@@ -1,4 +1,6 @@
 create table session (
-    ID int not null,
-    RFID varchar(100) not null
+    ID SERIAL,
+    RFID varchar(100) not null,
+    created_at date,
+    modified_at date
 );
