@@ -12,6 +12,8 @@ class SessionModel(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     rfid = db.Column(db.String(128), nullable=False)
+    start_value = db.Column(db.Float)
+    end_value = db.Column(db.Float)
     created_at = db.Column(db.DateTime)
     modified_at = db.Column(db.DateTime)
 
@@ -21,6 +23,8 @@ class SessionModel(db.Model):
         Class constructor
         """
         self.rfid = data.get('rfid')
+        self.start_value = data.get('start_value')
+        self.end_value = data.get('end_value')
         self.created_at = datetime.datetime.utcnow()
         self.modified_at = datetime.datetime.utcnow()
 
@@ -56,5 +60,7 @@ class SessionSchema(Schema):
     """
     id = fields.Int(dump_only=True)
     rfid = fields.Str(required=True)
+    start_value = fields.Float(dump_only=True)
+    end_value = fields.Float(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
     modified_at = fields.DateTime(dump_only=True)
