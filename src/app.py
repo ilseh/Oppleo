@@ -1,10 +1,9 @@
 from flask import Flask
+from config import app_config
+from nl.carcharging.models import db
+from nl.carcharging.views.SessionView import session_api as session_blueprint
+from nl.carcharging.views.SessionView import scheduler
 
-from .config import app_config
-
-from .nl.carcharging.models import db
-
-from .nl.carcharging.views.SessionView import session_api as session_blueprint
 
 def create_app(env_name):
     """
@@ -20,6 +19,9 @@ def create_app(env_name):
     app.register_blueprint(session_blueprint, url_prefix='/api/v1/sessions')
 
     db.init_app(app)
+
+    scheduler.init_app(app)
+    scheduler.start()
 
     @app.route('/', methods=['GET'])
     def index():
