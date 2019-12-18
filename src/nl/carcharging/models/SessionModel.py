@@ -1,6 +1,7 @@
 from marshmallow import fields, Schema
 import datetime
 from . import db
+from sqlalchemy import func
 
 class SessionModel(db.Model):
     """
@@ -50,7 +51,11 @@ class SessionModel(db.Model):
     def get_one_session(id):
         return SessionModel.query.get(id)
 
-
+    @staticmethod
+    def get_latest_rfid_session(rfid):
+        qryLatestId = db.session.query(func.max(SessionModel.id)).filter(SessionModel.rfid == rfid, SessionModel.end_value == None)
+        latestSession = SessionModel.query.filter(SessionModel.id == qryLatestId).first()
+        return latestSession
     def __repr(self):
         return '<id {}>'.format(self.id)
 
