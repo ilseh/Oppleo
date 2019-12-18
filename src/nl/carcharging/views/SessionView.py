@@ -17,21 +17,36 @@ def create(energy_util: EnergyUtil):
     """
     req_data = request.get_json()
     data = session_schema.load(req_data)
-    data['start_value'] = energy_util.getMeasurementValue()
+
+    # Check if session is running or not for rfid
+    existing_session = SessionModel.get_latest_rfid_session(data['rfid'])
+
+    if existing_session is None:
+        data['start_value'] = energy_util.getMeasurementValue()
+        session = SessionModel(data)
+        session.save()
+        ser_data = session_schema.dump(session)
+    else:
+        existing_session.end_value = energy_util.getMeasurementValue()
+        existing_session.save()
+        ser_data = session_schema.dump(existing_session)
 
     # if error:
     #     return custom_response(error, 400)
 
-    session = SessionModel(data)
-    session.save()
 
-    ser_data = session_schema.dump(session)
-
-    measure_job = "measuring"
-    scheduler.add_job(id=measure_job, func=lambda: save_measurement(energy_util, ser_data["id"]),
-                      trigger="interval", seconds=10)
+    toggle_measurement_job(energy_util, ser_data, existing_session is None)
 
     return custom_response(ser_data, 201)
+
+
+def toggle_measurement_job(energy_util: EnergyUtil, session_data, start):
+    measure_job = "measuring"
+    if start:
+        scheduler.add_job(id=measure_job, func=lambda: save_measurement(energy_util, session_data["id"]),
+                      trigger="interval", seconds=10)
+    else:
+        scheduler.remove_job(measure_job);
 
 
 def save_measurement(energy_util: EnergyUtil, session_id):
