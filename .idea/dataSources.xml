@@ -5,7 +5,7 @@
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://192.168.99.100:5432/carcharging</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/carcharging</jdbc-url>
     </data-source>
   </component>
 </project>
