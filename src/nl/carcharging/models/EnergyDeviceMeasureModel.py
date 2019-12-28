@@ -5,7 +5,6 @@ from marshmallow import fields, Schema
 from . import db
 from nl.carcharging.models.base import Base, Session
 
-session = Session()
 
 class EnergyDeviceMeasureModel(Base):
     """
@@ -26,7 +25,6 @@ class EnergyDeviceMeasureModel(Base):
     a_l3 = db.Column(db.Float)
     kw_total = db.Column(db.Float)
 
-    # class constructor
     def __init__(self, data):
         """
         Class constructor
@@ -42,6 +40,7 @@ class EnergyDeviceMeasureModel(Base):
         self.created_at = datetime.datetime.utcnow()
 
     def save(self):
+        session = Session()
         session.add(self)
         session.commit()
 

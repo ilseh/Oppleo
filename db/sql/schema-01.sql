@@ -14,7 +14,7 @@ create table energy_device (
 insert into energy_device values ('device_1');
 
 create table energy_device_measures (
-    id serial,
+    id serial primary key,
     energy_device_id varchar(100) references energy_device(energy_device_id),
     kwh_l1 float,
     kwh_l2 float,
