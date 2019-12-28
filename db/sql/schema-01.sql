@@ -8,10 +8,12 @@ create table session (
 );
 
 create table energy_device (
-    energy_device_id varchar(100) primary key
+    energy_device_id varchar(100) primary key,
+    port_name varchar(100),
+    slave_address int
 );
 
-insert into energy_device values ('device_1');
+insert into energy_device values ('device_1', '/dev/ttyUSB0', 1);
 
 create table energy_device_measures (
     id serial primary key,
