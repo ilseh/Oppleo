@@ -44,22 +44,13 @@ class EnergyDeviceMeasureModel(Base):
         session.add(self)
         session.commit()
 
-    def update(self, data):
-        for key, item in data.items():
-            setattr(self, key, item)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
-    @staticmethod
-    def get_all_measures():
-        return EnergyDeviceMeasureModel.query.all()
-
-    @staticmethod
-    def get_energy_device_measures(energy_device_id):
-        return EnergyDeviceMeasureModel.query.filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id)
+    # @staticmethod
+    # def get_all_measures():
+    #     return EnergyDeviceMeasureModel.query.all()
+    #
+    # @staticmethod
+    # def get_energy_device_measures(energy_device_id):
+    #     return EnergyDeviceMeasureModel.query.filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id)
 
 
     def __repr(self):
