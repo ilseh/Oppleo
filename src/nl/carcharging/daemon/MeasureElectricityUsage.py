@@ -10,6 +10,8 @@ from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 
 import os
+import logging
+
 
 scheduler = BlockingScheduler()
 
@@ -28,11 +30,18 @@ class MeasureElectricityUsage(Service):
         self.logger.setLevel(logging.DEBUG)
 
     def run(self):
-        self.create_save_measurement_job()
+        logging.basicConfig(level=logging.DEBUG, filename="/tmp/test.log")
+        self.run_forever()
+
+    def run_forever(self):
+        self.create_save_measurement_jobs()
         while not self.got_sigterm():
             time.sleep(5)
+        else:
+            self.remove_measurement_jobs()
 
-    def create_save_measurement_job(self):
+
+    def create_save_measurement_jobs(self):
         measure_jobname_base = "measuring_%s"
 
         self.logger.debug('Searching for measurement devices configured in the db')
@@ -41,20 +50,28 @@ class MeasureElectricityUsage(Service):
 
         for energy_device in energy_devices:
             self.logger.debug('Found energy device %s' % energy_device.energy_device_id)
-            scheduler.add_job(id=measure_jobname_base % energy_device.energy_device_id, func=lambda: save_measurement(self.energyUtil,
-                              energy_device.energy_device_id), trigger="interval", seconds=10)
+            scheduler.add_job(id=measure_jobname_base % energy_device.energy_device_id,
+                              func=save_measurement, args=[EnergyUtil(), energy_device.energy_device_id, self.logger],
+                              trigger="interval", seconds=10)
 
         scheduler.start()
 
 
+    def remove_measurement_jobs(self):
+        self.logger.debug('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.stopping scheduled jobs')
+        scheduler.remove_all_jobs()
+        scheduler.shutdown()
 
-def save_measurement(energy_util: EnergyUtil, energy_device_id):
+
+
+def save_measurement(energy_util: EnergyUtil, energy_device_id, logger):
+    logger.debug("starting measure %s" % energy_device_id)
     # app = scheduler.app
     data = energy_util.getMeasurementValue(energy_device_id)
-    # with app.app_context():
     device_measurement = EnergyDeviceMeasureModel(data)
+    logger.debug('want to save %s %s %s' % (energy_device_id, device_measurement.id, device_measurement.created_at))
     device_measurement.save()
-    print("value measured and saved")
+    logger.debug("value measured and saved %s %s %s" % (energy_device_id, device_measurement.id, device_measurement.created_at))
 
 
 
@@ -73,6 +90,8 @@ if __name__ == '__main__':
 
     if cmd == 'start':
         service.start()
+    elif cmd == 'debug':
+        service.run_forever()
     elif cmd == 'stop':
         stopped = service.stop()
         if not stopped:
