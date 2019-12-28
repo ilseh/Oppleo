@@ -11,6 +11,7 @@ from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureMo
 
 import os
 import logging
+import signal
 
 
 scheduler = BlockingScheduler()
@@ -28,17 +29,15 @@ class MeasureElectricityUsage(Service):
         self.logger.addHandler(SysLogHandler(address=find_syslog(),
                                              facility=SysLogHandler.LOG_DAEMON))
         self.logger.setLevel(logging.DEBUG)
+        self.logger.debug('initialized!!!!!!!!!!!!!!!!!!!!!1')
+    #     signal.signal(signal.SIGTERM, self.exit_gracefully)
+    #
+    # def exit_gracefully(self, signum, frame):
+    #     self.logger.debug('>>>>>>>>>SOEMTHING KILLING')
 
     def run(self):
-        logging.basicConfig(level=logging.DEBUG, filename="/tmp/test.log")
-        self.run_forever()
-
-    def run_forever(self):
         self.create_save_measurement_jobs()
-        while not self.got_sigterm():
-            time.sleep(5)
-        else:
-            self.remove_measurement_jobs()
+        # logging.basicConfig(level=logging.DEBUG, filename="/tmp/test.log")
 
 
     def create_save_measurement_jobs(self):
@@ -58,7 +57,7 @@ class MeasureElectricityUsage(Service):
 
 
     def remove_measurement_jobs(self):
-        self.logger.debug('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.stopping scheduled jobs')
+        self.logger.debug('>>>>>>>>>>>>>>>.stopping scheduled jobs')
         scheduler.remove_all_jobs()
         scheduler.shutdown()
 
@@ -66,13 +65,11 @@ class MeasureElectricityUsage(Service):
 
 def save_measurement(energy_util: EnergyUtil, energy_device_id, logger):
     logger.debug("starting measure %s" % energy_device_id)
-    # app = scheduler.app
     data = energy_util.getMeasurementValue(energy_device_id)
     device_measurement = EnergyDeviceMeasureModel(data)
     logger.debug('want to save %s %s %s' % (energy_device_id, device_measurement.id, device_measurement.created_at))
     device_measurement.save()
     logger.debug("value measured and saved %s %s %s" % (energy_device_id, device_measurement.id, device_measurement.created_at))
-
 
 
 if __name__ == '__main__':
@@ -91,7 +88,7 @@ if __name__ == '__main__':
     if cmd == 'start':
         service.start()
     elif cmd == 'debug':
-        service.run_forever()
+        service.run()
     elif cmd == 'stop':
         stopped = service.stop()
         if not stopped:
@@ -105,3 +102,5 @@ if __name__ == '__main__':
             print("Service is not running.")
     else:
         sys.exit('Unknown command "%s".' % cmd)
+
+
