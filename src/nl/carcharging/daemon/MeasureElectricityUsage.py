@@ -1,6 +1,4 @@
-import logging
 from logging.handlers import SysLogHandler
-import time
 
 from service import find_syslog, Service
 from injector import inject, Injector
@@ -11,6 +9,7 @@ from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureMo
 
 import os
 import logging
+import sys
 import signal
 
 
@@ -19,6 +18,9 @@ scheduler = BlockingScheduler()
 # TODO: make name and pid_dir configurable
 PROCESS_NAME = 'measure_electricity_usage'
 PID_DIR = '/tmp'
+
+# logging.basicConfig(level=logging.DEBUG, filename="/tmp/DaemonMeasureElectricity.log")
+
 
 class MeasureElectricityUsage(Service):
 
@@ -29,7 +31,7 @@ class MeasureElectricityUsage(Service):
         self.logger.addHandler(SysLogHandler(address=find_syslog(),
                                              facility=SysLogHandler.LOG_DAEMON))
         self.logger.setLevel(logging.DEBUG)
-        self.logger.debug('initialized!!!!!!!!!!!!!!!!!!!!!1')
+        self.logger.debug('initialized!')
     #     signal.signal(signal.SIGTERM, self.exit_gracefully)
     #
     # def exit_gracefully(self, signum, frame):
@@ -37,7 +39,6 @@ class MeasureElectricityUsage(Service):
 
     def run(self):
         self.create_save_measurement_jobs()
-        # logging.basicConfig(level=logging.DEBUG, filename="/tmp/test.log")
 
 
     def create_save_measurement_jobs(self):
@@ -48,7 +49,7 @@ class MeasureElectricityUsage(Service):
         self.logger.debug('Found %d measurement devices' % len(energy_devices))
 
         for energy_device in energy_devices:
-            self.logger.debug('Found energy device %s' % energy_device.energy_device_id)
+            self.logger.debug('Found energy device %s, adding it to scheduler' % energy_device.energy_device_id)
             scheduler.add_job(id=measure_jobname_base % energy_device.energy_device_id,
                               func=save_measurement, args=[EnergyUtil(), energy_device.energy_device_id, self.logger],
                               trigger="interval", seconds=10)
@@ -72,10 +73,15 @@ def save_measurement(energy_util: EnergyUtil, energy_device_id, logger):
     logger.debug("value measured and saved %s %s %s" % (energy_device_id, device_measurement.id, device_measurement.created_at))
 
 
-if __name__ == '__main__':
-    import sys
+def main():
+    logging.basicConfig(filename="/tmp/measurement_daemon.log")
+    logging.basicConfig(level=logging.DEBUG)
+
+    logger = logging.getLogger('measure_electricity_usage_daemon')
 
     env_name = os.getenv('CARCHARGING_ENV')
+
+    logger.info('Starting for environment %s' % env_name)
 
     if len(sys.argv) != 2:
         sys.exit('Invalid COMMAND %s, give an argument, ie \'start\'' % sys.argv[0])
@@ -104,3 +110,7 @@ if __name__ == '__main__':
         sys.exit('Unknown command "%s".' % cmd)
 
 
+
+
+if __name__ == '__main__':
+    main()

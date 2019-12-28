@@ -1,10 +1,7 @@
 from marshmallow import fields, Schema
-import datetime
-from . import db
-from sqlalchemy import func
-from nl.carcharging.models.base import Base, Session
 
-session = Session()
+from nl.carcharging.models.base import Base, Session
+from . import db
 
 
 class EnergyDeviceModel(Base):
@@ -16,40 +13,40 @@ class EnergyDeviceModel(Base):
     __tablename__ = 'energy_device'
 
     energy_device_id = db.Column(db.String(100), primary_key=True)
+    port_name = db.Column(db.String(100))
+    slave_address = db.Column(db.Integer)
 
-    # class constructor
     def __init__(self, data):
-        """
-        Class constructor
-        """
         self.energy_device_id = data.get('energy_device_id')
 
     def save(self):
-        db.session.add(self)
-        db.session.commit()
+        session = Session()
+        session.add(self)
+        session.commit()
 
     def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+        session = Session()
+        session.delete(self)
+        session.commit()
 
     @staticmethod
     def get_all():
+        session = Session()
         return session.query(EnergyDeviceModel).all()
 
     @staticmethod
     def get_one(energy_device_id):
-        return session.query.filter(EnergyDeviceModel.energy_device_id == energy_device_id)
+        session = Session()
+        return session.query(EnergyDeviceModel)\
+            .filter(EnergyDeviceModel.energy_device_id == energy_device_id).first()
 
     def __repr(self):
         return '<id {}>'.format(self.id)
 
 class EnergyDeviceSchema(Schema):
     """
-    Session Schema
+    Energy Device Schema
     """
-    id = fields.Int(dump_only=True)
-    rfid = fields.Str(required=True)
-    start_value = fields.Float(dump_only=True)
-    end_value = fields.Float(dump_only=True)
-    created_at = fields.DateTime(dump_only=True)
-    modified_at = fields.DateTime(dump_only=True)
+    energy_device_id = fields.Str(required=True)
+    port_name = fields.Str(dump_only=True)
+    slave_address = fields.Int(dump_only=True)
