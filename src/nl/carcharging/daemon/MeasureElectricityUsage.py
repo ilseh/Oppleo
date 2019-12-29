@@ -102,13 +102,13 @@ def handle_measurement(energy_util: EnergyUtil, energy_device_id):
                                                                    last_save_measurement.created_at))
 
 
-    if last_save_measurement is None or has_total_kw_increased(last_save_measurement, device_measurement) \
+    if last_save_measurement is None or is_a_value_changed(last_save_measurement, device_measurement) \
             or is_measurement_older_than_1hour(last_save_measurement, device_measurement):
         logger.debug('Measurement has changed or old one is older than 1 hour, saving it to db')
         save_measurement(device_measurement)
     else:
-        logger.debug('Not saving new measurement because total kw has not changed and last saved measurement is '
-                      'not older than 1 hour')
+        logger.debug('Not saving new measurement because values of interest have not changed and last saved measurement'
+                     ' is not older than 1 hour')
 
 
 def save_measurement(device_measurement):
@@ -120,8 +120,15 @@ def save_measurement(device_measurement):
                   (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
 
 
-def has_total_kw_increased(old_measurement, new_measurement):
-    return new_measurement.kw_total > old_measurement.kw_total
+def is_a_value_changed(old_measurement, new_measurement):
+    measurements_of_interest = {'kwh_l1', 'kwh_l2', 'kwh_l3', 'p_l1', 'p_l2', 'p_l3', 'a_l1', 'a_l2', 'a_l3', 'kw_total'}
+
+    for measurement in measurements_of_interest:
+        is_changed = getattr(new_measurement, measurement) > getattr(old_measurement, measurement)
+        if is_changed:
+            break
+
+    return is_changed
 
 
 def is_measurement_older_than_1hour(old_measurement, new_measurement):
