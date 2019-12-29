@@ -53,3 +53,8 @@ In /etc/init.d/ add a file (ie measure_energy_devices.sh) and put in content:
 # Description:       Enable measure_energy_devices at boot time to write energy measures to postgres db
 ### END INIT INFO
 ```
+
+## Operational info
+The log is in  `/tmp/measure_electricity_usage.log` and the pid of the daemon in `/tmp/measure_electricity_usage.pid`
+Locations are currently hardcoded in `MeasureElectricityUsage.py`
+Loglevel (hardcoded) put on debug.
