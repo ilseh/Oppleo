@@ -38,3 +38,18 @@ $ liquibase update
    $ pip3 -r requirements.txt
    ```
 5. Update the DATABASE_URL and CARCHARGING_ENV values in the start.sh to match your situation 
+
+### Let is start a boot time
+In /etc/init.d/ add a file (ie measure_energy_devices.sh) and put in content:
+```shell script
+# /etc/init.d/measure_energy_devices.sh
+### BEGIN INIT INFO
+# Provides:          measure_energy_devices.sh
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start measure_energy_device at boot time
+# Description:       Enable measure_energy_devices at boot time to write energy measures to postgres db
+### END INIT INFO
+```
