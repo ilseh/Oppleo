@@ -24,22 +24,25 @@ class EnergyDeviceMeasureModel(Base):
     a_l1 = db.Column(db.Float)
     a_l2 = db.Column(db.Float)
     a_l3 = db.Column(db.Float)
+    p_l1 = db.Column(db.Float)
+    p_l2 = db.Column(db.Float)
+    p_l3 = db.Column(db.Float)
+    v_l1 = db.Column(db.Float)
+    v_l2 = db.Column(db.Float)
+    v_l3 = db.Column(db.Float)
     kw_total = db.Column(db.Float)
+    hz = db.Column(db.Float)
 
     def __init__(self, data):
         self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
 
         self.logger.debug('Initializing EnergyDeviceMeasureModel with %s' % data)
 
-        self.energy_device_id = data.get('energy_device_id')
-        self.kwh_l1 = data.get('kwh_l1')
-        self.kwh_l2 = data.get('kwh_l3')
-        self.kwh_l3 = data.get('kwh_l3')
-        self.a_l1 = data.get('a_l1')
-        self.a_l2 = data.get('a_l2')
-        self.a_l3 = data.get('a_l3')
-        self.kw_total = data.get('kw_total')
+        for key in data:
+            setattr(self, key, data.get(key))
+
         self.created_at = datetime.datetime.utcnow()
+
 
     def save(self):
         session = Session()
@@ -76,5 +79,12 @@ class EnergyDeviceMeasureSchema(Schema):
     a_l1 = fields.Float(dump_only=True)
     a_l2 = fields.Float(dump_only=True)
     a_l3 = fields.Float(dump_only=True)
+    v_l1 = fields.Float(dump_only=True)
+    v_l2 = fields.Float(dump_only=True)
+    v_l3 = fields.Float(dump_only=True)
+    p_l1 = fields.Float(dump_only=True)
+    p_l2 = fields.Float(dump_only=True)
+    p_l3 = fields.Float(dump_only=True)
     kw_total = fields.Float(dump_only=True)
+    hz = fields.Float(dump_only=True)
     created_at = fields.DateTime(dump_only=True)

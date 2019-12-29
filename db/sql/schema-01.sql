@@ -24,6 +24,13 @@ create table energy_device_measures (
     a_l1 float,
     a_l2 float,
     a_l3 float,
+    v_l1 float,
+    v_l2 float,
+    v_l3 float,
+    p_l1 float,
+    p_l2 float,
+    p_l3 float,
     kw_total float,
+    hz float,
     created_at timestamp
 );

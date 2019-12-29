@@ -22,7 +22,6 @@ class EnergyUtil:
         self.logger.debug('found device: %s %s %d' % (device_data.energy_device_id, device_data.port_name, device_data.slave_address))
 
         instrument = minimalmodbus.Instrument(device_data.port_name, device_data.slave_address)  # port name, slave address (in decimal)
-        instrument.serial.baudrate = 9600
         instrument.close_port_after_each_call = True
 
         instrument.serial.baudrate = 9600
@@ -55,7 +54,14 @@ class EnergyUtil:
             "a_l1": 534.34,
             "a_l2": 534.34,
             "a_l3": 534.34,
+            "v_l1": 1,
+            "v_l2": 2,
+            "v_l3": 3,
+            "p_l1": 1,
+            "p_l2": 2,
+            "p_l3": 3,
             "kw_total": 50034.34,
+            "hz": 60034.34,
         }
 
 
@@ -93,5 +99,12 @@ class EnergyUtil:
             "a_l1": L1_A,
             "a_l2": L2_A,
             "a_l3": L3_A,
+            "v_l1": L1_V,
+            "v_l2": L2_V,
+            "v_l3": L3_V,
+            "p_l1": L1_P,
+            "p_l2": L2_P,
+            "p_l3": L3_P,
             "kw_total": kWh,
+            "hz": HZ
         }
