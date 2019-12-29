@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from marshmallow import fields, Schema
 
@@ -26,9 +27,10 @@ class EnergyDeviceMeasureModel(Base):
     kw_total = db.Column(db.Float)
 
     def __init__(self, data):
-        """
-        Class constructor
-        """
+        self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
+
+        self.logger.debug('Initializing EnergyDeviceMeasureModel with %s' % data)
+
         self.energy_device_id = data.get('energy_device_id')
         self.kwh_l1 = data.get('kwh_l1')
         self.kwh_l2 = data.get('kwh_l3')
@@ -43,6 +45,12 @@ class EnergyDeviceMeasureModel(Base):
         session = Session()
         session.add(self)
         session.commit()
+
+    @staticmethod
+    def get_last_one():
+        session = Session()
+        return session.query(EnergyDeviceMeasureModel)\
+            .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(1).first()
 
     # @staticmethod
     # def get_all_measures():

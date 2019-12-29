@@ -5,8 +5,6 @@ import logging
 
 PROD = 'production'
 
-logger = logging.getLogger('measure_electricity_usage_daemon')
-
 class EnergyUtil:
 
     def isProd(self):
@@ -14,13 +12,14 @@ class EnergyUtil:
 
     def __init__(self):
         self.env_name = os.getenv('CARCHARGING_ENV')
+        self.logger = logging.getLogger('nl.charging.services.EnergyUtil')
 
 
 
     def initInstrument(self, energy_device_id):
 
         device_data = EnergyDeviceModel.get_one(energy_device_id)
-        logger.info('found device: %s %s %d' % (device_data.energy_device_id, device_data.port_name, device_data.slave_address))
+        self.logger.debug('found device: %s %s %d' % (device_data.energy_device_id, device_data.port_name, device_data.slave_address))
 
         instrument = minimalmodbus.Instrument(device_data.port_name, device_data.slave_address)  # port name, slave address (in decimal)
         instrument.serial.baudrate = 9600
@@ -39,12 +38,15 @@ class EnergyUtil:
     def getMeasurementValue(self, energy_device_id):
 
         if self.isProd():
+            self.logger.debug('Production environment, getting real data')
             return self.getProdMeasurementValue(energy_device_id)
         else:
+            self.logger.debug('Not production environment, getting fake data')
             return self.getDevMeasurementValue(energy_device_id)
 
 
     def getDevMeasurementValue(self, energy_device_id):
+        self.logger.debug('returning fake data')
         return {
             "energy_device_id": energy_device_id,
             "kwh_l1": 1532.34,
