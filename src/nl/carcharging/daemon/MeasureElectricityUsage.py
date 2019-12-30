@@ -93,7 +93,7 @@ def handle_measurement(energy_util: EnergyUtil, energy_device_id):
     logger.debug('New measurement values: %s, %s, %s' % (device_measurement.id, device_measurement.kw_total,
                                                          device_measurement.created_at))
 
-    last_save_measurement = EnergyDeviceMeasureModel.get_last_one()
+    last_save_measurement = EnergyDeviceMeasureModel.get_last_saved(energy_device_id)
 
     if last_save_measurement is None:
         logger.info('No saved measurement found, is this the first run for device %s?' % energy_device_id)
@@ -153,6 +153,8 @@ def main():
         sys.exit('Invalid COMMAND %s, give an argument, ie \'start\'' % sys.argv[0])
 
     cmd = sys.argv[1].lower()
+
+    logger.info('Received command: %s' % cmd)
 
     injector = Injector()
     service = injector.get(MeasureElectricityUsage)
