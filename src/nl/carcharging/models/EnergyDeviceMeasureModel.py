@@ -50,9 +50,10 @@ class EnergyDeviceMeasureModel(Base):
         session.commit()
 
     @staticmethod
-    def get_last_one():
+    def get_last_saved(energy_device_id):
         session = Session()
-        return session.query(EnergyDeviceMeasureModel)\
+        return session.query(EnergyDeviceMeasureModel) \
+            .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(1).first()
 
     # @staticmethod
