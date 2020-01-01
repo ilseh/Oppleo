@@ -22,17 +22,14 @@ PULSE_LED_DUTY_CYCLE = 1  # 1s / 100 steps = 10ms/step
 
 
 class LedLightProd(object):
-
-    GPIO.setmode(GPIO.BCM)
-
     pulseLedValue = 0
     pulseLedMillis = 0
     pulseLedUp = True
 
 
     def __init__(self, color):
-        GPIO.setup(color, GPIO.OUT)
-        self.pwm = GPIO.PWM(color, 100)
+        self.t = threading.Thread(target=self._pulse)
+        self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
 
     # TODO: move to a more generic utility class?
@@ -40,8 +37,12 @@ class LedLightProd(object):
         return int(round(time.time() * 1000))
 
     def _pulse(self):
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.color, GPIO.OUT)
+        pwm = GPIO.PWM(self.color, 100)
+
         try:
-            self.pwm.start(0)
+            pwm.start(0)
             self.logger.debug('Starting led pulse')
             t = threading.currentThread()
             while getattr(t, "do_run", True):
@@ -53,7 +54,7 @@ class LedLightProd(object):
                         self.pulseLedValue += 1
                     else:
                         self.pulseLedValue -= 1
-                    self.pwm.ChangeDutyCycle(self.pulseLedValue)
+                    pwm.ChangeDutyCycle(self.pulseLedValue)
                     self.logger.debug("pulseLedValue = ", self.pulseLedValue)
                     self.pulseLedMillis = self.millis()
 
@@ -62,12 +63,11 @@ class LedLightProd(object):
 
         finally:
             self.logger.debug('Stopping led pulse')
-            self.pwm.stop()
+            pwm.stop()
             GPIO.cleanup()
 
 
     def pulse(self):
-        self.t = threading.Thread(target=self._pulse)
         self.t.start()
         self.logger.debug('Pulse started in thread')
 
