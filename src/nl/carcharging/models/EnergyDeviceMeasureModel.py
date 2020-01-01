@@ -5,7 +5,7 @@ from marshmallow import fields, Schema
 
 from . import db
 from nl.carcharging.models.base import Base, Session
-
+import json
 
 class EnergyDeviceMeasureModel(Base):
     """
@@ -56,6 +56,13 @@ class EnergyDeviceMeasureModel(Base):
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(1).first()
 
+    @staticmethod
+    def get_last_n_saved(energy_device_id, n):
+        session = Session()
+        return session.query(EnergyDeviceMeasureModel) \
+            .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+            .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
+
     # @staticmethod
     # def get_all_measures():
     #     return EnergyDeviceMeasureModel.query.all()
@@ -64,9 +71,54 @@ class EnergyDeviceMeasureModel(Base):
     # def get_energy_device_measures(energy_device_id):
     #     return EnergyDeviceMeasureModel.query.filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id)
 
-
     def __repr(self):
         return '<id {}>'.format(self.id)
+
+    # convert into JSON:
+    def to_json(self):
+        return (
+            json.dumps({
+                "energy_device_id": str(self.energy_device_id),
+                "created_at": str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S")),
+                "kwh_l1": self.kwh_l1,
+                "kwh_l2": str(self.kwh_l2),
+                "kwh_l3": str(self.kwh_l3),
+                "a_l1": str(self.a_l1),
+                "a_l2": str(self.a_l2),
+                "a_l3": str(self.a_l3),
+                "p_l1": str(self.p_l1),
+                "p_l2": str(self.p_l2),
+                "p_l3": str(self.p_l3),
+                "v_l1": str(self.v_l1),
+                "v_l2": str(self.v_l2),
+                "v_l3": str(self.v_l3),
+                "kw_total": str(self.kw_total),
+                "hz": str(self.hz)
+                }
+            )
+        )
+
+    # convert into dict:
+    def to_dict(self):
+        return ( {
+            "energy_device_id": str(self.energy_device_id),
+            "created_at": str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S")),
+            "kwh_l1": self.kwh_l1,
+            "kwh_l2": str(self.kwh_l2),
+            "kwh_l3": str(self.kwh_l3),
+            "a_l1": str(self.a_l1),
+            "a_l2": str(self.a_l2),
+            "a_l3": str(self.a_l3),
+            "p_l1": str(self.p_l1),
+            "p_l2": str(self.p_l2),
+            "p_l3": str(self.p_l3),
+            "v_l1": str(self.v_l1),
+            "v_l2": str(self.v_l2),
+            "v_l3": str(self.v_l3),
+            "kw_total": str(self.kw_total),
+            "hz": str(self.hz)
+            }
+        )
 
 class EnergyDeviceMeasureSchema(Schema):
     """
