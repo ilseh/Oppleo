@@ -18,7 +18,8 @@ LED_BLUE = 16
 PULSE_LED_MIN = 3
 PULSE_LED_MAX = 98
 
-PULSE_LED_DUTY_CYCLE = 1  # 1s / 100 steps = 10ms/step
+# Interval in ms to update led light
+FREQ_MS_TO_UPDATE_LED = 10
 
 
 class LedLightProd(object):
@@ -46,7 +47,7 @@ class LedLightProd(object):
             self.logger.debug('Starting led pulse')
             t = threading.currentThread()
             while getattr(t, "do_run", True):
-                if self.millis() > (self.pulseLedMillis + ((PULSE_LED_DUTY_CYCLE * 1000) / 100)):
+                if self.millis() > (self.pulseLedMillis + FREQ_MS_TO_UPDATE_LED):
                     if ((self.pulseLedUp and (self.pulseLedValue >= PULSE_LED_MAX)) or
                             ((not self.pulseLedUp) and (self.pulseLedValue <= PULSE_LED_MIN))):
                         self.pulseLedUp = not self.pulseLedUp
