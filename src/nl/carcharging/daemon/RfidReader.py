@@ -32,7 +32,7 @@ class RfidReader(Service):
     @inject
     def __init__(self):
         super(RfidReader, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
-        self.ledlighter = LedLighter(LedLighter.LED_BLUE)
+        self.ledlighter = LedLighter(LedLighter.LED_GREEN, LedLighter.LED_RED, LedLighter.LED_BLUE)
 
     def run(self):
         self.ledlighter.pulse()
@@ -74,7 +74,7 @@ def main():
         if not stopped:
             sys.exit('Could not stop service, trying kill instead')
     elif cmd == 'kill':
-        GPIO.cleanup()
+        # GPIO.cleanup()
         stopped = service.kill()
     elif cmd == 'status':
         if service.is_running():

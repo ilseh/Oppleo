@@ -1,9 +1,6 @@
 # https://raspberrytips.nl/kaarslicht-pwm-raspberry-pi/
 
-import logging
-import time
 import os
-import threading
 
 from .LedLightDev import LedLightDev
 
@@ -30,22 +27,27 @@ class LedLighter(object):
     LED_RED = 13
     LED_GREEN = 12
     LED_BLUE = 16
+    services = []
 
-    def __init__(self, color):
-        self.env_name = os.getenv('CARCHARGING_ENV')
-        if self.isProd():
-            self.service = LedLightProd(color)
+    def __init__(self, *colors):
+        env_name = os.getenv('CARCHARGING_ENV')
+        if self.isProd(env_name):
+            for color in colors:
+                self.services.append(LedLightProd(color))
         else:
-            self.service = LedLightDev(color)
+            for color in colors:
+                self.services.append(LedLightDev(color))
 
 
-    def isProd(self):
-        return self.env_name.lower() == PROD
+    def isProd(self, env_name):
+        return env_name.lower() == PROD
 
     def pulse(self,):
-        self.service.pulse()
+        for service in self.services:
+            service.pulse()
 
     def stop(self):
-        self.service.stop()
+        for service in self.services:
+            service.stop()
 
 
