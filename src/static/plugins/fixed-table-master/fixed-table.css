@@ -1,0 +1,41 @@
+.fixed-table-container {
+  height: 300px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  margin-bottom: 40px;
+}
+.fixed-table-container table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.fixed-table-container th,
+.fixed-table-container td {
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+
+  /**
+    * Current implementation doesn't work when
+    * cells in a row have different heights
+    */
+  white-space: nowrap !important;
+}
+.fixed-table-container th {
+  background: #eee;
+  font-size: 12px;
+  line-height: 16px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.fixed-table-container td:first-child {
+  background: #eee;
+}
+.fixed-table-container tr:last-child td {
+  border-bottom: 0;
+}
+.fixed-table-container th:last-child,
+.fixed-table-container td:last-child {
+  border-right: 0;
+}

@@ -1,0 +1,185 @@
+{% extends "template.html" %}
+{% block title %}Verbruik{% endblock %}
+{% block head %}
+  {{ super() }}
+
+  <!-- DataTables -->
+  <link href="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+  <link href="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+  <!-- Responsive datatable examples -->
+  <link href="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+   
+  <!-- Required datatable js -->
+  <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.js') }}"></script>
+  <!-- Buttons examples -->
+  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.buttons.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/jszip.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/pdfmake.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/vfs_fonts.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.html5.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.print.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.colVis.min.js') }}"></script>
+  <!-- Responsive examples -->
+  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
+  
+  <script>
+    function timestamp() {
+      d = new Date();
+      return (d.getFullYear() + "-" + 
+             (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
+             (d.getDate()<10?'0':'') + d.getDate() + '.' + 
+             (d.getHours()<10?'0':'') + d.getHours() + ":" + 
+             (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
+             (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
+             (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
+      )
+    }
+    function getUsageData( ) {
+      console.log(timestamp() + ' getUsageData()')
+    
+//      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
+            
+      $.ajax({
+        type		: 'GET',
+        url			: '/usage_data',
+        dataType	: 'json',
+            encode		: true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+  //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
+
+        var dt = $('table#usage').DataTable( {
+          "pageLength": 10,
+          "order": [[ 0, "desc" ]]
+        });
+        dt.draw('full-reset')
+        data.forEach(element => {
+          console.log(element.a_l1)
+
+          $("span#energy_device_id").text("("+element.energy_device_id+")")
+          dt.row.add( [
+            element.created_at,
+            element.kw_total +' kWh',
+            element.kwh_l1 +' kWh',
+            element.kwh_l2 +' kWh',
+            element.kwh_l3 +' kWh',
+            element.a_l1 +' A',
+            element.a_l2 +' A',
+            element.a_l3 +' A',
+            element.p_l1 +' W',
+            element.p_l2 +' W',
+            element.p_l3 +' W',
+            element.v_l1 +' V',
+            element.v_l1 +' V',
+            element.v_l3 +' V',
+            element.hz +' Hz'
+        ] ).draw( false )
+/*
+          var trEl = $('<tr>').append(
+            $('<td>').text(element.created_at),
+            $('<td>').text(element.kw_total + ' kWh'),
+            $('<td>').text(element.kwh_l1 + ' kWh'),
+            $('<td>').text(element.kwh_l2 + ' kWh'),
+            $('<td>').text(element.kwh_l3 + ' kWh'),
+            $('<td>').text(element.a_l1 + ' A'),
+            $('<td>').text(element.a_l2 + ' A'),
+            $('<td>').text(element.a_l3 + ' A'),
+            $('<td>').text(element.p_l1 + ' W'),
+            $('<td>').text(element.p_l2 + ' W'),
+            $('<td>').text(element.p_l3 + ' W'),
+            $('<td>').text(element.v_l1 + ' V'),
+            $('<td>').text(element.v_l2 + ' V'),
+            $('<td>').text(element.v_l3 + ' V'),
+            $('<td>').text(element.hz + ' Hz')
+          )
+          $('table#usage tbody').append(trEl);
+*/
+        })
+      })
+      .fail(function() {
+  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
+      })
+      .always(function() {
+        // Check every 60 seconds
+      })
+    
+    }
+    jQuery(document).ready(function () {
+      // Handler for .ready() called.
+      console.log(timestamp() + " splash.js file load completed")
+      getUsageData()
+    })
+
+    </script>
+
+{% endblock %}
+{% block content %}
+
+
+<div class="wrapper">
+  <div class="container-fluid">
+
+      <!-- Page-Title -->
+      <div class="row">
+          <div class="col-sm-12">
+              <div class="page-title-box">
+                  <div class="btn-group pull-right">
+                      <ol class="breadcrumb hide-phone p-0 m-0">
+                          <li class="breadcrumb-item"><a href="#">Minton</a></li>
+                          <li class="breadcrumb-item"><a href="#">Tables</a></li>
+                          <li class="breadcrumb-item active">Datatable</li>
+                      </ol>
+                  </div>
+                  <h4 class="page-title">Datatable</h4>
+              </div>
+          </div>
+      </div>
+      <!-- end page title end breadcrumb -->
+
+
+      <div class="row">
+          <div class="col-12">
+              <div class="card-box table-responsive">
+                  <h4 class="m-t-0 header-title"><b>Verbruik</b></h4>
+                  <p class="text-muted font-13 m-b-30">
+                      Recente verbruiksdata. <span id="energy_device_id"></span>
+                  </p>
+
+                  <table id="usage" class="table table-bordered" cellpadding="1" style="font-size: 10px;">
+                    <thead>
+                      <tr style="background-color: #555555;">
+                        <th rowspan="2">Timestamp</th>
+                        <th colspan="4" style="text-align: center;">Energie (kWh)</th>
+                        <th colspan="3" style="text-align: center;">Amps</th>
+                        <th colspan="3" style="text-align: center;">Watts</th>
+                        <th colspan="3" style="text-align: center;">Volts</th>
+                        <th rowspan="2" style="text-align: center;">Hz</th>
+                      </tr>
+                      <tr style="background-color: #555555;">
+                        <th style="text-align: center;">Totaal</th style="text-align: center;">
+                        <th style="text-align: center;">L1</th style="text-align: center;">
+                        <th style="text-align: center;">L2</th style="text-align: center;">
+                        <th style="text-align: center;">L3</th style="text-align: center;">
+                        <th style="text-align: center;">L1</th style="text-align: center;">
+                        <th style="text-align: center;">L2</th style="text-align: center;">
+                        <th style="text-align: center;">L3</th style="text-align: center;">
+                        <th style="text-align: center;">L1</th style="text-align: center;">
+                        <th style="text-align: center;">L2</th style="text-align: center;">
+                        <th style="text-align: center;">L3</th style="text-align: center;">
+                        <th style="text-align: center;">L1</th style="text-align: center;">
+                        <th style="text-align: center;">L2</th style="text-align: center;">
+                        <th style="text-align: center;">L3</th style="text-align: center;">
+                      </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+          </div> <!-- end row -->
+{% endblock %}
