@@ -35,7 +35,7 @@ $ liquibase update
 4. Install the python libs in the venv   
    ```shell script
    $ source venv/bin/activate
-   $ pip3 -r requirements.txt
+   $ pip3 install -r requirements.txt
    ```
 5. Update the DATABASE_URL and CARCHARGING_ENV values in the start.sh to match your situation 
 
