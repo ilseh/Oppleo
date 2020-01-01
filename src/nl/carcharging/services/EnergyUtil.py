@@ -12,7 +12,7 @@ class EnergyUtil:
 
     def __init__(self):
         self.env_name = os.getenv('CARCHARGING_ENV')
-        self.logger = logging.getLogger('nl.charging.services.EnergyUtil')
+        self.logger = logging.getLogger('nl.carcharging.services.EnergyUtil')
 
 
 

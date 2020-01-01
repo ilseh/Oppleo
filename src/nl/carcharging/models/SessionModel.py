@@ -64,6 +64,7 @@ class SessionModel(db.Model):
         qryLatestId = db.session.query(func.max(SessionModel.id)).filter(SessionModel.rfid == rfid, SessionModel.end_value == None)
         latestSession = SessionModel.query.filter(SessionModel.id == qryLatestId).first()
         return latestSession
+
     def __repr(self):
         return '<id {}>'.format(self.id)
 
