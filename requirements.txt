@@ -50,7 +50,7 @@ python-editor==1.0.4
 python-engineio==3.11.1
 python-socketio==4.4.0
 pytz==2019.3
-schedule==0.6.0
+RPi.GPIO==0.7.0
 service==0.6.0
 setproctitle==1.1.10
 six==1.13.0
