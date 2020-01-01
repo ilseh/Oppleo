@@ -46,8 +46,14 @@ class LedLighter(object):
         for service in self.services:
             service.pulse()
 
-    def stop(self):
+    def pulse_stop(self):
         for service in self.services:
-            service.stop()
+            service.pulse_stop()
 
+    def on(self, brightness):
+        for service in self.services:
+            service.on(brightness)
 
+    def off(self):
+        for service in self.services:
+            service.off()
