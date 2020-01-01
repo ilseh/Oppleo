@@ -3,6 +3,11 @@ import os
 import sys
 import time
 
+try:
+    import RPi.GPIO as GPIO
+except RuntimeError:
+    logging.debug('Assuming dev env')
+
 from apscheduler.schedulers.blocking import BlockingScheduler
 from injector import inject, Injector
 from service import Service
@@ -69,6 +74,7 @@ def main():
         if not stopped:
             sys.exit('Could not stop service, trying kill instead')
     elif cmd == 'kill':
+        GPIO.cleanup()
         stopped = service.kill()
     elif cmd == 'status':
         if service.is_running():
