@@ -35,10 +35,10 @@ class RfidReader(Service):
         self.ledlighter = LedLighter(LedLighter.LED_RED, LedLighter.LED_BLUE)
 
     def run(self):
-        self.ledlighter.pulse()
+        self.ledlighter.on(5)
         while not self.got_sigterm():
             time.sleep(20)
-            self.ledlighter.stop()
+            self.ledlighter.off()
         else:
             self.logger.info("Stopping RfidReader")
 
