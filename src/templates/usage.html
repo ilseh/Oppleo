@@ -25,6 +25,9 @@
   <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
   
+  <!-- Socket IO -->
+  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
   <script>
     function timestamp() {
       d = new Date();
@@ -37,14 +40,15 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    function getUsageData( ) {
+    var dt = undefined
+    function getUsageData( n = undefined ) {
       console.log(timestamp() + ' getUsageData()')
     
 //      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
             
       $.ajax({
         type		: 'GET',
-        url			: '/usage_data',
+        url			: (n == undefined ? '/usage_data' : '/usage_data' + n),
         dataType	: 'json',
             encode		: true
       }) // using the done promise callback
@@ -53,16 +57,16 @@
         console.log(data)
   //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
 
-        var dt = $('table#usage').DataTable( {
+        dt = $('table#usage').DataTable( {
           "pageLength": 10,
           "order": [[ 0, "desc" ]]
         });
         dt.draw('full-reset')
         data.forEach(element => {
-          console.log(element.a_l1)
+//          console.log(element.a_l1)
 
           $("span#energy_device_id").text("("+element.energy_device_id+")")
-          dt.row.add( [
+          dt.row.add([
             element.created_at,
             element.kw_total +' kWh',
             element.kwh_l1 +' kWh',
@@ -78,27 +82,7 @@
             element.v_l1 +' V',
             element.v_l3 +' V',
             element.hz +' Hz'
-        ] ).draw( false )
-/*
-          var trEl = $('<tr>').append(
-            $('<td>').text(element.created_at),
-            $('<td>').text(element.kw_total + ' kWh'),
-            $('<td>').text(element.kwh_l1 + ' kWh'),
-            $('<td>').text(element.kwh_l2 + ' kWh'),
-            $('<td>').text(element.kwh_l3 + ' kWh'),
-            $('<td>').text(element.a_l1 + ' A'),
-            $('<td>').text(element.a_l2 + ' A'),
-            $('<td>').text(element.a_l3 + ' A'),
-            $('<td>').text(element.p_l1 + ' W'),
-            $('<td>').text(element.p_l2 + ' W'),
-            $('<td>').text(element.p_l3 + ' W'),
-            $('<td>').text(element.v_l1 + ' V'),
-            $('<td>').text(element.v_l2 + ' V'),
-            $('<td>').text(element.v_l3 + ' V'),
-            $('<td>').text(element.hz + ' Hz')
-          )
-          $('table#usage tbody').append(trEl);
-*/
+          ]).draw( false )
         })
       })
       .fail(function() {
@@ -107,11 +91,44 @@
       .always(function() {
         // Check every 60 seconds
       })
-    
     }
+    var socket = undefined
+    function startWebSocket() {
+      console.log(timestamp() + ' startWebSocket()')
+      // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
+      socket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/usage')
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+      socket.on('status_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg.data))
+
+        dt.row.add([
+            msg.data.created_at,
+            msg.data.kw_total +' kWh',
+            msg.data.kwh_l1 +' kWh',
+            msg.data.kwh_l2 +' kWh',
+            msg.data.kwh_l3 +' kWh',
+            msg.data.a_l1 +' A',
+            msg.data.a_l2 +' A',
+            msg.data.a_l3 +' A',
+            msg.data.p_l1 +' W',
+            msg.data.p_l2 +' W',
+            msg.data.p_l3 +' W',
+            msg.data.v_l1 +' V',
+            msg.data.v_l1 +' V',
+            msg.data.v_l3 +' V',
+            msg.data.hz +' Hz'
+          ]).draw( false )
+      })
+    }
+    //example of triggering an event on click of a form submit button
+    function sendSocketMsg() {
+        socket.emit('my event', {data: $('#emit_data').val()});
+    }
+
+
     jQuery(document).ready(function () {
-      // Handler for .ready() called.
-      console.log(timestamp() + " splash.js file load completed")
+      console.log(timestamp() + " file load completed")
+      startWebSocket()
       getUsageData()
     })
 
@@ -130,12 +147,11 @@
               <div class="page-title-box">
                   <div class="btn-group pull-right">
                       <ol class="breadcrumb hide-phone p-0 m-0">
-                          <li class="breadcrumb-item"><a href="#">Minton</a></li>
-                          <li class="breadcrumb-item"><a href="#">Tables</a></li>
-                          <li class="breadcrumb-item active">Datatable</li>
+                          <li class="breadcrumb-item"><a href="#">Verbruik</a></li>
+                          <li class="breadcrumb-item active">Verbruik</li>
                       </ol>
                   </div>
-                  <h4 class="page-title">Datatable</h4>
+                  <h4 class="page-title">Verbruik</h4>
               </div>
           </div>
       </div>
@@ -145,11 +161,6 @@
       <div class="row">
           <div class="col-12">
               <div class="card-box table-responsive">
-                  <h4 class="m-t-0 header-title"><b>Verbruik</b></h4>
-                  <p class="text-muted font-13 m-b-30">
-                      Recente verbruiksdata. <span id="energy_device_id"></span>
-                  </p>
-
                   <table id="usage" class="table table-bordered" cellpadding="1" style="font-size: 10px;">
                     <thead>
                       <tr style="background-color: #555555;">
