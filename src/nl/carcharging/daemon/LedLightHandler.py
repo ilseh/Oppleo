@@ -5,6 +5,7 @@ import time
 
 try:
     import RPi.GPIO as GPIO
+    from mfrc522 import SimpleMFRC522
 except RuntimeError:
     logging.debug('Assuming dev env')
 
@@ -15,6 +16,7 @@ from service import Service
 from nl.carcharging.config import Logger
 
 from nl.carcharging.services.LedLighter import LedLighter
+from nl.carcharging.services.RfidReader import RfidReader
 
 PROCESS_NAME = 'rfid_reader'
 LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
@@ -27,23 +29,45 @@ PID_DIR = '/tmp/'
 SECONDS_IN_HOUR = 60 * 60
 
 
-class RfidReader(Service):
+class LedLightHandler(Service):
 
     @inject
     def __init__(self):
-        super(RfidReader, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
-        self.ledlighter = LedLighter(LedLighter.LED_RED, LedLighter.LED_BLUE)
+        super(LedLightHandler, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
+        self.ledlighterAvailable = LedLighter(LedLighter.LED_GREEN)
+        self.ledlighterReady = LedLighter(LedLighter.LED_RED, LedLighter.LED_GREEN)
 
     def run(self):
-        self.ledlighter.on(5)
+        # TODO: Just started up. Check if there was a session in progress.
+        #  Retrieved last session that was stored and check if it was ended or not.
+
+        reader = RfidReader()
         while not self.got_sigterm():
-            time.sleep(20)
-            self.ledlighter.off()
+            self.ledlighterReady.on(5)
+            rfid, text = reader.read()
+            self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
+
+            self.ledlighterReady.off()
+            self.ledlighterAvailable.on(5)
+            time.sleep(5)
+            self.ledlighterAvailable.off()
+
+            # TODO: check if rfid wants to start or stop session (toggle). We check by checking
+            #  if rfid has an open session or not.
+
+            # TODO: if open session than toggle session off (and stop the electricity) and set light to available again.
+            #  If no session open, we get a new session and set light to ready (and start electricity flow and ligth to charging).
+
+            time.sleep(2)
         else:
             self.logger.info("Stopping RfidReader")
+            self.stop()
 
     def stop(self, block=False):
-        self.ledlighter.stop()
+        self.ledlighterAvailable.off()
+        self.ledlighterAvailable.cleanup()
+        self.ledlighterReady.off()
+        self.ledlighterAvailable.cleanup()
 
 
 def main():
@@ -62,7 +86,8 @@ def main():
     logger.info('Received command: %s' % cmd)
 
     injector = Injector()
-    service = injector.get(RfidReader)
+    service = injector.get(LedLightHandler)
+
 
     if cmd == 'start':
         service.start()
