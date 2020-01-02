@@ -3,10 +3,9 @@ from nl.carcharging.services.EnergyUtil import EnergyUtil
 from flask_injector import FlaskInjector
 from src.app import create_app
 import logging
-
+from flask_socketio import SocketIO
 
 logging.basicConfig(level=logging.DEBUG)
-
 
 def configure(binder):
     binder.bind(
@@ -22,4 +21,6 @@ if __name__ == '__main__':
     FlaskInjector(app=app, modules=[configure])
 
     # run app
-    app.run()
+    # app.run()
+#    socketio.run(app)
+    socketio.run(app, host='localhost', port=10001)

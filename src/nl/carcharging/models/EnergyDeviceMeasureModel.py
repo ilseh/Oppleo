@@ -63,6 +63,9 @@ class EnergyDeviceMeasureModel(Base):
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
 
+    def get_created_at_str(self):
+        return str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S"))
+
     # @staticmethod
     # def get_all_measures():
     #     return EnergyDeviceMeasureModel.query.all()
