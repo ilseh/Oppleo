@@ -1,48 +1,41 @@
 # https://raspberrytips.nl/kaarslicht-pwm-raspberry-pi/
 
-import os
+import logging
 
 from .LedLightDev import LedLightDev
+
+from nl.carcharging.util.GenericUtil import GenericUtil
 
 try:
     from .LedLightProd import LedLightProd
 except NameError:
     print('Assuming dev env')
 
-
-# TODO: move logic for determining env to reusable position
-PROD = 'production'
-
-
-
 PULSE_LED_MIN = 3
 PULSE_LED_MAX = 98
-
-PULSE_LED_DUTY_CYCLE = 1  # 1s / 100 steps = 10ms/step
-
-
 
 
 class LedLighter(object):
     LED_RED = 13
     LED_GREEN = 12
     LED_BLUE = 16
-    services = []
 
-    def __init__(self, *colors):
-        env_name = os.getenv('CARCHARGING_ENV')
-        if self.isProd(env_name):
+    def __init__(self, *colors, services=None):
+        self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
+        if services is None:
+            services = []
+        self.services = services
+
+        if GenericUtil.isProd():
             for color in colors:
                 self.services.append(LedLightProd(color))
         else:
             for color in colors:
                 self.services.append(LedLightDev(color))
 
+        self.logger.debug('Initialize with %d ledlights' % len(self.services))
 
-    def isProd(self, env_name):
-        return env_name.lower() == PROD
-
-    def pulse(self,):
+    def pulse(self, ):
         for service in self.services:
             service.pulse()
 
@@ -57,3 +50,7 @@ class LedLighter(object):
     def off(self):
         for service in self.services:
             service.off()
+
+    def cleanup(self):
+        for service in self.services:
+            service.cleanup()

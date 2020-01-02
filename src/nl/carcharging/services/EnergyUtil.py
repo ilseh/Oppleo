@@ -1,20 +1,13 @@
 import os
 import minimalmodbus
+from nl.carcharging.util.GenericUtil import GenericUtil
 from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 import logging
 
-PROD = 'production'
-
 class EnergyUtil:
 
-    def isProd(self):
-        return self.env_name.lower() == PROD
-
     def __init__(self):
-        self.env_name = os.getenv('CARCHARGING_ENV')
         self.logger = logging.getLogger('nl.carcharging.services.EnergyUtil')
-
-
 
     def initInstrument(self, energy_device_id):
 
@@ -36,7 +29,7 @@ class EnergyUtil:
 
     def getMeasurementValue(self, energy_device_id):
 
-        if self.isProd():
+        if GenericUtil.isProd():
             self.logger.debug('Production environment, getting real data')
             return self.getProdMeasurementValue(energy_device_id)
         else:

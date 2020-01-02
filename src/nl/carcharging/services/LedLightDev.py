@@ -20,6 +20,9 @@ class LedLightDev(object):
     def off(self):
         self.logger.debug('fake light off %d' % self.color)
 
+    def cleanup(self):
+        self.logger.debug('fake cleanup')
+
     def pulse(self):
         self.t = threading.Thread(target=self._fakePulse)
         self.t.start()

@@ -22,6 +22,7 @@ FREQ_MS_TO_UPDATE_LED = 10
 
 
 class LedLightProd(object):
+    GPIO.setmode(GPIO.BCM)
     pwm = {}
 
     def __init__(self, color):
@@ -34,7 +35,6 @@ class LedLightProd(object):
         return int(round(time.time() * 1000))
 
     def _init_gpio_pwm(self):
-        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.color, GPIO.OUT)
         return GPIO.PWM(self.color, 100)
 
@@ -68,6 +68,7 @@ class LedLightProd(object):
 
     def on(self, brightness):
         self.pwm = self._init_gpio_pwm()
+
         try:
             self.pwm.start(0)
             self.logger.debug('Starting led light %d brightness %d' % (self.color, brightness))
@@ -78,6 +79,8 @@ class LedLightProd(object):
     def off(self):
         self.logger.debug('Stopping led light')
         self.pwm.stop()
+
+    def cleanup(self):
         GPIO.cleanup()
 
     def pulse(self):
