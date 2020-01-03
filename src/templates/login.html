@@ -1,24 +1,86 @@
-{% extends "template.html" %}
-{% block title %}Login{% endblock %}
-{% block head %}
-  {{ super() }}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
 
-{% endblock %}
-{% block content %}
+        <meta charset="utf-8" />
+        <title>Login - Carcharger 2020</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description" />
+        <meta content="Coderthemes" name="author" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/carcharger32.ico') }}">
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+		<meta name="theme-color" content="#3BAFDA">
+
+        <!-- App css -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+
+        <!-- jQuery  -->
+        <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script><!-- Popper for Bootstrap --><!-- Tether for Bootstrap -->
+        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.scrollTo.min.js') }}"></script>
+
+        <!-- Notification js -->
+        <script src="{{ url_for('static', filename='plugins/notifyjs/dist/notify.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='plugins/notifications/notify-metro.js') }}"></script>
+
+        <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
+
+		<!-- Add webpage to the iOS Home screen. -->
+        <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
+		<!-- iOS Launch Screen Image -->
+		<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash512.png') }}">
+		<!-- Adding a Launch Icon Title -->
+		<meta name="apple-mobile-web-app-title" content="Splash">
+		<!-- Hide Safari User Interface Components -->
+		<!-- Set the apple-mobile-web-app-capable meta tag to yes to turn on standalone mode. -->
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<!-- You can determine whether a webpage is displaying in standalone mode using the window.navigator.standalone read-only Boolean JavaScript property. -->
+		<!-- Changing the Status Bar Appearance -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="msapplication-starturl" content="/">
+
+        <style>
+        button {
+            cursor: pointer;
+        }
+        </style>
+    
+    </head>
+    <body>
 
 <div class="wrapper-page">
 
   <div class="text-center">
-      <span class="logo-lg"><i class="mdi mdi-radar"></i> <span>Splash</span> </span>
+      <span class="logo-lg"><i class="ion ion-ios7-bolt"></i> <span>Laadpunt</span> </span>
   </div>
 
-  <form id="splash-login" class="form-horizontal m-t-20">
+  {% if msg %}
+  <div class="text-center" style="color: #ef5350;">
+    <span class="mdi mdi-thumb-down-outline"><span style="font-weight: bold;"> {{ msg }}</span></span>
+  </div>
+  {% endif %}
 
-      <div class="form-group row">
+{% if form.errors %}
+{{ form.errors }}
+{% endif %}
+
+<form id="splash-login" class="form-horizontal m-t-20" method="POST" action="/login">
+    {{ form.csrf_token }}
+
+    <div class="form-group row">
           <div class="col-12">
               <div class="input-group">
                   <span class="input-group-addon"><i class="mdi mdi-account"></i></span>
-                  <input class="form-control" id="username" type="text" required="" placeholder="Username">
+                  <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username">
               </div>
           </div>
       </div>
@@ -27,7 +89,7 @@
           <div class="col-12">
               <div class="input-group">
                   <span class="input-group-addon"><i class="mdi mdi-radar"></i></span>
-                  <input class="form-control" id="password" type="password" required="" placeholder="Password">
+                  <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password">
               </div>
           </div>
       </div>
@@ -35,8 +97,8 @@
       <div class="form-group row">
           <div class="col-12">
               <div class="checkbox checkbox-primary">
-                  <input id="checkbox-signup" type="checkbox">
-                  <label for="checkbox-signup">
+                  <input id="remember_me" name="remember_me" type="checkbox" value="y">
+                  <label for="remember_me">
                       Remember me
                   </label>
               </div>
@@ -54,4 +116,6 @@
   </form>
 </div>
 
-{% endblock %}
+</body>
+    
+</html>
