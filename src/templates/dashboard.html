@@ -34,12 +34,13 @@
                     Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l3)+parseFloat(data.p_l3))/factor_Whkm),  // percentage
                     Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l3)+parseFloat(data.p_l3))/factor_Whkm),  // text 
                     'km/u',           // dataTitle
-                    Math.round(data.kw_total*10)/10 + ' kWh',   // inset value
+                    Math.round((data.kw_total*10)/10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' kWh',   // inset value
                     'Totaal',          // inset text
                     '±' + Math.round((data.kw_total*1000)/factor_Whkm).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' km',   // Tooltip
-                    '#ffaa00',        // fgColor
+                    '#ffaa00',        // fgColor    orange #ffaa00
                     '#505A66',        // bgColor
-                    '#ebeff2'         // fillColor
+                    '#36404a',        // fillColor  blue #3bafda
+                    '#3bafda'         // insetColor
                   )
       // Amps L1
       updateGauger( 'gauger_2',       // id
@@ -50,12 +51,13 @@
                     ((data.a_l1/25)*100),         // percentage
                     data.a_l1 + ' A', // text 
                     Math.round(data.v_l1) + 'V',  // dataTitle
-                    Math.round(data.p_l1) + ' W', // inset value
+                    Math.round(data.p_l1).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' W',   // inset value
                     'Current',        // inset text
                     Math.round(data.p_l1/factor_Whkm) + ' km/u',  // Tooltip
                     '#3bafda',        // fgColor
                     '#505A66',        // bgColor
-                    '#36404a'         // fillColor
+                    '#36404a',        // fillColor
+                    '#98a6ad'         // insetColor
                   )
       updateGauger( 'gauger_3',       // id
                     'L2',             // title
@@ -65,12 +67,13 @@
                     ((data.a_l2/25)*100),         // percentage
                     data.a_l2 + ' A', // text 
                     Math.round(data.v_l2) + 'V',  // dataTitle
-                    Math.round(data.p_l2) + ' W', // inset value
+                    Math.round(data.p_l2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' W',   // inset value
                     'Current',        // inset text
                     Math.round(data.p_l2/factor_Whkm) + ' km/u',  // Tooltip
                     '#3bafda',        // fgColor
                     '#505A66',        // bgColor
-                    '#36404a'         // fillColor
+                    '#36404a',        // fillColor
+                    '#98a6ad'         // insetColor
                   )
       updateGauger( 'gauger_4',       // id
                     'L3',             // title
@@ -80,12 +83,13 @@
                     ((data.a_l3/25)*100),         // percentage
                     data.a_l3 + ' A', // text 
                     Math.round(data.v_l3) + 'V',  // dataTitle
-                    Math.round(data.p_l3) + ' W', // inset value
+                    Math.round(data.p_l3).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' W',   // inset value
                     'Current',        // inset text
                     Math.round(data.p_l3/factor_Whkm) + ' km/u',  // Tooltip
                     '#3bafda',        // fgColor
                     '#505A66',        // bgColor
-                    '#36404a'         // fillColor
+                    '#36404a',        // fillColor
+                    '#98a6ad'         // insetColor
                   )
 
     }
@@ -153,10 +157,11 @@
                            dataTitle,     // The title below the text in the middle
                            inset_value,   // Inset is the right top
                            inset_text,    //
-                           inset_tooltip,  //
+                           inset_tooltip, //
                            fgColor,       // Fills the data percentage
                            bgColor,
-                           fillColor      // Fills the halve completely
+                           fillColor,     // Fills the halve completely
+                           insetColor     // Color of the inset value
                           ) {
       $('#' + id + '_inset').tooltip()
       $('#' + id + '_circliful').circliful()
@@ -166,9 +171,11 @@
 
       $('#' + id + '_scale_min').html(scale_min)
       $('#' + id + '_scale_max').html(scale_max)
-
+      // inset
       $('#' + id + '_inset').html(inset_value)
       $('#' + id + '_insettitle').html(inset_text)
+      $('#' + id + '_inset').css('color', insetColor)
+
       // Update the tooltip
       $('#' + id + '_inset').attr('data-original-title', inset_tooltip)
 
@@ -264,7 +271,7 @@
               <h6 id="gauger_1_scale_min" class="" style="position: absolute; top: 197px; right: 50%; margin-right: 73px; text-align: right;">.</h6>
               <h6 id="gauger_1_scale_max" class="" style="position: absolute; top: 197px; left: 50%; margin-left: 73px; text-align: left;">.</h6>
 
-              <h5 id="gauger_1_inset" class="invisible" data-toggle="tooltip" data-placement="bottom" title="â‚¬ 0,00" style="position: absolute; top: 20px; right: 20px; text-align: right; color: #3bafda;">...W</h5>
+              <h5 id="gauger_1_inset" class="invisible" data-toggle="tooltip" data-placement="bottom" title="" style="position: absolute; top: 20px; right: 20px; text-align: right;">...W</h5>
               <h6 id="gauger_1_insettitle" class="invisible" style="position: absolute; top: 35px; right: 20px; text-align: right;">...</h6>
               <h4 id="gauger_1_title" class="m-t-0 header-title"><b>...</b></h4>
               <p id="gauger_1_subtitle" class="text-muted m-b-30 font-13">...</p>

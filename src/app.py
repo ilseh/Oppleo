@@ -1,5 +1,7 @@
-from flask import Flask, render_template, jsonify, Response
+from flask import Flask, render_template, jsonify, Response, redirect
 from flask_socketio import SocketIO, emit
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import OperationalError
 from config import app_config
 from nl.carcharging.models import db
@@ -18,6 +20,7 @@ app = Flask(__name__)
 
 app.config.from_object(app_config[os.getenv('CARCHARGING_ENV')])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# import os; os.urandom(24)
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
 
 app.register_blueprint(session_blueprint, url_prefix='/api/v1/sessions')
@@ -25,6 +28,71 @@ app.register_blueprint(session_blueprint, url_prefix='/api/v1/sessions')
 socketio = SocketIO(app)
 
 db.init_app(app)
+
+# flask-login
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
+
+
+class User(db.Model):
+    """
+    """
+    __tablename__ = 'users'
+
+    username = db.Column(db.String, primary_key=True)
+    password = db.Column(db.String)
+    authenticated = db.Column(db.Boolean, default=False)
+
+    def is_active(self):
+        """True, as all users are active."""
+        return True
+
+    def get_id(self):
+        """Return the email address to satisfy Flask-Login's requirements."""
+        return self.username
+
+    def is_authenticated(self):
+        """Return True if the user is authenticated."""
+        return self.authenticated
+
+    def is_anonymous(self):
+        """False, as anonymous users aren't supported."""
+        return False
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """For GET requests, display the login form. 
+    For POSTS, login the current user by processing the form.
+
+    """
+    print(db)
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.get(form.email.data)
+        if user:
+            if check_password_hash(user.password, form.password.data):
+                user.authenticated = True
+                db.session.add(user)
+                db.session.commit()
+                login_user(user, remember=True)
+                return redirect(url_for("/"))
+    return render_template("login.html", form=form)
+
+@app.route("/logout", methods=["GET"])
+@login_required
+def logout():
+    """Logout the current user."""
+    user = current_user
+    user.authenticated = False
+    db.session.add(user)
+    db.session.commit()
+    logout_user()
+    return render_template("logout.html")
 
 @app.route('/', methods=['GET'])
 def index():
@@ -39,8 +107,12 @@ def about():
     return render_template("about.html")
 
 @app.route("/usage")
-def usage():
-    return render_template("usage.html")
+@app.route("/usage/")
+@app.route("/usage/<int:cnt>")
+#@login_required
+def usage(cnt="undefined"):
+#def usage():
+    return render_template("usage.html", cnt=cnt)
 
 @socketio.on("connect", namespace="/usage")
 def connect():

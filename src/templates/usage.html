@@ -3,30 +3,73 @@
 {% block head %}
   {{ super() }}
 
-  <!-- DataTables -->
-  <link href="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+  <!-- DataTables CSS -->
+  <link href="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
   <link href="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+  <link href="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+
   <!-- Responsive datatable examples -->
   <link href="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
    
   <!-- Required datatable js -->
-  <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.js') }}"></script>
-  <!-- Buttons examples -->
-  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.buttons.min.js') }}"></script>
+  <!-- Buttons -->
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/dataTables.buttons.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/jszip.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/pdfmake.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/vfs_fonts.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/buttons.html5.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/buttons.print.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.flash.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/jszip/3.1.3/jszip.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/pdfmake.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/vfs_fonts.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.html5.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.print.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/buttons.colVis.min.js') }}"></script>
-  <!-- Responsive examples -->
+
+  <!-- Responsive -->
   <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
   
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
+  <style>
+    .paginate_button {
+        padding: 0px !important;
+    }
+    tbody td {
+      padding: 2px 2px !important;
+      text-align: center;
+      background-color: #36404a;
+    }
+    div .dataTables_info {
+      color: #98a6ad !important;
+      margin-left: 5px;
+    }
+    div .dt-buttons {
+      margin-bottom: 10px;
+      margin-left: 3px;
+    }
+    div .dataTables_length {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+    }
+    div .dataTables_length label {
+      font-size: smaller;
+      margin-left: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      color: #98a6ad !important;
+    }
+    div .dataTables_length label select {
+      width: 80px;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+  </style>
 
   <script>
     function timestamp() {
@@ -48,7 +91,7 @@
             
       $.ajax({
         type		: 'GET',
-        url			: (n == undefined ? '/usage_data' : '/usage_data' + n),
+        url			: (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data'),
         dataType	: 'json',
             encode		: true
       }) // using the done promise callback
@@ -59,7 +102,27 @@
 
         dt = $('table#usage').DataTable( {
           "pageLength": 10,
-          "order": [[ 0, "desc" ]]
+          "order": [[ 0, "desc" ]],
+          dom: 'Blfrtip',
+          buttons: [
+            'copy', 
+            'csv', 
+            'excel', 
+            {
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'A4'
+            },
+            'print'
+          ],
+          "createdRow": function(row, data, dataIndex) {
+//            $(row).addClass('text-info')
+            $(row).toggleClass("text-info").fadeOut(800, function() {              
+              $(this).toggleClass("text-info").fadeIn(50)
+            })
+          },
+          "searching": false
+
         });
         dt.draw('full-reset')
         data.forEach(element => {
@@ -68,19 +131,19 @@
           $("span#energy_device_id").text("("+element.energy_device_id+")")
           dt.row.add([
             element.created_at,
-            element.kw_total +' kWh',
-            element.kwh_l1 +' kWh',
-            element.kwh_l2 +' kWh',
-            element.kwh_l3 +' kWh',
-            element.a_l1 +' A',
-            element.a_l2 +' A',
-            element.a_l3 +' A',
-            element.p_l1 +' W',
-            element.p_l2 +' W',
-            element.p_l3 +' W',
-            element.v_l1 +' V',
-            element.v_l1 +' V',
-            element.v_l3 +' V',
+            element.kw_total +'kWh',
+            element.kwh_l1 +'kWh',
+            element.kwh_l2 +'kWh',
+            element.kwh_l3 +'kWh',
+            element.a_l1 +'A',
+            element.a_l2 +'A',
+            element.a_l3 +'A',
+            element.p_l1 +'W',
+            element.p_l2 +'W',
+            element.p_l3 +'W',
+            element.v_l1 +'V',
+            element.v_l1 +'V',
+            element.v_l3 +'V',
             element.hz +' Hz'
           ]).draw( false )
         })
@@ -101,24 +164,42 @@
       socket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
 
+        // Check if entry does not already exist. After a server restart the last entry is always re-sent. 
+        var entryExists = false
+        dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+          var data = this.data()
+          if (data[0] === msg.data.created_at) {
+            console.log('Websocket data entry ['+msg.data.created_at+'] already in table through initial pull request.')
+            entryExists = true
+            // currently no way to stop the every() loop... (return false does not work)
+            return false
+          }
+        })
+        if (entryExists) {
+          return
+        }
+
         dt.row.add([
             msg.data.created_at,
-            msg.data.kw_total +' kWh',
-            msg.data.kwh_l1 +' kWh',
-            msg.data.kwh_l2 +' kWh',
-            msg.data.kwh_l3 +' kWh',
-            msg.data.a_l1 +' A',
-            msg.data.a_l2 +' A',
-            msg.data.a_l3 +' A',
-            msg.data.p_l1 +' W',
-            msg.data.p_l2 +' W',
-            msg.data.p_l3 +' W',
-            msg.data.v_l1 +' V',
-            msg.data.v_l1 +' V',
-            msg.data.v_l3 +' V',
-            msg.data.hz +' Hz'
+            msg.data.kw_total +'kWh',
+            msg.data.kwh_l1 +'kWh',
+            msg.data.kwh_l2 +'kWh',
+            msg.data.kwh_l3 +'kWh',
+            msg.data.a_l1 +'A',
+            msg.data.a_l2 +'A',
+            msg.data.a_l3 +'A',
+            msg.data.p_l1 +'W',
+            msg.data.p_l2 +'W',
+            msg.data.p_l3 +'W',
+            msg.data.v_l1 +'V',
+            msg.data.v_l1 +'V',
+            msg.data.v_l3 +'V',
+            msg.data.hz +'Hz'
           ]).draw( false )
       })
+      $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
+        $(this).toggleClass("testbg").fadeIn(0)
+})
     }
     //example of triggering an event on click of a form submit button
     function sendSocketMsg() {
@@ -127,9 +208,9 @@
 
 
     jQuery(document).ready(function () {
-      console.log(timestamp() + " file load completed")
+      console.log(timestamp() + " file load completed!")
       startWebSocket()
-      getUsageData()
+      getUsageData({{ cnt }})
     })
 
     </script>
@@ -137,60 +218,62 @@
 {% endblock %}
 {% block content %}
 
-
-<div class="wrapper">
+<div class="wrapper" id="{{ var1 }}">
   <div class="container-fluid">
 
-      <!-- Page-Title -->
-      <div class="row">
-          <div class="col-sm-12">
-              <div class="page-title-box">
-                  <div class="btn-group pull-right">
-                      <ol class="breadcrumb hide-phone p-0 m-0">
-                          <li class="breadcrumb-item"><a href="#">Verbruik</a></li>
-                          <li class="breadcrumb-item active">Verbruik</li>
-                      </ol>
-                  </div>
-                  <h4 class="page-title">Verbruik</h4>
-              </div>
-          </div>
-      </div>
-      <!-- end page title end breadcrumb -->
-
-
-      <div class="row">
-          <div class="col-12">
-              <div class="card-box table-responsive">
-                  <table id="usage" class="table table-bordered" cellpadding="1" style="font-size: 10px;">
-                    <thead>
-                      <tr style="background-color: #555555;">
-                        <th rowspan="2">Timestamp</th>
-                        <th colspan="4" style="text-align: center;">Energie (kWh)</th>
-                        <th colspan="3" style="text-align: center;">Amps</th>
-                        <th colspan="3" style="text-align: center;">Watts</th>
-                        <th colspan="3" style="text-align: center;">Volts</th>
-                        <th rowspan="2" style="text-align: center;">Hz</th>
-                      </tr>
-                      <tr style="background-color: #555555;">
-                        <th style="text-align: center;">Totaal</th style="text-align: center;">
-                        <th style="text-align: center;">L1</th style="text-align: center;">
-                        <th style="text-align: center;">L2</th style="text-align: center;">
-                        <th style="text-align: center;">L3</th style="text-align: center;">
-                        <th style="text-align: center;">L1</th style="text-align: center;">
-                        <th style="text-align: center;">L2</th style="text-align: center;">
-                        <th style="text-align: center;">L3</th style="text-align: center;">
-                        <th style="text-align: center;">L1</th style="text-align: center;">
-                        <th style="text-align: center;">L2</th style="text-align: center;">
-                        <th style="text-align: center;">L3</th style="text-align: center;">
-                        <th style="text-align: center;">L1</th style="text-align: center;">
-                        <th style="text-align: center;">L2</th style="text-align: center;">
-                        <th style="text-align: center;">L3</th style="text-align: center;">
-                      </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                  </table>
+    <!-- Page-Title -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <div class="btn-group pull-right">
+                    <ol class="breadcrumb hide-phone p-0 m-0">
+                        <li class="breadcrumb-item"><a href="#">Verbruik</a></li>
+                        <li class="breadcrumb-item active">Verbruik</li>
+                    </ol>
                 </div>
-              </div>
-          </div> <!-- end row -->
+                <h4 class="page-title">Verbruik {{ var1 }}</h4>
+            </div>
+        </div>
+    </div>
+    <!-- end page title end breadcrumb -->
+
+
+    <div class="row">
+      <div class="col-12">
+        <div class="card-box table-responsive">
+          <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+            <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
+              <tr style="font-size: 14pt; font-weight: bold;">
+                <th rowspan="2" style="font-size: 12pt; font-weight: bold;">Timestamp</th>
+                <th colspan="4" style="text-align: center;">Energie (kWh)</th>
+                <th colspan="3" style="text-align: center;">Amps</th>
+                <th colspan="3" style="text-align: center;">Watts</th>
+                <th colspan="3" style="text-align: center;">Volts</th>
+                <th rowspan="2" style="text-align: center;">Hz</th>
+              </tr>
+              <tr>
+                <th style="text-align: center;">Totaal</th style="text-align: center;">
+                <th style="text-align: center;">L1</th style="text-align: center;">
+                <th style="text-align: center;">L2</th style="text-align: center;">
+                <th style="text-align: center;">L3</th style="text-align: center;">
+                <th style="text-align: center;">L1</th style="text-align: center;">
+                <th style="text-align: center;">L2</th style="text-align: center;">
+                <th style="text-align: center;">L3</th style="text-align: center;">
+                <th style="text-align: center;">L1</th style="text-align: center;">
+                <th style="text-align: center;">L2</th style="text-align: center;">
+                <th style="text-align: center;">L3</th style="text-align: center;">
+                <th style="text-align: center;">L1</th style="text-align: center;">
+                <th style="text-align: center;">L2</th style="text-align: center;">
+                <th style="text-align: center;">L3</th style="text-align: center;">
+              </tr>
+            </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div> <!-- end row -->
+
+  </div>
+</div>
 {% endblock %}

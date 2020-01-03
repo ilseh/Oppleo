@@ -1,19 +1,19 @@
 {
-  "short_name": "Laadpaal App",
-  "name": "Laadpaal",
+  "short_name": "Laadpunt App",
+  "name": "Laadpunt",
   "icons": [
     {
-      "src": "/static/images/favicon.ico",
+      "src": "/static/images/carcharger32.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "/static/images/splash192.png",
+      "src": "/static/images/carcharger192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/static/images/splash512.png",
+      "src": "/static/images/carcharger512.png",
       "type": "image/png",
       "sizes": "512x512"
     }	    
