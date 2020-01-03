@@ -11,7 +11,7 @@
         <meta content="Coderthemes" name="author" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-        <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/carcharger32.ico') }}">
         <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
 		<meta name="theme-color" content="#3BAFDA">
@@ -22,7 +22,7 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 
         <!-- jQuery  -->
-        <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
         <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script><!-- Popper for Bootstrap --><!-- Tether for Bootstrap -->
         <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
@@ -50,6 +50,12 @@
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 		<meta name="msapplication-starturl" content="/">
 
+        <style>
+        button {
+            cursor: pointer;
+        }
+        </style>
+
         {% endblock %}
     
     </head>
@@ -64,8 +70,8 @@
 
                 <div class="logo">
                     <a href="{{ url_for('index') }}" class="logo">
-                        <span class="logo-small"><i class="mdi mdi-radar"></i></span>
-                        <span class="logo-large"><i class="mdi mdi-radar"></i> EV Laadpunt</span>
+                        <span class="logo-small"><img src="{{ url_for('static', filename='images/carcharger48.png') }}" style="background-color: white;"></span>
+                        <span class="logo-large"><img src="{{ url_for('static', filename='images/carcharger48.png') }}" style="background-color: white;"> EV Laadpunt</span>
                     </a>
                 </div>
 
