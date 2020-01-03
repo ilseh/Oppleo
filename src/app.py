@@ -1,8 +1,9 @@
-from flask import Flask, render_template, jsonify, Response, redirect
+from flask import Flask, render_template, jsonify, Response, redirect, request, url_for, session
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import OperationalError
+from functools import wraps
 from config import app_config
 from nl.carcharging.models import db
 from nl.carcharging.views.SessionView import session_api as session_blueprint
@@ -13,7 +14,9 @@ from nl.carcharging.services.EnergyUtil import EnergyUtil
 import time
 import datetime
 import schedule
-
+from flask_wtf import FlaskForm
+from wtforms import StringField, BooleanField, SubmitField
+from wtforms.validators import DataRequired, Length
 
 # app initiliazation
 app = Flask(__name__)
@@ -22,6 +25,7 @@ app.config.from_object(app_config[os.getenv('CARCHARGING_ENV')])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # import os; os.urandom(24)
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
+app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
 
 app.register_blueprint(session_blueprint, url_prefix='/api/v1/sessions')
 
@@ -63,9 +67,23 @@ class User(db.Model):
         """False, as anonymous users aren't supported."""
         return False
 
+class LoginForm(FlaskForm):
+    username = StringField('username', validators=[DataRequired(), Length(min=5, max=12, message=None)])
+    password = StringField('password', validators=[DataRequired()])
+    remember_me = BooleanField('remember_me')
+    submit = SubmitField('Sign In')
+    # recaptcha = RecaptchaField()
 
-@app.route("/login", methods=["GET", "POST"])
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if (request.method == 'GET'):
+#        username = Flask.request.values.get('user') # Your form's
+#        password = Flask.request.values.get('pass') # input names
+#        your_register_routine(username, password)
+        return render_template("login.html", form=LoginForm())
+
+
     """For GET requests, display the login form. 
     For POSTS, login the current user by processing the form.
 
@@ -73,15 +91,27 @@ def login():
     print(db)
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.get(form.email.data)
+        user = User.query.get(form.username.data)
         if user:
             if check_password_hash(user.password, form.password.data):
                 user.authenticated = True
                 db.session.add(user)
                 db.session.commit()
-                login_user(user, remember=True)
-                return redirect(url_for("/"))
-    return render_template("login.html", form=form)
+                login_user(user, remember=form.remember_me.data)
+                return redirect(url_for('home'))
+    return render_template("login.html", form=form, msg="Login failed")
+
+def authenticated_resource(function):
+    @wraps(function)
+    def decorated(*args, **kwargs):
+        if (session.get('authenticated')):
+            return function(*args, **kwargs)
+        if (current_user.is_authenticated):
+            return function(*args, **kwargs)
+
+        # return abort(403) # unauthenticated
+        return redirect(url_for('login'))
+    return decorated
 
 @app.route("/logout", methods=["GET"])
 @login_required
@@ -92,15 +122,16 @@ def logout():
     db.session.add(user)
     db.session.commit()
     logout_user()
-    return render_template("logout.html")
+    return redirect(url_for('login'))
 
 @app.route('/', methods=['GET'])
 def index():
     return render_template("dashboard.html")
 
 @app.route("/home")
+@authenticated_resource
 def home():
-    return render_template("home.html")
+    return render_template("dashboard.html")
 
 @app.route("/about")
 def about():
@@ -109,6 +140,7 @@ def about():
 @app.route("/usage")
 @app.route("/usage/")
 @app.route("/usage/<int:cnt>")
+@authenticated_resource
 #@login_required
 def usage(cnt="undefined"):
 #def usage():
