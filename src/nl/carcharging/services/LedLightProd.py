@@ -23,12 +23,12 @@ FREQ_MS_TO_UPDATE_LED = 10
 
 class LedLightProd(object):
     GPIO.setmode(GPIO.BCM)
-    pwm = {}
 
-    def __init__(self, color):
+    def __init__(self, color, pwm=None):
         self.thread_for_pulse = threading.Thread(target=self._pulse)
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
+        self.pwm = pwm
 
     # TODO: move to a more generic utility class?
     def millis(self):
@@ -76,7 +76,7 @@ class LedLightProd(object):
         except Exception as ex:
             self.logger.error('Exception lighting led %s' % ex)
 
-    def off(self):
+    def  off(self):
         self.logger.debug('Stopping led light')
         self.pwm.stop()
 
