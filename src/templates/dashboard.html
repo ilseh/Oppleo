@@ -1,0 +1,350 @@
+{% extends "template.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block head %}
+  {{ super() }}
+
+  <!-- Circliful -->
+  <link href="{{ url_for('static', filename='plugins/jquery-circliful/css/jquery.circliful.css') }}" rel="stylesheet" type="text/css" />
+  <script src="{{ url_for('static', filename='plugins/jquery-circliful/js/jquery.circliful.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/jquery-circliful/js/jquery.circliful.min.js') }}"></script>
+  
+  <!-- Socket IO -->
+  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
+  <script>
+    var factor_Whkm = 162
+    function timestamp() {
+      d = new Date();
+      return (d.getFullYear() + "-" + 
+             (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
+             (d.getDate()<10?'0':'') + d.getDate() + '.' + 
+             (d.getHours()<10?'0':'') + d.getHours() + ":" + 
+             (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
+             (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
+             (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
+      )
+    }
+
+    function updateGauges( data ) {
+      updateGauger( 'gauger_1',       // id
+                    'Available',       // title
+                    'No session',   // subtitle
+                    '0km/u',          // scale min
+                    '100km/u',        // scale max
+                    Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l3)+parseFloat(data.p_l3))/factor_Whkm),  // percentage
+                    Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l3)+parseFloat(data.p_l3))/factor_Whkm),  // text 
+                    'km/u',           // dataTitle
+                    Math.round((data.kw_total*10)/10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' kWh',   // inset value
+                    'Totaal',          // inset text
+                    '±' + Math.round((data.kw_total*1000)/factor_Whkm).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' km',   // Tooltip
+                    '#ffaa00',        // fgColor    orange #ffaa00
+                    '#505A66',        // bgColor
+                    '#36404a',        // fillColor  blue #3bafda
+                    '#3bafda'         // insetColor
+                  )
+      // Amps L1
+      updateGauger( 'gauger_2',       // id
+                    'L1',             // title
+                    '&nbsp;',         // subtitle
+                    '0A',             // scale min
+                    '25A',            // scale max
+                    ((data.a_l1/25)*100),         // percentage
+                    data.a_l1 + ' A', // text 
+                    Math.round(data.v_l1) + 'V',  // dataTitle
+                    Math.round(data.p_l1).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' W',   // inset value
+                    'Current',        // inset text
+                    Math.round(data.p_l1/factor_Whkm) + ' km/u',  // Tooltip
+                    '#3bafda',        // fgColor
+                    '#505A66',        // bgColor
+                    '#36404a',        // fillColor
+                    '#98a6ad'         // insetColor
+                  )
+      updateGauger( 'gauger_3',       // id
+                    'L2',             // title
+                    '&nbsp;',         // subtitle
+                    '0A',             // scale min
+                    '25A',            // scale max
+                    ((data.a_l2/25)*100),         // percentage
+                    data.a_l2 + ' A', // text 
+                    Math.round(data.v_l2) + 'V',  // dataTitle
+                    Math.round(data.p_l2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' W',   // inset value
+                    'Current',        // inset text
+                    Math.round(data.p_l2/factor_Whkm) + ' km/u',  // Tooltip
+                    '#3bafda',        // fgColor
+                    '#505A66',        // bgColor
+                    '#36404a',        // fillColor
+                    '#98a6ad'         // insetColor
+                  )
+      updateGauger( 'gauger_4',       // id
+                    'L3',             // title
+                    '&nbsp;',         // subtitle
+                    '0A',             // scale min
+                    '25A',            // scale max
+                    ((data.a_l3/25)*100),         // percentage
+                    data.a_l3 + ' A', // text 
+                    Math.round(data.v_l3) + 'V',  // dataTitle
+                    Math.round(data.p_l3).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' W',   // inset value
+                    'Current',        // inset text
+                    Math.round(data.p_l3/factor_Whkm) + ' km/u',  // Tooltip
+                    '#3bafda',        // fgColor
+                    '#505A66',        // bgColor
+                    '#36404a',        // fillColor
+                    '#98a6ad'         // insetColor
+                  )
+
+    }
+
+    var dt = undefined
+    function getUsageData( n ) {
+      console.log(timestamp() + ' getUsageData()')
+    
+//      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
+            
+      $.ajax({
+        type		: 'GET',
+        url			: (n == undefined ? '/usage_data' : '/usage_data/' + n),
+        dataType	: 'json',
+            encode		: true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+  //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
+        updateGauges( data[0] )
+
+        data.forEach(element => {
+//          console.log(element.a_l1)
+
+//          $("span#energy_device_id").text("("+element.energy_device_id+")")
+
+
+/*
+          dt.row.add([
+            element.created_at,
+            element.kw_total +' kWh',
+            element.kwh_l1 +' kWh',
+            element.kwh_l2 +' kWh',
+            element.kwh_l3 +' kWh',
+            element.a_l1 +' A',
+            element.a_l2 +' A',
+            element.a_l3 +' A',
+            element.p_l1 +' W',
+            element.p_l2 +' W',
+            element.p_l3 +' W',
+            element.v_l1 +' V',
+            element.v_l1 +' V',
+            element.v_l3 +' V',
+            element.hz +' Hz'
+          ]).draw( false )
+*/
+        })
+      })
+      .fail(function() {
+  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
+      })
+      .always(function() {
+        // Check every 60 seconds
+      })
+    }
+
+    function updateGauger( id,            // The element id
+                           title,
+                           subTitle,
+                           scale_min,     // min scale (usually 0)
+                           scale_max,     // max scale, 25A for amps, 250V for volts etc. 
+                           percentage,    // The usage indicator, percentage 0-100 of min-max scale
+                           text,          // The text in the middle, usually the indicated amount (16A etc)
+                           dataTitle,     // The title below the text in the middle
+                           inset_value,   // Inset is the right top
+                           inset_text,    //
+                           inset_tooltip, //
+                           fgColor,       // Fills the data percentage
+                           bgColor,
+                           fillColor,     // Fills the halve completely
+                           insetColor     // Color of the inset value
+                          ) {
+      $('#' + id + '_inset').tooltip()
+      $('#' + id + '_circliful').circliful()
+
+      $('#' + id + '_title').html(title)
+      $('#' + id + '_subtitle').html(subTitle)
+
+      $('#' + id + '_scale_min').html(scale_min)
+      $('#' + id + '_scale_max').html(scale_max)
+      // inset
+      $('#' + id + '_inset').html(inset_value)
+      $('#' + id + '_insettitle').html(inset_text)
+      $('#' + id + '_inset').css('color', insetColor)
+
+      // Update the tooltip
+      $('#' + id + '_inset').attr('data-original-title', inset_tooltip)
+
+      // Change
+      $('#' + id + '_circliful')
+        .empty()
+        .removeData()
+        .attr('data-percent', Math.round(percentage))
+        .attr('data-text', text)
+        .attr('data-fgcolor', fgColor)
+        .attr('data-fill', fillColor)
+        .attr('data-bgcolor', bgColor)
+        .attr('data-info', dataTitle)
+        .circliful()
+      $('#' + id + '_inset').toggleClass('invisible', false);    
+      $('#' + id + '_insettitle').toggleClass('invisible', false);    
+      
+    }
+
+    var socket = undefined
+    function startWebSocket() {
+      console.log(timestamp() + ' startWebSocket()')
+      // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
+      socket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/usage')
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+      socket.on('status_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg.data))
+
+        updateGauges( msg.data )
+          /*
+        dt.row.add([
+            msg.data.created_at,
+            msg.data.kw_total +' kWh',
+            msg.data.kwh_l1 +' kWh',
+            msg.data.kwh_l2 +' kWh',
+            msg.data.kwh_l3 +' kWh',
+            msg.data.a_l1 +' A',
+            msg.data.a_l2 +' A',
+            msg.data.a_l3 +' A',
+            msg.data.p_l1 +' W',
+            msg.data.p_l2 +' W',
+            msg.data.p_l3 +' W',
+            msg.data.v_l1 +' V',
+            msg.data.v_l1 +' V',
+            msg.data.v_l3 +' V',
+            msg.data.hz +' Hz'
+          ]).draw( false )
+*/
+      })
+    }
+    //example of triggering an event on click of a form submit button
+    function sendSocketMsg() {
+        socket.emit('my event', {data: $('#emit_data').val()});
+    }
+
+
+    jQuery(document).ready(function () {
+      console.log(timestamp() + " file load completed")
+      startWebSocket()
+      getUsageData(1)
+    })
+
+    </script>
+
+{% endblock %}
+{% block content %}
+
+
+<div class="wrapper">
+  <div class="container-fluid">
+
+      <!-- Page-Title -->
+      <div class="row">
+          <div class="col-sm-12">
+              <div class="page-title-box">
+                  <div class="btn-group pull-right">
+                      <ol class="breadcrumb hide-phone p-0 m-0">
+                          <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                          <li class="breadcrumb-item active">Dashboard</li>
+                      </ol>
+                  </div>
+                  <h4 class="page-title">Dashboard</h4>
+              </div>
+          </div>
+      </div>
+      <!-- end page title end breadcrumb -->
+
+
+      <div class="row">
+
+        <div id="gauger_1" class="col-lg-3" style="height: 220px; overflow: hidden; margin-bottom: 20px;">
+          <div class="card-box">
+              <h6 id="gauger_1_scale_min" class="" style="position: absolute; top: 197px; right: 50%; margin-right: 73px; text-align: right;">.</h6>
+              <h6 id="gauger_1_scale_max" class="" style="position: absolute; top: 197px; left: 50%; margin-left: 73px; text-align: left;">.</h6>
+
+              <h5 id="gauger_1_inset" class="invisible" data-toggle="tooltip" data-placement="bottom" title="" style="position: absolute; top: 20px; right: 20px; text-align: right;">...W</h5>
+              <h6 id="gauger_1_insettitle" class="invisible" style="position: absolute; top: 35px; right: 20px; text-align: right;">...</h6>
+              <h4 id="gauger_1_title" class="m-t-0 header-title"><b>...</b></h4>
+              <p id="gauger_1_subtitle" class="text-muted m-b-30 font-13">...</p>
+              <div class="slrdb_activity_wrapper">
+                  <div class="row text-center">
+                      <div class="col-sm-6 col-lg-3">
+                          <div id="gauger_1_circliful" class="circliful-chart" data-dimension="200" data-text="0" data-info="..." data-width="30" data-fontsize="24" data-percent="0" data-fgcolor="#3bafda" data-bgcolor="#505A66" data-type="half" data-fill="#36404a"></div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+
+        <div id="gauger_2" class="col-lg-3" style="height: 220px; overflow: hidden; margin-bottom: 20px;">
+          <div class="card-box">
+              <h6 id="gauger_2_scale_min" class="" style="position: absolute; top: 197px; right: 50%; margin-right: 73px; text-align: right;">.</h6>
+              <h6 id="gauger_2_scale_max" class="" style="position: absolute; top: 197px; left: 50%; margin-left: 73px; text-align: left;">.</h6>
+
+              <h5 id="gauger_2_inset" class="invisible" data-toggle="tooltip" data-placement="bottom" title="â‚¬ 0,00" style="position: absolute; top: 20px; right: 20px; text-align: right; color: #3bafda;">...W</h5>
+              <h6 id="gauger_2_insettitle" class="invisible" style="position: absolute; top: 35px; right: 20px; text-align: right;">...</h6>
+              <h4 id="gauger_2_title" class="m-t-0 header-title"><b>...</b></h4>
+              <p id="gauger_2_subtitle" class="text-muted m-b-30 font-13">...</p>
+              <div class="slrdb_activity_wrapper">
+                  <div class="row text-center">
+                      <div class="col-sm-6 col-lg-3">
+                          <div id="gauger_2_circliful" class="circliful-chart" data-dimension="200" data-text="0" data-info="..." data-width="30" data-fontsize="24" data-percent="0" data-fgcolor="#3bafda" data-bgcolor="#505A66" data-type="half" data-fill="#36404a"></div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+
+        <div id="gauger_3" class="col-lg-3" style="height: 220px; overflow: hidden; margin-bottom: 20px;">
+          <div class="card-box">
+              <h6 id="gauger_3_scale_min" class="" style="position: absolute; top: 197px; right: 50%; margin-right: 73px; text-align: right;">.</h6>
+              <h6 id="gauger_3_scale_max" class="" style="position: absolute; top: 197px; left: 50%; margin-left: 73px; text-align: left;">.</h6>
+
+              <h5 id="gauger_3_inset" class="invisible" data-toggle="tooltip" data-placement="bottom" title="â‚¬ 0,00" style="position: absolute; top: 20px; right: 20px; text-align: right; color: #3bafda;">...W</h5>
+              <h6 id="gauger_3_insettitle" class="invisible" style="position: absolute; top: 35px; right: 20px; text-align: right;">...</h6>
+              <h4 id="gauger_3_title" class="m-t-0 header-title"><b>...</b></h4>
+              <p id="gauger_3_subtitle" class="text-muted m-b-30 font-13">...</p>
+              <div class="slrdb_activity_wrapper">
+                  <div class="row text-center">
+                      <div class="col-sm-6 col-lg-3">
+                          <div id="gauger_3_circliful" class="circliful-chart" data-dimension="200" data-text="0" data-info="..." data-width="30" data-fontsize="24" data-percent="0" data-fgcolor="#3bafda" data-bgcolor="#505A66" data-type="half" data-fill="#36404a"></div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+
+        <div id="gauger_4" class="col-lg-3" style="height: 220px; overflow: hidden; margin-bottom: 20px;">
+          <div class="card-box">
+              <h6 id="gauger_4_scale_min" class="" style="position: absolute; top: 197px; right: 50%; margin-right: 73px; text-align: right;">.</h6>
+              <h6 id="gauger_4_scale_max" class="" style="position: absolute; top: 197px; left: 50%; margin-left: 73px; text-align: left;">.</h6>
+
+              <h5 id="gauger_4_inset" class="invisible" data-toggle="tooltip" data-placement="bottom" title="â‚¬ 0,00" style="position: absolute; top: 20px; right: 20px; text-align: right; color: #3bafda;">...W</h5>
+              <h6 id="gauger_4_insettitle" class="invisible" style="position: absolute; top: 35px; right: 20px; text-align: right;">...</h6>
+              <h4 id="gauger_4_title" class="m-t-0 header-title"><b>...</b></h4>
+              <p id="gauger_4_subtitle" class="text-muted m-b-30 font-13">...</p>
+              <div class="slrdb_activity_wrapper">
+                  <div class="row text-center">
+                      <div class="col-sm-6 col-lg-3">
+                          <div id="gauger_4_circliful" class="circliful-chart" data-dimension="200" data-text="0" data-info="..." data-width="30" data-fontsize="24" data-percent="0" data-fgcolor="#3bafda" data-bgcolor="#505A66" data-type="half" data-fill="#36404a"></div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+
+
+
+      </div> <!-- end row -->
+  </div>
+</div>
+{% endblock %}

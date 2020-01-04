@@ -4,7 +4,9 @@ from flask_injector import FlaskInjector
 from src.app import create_app
 import logging
 
+
 logging.basicConfig(level=logging.DEBUG)
+
 
 def configure(binder):
     binder.bind(
@@ -18,5 +20,6 @@ if __name__ == '__main__':
     app = create_app(env_name)
 
     FlaskInjector(app=app, modules=[configure])
+
     # run app
     app.run()
