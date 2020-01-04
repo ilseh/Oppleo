@@ -1,6 +1,6 @@
 
 import logging
-from nl.carcharging.util.GenericUtil import GenericUtil
+from nl.carcharging.utils.GenericUtil import GenericUtil
 try:
     from mfrc522 import SimpleMFRC522
 except RuntimeError:

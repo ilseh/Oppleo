@@ -4,7 +4,7 @@ import logging
 
 from .LedLightDev import LedLightDev
 
-from nl.carcharging.util.GenericUtil import GenericUtil
+from nl.carcharging.utils.GenericUtil import GenericUtil
 
 try:
     from .LedLightProd import LedLightProd

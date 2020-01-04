@@ -1,9 +1,7 @@
-from logging.handlers import SysLogHandler
-
-from service import find_syslog, Service
+from service import Service
 from injector import inject, Injector
 from apscheduler.schedulers.blocking import BlockingScheduler
-from nl.carcharging.services.EnergyUtil import EnergyUtil
+from nl.carcharging.utils.EnergyUtil import EnergyUtil
 from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.config import Logger

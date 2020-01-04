@@ -1,6 +1,5 @@
-import os
 import minimalmodbus
-from nl.carcharging.util.GenericUtil import GenericUtil
+from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 import logging
 
