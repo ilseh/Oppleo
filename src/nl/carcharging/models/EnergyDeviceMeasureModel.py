@@ -77,10 +77,10 @@ class EnergyDeviceMeasureModel(Base):
                 .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
 
     def get_created_at_str(self):
-        return str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S"))
+        return str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S"))
 
     def date_str_to_datetime(self, date_time_str):
-        return datetime.datetime.strptime(date_time_str, '%m/%d/%Y, %H:%M:%S')
+        return datetime.datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
 
     # @staticmethod
     # def get_all_measures():

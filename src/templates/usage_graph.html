@@ -12,7 +12,8 @@
   <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.selection.j') }}"></script>
   <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.stack.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.crosshair.js') }}"></script>
-  
+  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.navigate.js') }}"></script>
+
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
@@ -68,14 +69,14 @@
       )
     }
     var dt = undefined
-    function getUsageData( n = undefined ) {
+    function getUsageData( from_timestamp, n = undefined ) {
       console.log(timestamp() + ' getUsageData()')
     
 //      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
             
       $.ajax({
         type		: 'GET',
-        url			: ('/usage_data_since/' + encodeURI("01/03/2020, 13:58:44") + (Number.isInteger(n) ? '/' + n : '')),
+        url			: ('/usage_data_since/' + encodeURI(from_timestamp) + (Number.isInteger(n) ? '/' + n : '')),
         dataType	: 'json',
             encode		: true
       }) // using the done promise callback
@@ -142,13 +143,34 @@
             autoHighlight : false,
             mouseActiveRadius : 20
           },
+          zoom: {
+            interactive: true
+/*            active: true,
+            amount: 1.5,         // 2 = 200% (zoom in), 0.5 = 50% (zoom out)
+            enableTouch: true
+          */          },
+          pan: {
+            interactive: true
+/*            active: true,
+            cursor: "move",     // CSS mouse cursor value used when dragging, e.g. "pointer"
+            frameRate: 60,
+            mode: "smart",       // enable smart pan mode
+            enableTouch: true,
+            touchMode: ""
+          */         },
           yaxis: [{   // Amps 0-25
             min: 0, 
             max: 25,
             font : {
               color : '#00b19d'
             },
-            axisLabel: 'Amps'
+            axisLabel: 'Amps',
+            zoomRange: [0.1, 10],
+    				panRange: [-10, 10],
+            axisZoom: true, //zoom axis when mouse over it is allowed
+            plotZoom: true, //zoom axis is allowed for plot zoom
+            axisPan: true, //pan axis when mouse over it is allowed
+            plotPan: true //pan axis is allowed for plot pan
           }, {        // Volts 0-250
             min: 0, 
             max: 250,
@@ -156,7 +178,13 @@
               color : '#3bafda'
             },
             position: 'right',
-            axisLabel: 'Volts'
+            axisLabel: 'Volts',
+            zoomRange: [0.1, 10],
+    				panRange: [-10, 10],
+            axisZoom: true, //zoom axis when mouse over it is allowed
+            plotZoom: true, //zoom axis is allowed for plot zoom
+            axisPan: true, //pan axis when mouse over it is allowed
+            plotPan: true //pan axis is allowed for plot pan
           }, {        // kWh ever increasing
             min: 0, 
             max: 400,
@@ -164,7 +192,13 @@
               color : '#ffaa00'
             },
             position: 'right',
-            axisLabel: 'kWh'
+            axisLabel: 'kWh',
+            zoomRange: [0.1, 10],
+    				panRange: [-10, 10],
+            axisZoom: true, //zoom axis when mouse over it is allowed
+            plotZoom: true, //zoom axis is allowed for plot zoom
+            axisPan: true, //pan axis when mouse over it is allowed
+            plotPan: true //pan axis is allowed for plot pan
           }],
 
 //					tickFormatter: euroFormatter
@@ -181,7 +215,13 @@
 //                twelveHourClock: false,
             mode: "time",
             min: (new Date(new Date().getFullYear(), new Date().getMonth(), (new Date().getDate()-7), 0, 0)).getTime(),
-            max: (new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 6, 0)).getTime()
+            max: (new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 6, 0)).getTime(),
+            zoomRange: [0.1, 10],
+    				panRange: [-10, 10],
+            axisZoom: true, //zoom axis when mouse over it is allowed
+            plotZoom: true, //zoom axis is allowed for plot zoom
+            axisPan: true, //pan axis when mouse over it is allowed
+            plotPan: true //pan axis is allowed for plot pan
           },
           axisLabels: {
             show: true
@@ -300,11 +340,30 @@
         socket.emit('my event', {data: $('#emit_data').val()});
     }
 
+    function formatDate(date) {
+      return (date.getDate() < 10 ? '0' : '') + date.getDate() + '/' +
+             (date.getMonth() < 10 ? '0' : '') + date.getMonth() + '/' +
+             date.getFullYear() + ', ' + 
+             (date.getHours() < 10 ? '0' : '') + date.getHours() + ':' +
+             (date.getMinutes() < 10 ? '0' : '') + date.getMinutes() + ':' +
+             (date.getSeconds() < 10 ? '0' : '') + date.getSeconds()
+    }
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       startWebSocket()
-      getUsageData({{ cnt }})
+      var from_timestamp = new Date()
+      from_timestamp.setDate(from_timestamp.getDate()-7)
+{% if (cnt != None) and (cnt != 'undefined') %}
+      getUsageData(
+        formatDate, 
+        {{ cnt }}
+      )
+{% else %}
+      getUsageData(
+        formatDate(from_timestamp)
+      )
+{% endif %}
     })
 
 
@@ -341,11 +400,6 @@
             <div class="portlet-heading">
                 <h3 class="portlet-title text-dark">Verbruik</h3>
                 <div class="clearfix"></div>
-                <div class="btn-group" style="position: absolute; top: 20px; right: 30px;">
-                    <button type="button" id="stecapg_1_year" class="btn btn-outline-light waves-effect waves-light" style="width: 70px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].min = (new Date((new Date().getFullYear() -1), new Date().getMonth(), new Date().getDate(), new Date().getHours(), new Date().getMinutes())).getTime(); flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].tickSize = [ 1, 'month' ]; flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].timeformat = '%b %Y'; flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> Jaar </button>
-                    <button type="button" id="stecapg_1_today" class="btn btn-outline-light waves-effect waves-light" style="width: 70px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].min = (new Date(new Date().getFullYear(), (new Date().getMonth() -1), new Date().getDate(), new Date().getHours(), new Date().getMinutes())).getTime(); flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].tickSize = [ 1, 'day' ]; flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].timeformat = '%d %b'; flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> Maand </button>
-                    <button type="button" id="stecapg_1_week" class="btn btn-outline-light waves-effect waves-light" style="width: 70px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].min = (new Date(new Date().getFullYear(), new Date().getMonth(), (new Date().getDate() - 7), 0, 0)).getTime(); flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].tickSize = [ 1, 'day' ]; flotGraphs[ 'stecapg_1' ].getOptions().xaxes[0].timeformat = '%a %d %b'; flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> Week </button>
-               </div>
                 <div class="btn-group" style="position: absolute; top: 55px; left: 67px;">
                     <button type="button" id="stecapg_1_yaxeszoomout" class="btn btn-outline-secondary btn-sm waves-effect waves-light" style="width: 38px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max = flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max / 2; flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> <i class="fa fa-search-plus"></i> </button>
                     <button type="button" id="stecapg_1_yaxeszoomin" class="btn btn-outline-secondary btn-sm waves-effect waves-light" style="width: 38px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max = flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max * 2; flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> <i class="fa fa-search-minus"></i> </button>
@@ -357,7 +411,7 @@
             <div id="portlet 1" class="panel-collapse collapse show">
                 <div class="portlet-body">
                     <div id="stecapg_1_flotgraph" style="height: 320px;" class="flot-chart"></div>
-                    <div id="stecapg_1_waiting" style="position: absolute; top: 50%; left: 50%; font-size: 30px;" class="flot-chart"> <i class="fa fa-refresh fa-spin fa-7x"></i> </div>
+                    <div id="stecapg_1_waiting" style="position: absolute; top: 50%; left: 50%; font-size: 30px;" class="flot-chart"> <i class="fas fa-spinner fa-spin fa-1x"></i> </div>
                 </div>
             </div>
         </div>
