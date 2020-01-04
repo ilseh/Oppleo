@@ -34,6 +34,9 @@
 
         <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
 
+        <!-- Fontawesome -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
+
 		<!-- Add webpage to the iOS Home screen. -->
         <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
 		<!-- iOS Launch Screen Image -->
@@ -60,12 +63,12 @@
 <div class="wrapper-page">
 
   <div class="text-center">
-      <span class="logo-lg"><i class="ion ion-ios7-bolt"></i> <span>Laadpunt</span> </span>
+      <span class="logo-lg"><i class="fas fa-charging-station"></i></i> <span>Laadpunt</span> </span>
   </div>
 
   {% if msg %}
   <div class="text-center" style="color: #ef5350;">
-    <span class="mdi mdi-thumb-down-outline"><span style="font-weight: bold;"> {{ msg }}</span></span>
+    <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ msg }}</span></span>
   </div>
   {% endif %}
 

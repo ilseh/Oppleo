@@ -33,15 +33,17 @@ class EnergyDeviceMeasureModel(Base):
     kw_total = db.Column(db.Float)
     hz = db.Column(db.Float)
 
-    def __init__(self, data):
+
+    def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
+        self.logger.debug('Initializing EnergyDeviceMeasureModel without data')
 
-        self.logger.debug('Initializing EnergyDeviceMeasureModel with %s' % data)
 
+    def set(self, data):
         for key in data:
             setattr(self, key, data.get(key))
-
-        self.created_at = datetime.datetime.utcnow()
+        if (data.created_at == None):
+            self.created_at = datetime.datetime.now()
 
 
     def save(self):
@@ -49,22 +51,36 @@ class EnergyDeviceMeasureModel(Base):
         session.add(self)
         session.commit()
 
-    @staticmethod
-    def get_last_saved(energy_device_id):
+    def get_last_saved(self, energy_device_id):
         session = Session()
         return session.query(EnergyDeviceMeasureModel) \
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(1).first()
 
-    @staticmethod
-    def get_last_n_saved(energy_device_id, n):
+    def get_last_n_saved(self, energy_device_id, n):
         session = Session()
         return session.query(EnergyDeviceMeasureModel) \
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
 
+    def get_last_n_saved_since(self, energy_device_id, since_ts, n = -1):
+        session = Session()
+        if ( n == -1 ):
+            return session.query(EnergyDeviceMeasureModel) \
+                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
+                .order_by(EnergyDeviceMeasureModel.created_at.desc()).all()
+        else:
+            return session.query(EnergyDeviceMeasureModel) \
+                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
+                .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
+
     def get_created_at_str(self):
         return str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S"))
+
+    def date_str_to_datetime(self, date_time_str):
+        return datetime.datetime.strptime(date_time_str, '%m/%d/%Y, %H:%M:%S')
 
     # @staticmethod
     # def get_all_measures():
