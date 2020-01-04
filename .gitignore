@@ -4,3 +4,5 @@ venv
 env
 .pytest_cache
 .coverage
+src/.DS_Store
+src/static/.DS_Store
