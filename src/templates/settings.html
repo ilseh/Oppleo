@@ -1,5 +1,5 @@
 {% extends "template.html" %}
-{% block title %}Verbruik{% endblock %}
+{% block title %}Instellingen{% endblock %}
 {% block head %}
   {{ super() }}
 
@@ -101,7 +101,7 @@
   //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
 
         dt = $('table#usage').DataTable( {
-          "pageLength": 25,
+          "pageLength": 10,
           "order": [[ 0, "desc" ]],
           dom: 'Blfrtip',
           buttons: [
@@ -231,7 +231,7 @@
                         <li class="breadcrumb-item active">Verbruik</li>
                     </ol>
                 </div>
-                <h4 class="page-title">Verbruik</h4>
+                <h4 class="page-title">Verbruik {{ var1 }}</h4>
             </div>
         </div>
     </div>
@@ -239,39 +239,55 @@
 
 
     <div class="row">
-      <div class="col-12">
-        <div class="card-box table-responsive">
-          <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
-            <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
-              <tr style="font-size: 14pt; font-weight: bold;">
-                <th rowspan="2" style="font-size: 12pt; font-weight: bold;">Timestamp</th>
-                <th colspan="4" style="text-align: center;">Energie (kWh)</th>
-                <th colspan="3" style="text-align: center;">Amps</th>
-                <th colspan="3" style="text-align: center;">Watts</th>
-                <th colspan="3" style="text-align: center;">Volts</th>
-                <th rowspan="2" style="text-align: center;">Hz</th>
-              </tr>
-              <tr>
-                <th style="text-align: center;">Totaal</th style="text-align: center;">
-                <th style="text-align: center;">L1</th style="text-align: center;">
-                <th style="text-align: center;">L2</th style="text-align: center;">
-                <th style="text-align: center;">L3</th style="text-align: center;">
-                <th style="text-align: center;">L1</th style="text-align: center;">
-                <th style="text-align: center;">L2</th style="text-align: center;">
-                <th style="text-align: center;">L3</th style="text-align: center;">
-                <th style="text-align: center;">L1</th style="text-align: center;">
-                <th style="text-align: center;">L2</th style="text-align: center;">
-                <th style="text-align: center;">L3</th style="text-align: center;">
-                <th style="text-align: center;">L1</th style="text-align: center;">
-                <th style="text-align: center;">L2</th style="text-align: center;">
-                <th style="text-align: center;">L3</th style="text-align: center;">
-              </tr>
-            </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
-            <tbody>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div class="col-md-12">
+          <div class="card-box">
+              <h4 class="header-title m-t-0 m-b-30">Instellingen</h4>
+
+              <div class="tabs-vertical-env">
+                  <ul class="nav tabs-vertical">
+                      <li class="nav-item">
+                        <a href="#v-charger" class="nav-link{% if active==1 %} active{% endif %}" data-toggle="tab" aria-expanded="false"><i class="fas fa-charging-station"></i> Laadpunt</a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="#v-kwhmeter" class="nav-link{% if active==2 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-tachometer-alt"></i> kWh meter</a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="#v-network" class="nav-link{% if active==3 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-network-wired"></i> Netwerk</a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="#v-database" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-database"></i> Database</a>
+                      </li>
+                  </ul>
+
+                  <div class="tab-content">
+                      <div class="tab-pane{% if active==1 %} active{% endif %}" id="v-charger">
+                          <p>Naam laadpunt: laadpunt_noord.</p>
+                      </div>
+                      <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
+                          <p>Type: modbus</p>
+                          <p>ID: 1</p>
+                          <p>Parity:</p>
+                          <p>Stop bit.</p>
+                          <p>Snelheid: 9600 baud.</p>
+                      </div>
+                      <div class="tab-pane{% if active==3 %} active{% endif %}" id="v-netwerk">
+                        <p>Wifi: disabled</p>
+                        <p>LAN: enabled</p>
+                        <p>dchp/fixed</p>
+                        <p>IP: 10.0.1.160</p>
+                        <p>SSL: disabled</p>
+                        <p>IPTables: </p>
+                      </div>
+                      <div class="tab-pane{% if active==4 %} active{% endif %}" id="v-database">
+                        <p>Type: Postgress (restart)</p>
+                        <p></p>
+                        <p>Access: local (vs IP)</p>
+                        <p>- IP access: 10.0.0.0/16 (10.0.1.161/32)</p>
+                    </div>
+                </div>
+              </div>
+          </div>
+      </div> <!-- end col -->
     </div> <!-- end row -->
 
   </div>

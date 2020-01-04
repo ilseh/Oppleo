@@ -146,6 +146,26 @@ def usage(cnt="undefined"):
 #def usage():
     return render_template("usage.html", cnt=cnt)
 
+
+@app.route("/usage_graph")
+@app.route("/usage_graph/")
+@app.route("/usage_graph/<int:cnt>")
+@authenticated_resource
+#@login_required
+def usage_graph(cnt="undefined"):
+#def usage():
+    return render_template("usage_graph.html", cnt=cnt)
+
+
+@app.route("/settings")
+@app.route("/settings/")
+@app.route("/settings/<int:active>")
+@authenticated_resource
+def settings(active=1):
+#def usage():
+    return render_template("settings.html", active=active)
+
+
 @socketio.on("connect", namespace="/usage")
 def connect():
     emit("server_status", "server_up")
@@ -165,10 +185,21 @@ def handle_usage_event(json):
 @app.route("/usage_data/")
 @app.route("/usage_data/<int:cnt>")
 def usage_data(cnt=100):
-    device_measurement = EnergyDeviceMeasureModel(  
-        EnergyUtil().getDevMeasurementValue(energy_device_id="laadpaal_noord")        
-    )
+    device_measurement = EnergyDeviceMeasureModel()
+    device_measurement.energy_device_id = "laadpaal_noord"
     qr = device_measurement.get_last_n_saved(energy_device_id="laadpaal_noord",n=cnt)
+    qr_l = []
+    for o in qr:
+        qr_l.append(o.to_dict())  
+
+    return jsonify(qr_l)
+
+@app.route("/usage_data_since/<path:since_timestamp>")
+@app.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
+def usage_data_since(since_timestamp, cnt=-1):
+    device_measurement = EnergyDeviceMeasureModel()
+    device_measurement.energy_device_id = "laadpaal_noord"
+    qr = device_measurement.get_last_n_saved_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
@@ -184,21 +215,20 @@ class MapTool(object):
         self.thread = None
 
     def start_server(self):
-        print('Starting websocket server...')
+        print(f'{datetime.datetime.now()} - Starting websocket server...')
         socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
     def start(self):
         self.thread = socketio.start_background_task(self.start_server)
 
     def send_usage_update(self, type):
-        print(f'Checking usage data...')
+        print(f'{datetime.datetime.now()} - Checking usage data...')
 
-        device_measurement = EnergyDeviceMeasureModel(  
-            EnergyUtil().getDevMeasurementValue(energy_device_id="laadpaal_noord")        
-        )
+        device_measurement = EnergyDeviceMeasureModel()  
+        device_measurement.energy_device_id = "laadpaal_noord"
         qr = device_measurement.get_last_saved(energy_device_id="laadpaal_noord")
         if (self.most_recent != qr.get_created_at_str()):
-            print(f'Send msg {self.counter} via websocket...')
+            print(f'{datetime.datetime.now()} - Send msg {self.counter} via websocket...')
             socketio.emit('status_update', { 'data':  
                 { "a_l1": qr.a_l1,
                    "a_l2": qr.a_l2,
@@ -221,7 +251,7 @@ class MapTool(object):
             )
             self.most_recent = qr.get_created_at_str()
         else:
-            print(f'No change in usage at this time.')
+            print(f'{datetime.datetime.now()} - No change in usage at this time.')
 
         """
         now = datetime.datetime.now()

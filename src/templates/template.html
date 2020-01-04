@@ -35,6 +35,9 @@
 
         <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
 
+        <!-- Fontawesome -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
+
 		<!-- Add webpage to the iOS Home screen. -->
         <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
 		<!-- iOS Launch Screen Image -->
@@ -69,8 +72,8 @@
 
                 <div class="logo">
                     <a href="{{ url_for('index') }}" class="logo">
-                        <span class="logo-small"><img src="{{ url_for('static', filename='images/carcharger48.png') }}" style="background-color: white;"></span>
-                        <span class="logo-large"><img src="{{ url_for('static', filename='images/carcharger48.png') }}" style="background-color: white;"> EV Laadpunt</span>
+                        <span class="logo-small"><i class="fas fa-charging-station"></i> </span>
+                        <span class="logo-large"><i class="fas fa-charging-station"></i> EV Laadpunt</span>
                     </a>
                 </div>
 
@@ -100,20 +103,52 @@
                 <div id="navigation">
                     <ul class="navigation-menu">
                         <li class="has-submenu">
-                            <a href="{{ url_for('index') }}"><i class="mdi mdi-glassdoor"></i> Dashboard</a>
+                            <a href="{{ url_for('index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('index') }}"><i class="mdi mdi-glassdoor"></i> Configuratie</a>
+                            <a href="{{ url_for('index') }}" class="stay">
+                                <i class="fas fa-file-invoice-dollar"></i> Laadsessies
+                            </a>
+                        </li>
+
+                        <li class="has-submenu">
+                            <a href="{{ url_for('usage') }}"><i class="fas fa-table"></i> Verbruik</a>
                             <ul class="submenu">
                                 <li>
-                                    <a href="{{ url_for('index') }}" class="stay">
-                                        <i class="fa fa-file-o"></i> List Clients
+                                    <a href="{{ url_for('usage' ) }}" class="stay">
+                                        <i class="fas fa-table"></i> Tabel
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('index') }}" class="stay">
-                                        <i class="fa fa-plus"></i> New Client
+                                    <a href="{{ url_for('usage_graph' ) }}" class="stay">
+                                        <i class="fas fa-chart-line"></i> Grafiek
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="has-submenu">
+                            <a href="{{ url_for('settings') }}"><i class="fas fa-sliders-h"></i> Instellingen</a>
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('settings', active=1) }}" class="stay">
+                                        <i class="fas fa-charging-station"></i> Laadpunt
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=2) }}" class="stay">
+                                        <i class="fas fa-tachometer-alt"></i> kWh meter
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=3) }}" class="stay">
+                                        <i class="fas fa-network-wired"></i> Netwerk
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=4) }}" class="stay">
+                                        <i class="fas fa-database"></i> Database
                                     </a>
                                 </li>
                             </ul>
@@ -121,24 +156,20 @@
 
                         <li class="has-submenu">
                             <a href="{{ url_for('index') }}" class="stay">
-                                <i class="mdi mdi-glassdoor"></i> Accounts
+                                <i class="fas fa-user-circle"></i>Account
                             </a>
-                        </li>
-
-                        <li class="has-submenu">
-                            <a href="{{ url_for('index') }}" class="stay">
-                                <i class="mdi mdi-glassdoor"></i> Laadsessies
-                            </a>
-                        </li>
-
-                        <li class="has-submenu">
-                            <a href="{{ url_for('usage') }}"><i class="mdi mdi-glassdoor"></i> Verbruik</a>
-                        </li>
-
-                        <li class="has-submenu">
-                            <a href="{{ url_for('logout') }}" class="stay">
-                                <i class="mdi mdi-glassdoor"></i> Sign out
-                            </a>
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('index') }}" class="stay">
+                                        <i class="fa fa-file-o"></i> Change password
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('logout') }}" class="stay">
+                                        <i class="fas fa-sign-out-alt"></i> Sign out
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         
                     </ul>
