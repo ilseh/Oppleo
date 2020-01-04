@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        {% block head %}
+
+        <meta charset="utf-8" />
+        <title>{% block title %}{% endblock %} - Carcharger 2020</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description" />
+        <meta content="Coderthemes" name="author" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/carcharger32.ico') }}">
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+		<meta name="theme-color" content="#3BAFDA">
+
+        <!-- App css -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+
+        <!-- jQuery  -->
+        <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script><!-- Popper for Bootstrap --><!-- Tether for Bootstrap -->
+        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.scrollTo.min.js') }}"></script>
+
+        <!-- Notification js -->
+        <script src="{{ url_for('static', filename='plugins/notifyjs/dist/notify.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='plugins/notifications/notify-metro.js') }}"></script>
+
+        <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
+
+        <!-- Fontawesome -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
+
+		<!-- Add webpage to the iOS Home screen. -->
+        <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
+		<!-- iOS Launch Screen Image -->
+		<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash512.png') }}">
+		<!-- Adding a Launch Icon Title -->
+		<meta name="apple-mobile-web-app-title" content="Splash">
+		<!-- Hide Safari User Interface Components -->
+		<!-- Set the apple-mobile-web-app-capable meta tag to yes to turn on standalone mode. -->
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<!-- You can determine whether a webpage is displaying in standalone mode using the window.navigator.standalone read-only Boolean JavaScript property. -->
+		<!-- Changing the Status Bar Appearance -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="msapplication-starturl" content="/">
+
+        <style>
+        button {
+            cursor: pointer;
+        }
+        </style>
+
+        {% endblock %}
+    
+    </head>
+
+    <body>
+
+
+      <header id="topnav">
+
+        <div class="topbar-main">
+            <div class="container-fluid">
+
+                <div class="logo">
+                    <a href="{{ url_for('index') }}" class="logo">
+                        <span class="logo-small"><i class="fas fa-charging-station"></i> </span>
+                        <span class="logo-large"><i class="fas fa-charging-station"></i> EV Laadpunt</span>
+                    </a>
+                </div>
+
+                <div class="menu-extras topbar-custom">
+
+                    <ul class="list-inline float-right mb-0">
+
+                        <li class="menu-item list-inline-item">
+                            <span class="navbar-toggle nav-link">
+                                <div class="lines">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="clearfix"></div>
+
+            </div>
+        </div>
+
+        <div class="navbar-custom">
+            <div class="container-fluid">
+                <div id="navigation">
+                    <ul class="navigation-menu">
+                        <li class="has-submenu">
+                            <a href="{{ url_for('index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                        </li>
+
+                        <li class="has-submenu">
+                            <a href="{{ url_for('index') }}" class="stay">
+                                <i class="fas fa-file-invoice-dollar"></i> Laadsessies
+                            </a>
+                        </li>
+
+                        <li class="has-submenu">
+                            <a href="{{ url_for('usage') }}"><i class="fas fa-table"></i> Verbruik</a>
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('usage' ) }}" class="stay">
+                                        <i class="fas fa-table"></i> Tabel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('usage_graph' ) }}" class="stay">
+                                        <i class="fas fa-chart-line"></i> Grafiek
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="has-submenu">
+                            <a href="{{ url_for('settings') }}"><i class="fas fa-sliders-h"></i> Instellingen</a>
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('settings', active=1) }}" class="stay">
+                                        <i class="fas fa-charging-station"></i> Laadpunt
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=2) }}" class="stay">
+                                        <i class="fas fa-tachometer-alt"></i> kWh meter
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=3) }}" class="stay">
+                                        <i class="fas fa-network-wired"></i> Netwerk
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=4) }}" class="stay">
+                                        <i class="fas fa-database"></i> Database
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="has-submenu">
+                            <a href="{{ url_for('index') }}" class="stay">
+                                <i class="fas fa-user-circle"></i>Account
+                            </a>
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('index') }}" class="stay">
+                                        <i class="fa fa-file-o"></i> Change password
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('logout') }}" class="stay">
+                                        <i class="fas fa-sign-out-alt"></i> Sign out
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div> 
+        </div>
+    </header>
+    
+    {% block content %}
+    {% endblock %}
+    
+ </body>
+</html>
