@@ -1,19 +1,18 @@
-from logging.handlers import SysLogHandler
-
-from service import find_syslog, Service
-from injector import inject, Injector
-from apscheduler.schedulers.blocking import BlockingScheduler
-from nl.carcharging.services.EnergyUtil import EnergyUtil
-from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
-from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-
-import os
 import logging
+import os
 import sys
-import signal
+
+from apscheduler.schedulers.blocking import BlockingScheduler
+from injector import inject, Injector
+from service import Service
+
+from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
+from nl.carcharging.services.EnergyUtil import EnergyUtil
 
 PROCESS_NAME = 'measure_electricity_usage'
 LOG_FILE = '/tmp/measure_electricity_usage.log'
+
 
 def init_log():
     logger_daemon = logging.getLogger(PROCESS_NAME)
@@ -35,7 +34,6 @@ def init_log():
     logger_daemon.addHandler(fh)
     logger_package.addHandler(ch)
     logger_daemon.addHandler(ch)
-
 
 
 scheduler = BlockingScheduler()
@@ -75,6 +73,7 @@ class MeasureElectricityUsage(Service):
         scheduler.remove_all_jobs()
         scheduler.shutdown()
 
+
 def try_handle_measurement(energy_util: EnergyUtil, energy_device_id):
     try:
         handle_measurement(energy_util, energy_device_id)
@@ -82,47 +81,44 @@ def try_handle_measurement(energy_util: EnergyUtil, energy_device_id):
         logger = logging.getLogger(PROCESS_NAME)
         logger.error('Could not execute handle_measurement %s' % e)
 
+
 def handle_measurement(energy_util: EnergyUtil, energy_device_id):
     logger = logging.getLogger(PROCESS_NAME)
     logger.debug("starting measure %s" % energy_device_id)
 
     data = energy_util.getMeasurementValue(energy_device_id)
     logger.debug('Measurement returned %s' % data)
-    device_measurement = EnergyDeviceMeasureModel(data)
+    device_measurement = EnergyDeviceMeasureModel()
+    device_measurement.set(data)
 
     logger.debug('New measurement values: %s, %s, %s' % (device_measurement.id, device_measurement.kw_total,
                                                          device_measurement.created_at))
 
-    last_save_measurement = EnergyDeviceMeasureModel.get_last_saved(energy_device_id)
+    last_save_measurement = EnergyDeviceMeasureModel().get_last_saved(energy_device_id)
 
     if last_save_measurement is None:
         logger.info('No saved measurement found, is this the first run for device %s?' % energy_device_id)
     else:
-        logger.debug('Last save measurement values: %s, %s, %s' % (last_save_measurement.id, last_save_measurement.kw_total,
-                                                                   last_save_measurement.created_at))
-
+        logger.debug(
+            'Last save measurement values: %s, %s, %s' % (last_save_measurement.id, last_save_measurement.kw_total,
+                                                          last_save_measurement.created_at))
 
     if last_save_measurement is None or is_a_value_changed(last_save_measurement, device_measurement) \
             or is_measurement_older_than_1hour(last_save_measurement, device_measurement):
         logger.debug('Measurement has changed or old one is older than 1 hour, saving it to db')
-        save_measurement(device_measurement)
+        device_measurement.save()
+        logger.debug("value saved %s %s %s" %
+                     (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
     else:
         logger.debug('Not saving new measurement because values of interest have not changed and last saved measurement'
                      ' is not older than 1 hour')
 
 
-def save_measurement(device_measurement):
-    logger = logging.getLogger(PROCESS_NAME)
-    logger.debug('want to save %s %s %s' %
-                  (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
-    device_measurement.save()
-    logger.debug("value saved %s %s %s" %
-                  (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
-
-
 def is_a_value_changed(old_measurement, new_measurement):
-    measurements_of_interest = {'kwh_l1', 'kwh_l2', 'kwh_l3', 'p_l1', 'p_l2', 'p_l3', 'a_l1', 'a_l2', 'a_l3', 'kw_total'}
+    measurements_of_interest = {'kwh_l1', 'kwh_l2', 'kwh_l3', 'p_l1', 'p_l2', 'p_l3', 'a_l1', 'a_l2', 'a_l3',
+                                'kw_total'}
 
+    is_changed = False
     for measurement in measurements_of_interest:
         is_changed = getattr(new_measurement, measurement) != getattr(old_measurement, measurement)
         if is_changed:
@@ -138,11 +134,6 @@ def is_measurement_older_than_1hour(old_measurement, new_measurement):
 
 def main():
     init_log()
-    # logging.basicConfig(filename="/tmp/measurement_daemon.log")
-    # logging.basicConfig(level=logging.DEBUG)
-    # logging.basicConfig(filename='example.log', level=logging.NOTSET)
-
-    # logger = logging.getLogger('measure_electricity_usage_daemon')
 
     env_name = os.getenv('CARCHARGING_ENV')
 
