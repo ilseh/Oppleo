@@ -124,7 +124,7 @@ def is_a_value_changed(old_measurement, new_measurement):
     measurements_of_interest = {'kwh_l1', 'kwh_l2', 'kwh_l3', 'p_l1', 'p_l2', 'p_l3', 'a_l1', 'a_l2', 'a_l3', 'kw_total'}
 
     for measurement in measurements_of_interest:
-        is_changed = getattr(new_measurement, measurement) > getattr(old_measurement, measurement)
+        is_changed = getattr(new_measurement, measurement) != getattr(old_measurement, measurement)
         if is_changed:
             break
 
