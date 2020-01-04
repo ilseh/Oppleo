@@ -7,6 +7,7 @@ from . import db
 from nl.carcharging.models.base import Base, Session
 import json
 
+
 class EnergyDeviceMeasureModel(Base):
     """
     EnergyDeviceMeasure Model
@@ -33,18 +34,15 @@ class EnergyDeviceMeasureModel(Base):
     kw_total = db.Column(db.Float)
     hz = db.Column(db.Float)
 
-
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
         self.logger.debug('Initializing EnergyDeviceMeasureModel without data')
 
-
     def set(self, data):
         for key in data:
             setattr(self, key, data.get(key))
-        if (data.created_at == None):
-            self.created_at = datetime.datetime.now()
-
+        # If no field created_at or it has no value, use current datetime.
+        self.created_at = data.get('created_at', datetime.datetime.now())
 
     def save(self):
         session = Session()
@@ -52,10 +50,7 @@ class EnergyDeviceMeasureModel(Base):
         session.commit()
 
     def get_last_saved(self, energy_device_id):
-        session = Session()
-        return session.query(EnergyDeviceMeasureModel) \
-            .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
-            .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(1).first()
+        return self.get_last_n_saved(energy_device_id, 1)[0]
 
     def get_last_n_saved(self, energy_device_id, n):
         session = Session()
@@ -63,9 +58,9 @@ class EnergyDeviceMeasureModel(Base):
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
 
-    def get_last_n_saved_since(self, energy_device_id, since_ts, n = -1):
+    def get_last_n_saved_since(self, energy_device_id, since_ts, n=-1):
         session = Session()
-        if ( n == -1 ):
+        if n == -1:
             return session.query(EnergyDeviceMeasureModel) \
                 .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
@@ -113,13 +108,13 @@ class EnergyDeviceMeasureModel(Base):
                 "v_l3": str(self.v_l3),
                 "kw_total": str(self.kw_total),
                 "hz": str(self.hz)
-                }
+            }
             )
         )
 
     # convert into dict:
     def to_dict(self):
-        return ( {
+        return ({
             "energy_device_id": str(self.energy_device_id),
             "created_at": str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S")),
             "kwh_l1": self.kwh_l1,
@@ -136,8 +131,9 @@ class EnergyDeviceMeasureModel(Base):
             "v_l3": str(self.v_l3),
             "kw_total": str(self.kw_total),
             "hz": str(self.hz)
-            }
+        }
         )
+
 
 class EnergyDeviceMeasureSchema(Schema):
     """
@@ -147,7 +143,7 @@ class EnergyDeviceMeasureSchema(Schema):
     energy_device_id = fields.Str(required=True)
     kwh_l1 = fields.Float(dump_only=True)
     kwh_l2 = fields.Float(dump_only=True)
-    kwh_l2 = fields.Float(dump_only=True)
+    kwh_l3 = fields.Float(dump_only=True)
     a_l1 = fields.Float(dump_only=True)
     a_l2 = fields.Float(dump_only=True)
     a_l3 = fields.Float(dump_only=True)
