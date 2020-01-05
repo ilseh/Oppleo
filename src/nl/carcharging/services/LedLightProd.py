@@ -100,4 +100,4 @@ class LedLightProd(object):
     def pulse_stop(self):
         self.thread_for_pulse.do_run = False
         self.thread_for_pulse.join()
-        self.logger.debug('Pulse stopped')
+        self.logger.debug('Pulse %s stopped' % self.color_desc())
