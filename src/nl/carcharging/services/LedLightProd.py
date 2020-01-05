@@ -74,7 +74,7 @@ class LedLightProd(object):
                     self.pwm.ChangeDutyCycle(pulse_led_value)
                     self.logger.debug("pulseLedValue = ", pulse_led_value)
                     pulse_led_millis = self.millis()
-                time.sleep(.1)
+                # time.sleep(.1)
 
         except Exception as ex:
             self.logger.error('Exception pulsing %s' % ex)
