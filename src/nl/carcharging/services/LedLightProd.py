@@ -25,7 +25,7 @@ class LedLightProd(object):
     GPIO.setmode(GPIO.BCM)
 
     def __init__(self, color, pwm=None):
-        self.thread_for_pulse = threading.Thread(target=self._pulse())
+        self.thread_for_pulse = threading.Thread(target=self._pulse)
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
         self.pwm = pwm
