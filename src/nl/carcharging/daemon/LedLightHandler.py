@@ -6,7 +6,6 @@ import time
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.SessionModel import SessionModel
 from nl.carcharging.utils.GenericUtil import GenericUtil
-from nl.carcharging.views.SessionView import session_schema
 
 try:
     import RPi.GPIO as GPIO
@@ -65,12 +64,9 @@ class LedLightHandler(Service):
 
         reader = RfidReader()
         while not self.got_sigterm():
-            self.logger.debug("Getting ready to read rfid...")
             rfid, text = reader.read()
             self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
-            # TODO: check if rfid wants to start or stop session (toggle). We check by checking
-            #  if rfid has an open session or not.
             latest_session = SessionModel.get_latest_rfid_session(rfid)
 
             start_session = False
@@ -80,13 +76,11 @@ class LedLightHandler(Service):
                 data['start_value'] = self.energy_util.getMeasurementValue(device)['kw_total']
                 session = SessionModel(data)
                 session.save()
-                ser_data = session_schema.dump(session)
                 start_session = True
                 self.logger.debug("Starting new charging session for rfid %s" % rfid)
             else:
                 latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
                 latest_session.save()
-                ser_data = session_schema.dump(latest_session)
                 self.logger.debug("Stopping charging session for rfid %s" % rfid)
 
 
@@ -106,7 +100,6 @@ class LedLightHandler(Service):
             self.stop()
 
     def turn_current_light_off(self):
-        # self.current_light.off()
         if self.current_light == self.ledlighterCharging:
             self.current_light.pulse_stop()
         else:
@@ -116,16 +109,15 @@ class LedLightHandler(Service):
         self.ledlighterAvailable.off()
         self.ledlighterAvailable.cleanup()
         self.ledlighterReady.off()
-        self.ledlighterAvailable.cleanup()
+        self.ledlighterReady.cleanup()
 
     def handle_charging(self, device):
         last_two_measures = EnergyDeviceMeasureModel().get_last_n_saved(device, 2)
         diff_last_two_measures_saved = last_two_measures[0].created_at - last_two_measures[1].created_at
-        # Get dummy measure to get current datetime which we can use to see if charging is going pn.
+        # Get dummy measure to get current datetime which we can use to see if charging is going on.
         current_date_time = EnergyDeviceMeasureModel()
         current_date_time.set({})
         diff_now_and_last_saved_session = current_date_time.created_at - last_two_measures[0].created_at
-        # It is charging, let blue light pulse.
         if self.is_car_charging(diff_now_and_last_saved_session, diff_last_two_measures_saved):
             self.logger.debug("Device is currently charging")
             if self.current_light != self.ledlighterCharging:
@@ -135,7 +127,6 @@ class LedLightHandler(Service):
                 self.current_light = self.ledlighterCharging
                 self.logger.debug('Start charging light pulse')
                 self.current_light.pulse()
-        #         self.logger.debug("Blue light is pulsing to indicate charging")
         else:
             self.logger.debug("Not charging")
             # Not charging. If it was charging, set light back to previous light
@@ -146,9 +137,8 @@ class LedLightHandler(Service):
                 self.current_light.on(5)
 
     def is_car_charging(self, diff_now_and_last_saved_session, diff_last_two_measures_saved):
-        return True
-        # return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
-        #     and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
+        return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
+            and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
 
 def main():
     Logger.init_log(PROCESS_NAME, LOG_FILE)
