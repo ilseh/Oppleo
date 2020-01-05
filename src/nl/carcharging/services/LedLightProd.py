@@ -46,7 +46,9 @@ class LedLightProd(object):
         return pwm
 
     def test(self):
-        self.logger.debug('FAKING BLUE PULSE')
+        t = threading.currentThread()
+        while getattr(t, "do_run", True):
+            self.logger.debug('FAKING BLUE PULSE')
 
     def _pulse(self):
         pulse_led_value = 0
