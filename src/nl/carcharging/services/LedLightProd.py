@@ -31,6 +31,9 @@ class LedLightProd(object):
         self.pwm = pwm
         self.lock = threading.Lock()
 
+    def color_desc(self):
+        return {13: 'red', 12: 'green', 16: 'blue'}.get(self.color)
+
     # TODO: move to a more generic utility class?
     def millis(self):
         return int(round(time.time() * 1000))
@@ -75,18 +78,19 @@ class LedLightProd(object):
 
         try:
             self.pwm.start(0)
-            self.logger.debug('Starting led light %d brightness %d' % (self.color, brightness))
+            self.logger.debug('Starting led light %s brightness %d' % (self.color_desc(), brightness))
             self.pwm.ChangeDutyCycle(brightness)
         except Exception as ex:
             self.logger.error('Exception lighting led %s' % ex)
 
     def off(self):
-        self.logger.debug('Stopping led light')
+        self.logger.debug('Stopping led light %s' % self.color_desc())
         self.pwm.stop()
 
     def cleanup(self):
         self.lock.acquire()
         GPIO.cleanup()
+        self.logger.debug("GPIO cleanup done for %s" % self.color_desc())
         self.lock.release()
 
     def pulse(self):
