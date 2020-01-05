@@ -138,12 +138,12 @@ class LedLightHandler(Service):
         #         self.logger.debug("Blue light is pulsing to indicate charging")
         else:
             self.logger.debug("Not charging")
-        #     # Not charging. If it was charging, set light back to previous light
-        #     if self.current_light == self.ledlighterCharging:
-        #         self.logger.debug("Charging is stopped, setting back previous light %s" % self.previous_light)
-        #         self.turn_current_light_off()
-        #         self.current_light = self.previous_light
-        #         self.current_light.on(5)
+            # Not charging. If it was charging, set light back to previous light
+            if self.current_light == self.ledlighterCharging:
+                self.logger.debug("Charging is stopped, setting back previous light %s" % self.previous_light)
+                self.turn_current_light_off()
+                self.current_light = self.previous_light
+                self.current_light.on(5)
 
     def is_car_charging(self, diff_now_and_last_saved_session, diff_last_two_measures_saved):
         return True
