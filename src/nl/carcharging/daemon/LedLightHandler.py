@@ -60,7 +60,7 @@ class LedLightHandler(Service):
 
         scheduler.add_job(id="check_is_charging",
                           func=self.handle_charging, args=[device],
-                          trigger="interval", seconds=20)
+                          trigger="interval", seconds=10)
         scheduler.start()
 
         reader = RfidReader()
