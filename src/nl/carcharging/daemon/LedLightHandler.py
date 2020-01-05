@@ -82,10 +82,12 @@ class LedLightHandler(Service):
                 session.save()
                 ser_data = session_schema.dump(session)
                 start_session = True
+                self.logger.debug("Starting new charging session for rfid %s" % rfid)
             else:
                 latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
                 latest_session.save()
                 ser_data = session_schema.dump(latest_session)
+                self.logger.debug("Stopping charging session for rfid %s" % rfid)
 
 
             self.turn_current_light_off()
@@ -130,7 +132,8 @@ class LedLightHandler(Service):
             if self.current_light != self.ledlighterCharging:
                 self.previous_light = self.current_light
                 self.turn_current_light_off()
-        #         self.current_light = self.ledlighterCharging
+                self.current_light = self.ledlighterCharging
+                self.current_light.on(50)
         #         self.current_light.pulse()
         #         self.logger.debug("Blue light is pulsing to indicate charging")
         # else:
