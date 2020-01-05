@@ -126,8 +126,7 @@ class LedLightHandler(Service):
         current_date_time.set({})
         diff_now_and_last_saved_session = current_date_time.created_at - last_two_measures[0].created_at
         # It is charging, let blue light pulse.
-        if diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
-                and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING:
+        if self.is_car_charging(diff_now_and_last_saved_session, diff_last_two_measures_saved):
             self.logger.debug("Device is currently charging")
             if self.current_light != self.ledlighterCharging:
                 self.previous_light = self.current_light
@@ -145,7 +144,10 @@ class LedLightHandler(Service):
         #         self.current_light = self.previous_light
         #         self.current_light.on(5)
 
-
+    def is_car_charging(self, diff_now_and_last_saved_session, diff_last_two_measures_saved):
+        return True
+        # return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
+        #     and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
 
 def main():
     Logger.init_log(PROCESS_NAME, LOG_FILE)
