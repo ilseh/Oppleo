@@ -104,10 +104,11 @@ class LedLightHandler(Service):
             self.stop()
 
     def turn_current_light_off(self):
-        if self.current_light == self.ledlighterCharging:
-            self.current_light.pulse_stop()
-        else:
-            self.current_light.off()
+        self.current_light.off()
+        # if self.current_light == self.ledlighterCharging:
+        #     self.current_light.pulse_stop()
+        # else:
+        #     self.current_light.off()
 
     def stop(self, block=False):
         self.ledlighterAvailable.off()
@@ -126,9 +127,9 @@ class LedLightHandler(Service):
         if diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
                 and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING:
             self.logger.debug("Device is currently charging")
-        #     if self.current_light != self.ledlighterCharging:
-        #         self.previous_light = self.current_light
-        #         self.turn_current_light_off()
+            if self.current_light != self.ledlighterCharging:
+                self.previous_light = self.current_light
+                self.turn_current_light_off()
         #         self.current_light = self.ledlighterCharging
         #         self.current_light.pulse()
         #         self.logger.debug("Blue light is pulsing to indicate charging")
