@@ -25,7 +25,7 @@ class LedLightProd(object):
     GPIO.setmode(GPIO.BCM)
 
     def __init__(self, color, pwm=None):
-        self.thread_for_pulse = threading.Thread(target=self._pulse)
+        self.thread_for_pulse = threading.Thread(target=self.test)
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
         self.pwm = pwm
@@ -44,6 +44,9 @@ class LedLightProd(object):
         pwm = GPIO.PWM(self.color, 100)
         self.lock.release()
         return pwm
+
+    def test(self):
+        self.logger.debug('FAKING BLUE PULSE')
 
     def _pulse(self):
         pulse_led_value = 0
