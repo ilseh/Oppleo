@@ -41,28 +41,49 @@ class LedLightHandler(Service):
     @inject
     def __init__(self, energy_util: EnergyUtil, charger: Charger):
         super(LedLightHandler, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
+
+        self.energy_util = energy_util
+        self.charger = charger
+
         self.ledlighterAvailable = LedLighter(LedLighter.LED_GREEN)
         self.ledlighterReady = LedLighter(LedLighter.LED_RED, LedLighter.LED_GREEN)
         self.ledlighterCharging = LedLighter(LedLighter.LED_BLUE)
-        self.energy_util = energy_util
-        self.charger = charger
+        self.ledlighterError = LedLighter(LedLighter.LED_RED)
+
         self.current_light = None
         self.previous_light = None
 
+    def error_status(self):
+        self.current_light = self.ledlighterError
+        self.current_light.on(80)
+
     def run(self):
+
+        device = GenericUtil.getMeasurementDevice()
+
+        try:
+            scheduler.add_job(id="check_is_charging",
+                              func=self.try_handle_charging, args=[device],
+                              trigger="interval", seconds=10)
+            scheduler.start()
+        except Exception as ex:
+            self.logger.error("Could not start scheduler to check if charging is active: %s" % ex)
+            self.error_status()
+
+        try:
+            self.read_rfid(device)
+        except Exception as ex:
+            self.logger.error("Could not execute read_rfid %s" % ex)
+            self.error_status()
+
+    def read_rfid(self, device):
         # TODO: Just started up. Check if there was a session in progress.
         #  Retrieved last session that was stored and check if it was ended or not.
         #  I suppose we need to link laadpaal to this instance...
-        device = GenericUtil.getMeasurementDevice()
         self.logger.info("Starting rfid reader for device %s" % device)
 
         self.current_light = self.ledlighterAvailable
         self.current_light.on(5)
-
-        scheduler.add_job(id="check_is_charging",
-                          func=self.handle_charging, args=[device],
-                          trigger="interval", seconds=10)
-        scheduler.start()
 
         reader = RfidReader()
         while not self.got_sigterm():
@@ -84,7 +105,6 @@ class LedLightHandler(Service):
                 latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
                 latest_session.save()
                 self.logger.debug("Stopping charging session for rfid %s" % rfid)
-
 
             self.turn_current_light_off()
 
@@ -110,10 +130,16 @@ class LedLightHandler(Service):
             self.current_light.off()
 
     def stop(self, block=False):
-        self.ledlighterAvailable.off()
-        self.ledlighterAvailable.cleanup()
-        self.ledlighterReady.off()
-        self.ledlighterReady.cleanup()
+        lights = {self.ledlighterAvailable, self.ledlighterReady, self.ledlighterError}
+        for light in lights:
+            light.off()
+            light.cleanup()
+
+    def try_handle_charging(self, device):
+        try:
+            self.handle_charging(device)
+        except Exception as ex:
+            self.error_status()
 
     def handle_charging(self, device):
         last_two_measures = EnergyDeviceMeasureModel().get_last_n_saved(device, 2)
@@ -142,7 +168,8 @@ class LedLightHandler(Service):
 
     def is_car_charging(self, diff_now_and_last_saved_session, diff_last_two_measures_saved):
         return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
-            and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
+               and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
+
 
 def main():
     Logger.init_log(PROCESS_NAME, LOG_FILE)
@@ -161,7 +188,6 @@ def main():
 
     injector = Injector()
     service = injector.get(LedLightHandler)
-
 
     if cmd == 'start':
         service.start()
