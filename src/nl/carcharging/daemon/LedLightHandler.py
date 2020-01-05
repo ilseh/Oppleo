@@ -5,6 +5,7 @@ import time
 
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.SessionModel import SessionModel
+from nl.carcharging.services.Charger import Charger
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
 try:
@@ -38,12 +39,13 @@ SECONDS_IN_HOUR = 60 * 60
 class LedLightHandler(Service):
 
     @inject
-    def __init__(self, energy_util: EnergyUtil):
+    def __init__(self, energy_util: EnergyUtil, charger: Charger):
         super(LedLightHandler, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
         self.ledlighterAvailable = LedLighter(LedLighter.LED_GREEN)
         self.ledlighterReady = LedLighter(LedLighter.LED_RED, LedLighter.LED_GREEN)
         self.ledlighterCharging = LedLighter(LedLighter.LED_BLUE)
         self.energy_util = energy_util
+        self.charger = charger
         self.current_light = None
         self.previous_light = None
 
@@ -89,8 +91,10 @@ class LedLightHandler(Service):
             # TODO: if open session than toggle session off (and stop the electricity) and set light to available again.
             #  If no session open, we get a new session and set light to ready (and start electricity flow and ligth to charging).
             if start_session:
+                self.charger.start()
                 self.current_light = self.ledlighterReady
             else:
+                self.charger.stop()
                 self.current_light = self.ledlighterAvailable
             self.current_light.on(5)
 
