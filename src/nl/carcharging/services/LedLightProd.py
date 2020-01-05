@@ -29,14 +29,18 @@ class LedLightProd(object):
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
         self.pwm = pwm
+        self.lock = threading.Lock()
 
     # TODO: move to a more generic utility class?
     def millis(self):
         return int(round(time.time() * 1000))
 
     def _init_gpio_pwm(self):
+        self.lock.acquire()
         GPIO.setup(self.color, GPIO.OUT)
-        return GPIO.PWM(self.color, 100)
+        pwm = GPIO.PWM(self.color, 100)
+        self.lock.release()
+        return pwm
 
     def _pulse(self):
         pulse_led_value = 0
@@ -76,12 +80,14 @@ class LedLightProd(object):
         except Exception as ex:
             self.logger.error('Exception lighting led %s' % ex)
 
-    def  off(self):
+    def off(self):
         self.logger.debug('Stopping led light')
         self.pwm.stop()
 
     def cleanup(self):
+        self.lock.acquire()
         GPIO.cleanup()
+        self.lock.release()
 
     def pulse(self):
         self.thread_for_pulse.start()
