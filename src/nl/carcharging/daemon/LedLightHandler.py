@@ -106,11 +106,11 @@ class LedLightHandler(Service):
             self.stop()
 
     def turn_current_light_off(self):
-        self.current_light.off()
-        # if self.current_light == self.ledlighterCharging:
-        #     self.current_light.pulse_stop()
-        # else:
-        #     self.current_light.off()
+        # self.current_light.off()
+        if self.current_light == self.ledlighterCharging:
+            self.current_light.pulse_stop()
+        else:
+            self.current_light.off()
 
     def stop(self, block=False):
         self.ledlighterAvailable.off()
