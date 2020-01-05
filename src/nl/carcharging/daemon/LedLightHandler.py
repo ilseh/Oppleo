@@ -65,7 +65,7 @@ class LedLightHandler(Service):
 
         reader = RfidReader()
         while not self.got_sigterm():
-            self.logger.debug("Ready to read rfid...")
+            self.logger.debug("Getting ready to read rfid...")
             rfid, text = reader.read()
             self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
@@ -126,19 +126,19 @@ class LedLightHandler(Service):
         if diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
                 and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING:
             self.logger.debug("Device is currently charging")
-            if self.current_light != self.ledlighterCharging:
-                self.previous_light = self.current_light
-                self.turn_current_light_off()
-                self.current_light = self.ledlighterCharging
-                self.current_light.pulse()
-                self.logger.debug("Blue light is pulsing to indicate charging")
-        else:
-            # Not charging. If it was charging, set light back to previous light
-            if self.current_light == self.ledlighterCharging:
-                self.logger.debug("Charging is stopped, setting back previous light %s" % self.previous_light)
-                self.turn_current_light_off()
-                self.current_light = self.previous_light
-                self.current_light.on(5)
+        #     if self.current_light != self.ledlighterCharging:
+        #         self.previous_light = self.current_light
+        #         self.turn_current_light_off()
+        #         self.current_light = self.ledlighterCharging
+        #         self.current_light.pulse()
+        #         self.logger.debug("Blue light is pulsing to indicate charging")
+        # else:
+        #     # Not charging. If it was charging, set light back to previous light
+        #     if self.current_light == self.ledlighterCharging:
+        #         self.logger.debug("Charging is stopped, setting back previous light %s" % self.previous_light)
+        #         self.turn_current_light_off()
+        #         self.current_light = self.previous_light
+        #         self.current_light.on(5)
 
 
 
