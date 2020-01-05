@@ -1,62 +1,72 @@
 {% extends "template.html" %}
 {% block title %}Verbruik{% endblock %}
 {% block head %}
+  {% block jquery %} 
+    {% include 'includes/include.jquery-1.8.3.html' %}
+  {% endblock %} 
   {{ super() }}
-   
-  <!-- Required Flot -->
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.time.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.tooltip.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.resize.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.pie.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.selection.j') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.stack.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.crosshair.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/flot-chart/jquery.flot.navigate.js') }}"></script>
 
-  <!-- Socket IO -->
-  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+  <!-- Required Flot prereq -->
+  <script src="{{ url_for('static', filename='js/jquery.event.drag-1.6.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery.mousewheel-3.0.6.js') }}"></script>
+
+  <!-- Required Flot -->
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.canvaswrapper.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.colorhelpers.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.saturated.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.browser.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.drawSeries.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.uiConstants.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.axislabels.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.time.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.resize.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.selection.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.stack.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.crosshair.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.navigate.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.touchNavigate.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.hover.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.legend.js') }}"></script>
+
+    <!-- Socket IO -->
+    <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
   <style>
-    .paginate_button {
-        padding: 0px !important;
-    }
-    tbody td {
-      padding: 2px 2px !important;
-      text-align: center;
-      background-color: #36404a;
-    }
-    div .dataTables_info {
-      color: #98a6ad !important;
-      margin-left: 5px;
-    }
-    div .dt-buttons {
-      margin-bottom: 10px;
-      margin-left: 3px;
-    }
-    div .dataTables_length {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 100%;
-    }
-    div .dataTables_length label {
-      font-size: smaller;
-      margin-left: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 100%;
-      color: #98a6ad !important;
-    }
-    div .dataTables_length label select {
-      width: 80px;
-      margin-left: 10px;
-      margin-right: 10px;
-    }
+  #tooltip {
+    position: absolute;
+    display: none;
+    border: 1px solid #fdd;
+    padding: 2px;
+    background-color: #fee;
+    opacity: 0.80;
+  }
+  g.flot-x1-axis text {
+    fill: #98a6ad;  /* text color */
+  }
+  g.flot-y1-axis text, .y1LabelLayer text {
+    fill: #00b19d;  /* text color */
+  }
+  g.flot-y2-axis text, .y2LabelLayer text {
+    fill: #ffaa00;  /* text color */
+  }
+  div.legend svg.legendLayer {
+    fill: rgba(76, 83, 87, 0.4);/*
+    fill-opacity: '0.4';*/
+    border: 1px solid #98a6ad;
+    background: rgba(76, 83, 87, 0.6);
+  }
+  div.legend svg.legendLayer g:nth-of-type(1) text tspan {
+    fill: #00b19d;
+    font-size: smaller;
+  }
+  div.legend svg.legendLayer g:nth-of-type(2) text tspan {
+    fill: #ffaa00;
+    font-size: smaller;
+  }
   </style>
-
   <script>
+    var flotObj = null
     function timestamp() {
       d = new Date();
       return (d.getFullYear() + "-" + 
@@ -68,12 +78,23 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    var dt = undefined
+    // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
+    function parseDate(dateStr) {
+      var p1 = dateStr.split(',')
+      var date = p1[0].split('/')
+      var time = p1[1].trim().split(':')
+      var dObj = new Date()
+      dObj.setDate(date[0]) 
+      dObj.setMonth(parseInt(date[1]) -1) 
+      dObj.setFullYear(date[2]) 
+      dObj.setHours(time[0]) 
+      dObj.setMinutes(time[1]) 
+      dObj.setSeconds(time[2]) 
+      return dObj
+    }
+
     function getUsageData( from_timestamp, n = undefined ) {
       console.log(timestamp() + ' getUsageData()')
-    
-//      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
-            
       $.ajax({
         type		: 'GET',
         url			: ('/usage_data_since/' + encodeURI(from_timestamp) + (Number.isInteger(n) ? '/' + n : '')),
@@ -83,212 +104,193 @@
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
-  //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
 
-        var flotDataset = []
-        var flotDataL1A = []
-        var flotDataL2A = []
-        var flotDataL3A = []
-        var flotDataL1P = []
-        var flotDataL2P = []
-        var flotDataL3P = []
-        var flotDatakWhTotal = []
+        var flotDataset = [ 
+          { label: 'Stroom [A]', data: [], color: "#00b19d", yaxis: 1, lines: { show: true, fill: true } },
+          { label: 'Energie [kWh]', data: [], color: "#ffaa00", yaxis: 2 } 
+        ]
+        var flotData_A = []
+        var flotData_kWh = []
 
-        var flotGraph = $.plot($("#stecapg_1_flotgraph"), flotDataset, {
-          tooltip : true, //activate tooltip
-          tooltipOpts : {
-            content: function(label, xval, yval, flotItem) {
-              var d = new Date(parseInt(xval));
-              var monthNames = [
-                "January", "February", "March",
-                "April", "May", "June", "July",
-                "August", "September", "October",
-                "November", "December"
-              ]
-              var ttStr = '<span style="color: ' + flotItem.series.color + ' !important"><i class="fas fa-charging-station"></i> ' + 
-                  flotItem.series.label + ' ' + yval + 
-                  (flotItem.series.label.endsWith('A') ? 'A' : 
-                    (flotItem.series.label.endsWith('P') ? 'W' :
-                      (flotItem.series.label.endsWith('kWh') ? 'kWh' : '')
-                    )
-                  ) +
-                  '</span><br>' + 
-                  '<span style="color: #98a6ad !important"><i class="fa fa-calendar"></i> ' + 
-                  d.getDate() + " " + 
-                  monthNames[d.getMonth()] + 
-                  " " + d.getFullYear() + 
-                  " " + (d.getHours() < 10 ? "0" : "" ) + d.getHours() +
-                  ":" + (d.getMinutes() < 10 ? "0" : "" ) + d.getMinutes() +
-                  '</span>'
-
-              return ttStr
-            },
-            shifts : {
-              x : 5,
-              y : -30    // 140
-            }
+        var axis = { 
+          'x': {
+            'min': 0,
+            'max': 0
           },
+          'y1': {
+            'min': 0,
+            'max': 0
+          },
+          'y2': {
+            'min': 0,
+            'max': 0
+          }
+        }
+        
+        data.forEach(element => {
+          // created_at format 01/04/2020, 13:58:44
+          var ts = Math.round(parseDate(element.created_at).getTime() /1000)
+          var a = Math.round( (
+                    parseFloat(element.a_l1) +
+                    parseFloat(element.a_l1) +
+                    parseFloat(element.a_l1)
+                  ) * 10 ) / 10
+          flotData_A.push( [ ts, a ] )
+          flotData_kWh.push( [ ts, element.kw_total ] )
+          axis.x.min = (axis.x.min == 0 ? ts : Math.min(ts, axis.x.min))
+          axis.x.max = Math.max(ts, axis.x.max)
+          axis.y1.min = Math.min(a, axis.y1.min)
+          axis.y1.max = Math.max(a, axis.y1.max)
+          axis.y2.min = Math.min(element.kw_total, axis.y2.min)
+          axis.y2.max = Math.max(element.kw_total, axis.y2.max)
+        })
+
+        flotDataset[0].data = flotData_A
+        flotDataset[1].data = flotData_kWh
+
+        // Blue:    "3bafda"
+        // Orange:  "#ffaa00"
+        // Green:   "#00b19d"
+        flotObj = $.plot($("#stecapg_1_flotgraph"), flotDataset, {
+          xaxis: { 
+            timezone: 'browser',
+            tickSize: [ 1, 'day' ],
+            timeformat: '%e %b', // %H:%M",
+            color: "#98a6ad", // Color of the horizontal line (not the numbers)
+            font: { 
+              size: 11,
+              lineHeight: 11
+            },
+            mode: "time",
+            min: axis.x.min,
+            max: axis.x.max,
+            zoomRange: [7200000, null],
+            panRange: [axis.x.min*0.9, axis.x.max*1.1]
+          },
+          yaxes: [{   // Amps 0-25
+            min: 0, 
+            max: 25,
+            color: "#00b19d", // Color of the vertical line (not the numbers) "#00b19d"
+            // axisLabel: "Stroom [A]",
+            axisLabelUseCanvas: true,
+            axisLabelColor: '#FF0000',
+            tickFormatter: function (val, axis) {
+              return val + ' (' + Math.round((parseFloat(val)*230) / factor_Whkm) + 'km/u)'
+            },
+            font: { 
+              size: 11,
+              lineHeight: 11,
+              color: "#00b19d" //"#00b19d"
+            },
+            position: 'right'
+          }, {      // Energie 0-300
+            min: 0, 
+            max: 25,
+            color: "#ffaa00", // Color of the vertical line (not the numbers) "#00b19d"
+            // axisLabel: "Energie [kWh]",
+            font: { 
+              size: 11,
+              lineHeight: 11,
+              color: "#ffaa00" //"#00b19d"
+            },
+            position: 'left'
+            }
+          ],
           grid : {
             show : true,
             aboveData : false,
-            color : '#36404a',
-            borderColor : '#36404a',
+            color : '#98a6ad', 
+            borderColor : '#98a6ad', 
             labelMargin : 15,
             axisMargin : 0,
             borderWidth : 0,
-            borderColor : null,
             minBorderMargin : 5,
-            clickable : true,
-            hoverable : true,
-            autoHighlight : false,
-            mouseActiveRadius : 20
+            hoverable: true,
+            clickable: true
           },
           zoom: {
             interactive: true
-/*            active: true,
-            amount: 1.5,         // 2 = 200% (zoom in), 0.5 = 50% (zoom out)
-            enableTouch: true
-          */          },
-          pan: {
-            interactive: true
-/*            active: true,
-            cursor: "move",     // CSS mouse cursor value used when dragging, e.g. "pointer"
-            frameRate: 60,
-            mode: "smart",       // enable smart pan mode
-            enableTouch: true,
-            touchMode: ""
-          */         },
-          yaxis: [{   // Amps 0-25
-            min: 0, 
-            max: 25,
-            font : {
-              color : '#00b19d'
-            },
-            axisLabel: 'Amps',
-            zoomRange: [0.1, 10],
-    				panRange: [-10, 10],
-            axisZoom: true, //zoom axis when mouse over it is allowed
-            plotZoom: true, //zoom axis is allowed for plot zoom
-            axisPan: true, //pan axis when mouse over it is allowed
-            plotPan: true //pan axis is allowed for plot pan
-          }, {        // Volts 0-250
-            min: 0, 
-            max: 250,
-            font : {
-              color : '#3bafda'
-            },
-            position: 'right',
-            axisLabel: 'Volts',
-            zoomRange: [0.1, 10],
-    				panRange: [-10, 10],
-            axisZoom: true, //zoom axis when mouse over it is allowed
-            plotZoom: true, //zoom axis is allowed for plot zoom
-            axisPan: true, //pan axis when mouse over it is allowed
-            plotPan: true //pan axis is allowed for plot pan
-          }, {        // kWh ever increasing
-            min: 0, 
-            max: 400,
-            font : {
-              color : '#ffaa00'
-            },
-            position: 'right',
-            axisLabel: 'kWh',
-            zoomRange: [0.1, 10],
-    				panRange: [-10, 10],
-            axisZoom: true, //zoom axis when mouse over it is allowed
-            plotZoom: true, //zoom axis is allowed for plot zoom
-            axisPan: true, //pan axis when mouse over it is allowed
-            plotPan: true //pan axis is allowed for plot pan
-          }],
-
-//					tickFormatter: euroFormatter
-
-          xaxis: { 
-            show : true,
-            font : {
-              color : '#98a6ad'
-            },
-//                tickDecimals: 0,
-            timezone: 'browser',
-//            minTickSize: [1, "minute"],
-            timeformat: "%a %d %b %H:%M",
-//                twelveHourClock: false,
-            mode: "time",
-            min: (new Date(new Date().getFullYear(), new Date().getMonth(), (new Date().getDate()-7), 0, 0)).getTime(),
-            max: (new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 6, 0)).getTime(),
-            zoomRange: [0.1, 10],
-    				panRange: [-10, 10],
-            axisZoom: true, //zoom axis when mouse over it is allowed
-            plotZoom: true, //zoom axis is allowed for plot zoom
-            axisPan: true, //pan axis when mouse over it is allowed
-            plotPan: true //pan axis is allowed for plot pan
           },
-          axisLabels: {
-            show: true
-          } 
+          pan: {
+            interactive: true,
+            enableTouch: true
+          },
+          legend: {
+            position: 'ne',
+            show: true,
+            backgroundOpacity: 0.9,
+            noColumns: 1
+          }
         })
 
+        var axes = flotObj.getAxes()
+        axes.xaxis.options.min = axis.x.min 
+        axes.xaxis.options.max = axis.x.max
+        axes.yaxis.options.min = axis.y1.min
+        axes.yaxis.options.max = axis.y1.max 
+        axes.y2axis.options.min = axis.y2.min 
+        axes.y2axis.options.max = axis.y2.max
+        flotObj.setupGrid()             // if axis have changed
+        flotObj.draw()
 
-        data.forEach(element => {
-          console.log(element.created_at)
-            // created_at format 01/04/2020, 13:58:44
-          var ts = new Date(element.created_at).getTime()
+        $("#stecapg_1_flotgraph").bind("plothover", function (event, pos, item) {
+          if (!pos.x || !pos.y) {
+            return;
+          }
 
-          flotDataL1A.push( [ ts, element.a_l1 ] )
-          flotDataL2A.push( [ ts, element.a_l2 ] )
-          flotDataL3A.push( [ ts, element.a_l3 ] )
+          if (item) {
+            var x = item.datapoint[0].toFixed(2),
+              y = item.datapoint[1].toFixed(2);
 
-          flotDataL1P.push( [ ts, element.p_l1 ] )
-          flotDataL2P.push( [ ts, element.p_l2 ] )
-          flotDataL3P.push( [ ts, element.p_l3 ] )
+              
+            var d = new Date(parseInt(item.datapoint[0]) *1000);
+            var monthNames = [
+              "January", "February", "March",
+              "April", "May", "June", "July",
+              "August", "September", "October",
+              "November", "December"
+            ]
+            var ttStr = '<span style="color: ' + item.series.color + ' !important; font-size: smaller;">' +
+                '<i class="fas fa-charging-station"></i> ' + 
+                item.datapoint[1] + 
+                (item.series.label.endsWith('[A]') ? 'A (' + Math.round((parseFloat(item.datapoint[1])*230) / factor_Whkm) + 'km/u)' : 
+                  (item.series.label.endsWith('[kWh]') ? 'kWh (' + Math.round((parseFloat(item.datapoint[1])*1000) / factor_Whkm).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + 'km)' : '')
+                ) +
+                '</span><br>' + 
+                '<span style="color: #98a6ad !important; font-size: smaller;">' + 
+                '<i class="fa fa-calendar"></i> ' + 
+                d.getDate() + " " + 
+                monthNames[d.getMonth()] + 
+                " " + d.getFullYear() + 
+                " " + (d.getHours() < 10 ? "0" : "" ) + d.getHours() +
+                ":" + (d.getMinutes() < 10 ? "0" : "" ) + d.getMinutes() +
+                'u</span>'
 
-          flotDatakWhTotal.push( [ ts, element.kw_total ] )
-
-/*        
-          $("span#energy_device_id").text("("+element.energy_device_id+")")
-          dt.row.add([
-            element.created_at,
-            element.kw_total +'kWh',
-            element.kwh_l1 +'kWh',
-            element.kwh_l2 +'kWh',
-            element.kwh_l3 +'kWh',
-            element.a_l1 +'A',
-            element.a_l2 +'A',
-            element.a_l3 +'A',
-            element.p_l1 +'W',
-            element.p_l2 +'W',
-            element.p_l3 +'W',
-            element.v_l1 +'V',
-            element.v_l1 +'V',
-            element.v_l3 +'V',
-            element.hz +' Hz'
-          ]).draw( false )
-*/
+            $("#tooltip").html( ttStr )
+              .css({top: item.pageY+5, left: item.pageX+5})
+              .fadeIn(200);
+          } else {
+            $("#tooltip").hide();
+          }
         })
-        // blue     #505a66 
-        flotDataset.push( { label: 'L1 A', data: flotDataL1A, color: "#00b19d", yaxis: 1 })
-        flotDataset.push( { label: 'L2 A', data: flotDataL2A, color: "#00b19d", yaxis: 1 })
-        flotDataset.push( { label: 'L3 A', data: flotDataL3A, color: "#00b19d", yaxis: 1 })
+        $("#stecapg_1_flotgraph").bind("plothovercleanup", function (event, pos, item) {
+          $("#tooltip").hide();
+        })
 
-        flotDataset.push( { label: 'L3 P', data: flotDataL1P, color: "#3bafda", yaxis: 2 })
-        flotDataset.push( { label: 'L3 P', data: flotDataL2P, color: "#3bafda", yaxis: 2 })
-        flotDataset.push( { label: 'L3 P', data: flotDataL3P, color: "#3bafda", yaxis: 2 })
-
-        flotDataset.push( { label: 'kWh', data: flotDatakWhTotal, color: "#ffaa00", yaxis: 3 })
-
-        flotGraph.setData( flotDataset );
-        flotGraph.setupGrid();
-        flotGraph.draw();
+        $("#stecapg_1_flotgraph").bind("plotclick", function (event, pos, item) {
+          if (item) {
+            plot.highlight(item.series, item.datapoint);
+          }
+        })
 
         $('#stecapg_1_waiting').toggleClass( 'invisible', true );
       })
       .fail(function() {
-  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
       })
       .always(function() {
-        // Check every 60 seconds
       })
     }
+
     var socket = undefined
     function startWebSocket() {
       console.log(timestamp() + ' startWebSocket()')
@@ -298,12 +300,18 @@
       socket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
 
+        if ( flotObj == null || flotObj == undefined) {
+          // No graph data loaded yet, ignore websocket for now
+          console.log('Websocket data entry ['+msg.data.created_at+'] ignored, graph not loaded yet.')
+          return
+        }
         // Check if entry does not already exist. After a server restart the last entry is always re-sent. 
         var entryExists = false
-        dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
-          var data = this.data()
-          if (data[0] === msg.data.created_at) {
-            console.log('Websocket data entry ['+msg.data.created_at+'] already in table through initial pull request.')
+        var allData = flotObj.getData() // array of series objects
+        var ts = Math.round(parseDate(msg.data.created_at).getTime() /1000)
+        $.each(allData[0].data, function( index, value ) {
+          if (value[0] === ts) {
+            console.log('Websocket data entry ['+msg.data.created_at+'] already in graph through initial pull request.')
             entryExists = true
             // currently no way to stop the every() loop... (return false does not work)
             return false
@@ -313,31 +321,30 @@
           return
         }
 
-        dt.row.add([
-            msg.data.created_at,
-            msg.data.kw_total +'kWh',
-            msg.data.kwh_l1 +'kWh',
-            msg.data.kwh_l2 +'kWh',
-            msg.data.kwh_l3 +'kWh',
-            msg.data.a_l1 +'A',
-            msg.data.a_l2 +'A',
-            msg.data.a_l3 +'A',
-            msg.data.p_l1 +'W',
-            msg.data.p_l2 +'W',
-            msg.data.p_l3 +'W',
-            msg.data.v_l1 +'V',
-            msg.data.v_l1 +'V',
-            msg.data.v_l3 +'V',
-            msg.data.hz +'Hz'
-          ]).draw( false )
+        // add data element
+        var a = Math.round( (
+                  parseFloat(msg.data.a_l1) +
+                  parseFloat(msg.data.a_l1) +
+                  parseFloat(msg.data.a_l1)
+                ) * 10 ) / 10
+        allData[0].data.push( [ ts, a ] )
+        allData[1].data.push( [ ts, msg.data.kw_total ] )
+
+        var axes = flotObj.getAxes()
+        axes.xaxis.options.min = Math.min(ts, axes.xaxis.options.min) 
+        axes.xaxis.options.max = Math.max(ts, axes.xaxis.options.max)
+        axes.yaxis.options.min = Math.min(a, axes.yaxis.options.min)
+        axes.yaxis.options.max = Math.max(a, axes.yaxis.options.max) 
+        axes.y2axis.options.min = Math.min(msg.data.kw_total, axes.y2axis.options.min) 
+        axes.y2axis.options.max = Math.max(msg.data.kw_total, axes.y2axis.options.max)
+        flotObj.setupGrid()             // if axis have changed
+        flotObj.draw()
+        console.log('Websocket data entry ['+msg.data.created_at+'] added to the graph.')
+
       })
       $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
         $(this).toggleClass("testbg").fadeIn(0)
-})
-    }
-    //example of triggering an event on click of a form submit button
-    function sendSocketMsg() {
-        socket.emit('my event', {data: $('#emit_data').val()});
+      })
     }
 
     function formatDate(date) {
@@ -351,7 +358,6 @@
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
-      startWebSocket()
       var from_timestamp = new Date()
       from_timestamp.setDate(from_timestamp.getDate()-7)
 {% if (cnt != None) and (cnt != 'undefined') %}
@@ -364,10 +370,11 @@
         formatDate(from_timestamp)
       )
 {% endif %}
+      startWebSocket()
     })
 
 
-    </script>
+  </script>
 
 {% endblock %}
 {% block content %}
@@ -382,7 +389,7 @@
                 <div class="btn-group pull-right">
                     <ol class="breadcrumb hide-phone p-0 m-0">
                         <li class="breadcrumb-item"><a href="#">Verbruik</a></li>
-                        <li class="breadcrumb-item active">Verbruik</li>
+                        <li class="breadcrumb-item active">Grafiek</li>
                     </ol>
                 </div>
                 <h4 class="page-title">Verbruik</h4>
@@ -394,20 +401,8 @@
 
     <div class="row">
 
-
       <div id="stecapg_1" class="col-lg-12">
         <div class="portlet"><!-- /primary heading -->
-            <div class="portlet-heading">
-                <h3 class="portlet-title text-dark">Verbruik</h3>
-                <div class="clearfix"></div>
-                <div class="btn-group" style="position: absolute; top: 55px; left: 67px;">
-                    <button type="button" id="stecapg_1_yaxeszoomout" class="btn btn-outline-secondary btn-sm waves-effect waves-light" style="width: 38px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max = flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max / 2; flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> <i class="fa fa-search-plus"></i> </button>
-                    <button type="button" id="stecapg_1_yaxeszoomin" class="btn btn-outline-secondary btn-sm waves-effect waves-light" style="width: 38px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max = flotGraphs[ 'stecapg_1' ].getOptions().yaxes[0].max * 2; flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> <i class="fa fa-search-minus"></i> </button>
-               </div>
-                <div class="btn-group" style="position: absolute; top: 55px; left: 150px;">
-                    <button type="button" id="stecapg_1_toggleLegenda" class="btn btn-outline-secondary btn-sm waves-effect waves-light" style="width: 38px;" onclick="flotGraphs[ 'stecapg_1' ].getOptions().legend.show = (! ( flotGraphs[ 'stecapg_1' ].getOptions().legend.show ) ); flotGraphs[ 'stecapg_1' ].setupGrid(); flotGraphs[ 'stecapg_1' ].draw();"> <i class="ion-map"></i> </button>
-               </div>
-            </div>
             <div id="portlet 1" class="panel-collapse collapse show">
                 <div class="portlet-body">
                     <div id="stecapg_1_flotgraph" style="height: 320px;" class="flot-chart"></div>
@@ -424,4 +419,6 @@
 
   </div>
 </div>
+<div id='tooltip'></div>
+
 {% endblock %}

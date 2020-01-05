@@ -141,19 +141,23 @@ def about():
 @app.route("/usage/")
 @app.route("/usage/<int:cnt>")
 @authenticated_resource
-#@login_required
 def usage(cnt="undefined"):
-#def usage():
-    return render_template("usage.html", cnt=cnt)
+    return render_template("usage_table.html", cnt=cnt)
+
+
+@app.route("/usage_table")
+@app.route("/usage_table/")
+@app.route("/usage_table/<int:cnt>")
+@authenticated_resource
+def usage_table(cnt="undefined"):
+    return render_template("usage_table.html", cnt=cnt)
 
 
 @app.route("/usage_graph")
 @app.route("/usage_graph/")
 @app.route("/usage_graph/<int:cnt>")
 @authenticated_resource
-#@login_required
 def usage_graph(cnt="undefined"):
-#def usage():
     return render_template("usage_graph.html", cnt=cnt)
 
 
@@ -162,7 +166,6 @@ def usage_graph(cnt="undefined"):
 @app.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-#def usage():
     return render_template("settings.html", active=active)
 
 
