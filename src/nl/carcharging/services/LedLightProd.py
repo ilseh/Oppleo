@@ -100,6 +100,7 @@ class LedLightProd(object):
         self.lock.release()
 
     def pulse(self):
+        self.logger.debug('Attempt to start pulse in thread')
         self.thread_for_pulse.start()
         self.logger.debug('Pulse started in thread')
 
