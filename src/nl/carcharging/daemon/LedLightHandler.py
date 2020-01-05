@@ -132,7 +132,6 @@ class LedLightHandler(Service):
                 self.previous_light = self.current_light
                 self.turn_current_light_off()
                 self.current_light = self.ledlighterCharging
-                self.current_light.on(50)
                 self.current_light.pulse()
         #         self.logger.debug("Blue light is pulsing to indicate charging")
         else:
