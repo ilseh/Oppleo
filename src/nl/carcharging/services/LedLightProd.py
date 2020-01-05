@@ -102,7 +102,10 @@ class LedLightProd(object):
     def pulse(self):
         self.thread_for_pulse = threading.Thread(target=self._pulse)
         self.logger.debug('Attempt to start pulse in thread')
-        self.thread_for_pulse.start()
+        try:
+            self.thread_for_pulse.start()
+        except Exception as ex:
+            self.logger.warning("Could not start pulsing in thread: %s" % ex)
         self.logger.debug('Pulse started in thread')
 
     def pulse_stop(self):
