@@ -25,7 +25,7 @@ class LedLightProd(object):
     GPIO.setmode(GPIO.BCM)
 
     def __init__(self, color, pwm=None):
-        self.thread_for_pulse = threading.Thread(target=self.test)
+        self.thread_for_pulse = threading.Thread(target=self._pulse())
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
         self.pwm = pwm
@@ -71,6 +71,7 @@ class LedLightProd(object):
                     self.pwm.ChangeDutyCycle(pulse_led_value)
                     self.logger.debug("pulseLedValue = ", pulse_led_value)
                     pulse_led_millis = self.millis()
+                time.sleep(.1)
 
         except Exception as ex:
             self.logger.error('Exception pulsing %s' % ex)
