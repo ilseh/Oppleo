@@ -65,6 +65,7 @@ class LedLightHandler(Service):
 
         reader = RfidReader()
         while not self.got_sigterm():
+            self.logger.debug("Ready to read rfid...")
             rfid, text = reader.read()
             self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
