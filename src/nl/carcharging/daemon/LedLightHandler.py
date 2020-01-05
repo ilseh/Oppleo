@@ -60,7 +60,7 @@ class LedLightHandler(Service):
 
         scheduler.add_job(id="check_is_charging",
                           func=self.handle_charging, args=[device],
-                          trigger="interval", seconds=10)
+                          trigger="interval", seconds=20)
         scheduler.start()
 
         reader = RfidReader()
@@ -106,11 +106,11 @@ class LedLightHandler(Service):
             self.stop()
 
     def turn_current_light_off(self):
-        self.current_light.off()
-        # if self.current_light == self.ledlighterCharging:
-        #     self.current_light.pulse_stop()
-        # else:
-        #     self.current_light.off()
+        # self.current_light.off()
+        if self.current_light == self.ledlighterCharging:
+            self.current_light.pulse_stop()
+        else:
+            self.current_light.off()
 
     def stop(self, block=False):
         self.ledlighterAvailable.off()
@@ -133,8 +133,8 @@ class LedLightHandler(Service):
                 self.previous_light = self.current_light
                 self.turn_current_light_off()
                 self.current_light = self.ledlighterCharging
-                self.current_light.on(50)
-        #         self.current_light.pulse()
+                # self.current_light.on(50)
+                self.current_light.pulse()
         #         self.logger.debug("Blue light is pulsing to indicate charging")
         else:
             self.logger.debug("Not charging")
