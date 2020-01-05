@@ -39,11 +39,14 @@ class LedLightProd(object):
         return int(round(time.time() * 1000))
 
     def _init_gpio_pwm(self):
-        self.lock.acquire()
-        GPIO.setup(self.color, GPIO.OUT)
-        pwm = GPIO.PWM(self.color, 100)
-        self.lock.release()
-        return pwm
+        try:
+            self.lock.acquire()
+            GPIO.setup(self.color, GPIO.OUT)
+            pwm = GPIO.PWM(self.color, 100)
+            self.lock.release()
+            return pwm
+        except Exception as ex:
+            self.logger.warning("Could not initialize GPIO %s" % ex)
 
     def test(self):
         t = threading.currentThread()
