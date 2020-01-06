@@ -25,6 +25,7 @@ class LedLighter(object):
         if services is None:
             services = []
         self.services = services
+        self.brightness = None
 
         if GenericUtil.isProd():
             for color in colors:
@@ -44,6 +45,7 @@ class LedLighter(object):
             service.pulse_stop()
 
     def on(self, brightness):
+        self.brightness = brightness
         for service in self.services:
             service.on(brightness)
 

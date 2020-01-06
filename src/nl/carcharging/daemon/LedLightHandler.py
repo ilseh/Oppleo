@@ -2,8 +2,10 @@ import logging
 import os
 import sys
 import time
+from datetime import datetime
 
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.SessionModel import SessionModel
 from nl.carcharging.services.Charger import Charger
 from nl.carcharging.utils.GenericUtil import GenericUtil
@@ -35,6 +37,8 @@ scheduler = BackgroundScheduler()
 PID_DIR = '/tmp/'
 SECONDS_IN_HOUR = 60 * 60
 
+class NotAuthorizedException(Exception):
+    pass
 
 class LedLightHandler(Service):
 
@@ -71,12 +75,43 @@ class LedLightHandler(Service):
             self.error_status()
 
         try:
-            self.read_rfid(device)
+            self.read_rfid_loop(device)
         except Exception as ex:
             self.logger.error("Could not execute read_rfid %s" % ex)
             self.error_status()
 
-    def read_rfid(self, device):
+
+    def is_authorized(self, rfid):
+
+        authorized = False
+
+        try:
+            rfid_data = RfidModel.get_one(rfid)
+            if rfid_data is None:
+                self.logger.warn("Unknown rfid offered. Access denied and rfid value saved in db.")
+                new_rfid_entry = RfidModel({"rfid": rfid})
+                new_rfid_entry.save()
+            else:
+                authorized = rfid_data.allow
+                self.logger.info("Rfid %s offered. Access %s" % (rfid, authorized))
+                rfid_data.last_used_at = datetime.now()
+                rfid_data.save()
+        except Exception as ex:
+            self.logger.error("Could not authorize %s %s" % (rfid, ex))
+
+        return authorized
+
+    def temp_switch_to_light(self, light, brightness, duration):
+        self.previous_light = self.current_light
+        self.current_light.off()
+        self.current_light = light
+        self.current_light.on(brightness)
+        time.sleep(duration)
+        self.current_light.off()
+        self.current_light = self.previous_light
+        self.current_light.on(self.current_light.brightness)
+
+    def read_rfid_loop(self, device):
         # TODO: Just started up. Check if there was a session in progress.
         #  Retrieved last session that was stored and check if it was ended or not.
         #  I suppose we need to link laadpaal to this instance...
@@ -87,41 +122,52 @@ class LedLightHandler(Service):
 
         reader = RfidReader()
         while not self.got_sigterm():
-            rfid, text = reader.read()
-            self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
+           try:
+               self.read_rfid(reader, device)
+           except Exception as ex:
+               self.logger.error("Could not execute run_rfid: %s" % ex)
+               self.temp_switch_to_light(self.ledlighterError, 90, 3)
 
-            latest_session = SessionModel.get_latest_rfid_session(rfid)
-
-            start_session = False
-            data = {"rfid": rfid}
-            # If there is no session at all yet for rfid or the end_value is set, we need to start new session.
-            if latest_session is None or latest_session.end_value:
-                data['start_value'] = self.energy_util.getMeasurementValue(device)['kw_total']
-                session = SessionModel(data)
-                session.save()
-                start_session = True
-                self.logger.debug("Starting new charging session for rfid %s" % rfid)
-            else:
-                latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
-                latest_session.save()
-                self.logger.debug("Stopping charging session for rfid %s" % rfid)
-
-            self.turn_current_light_off()
-
-            # TODO: if open session than toggle session off (and stop the electricity) and set light to available again.
-            #  If no session open, we get a new session and set light to ready (and start electricity flow and ligth to charging).
-            if start_session:
-                self.charger.start()
-                self.current_light = self.ledlighterReady
-            else:
-                self.charger.stop()
-                self.current_light = self.ledlighterAvailable
-            self.current_light.on(5)
-
-            time.sleep(2)
+           time.sleep(2)
         else:
             self.logger.info("Stopping RfidReader")
             self.stop()
+
+    def read_rfid(self, reader, device):
+        rfid, text = reader.read()
+        self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
+
+        if not self.is_authorized(rfid):
+            raise NotAuthorizedException("Unauthorized rfid %s" % rfid)
+
+        latest_session = SessionModel.get_latest_rfid_session(rfid)
+
+        start_session = False
+        data_for_session = {"rfid": rfid}
+        # If there is no session at all yet for rfid or the end_value is set, we need to start new session.
+        if latest_session is None or latest_session.end_value:
+            data_for_session['start_value'] = self.energy_util.getMeasurementValue(device)['kw_total']
+            session = SessionModel(data_for_session)
+            session.save()
+            start_session = True
+            self.logger.debug("Starting new charging session for rfid %s" % rfid)
+        else:
+            latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
+            latest_session.save()
+            self.logger.debug("Stopping charging session for rfid %s" % rfid)
+
+        self.turn_current_light_off()
+
+        # TODO: if open session than toggle session off (and stop the electricity) and set light to available again.
+        #  If no session open, we get a new session and set light to ready (and start electricity flow and ligth to charging).
+        if start_session:
+            self.charger.start()
+            self.current_light = self.ledlighterReady
+        else:
+            self.charger.stop()
+            self.current_light = self.ledlighterAvailable
+        self.current_light.on(5)
+
 
     def turn_current_light_off(self):
         if self.current_light == self.ledlighterCharging:
