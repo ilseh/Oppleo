@@ -16,6 +16,7 @@ class SessionModel(Base):
 
     id = db.Column(db.Integer, primary_key=True)
     rfid = db.Column(db.String(128), nullable=False)
+    energy_device_id = db.Column(db.String(128), nullable=False)
     start_value = db.Column(db.Float)
     end_value = db.Column(db.Float)
     created_at = db.Column(db.DateTime)   # start_time
@@ -67,9 +68,11 @@ class SessionModel(Base):
         return session.query.get(id)
 
     @staticmethod
-    def get_latest_rfid_session(rfid):
+    def get_latest_rfid_session(device, rfid=None):
         session = Session()
-        qry_latest_id = session.query(func.max(SessionModel.id)).filter(SessionModel.rfid == str(rfid))
+        qry_latest_id = session.query(func.max(SessionModel.id)).filter(SessionModel.energy_device_id == device)
+        if rfid is not None:
+            qry_latest_id = qry_latest_id.filter(SessionModel.rfid == str(rfid))
         latest_session = session.query(SessionModel).filter(SessionModel.id == qry_latest_id).first()
         return latest_session
 
@@ -162,6 +165,7 @@ class SessionSchema(Schema):
     """
     id = fields.Int(dump_only=True)
     rfid = fields.Str(required=True)
+    energy_device_id = fields.Str(required=True)
     start_value = fields.Float(dump_only=True)
     end_value = fields.Float(dump_only=True)
     created_at = fields.DateTime(dump_only=True)

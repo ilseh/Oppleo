@@ -8,10 +8,10 @@ class ChargerDev(object):
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.services.ChargerDev')
 
-        def start(self):
-            self.logger.debug("Fake charger started")
+    def start(self):
+        self.logger.debug("Fake charger started")
 
-        def stop(self):
+    def stop(self):
             self.logger.debug("Fake charger stopped")
 
 
