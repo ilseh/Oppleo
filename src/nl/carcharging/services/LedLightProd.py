@@ -96,7 +96,10 @@ class LedLightProd(object):
 
     def off(self):
         self.logger.debug('Stopping led light %s' % self.color_desc())
-        self.pwm.stop()
+        try:
+            self.pwm.stop()
+        except Exception as ex:
+            self.logger.debug("Could not stop pwm, assume not running %s" % ex)
 
     def cleanup(self):
         self.lock.acquire()
