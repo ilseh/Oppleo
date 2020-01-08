@@ -101,7 +101,6 @@ class LedLightHandler(Service):
                 new_rfid_entry.save()
             else:
                 is_authorized = rfid_data.allow
-                self.logger.info("Rfid %s offered. Access %s" % (rfid, is_authorized))
                 is_expired = self.is_expired(rfid_data.valid_from, rfid_data.valid_until)
                 rfid_data.last_used_at = datetime.now()
                 rfid_data.save()
@@ -173,31 +172,35 @@ class LedLightHandler(Service):
         rfid, text = reader.read()
         self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
-        self.authorize(rfid)
-
-        # If there is an open session for another rfid, raise error.
-        last_saved_session = SessionModel.get_latest_rfid_session(device)
-        if self.is_other_pending_session(last_saved_session, rfid):
-            raise OtherRfidHasOpenSessionException(
-                "Rfid %s was offered but rfid %s has an open session" % (rfid, last_saved_session.rfid))
-
         rfid_latest_session = SessionModel.get_latest_rfid_session(device, rfid)
 
         start_session = False
         data_for_session = {"rfid": rfid, "energy_device_id": device}
-        # If there is no session at all yet for rfid or the end_value is set, we need to start new session.
-        if rfid_latest_session is None or rfid_latest_session.end_value:
+        # If rfid has open session, no need to authorize, let it end the session.
+        # If no open session, authorize rfid.
+        if self.has_rfid_open_session(rfid_latest_session):
+            self.logger.debug("Stopping charging session for rfid %s" % rfid)
+            rfid_latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
+            rfid_latest_session.save()
+        else:
+            self.authorize(rfid)
+
+            # If there is an open session for another rfid, raise error.
+            last_saved_session = SessionModel.get_latest_rfid_session(device)
+            if self.is_other_pending_session(last_saved_session, rfid):
+                raise OtherRfidHasOpenSessionException(
+                    "Rfid %s was offered but rfid %s has an open session" % (rfid, last_saved_session.rfid))
+
             self.logger.debug("Starting new charging session for rfid %s" % rfid)
             data_for_session['start_value'] = self.energy_util.getMeasurementValue(device).get('kw_total')
             session = SessionModel(data_for_session)
             session.save()
             start_session = True
-        else:
-            self.logger.debug("Stopping charging session for rfid %s" % rfid)
-            rfid_latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
-            rfid_latest_session.save()
 
         self.update_charger_and_led(start_session)
+
+    def has_rfid_open_session(self, rfid_latest_session):
+        return not (rfid_latest_session is None or rfid_latest_session.end_value)
 
     def update_charger_and_led(self, start_session):
         if self.current_light:
