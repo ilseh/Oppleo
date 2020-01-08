@@ -170,3 +170,4 @@ class SessionSchema(Schema):
     end_value = fields.Float(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
     modified_at = fields.DateTime(dump_only=True)
+
