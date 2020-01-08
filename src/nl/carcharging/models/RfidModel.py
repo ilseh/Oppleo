@@ -7,17 +7,17 @@ from . import db
 
 
 class RfidModel(Base):
-    """
-    Rfid Model
-    """
-
-    # table name
     __tablename__ = 'rfid'
 
     rfid = db.Column(db.String(100), primary_key=True)
     allow = db.Column(db.Boolean)
     created_at = db.Column(db.DateTime)
     last_used_at = db.Column(db.DateTime)
+    name = db.Column(db.String(100))
+    vehicle = db.Column(db.String(100))
+    license_plate = db.Column(db.String(20))
+    valid_from = db.Column(db.DateTime)
+    valid_until = db.Column(db.DateTime)
 
     def __init__(self, data):
         for key in data:
@@ -58,3 +58,8 @@ class RfidSchema(Schema):
     allow = fields.Bool(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
     last_used = fields.DateTime(dump_only=True)
+    name = fields.Str(required=True)
+    vehicle = fields.Str(required=True)
+    license_plate = fields.Str(required=True)
+    valid_from = fields.DateTime(dump_only=True)
+    valid_until = fields.DateTime(dump_only=True)

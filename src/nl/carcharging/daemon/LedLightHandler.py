@@ -43,10 +43,11 @@ LIGHT_INTENSITY_HIGH = 90
 class NotAuthorizedException(Exception):
     pass
 
-
-class OtherRfidHasOpenSession(Exception):
+class OtherRfidHasOpenSessionException(Exception):
     pass
 
+class ExpiredException(Exception):
+    pass
 
 class LedLightHandler(Service):
 
@@ -88,10 +89,10 @@ class LedLightHandler(Service):
             self.logger.error("Could not execute read_rfid_loop %s" % ex)
             self.error_status()
 
-    def is_authorized(self, rfid):
+    def authorize(self, rfid):
 
-        authorized = False
-
+        is_authorized = False
+        is_expired = False
         try:
             rfid_data = RfidModel.get_one(rfid)
             if rfid_data is None:
@@ -99,14 +100,31 @@ class LedLightHandler(Service):
                 new_rfid_entry = RfidModel({"rfid": rfid})
                 new_rfid_entry.save()
             else:
-                authorized = rfid_data.allow
-                self.logger.info("Rfid %s offered. Access %s" % (rfid, authorized))
+                is_authorized = rfid_data.allow
+                self.logger.info("Rfid %s offered. Access %s" % (rfid, is_authorized))
+                is_expired = self.is_expired(rfid_data.valid_from, rfid_data.valid_until)
                 rfid_data.last_used_at = datetime.now()
                 rfid_data.save()
         except Exception as ex:
             self.logger.error("Could not authorize %s %s" % (rfid, ex))
 
-        return authorized
+        if not is_authorized:
+            raise NotAuthorizedException("Unauthorized rfid %s" % rfid)
+        if is_expired:
+            raise ExpiredException("Rfid isn't valid yet/anymore. Valid from %s to %s" %
+                                   (rfid_data.valid_from, rfid_data.valid_until))
+
+
+    def is_expired(self, from_date, until_date):
+
+        expired = False
+        if from_date:
+            expired = datetime.now() < from_date
+
+        if not expired and until_date:
+            expired = datetime.now() > until_date
+
+        return expired
 
     def temp_switch_to_light(self, light, brightness, duration):
         self.previous_light = self.current_light
@@ -155,13 +173,12 @@ class LedLightHandler(Service):
         rfid, text = reader.read()
         self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
-        if not self.is_authorized(rfid):
-            raise NotAuthorizedException("Unauthorized rfid %s" % rfid)
+        self.authorize(rfid)
 
         # If there is an open session for another rfid, raise error.
         last_saved_session = SessionModel.get_latest_rfid_session(device)
         if self.is_other_pending_session(last_saved_session, rfid):
-            raise OtherRfidHasOpenSession(
+            raise OtherRfidHasOpenSessionException(
                 "Rfid %s was offered but rfid %s has an open session" % (rfid, last_saved_session.rfid))
 
         rfid_latest_session = SessionModel.get_latest_rfid_session(device, rfid)
