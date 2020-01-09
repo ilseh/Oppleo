@@ -50,10 +50,10 @@ class Buzzer(object):
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.services.Buzzer')
 
-        if GenericUtil.isProd():
-            self.buzzer = BuzzerProd()
-        else:
-            self.buzzer = BuzzerDev()
+        # if GenericUtil.isProd():
+        #     self.buzzer = BuzzerProd()
+        # else:
+        self.buzzer = BuzzerDev()
 
     def buzz(self, buzz_duration_s, iterations=1):
         self.buzzer.buzz(buzz_duration_s, iterations)
