@@ -69,6 +69,8 @@ class LedLightHandler(Service):
         self.previous_light = None
 
     def error_status(self):
+        self.previous_light = self.current_light;
+        self.current_light.off()
         self.current_light = self.ledlighterError
         self.current_light.on(80)
 

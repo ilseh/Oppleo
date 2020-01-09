@@ -38,12 +38,17 @@ class LedLightProd(object):
 
     def _init_gpio_pwm(self):
         self.lock.acquire()
-        try:
-            GPIO.setup(self.color, GPIO.OUT)
-        except Exception as ex:
-            self.logger.warning("Could not initialize GPIO %s" % ex)
 
-        pwm = GPIO.PWM(self.color, 100)
+        for i in range(2):
+            try:
+                GPIO.setup(self.color, GPIO.OUT)
+                pwm = GPIO.PWM(self.color, 100)
+            except Exception as ex:
+                self.logger.warning("Could not initialize GPIO %s, retrying" % ex)
+                GPIO.cleanup()
+            if pwm:
+                break
+
         self.lock.release()
         return pwm
 
