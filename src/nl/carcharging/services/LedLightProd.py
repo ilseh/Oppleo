@@ -19,7 +19,6 @@ FREQ_MS_TO_UPDATE_LED = 10
 
 
 class LedLightProd(object):
-    GPIO.setmode(GPIO.BCM)
 
     def __init__(self, color, pwm=None):
         self.thread_for_pulse = threading.Thread(target=self._pulse)
@@ -41,6 +40,7 @@ class LedLightProd(object):
 
         for i in range(2):
             try:
+                GPIO.setmode(GPIO.BCM)
                 GPIO.setup(self.color, GPIO.OUT)
                 pwm = GPIO.PWM(self.color, 100)
             except Exception as ex:
