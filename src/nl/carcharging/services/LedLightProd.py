@@ -47,6 +47,7 @@ class LedLightProd(object):
                 self.logger.warning("Could not initialize GPIO %s, retrying" % ex)
                 GPIO.cleanup()
             if pwm:
+                self.logger.debug('pwm initialized')
                 break
 
         self.lock.release()
