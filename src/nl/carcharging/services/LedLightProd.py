@@ -7,9 +7,6 @@ try:
 except RuntimeError:
     logging.debug('Assuming dev env')
 
-# TODO: move logic for determining env to reusable position
-PROD = 'production'
-
 LED_RED = 13
 LED_GREEN = 12
 LED_BLUE = 16
@@ -48,11 +45,6 @@ class LedLightProd(object):
             return pwm
         except Exception as ex:
             self.logger.warning("Could not initialize GPIO %s" % ex)
-
-    def test(self):
-        t = threading.currentThread()
-        while getattr(t, "do_run", True):
-            self.logger.debug('FAKING BLUE PULSE')
 
     def _pulse(self):
         pulse_led_value = 0
