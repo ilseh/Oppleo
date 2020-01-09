@@ -7,6 +7,7 @@ from datetime import datetime
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.SessionModel import SessionModel
+from nl.carcharging.services.Buzzer import Buzzer
 from nl.carcharging.services.Charger import Charger
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
@@ -57,6 +58,7 @@ class LedLightHandler(Service):
 
         self.energy_util = energy_util
         self.charger = charger
+        self.buzzer = Buzzer()
 
         self.ledlighterAvailable = LedLighter(LedLighter.LED_GREEN)
         self.ledlighterReady = LedLighter(LedLighter.LED_RED, LedLighter.LED_GREEN)
@@ -108,11 +110,14 @@ class LedLightHandler(Service):
             self.logger.error("Could not authorize %s %s" % (rfid, ex))
 
         if not is_authorized:
+            self.buzz_error()
             raise NotAuthorizedException("Unauthorized rfid %s" % rfid)
         if is_expired:
+            self.buzz_error()
             raise ExpiredException("Rfid isn't valid yet/anymore. Valid from %s to %s" %
                                    (rfid_data.valid_from, rfid_data.valid_until))
 
+        self.buzz_ok()
 
     def is_expired(self, from_date, until_date):
 
@@ -179,6 +184,7 @@ class LedLightHandler(Service):
         # If rfid has open session, no need to authorize, let it end the session.
         # If no open session, authorize rfid.
         if self.has_rfid_open_session(rfid_latest_session):
+            self.buzz_ok()
             self.logger.debug("Stopping charging session for rfid %s" % rfid)
             rfid_latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
             rfid_latest_session.save()
@@ -262,6 +268,11 @@ class LedLightHandler(Service):
         return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
                and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
 
+    def buzz_ok(self):
+        self.buzzer.buzz(.5, 1)
+
+    def buzz_error(self):
+        self.buzzer.buzz(.5, 2)
 
 def main():
     Logger.init_log(PROCESS_NAME, LOG_FILE)
