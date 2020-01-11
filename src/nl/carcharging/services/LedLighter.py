@@ -69,11 +69,16 @@ class LedLighter(object):
 
     def error(self, duration=None):
         if duration:
-            self.temp_switch_on(self.ledlightError, LIGHT_INTENSITY_HIGH, duration)
+            self.temp_switch_on_thread(self.ledlightError, LIGHT_INTENSITY_HIGH, duration)
         else:
             self.switch_to_light(self.ledlightError, LIGHT_INTENSITY_HIGH)
 
+    def temp_switch_on_thread(self, light, brightness, duration):
+        thread_for_temp_switch_on = threading.Thread(target=self.temp_switch_on, name="Temp_switch_on thread", args=(light, brightness, duration))
+        thread_for_temp_switch_on.start()
+
     def temp_switch_on(self, light, brightness, duration):
+
         self.lock.acquire()
         self.save_state()
         self.current_light = light
