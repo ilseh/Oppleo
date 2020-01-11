@@ -13,7 +13,12 @@ LIGHT_INTENSITY_HIGH = 90
 
 
 class LedLighter(object):
-    GPIO.setmode(GPIO.BCM)
+    logger = logging.getLogger('nl.carcharging.services.LedLighter')
+
+    try:
+        GPIO.setmode(GPIO.BCM)
+    except Exception as ex:
+        logger.debug("Could not setmode of GPIO, assuming dev env")
 
     def __init__(self):
 
