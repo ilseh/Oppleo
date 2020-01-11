@@ -10,6 +10,7 @@ except RuntimeError:
 class LedLightProdHardware(object):
 
     def __init__(self):
+        self.logger = logging.getLogger('nl.carcharging.services.LedLightProdHardware')
         # TODO: check if this lock mechanism is still necessary.
         self.lock = threading.Lock()
 
