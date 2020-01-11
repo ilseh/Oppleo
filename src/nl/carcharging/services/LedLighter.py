@@ -74,14 +74,15 @@ class LedLighter(object):
             self.switch_to_light(self.ledlightError, LIGHT_INTENSITY_HIGH)
 
     def temp_switch_on(self, light, brightness, duration):
-        self.previous_light = self.current_light
-        self.current_light.off()
+        self.lock.acquire()
+        self.save_state()
         self.current_light = light
         self.current_light.on(brightness)
         time.sleep(duration)
         self.current_light.off()
         self.current_light = self.previous_light
         self.current_light.on(self.current_light.brightness)
+        self.lock.release()
 
     def stop(self):
         lights = {self.ledlightAvailable, self.ledlightReady, self.ledlightError}
