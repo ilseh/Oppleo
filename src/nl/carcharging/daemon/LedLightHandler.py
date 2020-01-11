@@ -81,6 +81,7 @@ class LedLightHandler(Service):
         except Exception as ex:
             self.logger.error("Could not execute read_rfid_loop %s" % ex)
             self.ledlighter.error()
+            self.buzz_error()
 
     def authorize(self, rfid):
 
@@ -101,14 +102,11 @@ class LedLightHandler(Service):
             self.logger.error("Could not authorize %s %s" % (rfid, ex))
 
         if not is_authorized:
-            self.buzz_error()
             raise NotAuthorizedException("Unauthorized rfid %s" % rfid)
         if is_expired:
-            self.buzz_error()
             raise ExpiredException("Rfid isn't valid yet/anymore. Valid from %s to %s" %
                                    (rfid_data.valid_from, rfid_data.valid_until))
 
-        self.buzz_ok()
 
     def is_expired(self, from_date, until_date):
 
@@ -171,6 +169,7 @@ class LedLightHandler(Service):
             rfid_latest_session.save()
         else:
             self.authorize(rfid)
+            self.buzz_ok()
 
             # If there is an open session for another rfid, raise error.
             last_saved_session = SessionModel.get_latest_rfid_session(device)
