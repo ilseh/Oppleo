@@ -1,3 +1,4 @@
+import threading
 import time
 import logging
 
@@ -14,6 +15,7 @@ LIGHT_INTENSITY_HIGH = 90
 
 class LedLighter(object):
     logger = logging.getLogger('nl.carcharging.services.LedLighter')
+    lock = threading.Lock()
 
     try:
         GPIO.setmode(GPIO.BCM)
@@ -48,9 +50,11 @@ class LedLighter(object):
         self.switch_to_light(self.ledlightReady, LIGHT_INTENSITY_LOW)
 
     def switch_to_light(self, light, intensity):
+        self.lock.acquire()
         self.save_state()
         self.current_light = light
         self.current_light.on(intensity)
+        self.lock.release()
 
     def save_state(self):
         self.previous_light = self.current_light
