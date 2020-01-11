@@ -141,6 +141,7 @@ class LedLightHandler(Service):
             except Exception as ex:
                 self.logger.error("Could not execute run_rfid: %s" % ex)
                 self.ledlighter.error(duration=3)
+                self.buzz_error()
 
             time.sleep(2)
         else:
@@ -237,7 +238,7 @@ class LedLightHandler(Service):
         self.buzzer.buzz(.5, 1)
 
     def buzz_error(self):
-        self.buzzer.buzz(.5, 2)
+        self.buzzer.buzz(1, 2)
 
 
 def main():
