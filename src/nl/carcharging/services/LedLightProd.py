@@ -1,18 +1,12 @@
 import logging
-import threading
-import time
+
+from nl.carcharging.services.LedLightProdHardware import LedLightProdHardware
 
 try:
     import RPi.GPIO as GPIO
 except RuntimeError:
     logging.debug('Assuming dev env')
 
-LED_RED = 13
-LED_GREEN = 12
-LED_BLUE = 16
-
-PULSE_LED_MIN = 3
-PULSE_LED_MAX = 98
 
 # Interval in ms to update led light
 FREQ_MS_TO_UPDATE_LED = 10
@@ -21,101 +15,28 @@ FREQ_MS_TO_UPDATE_LED = 10
 class LedLightProd(object):
 
     def __init__(self, color, pwm=None):
-        self.thread_for_pulse = threading.Thread(target=self._pulse)
+        self.logger = logging.getLogger('nl.carcharging.services.LedLightProd')
         self.color = color
-        self.logger = logging.getLogger('nl.carcharging.services.LedLighter')
+        self.hardware = LedLightProdHardware()
         self.pwm = pwm
-        # TODO: check if this lock mechanism is still necessary.
-        self.lock = threading.Lock()
-
-    def color_desc(self):
-        return {13: 'red', 12: 'green', 16: 'blue'}.get(self.color)
-
-    # TODO: move to a more generic utility class?
-    def millis(self):
-        return int(round(time.time() * 1000))
-
-    def _init_gpio_pwm(self):
-        self.lock.acquire()
-
-        for i in range(2):
-            try:
-                GPIO.setmode(GPIO.BCM)
-                GPIO.setup(self.color, GPIO.OUT)
-                pwm = GPIO.PWM(self.color, 100)
-            except Exception as ex:
-                self.logger.warning("Could not initialize GPIO %s, retrying" % ex)
-                GPIO.cleanup()
-            if pwm:
-                self.logger.debug('pwm initialized')
-                break
-
-        self.lock.release()
-        return pwm
-
-    def _pulse(self):
-        pulse_led_value = 0
-        pulse_led_millis = 0
-        pulse_led_up = True
-        self.pwm = self._init_gpio_pwm()
-        try:
-            self.pwm.start(0)
-            self.logger.debug('Starting led pulse')
-            t = threading.currentThread()
-            while getattr(t, "do_run", True):
-                if self.millis() > (pulse_led_millis + FREQ_MS_TO_UPDATE_LED):
-                    if ((pulse_led_up and (pulse_led_value >= PULSE_LED_MAX)) or
-                            ((not pulse_led_up) and (pulse_led_value <= PULSE_LED_MIN))):
-                        pulse_led_up = not pulse_led_up
-                    if pulse_led_up:
-                        pulse_led_value += 1
-                    else:
-                        pulse_led_value -= 1
-                    self.pwm.ChangeDutyCycle(pulse_led_value)
-                    self.logger.debug("pulseLedValue = ", pulse_led_value)
-                    pulse_led_millis = self.millis()
-                # Short sleep to fix issue rfid reader was not working anymore. Sleep to free some resource?
-                time.sleep(.001)
-
-        except Exception as ex:
-            self.logger.error('Exception pulsing %s' % ex)
-
-        finally:
-            self.off()
 
     def on(self, brightness):
-        self.pwm = self._init_gpio_pwm()
+        self.pwm = self.hardware.init_gpio_pwm()
 
         try:
             self.pwm.start(0)
-            self.logger.debug('Starting led light %s brightness %d' % (self.color_desc(), brightness))
+            self.logger.debug('Starting led light %s brightness %d' % (self.hardware.color_desc(self.color), brightness))
             self.pwm.ChangeDutyCycle(brightness)
         except Exception as ex:
             self.logger.error('Exception lighting led %s' % ex)
 
     def off(self):
-        self.logger.debug('Stopping led light %s' % self.color_desc())
+        self.logger.debug('Stopping led light %s' % self.hardware.color_desc(self.color))
         try:
             self.pwm.stop()
         except Exception as ex:
             self.logger.debug("Could not stop pwm, assume not running %s" % ex)
 
+
     def cleanup(self):
-        self.lock.acquire()
-        GPIO.cleanup()
-        self.logger.debug("GPIO cleanup done for %s" % self.color_desc())
-        self.lock.release()
-
-    def pulse(self):
-        self.thread_for_pulse = threading.Thread(target=self._pulse)
-        self.logger.debug('Attempt to start pulse in thread')
-        try:
-            self.thread_for_pulse.start()
-        except Exception as ex:
-            self.logger.warning("Could not start pulsing in thread: %s" % ex)
-        self.logger.debug('Pulse started in thread')
-
-    def pulse_stop(self):
-        self.thread_for_pulse.do_run = False
-        self.thread_for_pulse.join()
-        self.logger.debug('Pulse %s stopped' % self.color_desc())
+        self.hardware.cleanup()
