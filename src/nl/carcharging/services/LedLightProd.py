@@ -17,7 +17,7 @@ class LedLightProd(object):
     def __init__(self, color, pwm=None):
         self.logger = logging.getLogger('nl.carcharging.services.LedLightProd')
         self.color = color
-        self.hardware = LedLightProdHardware()
+        self.hardware = LedLightProdHardware(self.color)
         self.pwm = pwm
 
     def on(self, brightness):
@@ -25,13 +25,13 @@ class LedLightProd(object):
 
         try:
             self.pwm.start(0)
-            self.logger.debug('Starting led light %s brightness %d' % (self.hardware.color_desc(self.color), brightness))
+            self.logger.debug('Starting led light %s brightness %d' % (self.hardware.color_desc(), brightness))
             self.pwm.ChangeDutyCycle(brightness)
         except Exception as ex:
             self.logger.error('Exception lighting led %s' % ex)
 
     def off(self):
-        self.logger.debug('Stopping led light %s' % self.hardware.color_desc(self.color))
+        self.logger.debug('Stopping led light %s' % self.hardware.color_desc())
         try:
             self.pwm.stop()
         except Exception as ex:

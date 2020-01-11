@@ -9,21 +9,21 @@ except RuntimeError:
 
 class LedLightProdHardware(object):
 
-    def __init__(self):
+    def __init__(self, color):
         self.logger = logging.getLogger('nl.carcharging.services.LedLightProdHardware')
         # TODO: check if this lock mechanism is still necessary.
         self.lock = threading.Lock()
+        self.color = color
 
-    @staticmethod
-    def color_desc(color):
-        return {13: 'red', 12: 'green', 16: 'blue'}.get(color)
+    def color_desc(self):
+        return {13: 'red', 12: 'green', 16: 'blue'}.get(self.color)
 
     def init_gpio_pwm(self):
         self.lock.acquire()
 
+        pwm = None
         for i in range(2):
             try:
-                GPIO.setmode(GPIO.BCM)
                 GPIO.setup(self.color, GPIO.OUT)
                 pwm = GPIO.PWM(self.color, 100)
             except Exception as ex:

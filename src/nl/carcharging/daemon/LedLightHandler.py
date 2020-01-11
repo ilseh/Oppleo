@@ -42,11 +42,14 @@ SECONDS_IN_HOUR = 60 * 60
 class NotAuthorizedException(Exception):
     pass
 
+
 class OtherRfidHasOpenSessionException(Exception):
     pass
 
+
 class ExpiredException(Exception):
     pass
+
 
 class LedLightHandler(Service):
 
@@ -206,7 +209,7 @@ class LedLightHandler(Service):
     def handle_charging(self, device):
         if self.is_car_charging(device):
             self.logger.debug("Device is currently charging")
-            if not self.is_status_charging:
+            if not self.ledlighter.is_charging_light_on():
                 self.is_status_charging = True
                 self.logger.debug('Start charging light pulse')
                 self.ledlighter.charging()
@@ -216,24 +219,27 @@ class LedLightHandler(Service):
             if self.is_status_charging:
                 self.is_status_charging = False
                 self.logger.debug("Charging is stopped")
-                self.ledlighter.previous_light()
+                if self.ledlighter.is_charging_light_on():
+                    self.ledlighter.previous_light()
 
     def is_car_charging(self, device):
-        last_two_measures = EnergyDeviceMeasureModel().get_last_n_saved(device, 2)
-        diff_last_two_measures_saved = last_two_measures[0].created_at - last_two_measures[1].created_at
-        # Get dummy measure to get current datetime (make sure the datetime is calculated like in the saved sessions)
-        # which we can use to see if charging is going on.
-        current_date_time = EnergyDeviceMeasureModel()
-        current_date_time.set({})
-        diff_now_and_last_saved_session = current_date_time.created_at - last_two_measures[0].created_at
-        return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
-               and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
+        return True
+        # last_two_measures = EnergyDeviceMeasureModel().get_last_n_saved(device, 2)
+        # diff_last_two_measures_saved = last_two_measures[0].created_at - last_two_measures[1].created_at
+        # # Get dummy measure to get current datetime (make sure the datetime is calculated like in the saved sessions)
+        # # which we can use to see if charging is going on.
+        # current_date_time = EnergyDeviceMeasureModel()
+        # current_date_time.set({})
+        # diff_now_and_last_saved_session = current_date_time.created_at - last_two_measures[0].created_at
+        # return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
+        #        and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
 
     def buzz_ok(self):
         self.buzzer.buzz(.5, 1)
 
     def buzz_error(self):
         self.buzzer.buzz(.5, 2)
+
 
 def main():
     Logger.init_log(PROCESS_NAME, LOG_FILE)

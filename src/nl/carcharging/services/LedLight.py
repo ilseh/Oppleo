@@ -34,7 +34,7 @@ class LedLight(object):
             else:
                 self.services.append(LedLightDev(color))
 
-        self.logger.debug('Initialize with %d ledlights %s' % (len(self.services), "to pulse" if pulse else ""))
+        self.logger.debug('Initialize with %d ledlights %s' % (len(self.services), "to pulse" if pulse else "no pulse"))
 
     def on(self, brightness):
         self.brightness = brightness
