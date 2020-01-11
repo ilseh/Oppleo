@@ -34,7 +34,7 @@ class BuzzerProd(object):
         self.logger = logging.getLogger('nl.carcharging.services.BuzzerProd')
 
     def buzz(self, buzz_duration_s, iterations=1):
-        self.logger.debug("Buzzing. Iteration %d, duration %d" % (iterations, buzz_duration_s))
+        self.logger.debug("Buzzing. Iteration %d, duration %.2f" % (iterations, buzz_duration_s))
 
         GPIO.setup(buzzer, GPIO.OUT, initial=GPIO.LOW)
 
