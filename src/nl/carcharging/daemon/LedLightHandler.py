@@ -80,8 +80,8 @@ class LedLightHandler(Service):
             self.read_rfid_loop(device)
         except Exception as ex:
             self.logger.error("Could not execute read_rfid_loop %s" % ex)
-            self.ledlighter.error()
             self.buzz_error()
+            self.ledlighter.error()
 
     def authorize(self, rfid):
 
@@ -140,8 +140,8 @@ class LedLightHandler(Service):
                 self.read_rfid(reader, device)
             except Exception as ex:
                 self.logger.error("Could not execute run_rfid: %s" % ex)
-                self.ledlighter.error(duration=3)
                 self.buzz_error()
+                self.ledlighter.error(duration=3)
 
             time.sleep(2)
         else:
@@ -235,10 +235,10 @@ class LedLightHandler(Service):
         #        and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
 
     def buzz_ok(self):
-        self.buzzer.buzz(.5, 1)
+        self.buzzer.buzz_other_thread(.1, 1)
 
     def buzz_error(self):
-        self.buzzer.buzz(1, 2)
+        self.buzzer.buzz_other_thread(.1, 2)
 
 
 def main():
