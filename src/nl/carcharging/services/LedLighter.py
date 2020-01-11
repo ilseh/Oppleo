@@ -1,4 +1,10 @@
 import time
+import logging
+
+try:
+    import RPi.GPIO as GPIO
+except RuntimeError:
+    logging.debug('Assuming dev env')
 
 from nl.carcharging.services.LedLight import LedLight
 
@@ -7,12 +13,13 @@ LIGHT_INTENSITY_HIGH = 90
 
 
 class LedLighter(object):
+    GPIO.setmode(GPIO.BCM)
 
     def __init__(self):
 
         self.ledlightAvailable = LedLight(LedLight.LED_GREEN)
         self.ledlightReady = LedLight(LedLight.LED_RED, LedLight.LED_GREEN)
-        self.ledlightCharging = LedLight(LedLight.LED_BLUE, True)
+        self.ledlightCharging = LedLight(LedLight.LED_BLUE, pulse=True)
         self.ledlightError = LedLight(LedLight.LED_RED)
 
         # self.ledlight_configs = [self.ledlightAvailable, self.ledlightReady, self.ledlightCharging, self.ledlightError]
@@ -22,6 +29,9 @@ class LedLighter(object):
 
     def back_to_previous_light(self):
         self.switch_to_light(self.previous_light)
+
+    def is_charging_light_on(self):
+        return self.current_light == self.ledlightCharging
 
     def charging(self):
         self.switch_to_light(self.ledlightCharging, LIGHT_INTENSITY_LOW)

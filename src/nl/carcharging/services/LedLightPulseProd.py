@@ -23,7 +23,7 @@ class LedLightPulseProd(object):
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLightPulseProd')
         self.pwm = pwm
-        self.hardware = LedLightProdHardware()
+        self.hardware = LedLightProdHardware(self.color)
 
     # TODO: move to a more generic utility class?
     def millis(self):
@@ -60,7 +60,7 @@ class LedLightPulseProd(object):
             self._pwm_off()
 
     def _pwm_off(self):
-        self.logger.debug('Stopping led light %s' % self.hardware.color_desc(self.color))
+        self.logger.debug('Stopping led light %s' % self.hardware.color_desc())
         try:
             self.pwm.stop()
         except Exception as ex:
@@ -81,4 +81,4 @@ class LedLightPulseProd(object):
     def off(self):
         self.thread_for_pulse.do_run = False
         self.thread_for_pulse.join()
-        self.logger.debug('Pulse %s stopped' % self.hardware.color_desc(self.color))
+        self.logger.debug('Pulse %s stopped' % self.hardware.color_desc())
