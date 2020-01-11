@@ -9,6 +9,7 @@ from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.SessionModel import SessionModel
 from nl.carcharging.services.Buzzer import Buzzer
 from nl.carcharging.services.Charger import Charger
+from nl.carcharging.services.LedLighter import LedLighter
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
 try:
@@ -23,7 +24,6 @@ from service import Service
 
 from nl.carcharging.config import Logger
 
-from nl.carcharging.services.LedLighter import LedLighter
 from nl.carcharging.services.RfidReader import RfidReader
 from nl.carcharging.utils.EnergyUtil import EnergyUtil
 
@@ -37,8 +37,6 @@ scheduler = BackgroundScheduler()
 # TODO: make pid_dir configurable
 PID_DIR = '/tmp/'
 SECONDS_IN_HOUR = 60 * 60
-LIGHT_INTENSITY_LOW = 5
-LIGHT_INTENSITY_HIGH = 90
 
 
 class NotAuthorizedException(Exception):
@@ -53,26 +51,14 @@ class ExpiredException(Exception):
 class LedLightHandler(Service):
 
     @inject
-    def __init__(self, energy_util: EnergyUtil, charger: Charger):
+    def __init__(self, energy_util: EnergyUtil, charger: Charger, ledlighter: LedLighter):
         super(LedLightHandler, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
 
         self.energy_util = energy_util
         self.charger = charger
+        self.ledlighter = ledlighter
         self.buzzer = Buzzer()
-
-        self.ledlighterAvailable = LedLighter(LedLighter.LED_GREEN)
-        self.ledlighterReady = LedLighter(LedLighter.LED_RED, LedLighter.LED_GREEN)
-        self.ledlighterCharging = LedLighter(LedLighter.LED_BLUE)
-        self.ledlighterError = LedLighter(LedLighter.LED_RED)
-
-        self.current_light = None
-        self.previous_light = None
-
-    def error_status(self):
-        self.previous_light = self.current_light;
-        self.current_light.off()
-        self.current_light = self.ledlighterError
-        self.current_light.on(80)
+        self.is_status_charging = False
 
     def run(self):
 
@@ -85,13 +71,13 @@ class LedLightHandler(Service):
             scheduler.start()
         except Exception as ex:
             self.logger.error("Could not start scheduler to check if charging is active: %s" % ex)
-            self.error_status()
+            self.ledlighter.error()
 
         try:
             self.read_rfid_loop(device)
         except Exception as ex:
             self.logger.error("Could not execute read_rfid_loop %s" % ex)
-            self.error_status()
+            self.ledlighter.error()
 
     def authorize(self, rfid):
 
@@ -132,16 +118,6 @@ class LedLightHandler(Service):
 
         return expired
 
-    def temp_switch_to_light(self, light, brightness, duration):
-        self.previous_light = self.current_light
-        self.current_light.off()
-        self.current_light = light
-        self.current_light.on(brightness)
-        time.sleep(duration)
-        self.current_light.off()
-        self.current_light = self.previous_light
-        self.current_light.on(self.current_light.brightness)
-
     def resume_session_if_applicable(self, device):
         # Check if there was a session active when this daemon was stopped.
         last_saved_session = SessionModel.get_latest_rfid_session(device)
@@ -163,7 +139,7 @@ class LedLightHandler(Service):
                 self.read_rfid(reader, device)
             except Exception as ex:
                 self.logger.error("Could not execute run_rfid: %s" % ex)
-                self.temp_switch_to_light(self.ledlighterError, LIGHT_INTENSITY_HIGH, duration=3)
+                self.ledlighter.error(duration=3)
 
             time.sleep(2)
         else:
@@ -211,53 +187,36 @@ class LedLightHandler(Service):
         return not (rfid_latest_session is None or rfid_latest_session.end_value)
 
     def update_charger_and_led(self, start_session):
-        if self.current_light:
-            self.turn_current_light_off()
         if start_session:
             self.charger.start()
-            self.current_light = self.ledlighterReady
+            self.ledlighter.ready()
         else:
             self.charger.stop()
-            self.current_light = self.ledlighterAvailable
-        self.current_light.on(LIGHT_INTENSITY_LOW)
-
-    def turn_current_light_off(self):
-        if self.current_light == self.ledlighterCharging:
-            self.current_light.pulse_stop()
-        else:
-            self.current_light.off()
+            self.ledlighter.available()
 
     def stop(self, block=False):
-        lights = {self.ledlighterAvailable, self.ledlighterReady, self.ledlighterError}
-        for light in lights:
-            light.off()
-            light.cleanup()
+        self.ledlighter.stop()
 
     def try_handle_charging(self, device):
         try:
             self.handle_charging(device)
         except Exception as ex:
-            self.error_status()
+            self.ledlighter.error()
 
     def handle_charging(self, device):
-
         if self.is_car_charging(device):
             self.logger.debug("Device is currently charging")
-            if self.current_light != self.ledlighterCharging:
-                self.previous_light = self.current_light
-                self.turn_current_light_off()
-                self.logger.debug("Prevous light off, setting charging light")
-                self.current_light = self.ledlighterCharging
+            if not self.is_status_charging:
+                self.is_status_charging = True
                 self.logger.debug('Start charging light pulse')
-                self.current_light.pulse()
+                self.ledlighter.charging()
         else:
             self.logger.debug("Not charging")
             # Not charging. If it was charging, set light back to previous light
-            if self.current_light == self.ledlighterCharging:
-                self.logger.debug("Charging is stopped, setting back previous light %s" % self.previous_light)
-                self.turn_current_light_off()
-                self.current_light = self.previous_light
-                self.current_light.on(LIGHT_INTENSITY_LOW)
+            if self.is_status_charging:
+                self.is_status_charging = False
+                self.logger.debug("Charging is stopped")
+                self.ledlighter.previous_light()
 
     def is_car_charging(self, device):
         last_two_measures = EnergyDeviceMeasureModel().get_last_n_saved(device, 2)
