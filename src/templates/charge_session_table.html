@@ -1,6 +1,9 @@
 {% extends "template.html" %}
-{% block title %}Instellingen{% endblock %}
+{% block title %}Verbruik{% endblock %}
 {% block head %}
+  {% block jquery %} 
+    {% include 'includes/include.jquery-3.3.1.html' %}
+  {% endblock %} 
   {{ super() }}
 
   <!-- DataTables CSS -->
@@ -69,33 +72,6 @@
       margin-left: 10px;
       margin-right: 10px;
     }
-    td.diag_pre {
-      box-sizing: inherit;
-      overflow-x: hidden !important;
-    }
-    td.diag_name {
-      text-align: right;
-      vertical-align: top;
-      padding: 10px;
-      width: 60px;
-    }
-    td.diag_value {
-      color: #3bafda;
-      text-align: left;
-      margin-left: 10px;
-    }
-    td.diag_value ul li {
-      list-style-type: none;
-    }
-    td.diag_value ul li span:nth-of-type(1) {
-      display: inline-block;
-      width: 50px;
-    }
-    td.diag_value ul li span:nth-of-type(2) {
-      display: inline-block;
-      width: 100px;
-      text-align: right;
-    }
   </style>
 
   <script>
@@ -111,14 +87,22 @@
       )
     }
     var dt = undefined
-    function getUsageData( n = undefined ) {
-      console.log(timestamp() + ' getUsageData()')
+    function getSessionData( ts = undefined, n = undefined ) {
+      console.log(timestamp() + ' getSessionData()')
     
 //      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
-            
       $.ajax({
         type		: 'GET',
-        url			: (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data'),
+        url			: (Number.isInteger(n) ? 
+                    (Number.isInteger(ts) ? 
+                      '/charge_sessions/' + ts + '/' + n : 
+                      '/charge_sessions//' + n
+                    ) :
+                    (Number.isInteger(ts) ? 
+                      '/charge_sessions/' + ts : 
+                      '/charge_sessions'
+                    )
+                  ),
         dataType	: 'json',
             encode		: true
       }) // using the done promise callback
@@ -128,7 +112,7 @@
   //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
 
         dt = $('table#usage').DataTable( {
-          "pageLength": 10,
+          "pageLength": 25,
           "order": [[ 0, "desc" ]],
           dom: 'Blfrtip',
           buttons: [
@@ -226,38 +210,18 @@
       })
       $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
         $(this).toggleClass("testbg").fadeIn(0)
-})
+      })
     }
     //example of triggering an event on click of a form submit button
     function sendSocketMsg() {
         socket.emit('my event', {data: $('#emit_data').val()});
     }
 
-    var diag_data = {{ diag_json | safe }}
 
-    jQuery(document).ready(function() {
+    jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
-      startWebSocket()
       getUsageData({{ cnt }})
-      $('pre#diag_json').toggle()
-      $('pre#diag_json').html( 
-        JSON.stringify(diag_data, undefined, 2) 
-      )
-      $('button#diag_detail_button').click(function(){
-        if ($(this).text() == "Show details") {
-          $(this).text("Hide details")
-          $('pre#diag_json').toggle( "slow", function() {
-            // Animation complete.
-          })
-
-        } else {
-          $(this).text("Show details")
-          $('pre#diag_json').toggle( "slow", function() {
-            // Animation complete.
-          })
-
-        }
-      })
+      startWebSocket()
     })
 
     </script>
@@ -275,10 +239,10 @@
                 <div class="btn-group pull-right">
                     <ol class="breadcrumb hide-phone p-0 m-0">
                         <li class="breadcrumb-item"><a href="#">Verbruik</a></li>
-                        <li class="breadcrumb-item active">Verbruik</li>
+                        <li class="breadcrumb-item active">Tabel</li>
                     </ol>
                 </div>
-                <h4 class="page-title">Verbruik {{ var1 }}</h4>
+                <h4 class="page-title">Verbruik</h4>
             </div>
         </div>
     </div>
@@ -286,114 +250,33 @@
 
 
     <div class="row">
-      <div class="col-md-12">
-          <div class="card-box">
-              <h4 class="header-title m-t-0 m-b-30">Instellingen</h4>
-
-              <div class="tabs-vertical-env">
-                  <ul class="nav tabs-vertical">
-                      <li class="nav-item">
-                        <a href="#v-charger" class="nav-link{% if active==1 %} active{% endif %}" data-toggle="tab" aria-expanded="false"><i class="fas fa-charging-station"></i> Laadpunt</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-kwhmeter" class="nav-link{% if active==2 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-tachometer-alt"></i> kWh meter</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-network" class="nav-link{% if active==3 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-network-wired"></i> Netwerk</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-database" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-database"></i> Database</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-diagnostics" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
-                      </li>
-                  </ul>
-
-                  <div class="tab-content">
-                      <div class="tab-pane{% if active==1 %} active{% endif %}" id="v-charger">
-                          <p>Naam laadpunt: laadpunt_noord.</p>
-                      </div>
-                      <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
-                          <p>Type: modbus</p>
-                          <p>ID: 1</p>
-                          <p>Parity:</p>
-                          <p>Stop bit.</p>
-                          <p>Snelheid: 9600 baud.</p>
-                      </div>
-                      <div class="tab-pane{% if active==3 %} active{% endif %}" id="v-netwerk">
-                        <p>Wifi: disabled</p>
-                        <p>LAN: enabled</p>
-                        <p>dchp/fixed</p>
-                        <p>IP: 10.0.1.160</p>
-                        <p>SSL: disabled</p>
-                        <p>IPTables: </p>
-                      </div>
-                      <div class="tab-pane{% if active==4 %} active{% endif %}" id="v-database">
-                        <p>Type: Postgress (restart)</p>
-                        <p></p>
-                        <p>Access: local (vs IP)</p>
-                        <p>- IP access: 10.0.0.0/16 (10.0.1.161/32)</p>
-                      </div>
-                      <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-diagnostics">
-
-                        <table>
-                          <tr>
-                            <td colspan="3" style="text-align: left;">Diagnostics</td>
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">Model</td>
-                            <td class="diag_value">{{ diag['model'] }}</td>
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">Revision</td class="diag_name">
-                            <td class="diag_value">{{ diag['revision'] }}</td class="diag_value">
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">IPv4</td class="diag_name">
-                            <td class="diag_value">{{ diag['ip']['en0']['INET'][0]['addr'] }}</td class="diag_value">
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">IPv6</td class="diag_name">
-                            <td class="diag_value">{{ diag['ip']['en0']['INET6'][0]['addr'] }}</td class="diag_name">
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">OS</td class="diag_name">
-                            <td class="diag_value">
-                              <ul>
-                                <li>{{ diag['os'][0] }}</li>
-                                <li>{{ diag['os'][1] }}</li>
-                                <li>{{ diag['os'][2] }}</li>
-                                <li>{{ diag['os'][3] }}</li>
-                                <li>{{ diag['os'][4] }}</li>
-                              </ul>
-                            </td class="diag_name">
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">Disk</td class="diag_name">
-                            <td class="diag_value">
-                              <ul>
-                                <li><span>Total:</span><span>{{ diag['disk']['total'] }} MB</span></li>
-                                <li><span>Free:</span><span>{{ diag['disk']['free'] }} MB</span></li>
-                                <li><span>Used:</span><span>{{ diag['disk']['used'] }} MB</span></li>
-                                <li><span></span><span>{{ diag['disk']['percent'] }}%</span></li>
-                              </ul>
-                            </td class="diag_name">
-                          </tr>
-                        </table>
-                        <button type="button" id="diag_detail_button" class="btn btn-primary waves-effect waves-light">Show details</button>
-                        <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
-
-                      </div>
-                </div>
-              </div>
-          </div>
-      </div> <!-- end col -->
+      <div class="col-12">
+        <div class="card-box table-responsive">
+          <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+            <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
+              <tr style="font-size: 14pt; font-weight: bold;">
+                <th rowspan="2" style="text-align: center;">Laadpunt</th>
+                <th rowspan="2" style="text-align: center;">ID</th>
+                <th colspan="2" style="text-align: center;">Start</th>
+                <th colspan="2" style="text-align: center;">Einde</th>
+                <th colspan="3" style="text-align: center;">Totaal</th>
+              </tr>
+              <tr>
+                <th style="text-align: center;"></th style="text-align: center;">
+                <th style="text-align: center;">Tijd</th style="text-align: center;">
+                <th style="text-align: center;">kWh</th style="text-align: center;">
+                <th style="text-align: center;">Tijd</th style="text-align: center;">
+                <th style="text-align: center;">kWh</th style="text-align: center;">
+                <th style="text-align: center;">kWh</th style="text-align: center;">
+                <th style="text-align: center;">Tarief</th style="text-align: center;">
+                <th style="text-align: center;">Kosten</th style="text-align: center;">
+              </tr>
+            </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div> <!-- end row -->
 
   </div>

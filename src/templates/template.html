@@ -115,7 +115,7 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('index') }}" class="stay">
+                            <a href="{{ url_for('charge_sessions') }}" class="stay">
                                 <i class="fas fa-file-invoice-dollar"></i> Laadsessies
                             </a>
                         </li>
@@ -157,6 +157,11 @@
                                 <li>
                                     <a href="{{ url_for('settings', active=4) }}" class="stay">
                                         <i class="fas fa-database"></i> Database
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=5) }}" class="stay">
+                                        <i class="fas fa-stethoscope"></i> Diagnostics
                                     </a>
                                 </li>
                             </ul>
