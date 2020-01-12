@@ -34,10 +34,8 @@ class SessionModel(Base):
     def set(self, data):
         for key in data:
             setattr(self, key, data.get(key))
-        if (data.created_at == None):
-            self.created_at = datetime.datetime.now()
-        if (data.modified_at == None):
-            self.modified_at = datetime.datetime.now()
+        self.created_at = data.get('created_at', datetime.datetime.now())
+        self.modified_at = data.get('modified_at', datetime.datetime.now())
 
     def save(self):
         session = Session()
