@@ -17,6 +17,10 @@ import schedule
 from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Length
+from nl.carcharging.models.Raspberry import Raspberry
+import json
+from nl.carcharging.models.User import User
+from nl.carcharging.models.SessionModel import SessionModel
 
 # app initiliazation
 app = Flask(__name__)
@@ -41,31 +45,6 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.query.get(user_id)
 
-
-class User(db.Model):
-    """
-    """
-    __tablename__ = 'users'
-
-    username = db.Column(db.String, primary_key=True)
-    password = db.Column(db.String)
-    authenticated = db.Column(db.Boolean, default=False)
-
-    def is_active(self):
-        """True, as all users are active."""
-        return True
-
-    def get_id(self):
-        """Return the email address to satisfy Flask-Login's requirements."""
-        return self.username
-
-    def is_authenticated(self):
-        """Return True if the user is authenticated."""
-        return self.authenticated
-
-    def is_anonymous(self):
-        """False, as anonymous users aren't supported."""
-        return False
 
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[DataRequired(), Length(min=5, max=12, message=None)])
@@ -141,19 +120,23 @@ def about():
 @app.route("/usage/")
 @app.route("/usage/<int:cnt>")
 @authenticated_resource
-#@login_required
 def usage(cnt="undefined"):
-#def usage():
-    return render_template("usage.html", cnt=cnt)
+    return render_template("usage_table.html", cnt=cnt)
+
+
+@app.route("/usage_table")
+@app.route("/usage_table/")
+@app.route("/usage_table/<int:cnt>")
+@authenticated_resource
+def usage_table(cnt="undefined"):
+    return render_template("usage_table.html", cnt=cnt)
 
 
 @app.route("/usage_graph")
 @app.route("/usage_graph/")
 @app.route("/usage_graph/<int:cnt>")
 @authenticated_resource
-#@login_required
 def usage_graph(cnt="undefined"):
-#def usage():
     return render_template("usage_graph.html", cnt=cnt)
 
 
@@ -162,8 +145,10 @@ def usage_graph(cnt="undefined"):
 @app.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-#def usage():
-    return render_template("settings.html", active=active)
+    rPi = Raspberry()
+    diag = Raspberry().get_all()
+    diag_json = json.dumps(diag)
+    return render_template("settings.html", active=active, diag=diag, diag_json=diag_json)
 
 
 @socketio.on("connect", namespace="/usage")
@@ -194,6 +179,7 @@ def usage_data(cnt=100):
 
     return jsonify(qr_l)
 
+# Cnt is a maximum to limit impact of this request
 @app.route("/usage_data_since/<path:since_timestamp>")
 @app.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
 def usage_data_since(since_timestamp, cnt=-1):
@@ -203,6 +189,22 @@ def usage_data_since(since_timestamp, cnt=-1):
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
+
+    return jsonify(qr_l)
+
+# Cnt is a maximum to limit impact of this request
+@app.route("/charge_sessions")
+@app.route("/charge_sessions/")
+@app.route("/charge_sessions//<int:cnt>")
+@app.route("/charge_sessions/<path:since_timestamp>")
+@app.route("/charge_sessions/<path:since_timestamp>/<int:cnt>")
+def charge_sessions(since_timestamp=None, cnt=-1):
+    charge_sessions = SessionModel()
+    charge_sessions.energy_device_id = "laadpaal_noord"
+    qr = charge_sessions.get_last_n_sessions_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
+    qr_l = []
+    for o in qr:
+        qr_l.append(o.to_dict())
 
     return jsonify(qr_l)
 
@@ -253,31 +255,6 @@ class MapTool(object):
         else:
             print(f'{datetime.datetime.now()} - No change in usage at this time.')
 
-        """
-        now = datetime.datetime.now()
-        # run this for each status update
-        socketio.emit('status_update', { 'data':  
-                { "a_l1": self.counter,
-                   "a_l2": "15.9",
-                   "a_l3": "16.0",
-                   # "created_at": "01/01/2020, 16:38:11",
-                   "created_at": now.strftime('%d/%m/%Y, %H:%M:%S'),
-                   "energy_device_id": "laadpaal_noord",
-                   "hz": "49.9",
-                   "kw_total": "202.0",
-                   "kwh_l1": "67.3",
-                   "kwh_l2": "67.4",
-                   "kwh_l3": "67.3",
-                   "p_l1": "3697.3",
-                   "p_l2": "3722.4",
-                   "p_l3": "3737.7",
-                   "v_l1": "230.6",
-                   "v_l2": "233.5",
-                   "v_l3": "233.1"
-                }}, 
-                namespace='/usage'
-            )
-        """
         self.counter += 1
 
     def wait(self):
