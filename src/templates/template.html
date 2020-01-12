@@ -20,6 +20,9 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 
+        {% block jquery %}
+        {% endblock %}
+
         <!-- jQuery  -->
         <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
         <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script><!-- Popper for Bootstrap --><!-- Tether for Bootstrap -->
@@ -33,6 +36,7 @@
         <script src="{{ url_for('static', filename='plugins/notifyjs/dist/notify.min.js') }}"></script>
         <script src="{{ url_for('static', filename='plugins/notifications/notify-metro.js') }}"></script>
 
+        <!-- Minton template -->
         <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
 
         <!-- Fontawesome -->
@@ -51,6 +55,10 @@
 		<!-- Changing the Status Bar Appearance -->
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 		<meta name="msapplication-starturl" content="/">
+
+        <script>
+            var factor_Whkm = 162
+        </script>
 
         <style>
         button {
@@ -107,7 +115,7 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('index') }}" class="stay">
+                            <a href="{{ url_for('charge_sessions') }}" class="stay">
                                 <i class="fas fa-file-invoice-dollar"></i> Laadsessies
                             </a>
                         </li>
@@ -116,7 +124,7 @@
                             <a href="{{ url_for('usage') }}"><i class="fas fa-table"></i> Verbruik</a>
                             <ul class="submenu">
                                 <li>
-                                    <a href="{{ url_for('usage' ) }}" class="stay">
+                                    <a href="{{ url_for('usage_table' ) }}" class="stay">
                                         <i class="fas fa-table"></i> Tabel
                                     </a>
                                 </li>
@@ -149,6 +157,11 @@
                                 <li>
                                     <a href="{{ url_for('settings', active=4) }}" class="stay">
                                         <i class="fas fa-database"></i> Database
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('settings', active=5) }}" class="stay">
+                                        <i class="fas fa-stethoscope"></i> Diagnostics
                                     </a>
                                 </li>
                             </ul>

@@ -93,7 +93,7 @@ class EnergyDeviceMeasureModel(Base):
         return (
             json.dumps({
                 "energy_device_id": str(self.energy_device_id),
-                "created_at": str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S")),
+                "created_at": str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")),
                 "kwh_l1": self.kwh_l1,
                 "kwh_l2": str(self.kwh_l2),
                 "kwh_l3": str(self.kwh_l3),
@@ -116,7 +116,7 @@ class EnergyDeviceMeasureModel(Base):
     def to_dict(self):
         return ({
             "energy_device_id": str(self.energy_device_id),
-            "created_at": str(self.created_at.strftime("%m/%d/%Y, %H:%M:%S")),
+            "created_at": str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")),
             "kwh_l1": self.kwh_l1,
             "kwh_l2": str(self.kwh_l2),
             "kwh_l3": str(self.kwh_l3),
