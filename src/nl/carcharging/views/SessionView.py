@@ -1,7 +1,7 @@
 from flask import request, json, Response, Blueprint
 from ..models.SessionModel import SessionModel, SessionSchema
 #from ..models.SessionMeasureModel import SessionMeasureModel, SessionMeasureSchema
-from ..services.EnergyUtil import EnergyUtil
+from nl.carcharging.utils.EnergyUtil import EnergyUtil
 from flask_apscheduler import APScheduler
 
 scheduler = APScheduler()
