@@ -1,3 +1,12 @@
+from service import Service
+from injector import inject, Injector
+from apscheduler.schedulers.blocking import BlockingScheduler
+from nl.carcharging.utils.EnergyUtil import EnergyUtil
+from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
+from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+from nl.carcharging.config import Logger
+
+import os
 import logging
 import os
 import sys
@@ -11,30 +20,7 @@ from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.carcharging.services.EnergyUtil import EnergyUtil
 
 PROCESS_NAME = 'measure_electricity_usage'
-LOG_FILE = '/tmp/measure_electricity_usage.log'
-
-
-def init_log():
-    logger_daemon = logging.getLogger(PROCESS_NAME)
-    logger_package = logging.getLogger('nl.charging')
-    logger_package.setLevel(logging.DEBUG)
-    logger_daemon.setLevel(logging.DEBUG)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler(LOG_FILE)
-    fh.setLevel(logging.DEBUG)
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s -  %(threadName)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    # add the handlers to the logger
-    logger_package.addHandler(fh)
-    logger_daemon.addHandler(fh)
-    logger_package.addHandler(ch)
-    logger_daemon.addHandler(ch)
-
+LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
 
 scheduler = BlockingScheduler()
 
@@ -133,7 +119,12 @@ def is_measurement_older_than_1hour(old_measurement, new_measurement):
 
 
 def main():
-    init_log()
+    Logger.init_log(PROCESS_NAME, LOG_FILE)
+    # logging.basicConfig(filename="/tmp/measurement_daemon.log")
+    # logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(filename='example.log', level=logging.NOTSET)
+
+    # logger = logging.getLogger('measure_electricity_usage_daemon')
 
     env_name = os.getenv('CARCHARGING_ENV')
 

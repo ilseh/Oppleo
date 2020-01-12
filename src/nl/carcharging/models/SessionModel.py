@@ -5,7 +5,8 @@ from . import db
 from sqlalchemy import func
 from nl.carcharging.models.base import Base, Session
 
-class SessionModel(db.Model):
+
+class SessionModel(Base):
     """
     Session Model
     """
@@ -15,55 +16,64 @@ class SessionModel(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     rfid = db.Column(db.String(128), nullable=False)
+    energy_device_id = db.Column(db.String(128), nullable=False)
     start_value = db.Column(db.Float)
     end_value = db.Column(db.Float)
     created_at = db.Column(db.DateTime)   # start_time
     modified_at = db.Column(db.DateTime)  # end_time - null if session in progress
 #    tariff = db.Column(db.Float)          # €/kWh
-#    total_energy = db.Column(db.Float)    # kWh (end_value - start_value) - increasing during session    
-#    total_price = db.Column(db.Float)     # € (total_energy * tariff) - increasing during session    
+#    total_energy = db.Column(db.Float)    # kWh (end_value - start_value) - increasing during session
+#    total_price = db.Column(db.Float)     # € (total_energy * tariff) - increasing during session
     energy_device_id = db.Column(db.String(100))
 
     # class constructor
     def __init__(self):
-        self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
-        self.logger.debug('Initializing EnergyDeviceMeasureModel without data')
+        self.logger = logging.getLogger('nl.carcharging.models.SessionModel')
+        self.logger.debug('Initializing SessionModel without data')
 
     def set(self, data):
         for key in data:
             setattr(self, key, data.get(key))
-        if (data.created_at == None):
-            self.created_at = datetime.datetime.now()
-        if (data.modified_at == None):
-            self.modified_at = datetime.datetime.now()
+        self.created_at = data.get('created_at', datetime.datetime.now())
+        self.modified_at = data.get('modified_at', datetime.datetime.now())
 
     def save(self):
-        db.session.add(self)
-        db.session.commit()
+        session = Session()
+        session.add(self)
+        session.commit()
 
     def update(self, data):
         for key, item in data.items():
             setattr(self, key, item)
-        self.modified_at = datetime.datetime.utcnow()
-        db.session.commit()
+        self.modified_at = datetime.datetime.now()
+
+        session = Session()
+        session.commit()
 
     def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+        session = Session()
+        session.delete(self)
+        session.commit()
 
     @staticmethod
     def get_all_sessions():
-        return SessionModel.query.all()
+        session = Session()
+        return session.query.all()
 
     @staticmethod
     def get_one_session(id):
-        return SessionModel.query.get(id)
+        session = Session()
+        return session.query.get(id)
 
     @staticmethod
-    def get_latest_rfid_session(rfid):
-        qryLatestId = db.session.query(func.max(SessionModel.id)).filter(SessionModel.rfid == rfid, SessionModel.end_value == None)
-        latestSession = SessionModel.query.filter(SessionModel.id == qryLatestId).first()
-        return latestSession
+    def get_latest_rfid_session(device, rfid=None):
+        session = Session()
+        qry_latest_id = session.query(func.max(SessionModel.id)).filter(SessionModel.energy_device_id == device)
+        if rfid is not None:
+            qry_latest_id = qry_latest_id.filter(SessionModel.rfid == str(rfid))
+        latest_session = session.query(SessionModel).filter(SessionModel.id == qry_latest_id).first()
+        return latest_session
+
     def __repr(self):
         return '<id {}>'.format(self.id)
 
@@ -153,7 +163,9 @@ class SessionSchema(Schema):
     """
     id = fields.Int(dump_only=True)
     rfid = fields.Str(required=True)
+    energy_device_id = fields.Str(required=True)
     start_value = fields.Float(dump_only=True)
     end_value = fields.Float(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
     modified_at = fields.DateTime(dump_only=True)
+
