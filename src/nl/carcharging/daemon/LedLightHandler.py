@@ -205,6 +205,7 @@ class LedLightHandler(Service):
         try:
             self.handle_charging(device)
         except Exception as ex:
+            self.logger.error("Error handle charging: %s", ex)
             self.ledlighter.error()
 
     def handle_charging(self, device):
@@ -221,18 +222,19 @@ class LedLightHandler(Service):
                 self.is_status_charging = False
                 self.logger.debug("Charging is stopped")
                 if self.ledlighter.is_charging_light_on():
-                    self.ledlighter.previous_light()
+                    self.ledlighter.back_to_previous_light()
 
     def is_car_charging(self, device):
-        last_two_measures = EnergyDeviceMeasureModel().get_last_n_saved(device, 2)
-        diff_last_two_measures_saved = last_two_measures[0].created_at - last_two_measures[1].created_at
-        # Get dummy measure to get current datetime (to sure the datetime is calculated consistently)
-        # which we can use to see if charging is going on.
-        current_date_time = EnergyDeviceMeasureModel()
-        current_date_time.set({})
-        diff_now_and_last_saved_session = current_date_time.created_at - last_two_measures[0].created_at
-        return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
-               and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
+        return True
+        # last_two_measures = EnergyDeviceMeasureModel().get_last_n_saved(device, 2)
+        # diff_last_two_measures_saved = last_two_measures[0].created_at - last_two_measures[1].created_at
+        # # Get dummy measure to get current datetime (to sure the datetime is calculated consistently)
+        # # which we can use to see if charging is going on.
+        # current_date_time = EnergyDeviceMeasureModel()
+        # current_date_time.set({})
+        # diff_now_and_last_saved_session = current_date_time.created_at - last_two_measures[0].created_at
+        # return diff_now_and_last_saved_session.seconds <= MAX_SECONDS_INTERVAL_CHARGING \
+        #        and diff_last_two_measures_saved.seconds <= MAX_SECONDS_INTERVAL_CHARGING
 
     def buzz_ok(self):
         self.buzzer.buzz_other_thread(.1, 1)

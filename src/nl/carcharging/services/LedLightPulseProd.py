@@ -18,11 +18,13 @@ FREQ_MS_TO_UPDATE_LED = 10
 
 class LedLightPulseProd(object):
 
-    def __init__(self, color, pwm=None):
+    def __init__(self, color, intensity, pwm=None):
         self.thread_for_pulse = threading.Thread(target=self._pulse)
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLightPulseProd')
         self.pwm = pwm
+        # For pulse intensity is not used yet.
+        self.intensity = intensity
         self.hardware = LedLightProdHardware(self.color)
 
     # TODO: move to a more generic utility class?
@@ -69,7 +71,7 @@ class LedLightPulseProd(object):
     def cleanup(self):
         self.hardware.cleanup()
 
-    def on(self, brightness):
+    def on(self):
         self.thread_for_pulse = threading.Thread(target=self._pulse)
         self.logger.debug('Attempt to start pulse in thread')
         try:
