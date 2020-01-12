@@ -140,7 +140,7 @@ class LedLightHandler(Service):
             try:
                 self.read_rfid(reader, device)
             except Exception as ex:
-                self.logger.error("Could not execute run_rfid: %s" % ex)
+                self.logger.error("Could not execute run_read_rfid: %s" % ex)
                 self.buzz_error()
                 self.ledlighter.error(duration=3)
 
@@ -181,7 +181,8 @@ class LedLightHandler(Service):
 
             self.logger.debug("Starting new charging session for rfid %s" % rfid)
             data_for_session['start_value'] = self.energy_util.getMeasurementValue(device).get('kw_total')
-            session = SessionModel(data_for_session)
+            session = SessionModel()
+            session.set(data_for_session)
             session.save()
             start_session = True
 

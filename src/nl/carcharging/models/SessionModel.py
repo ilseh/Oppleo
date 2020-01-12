@@ -28,8 +28,8 @@ class SessionModel(Base):
 
     # class constructor
     def __init__(self):
-        self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
-        self.logger.debug('Initializing EnergyDeviceMeasureModel without data')
+        self.logger = logging.getLogger('nl.carcharging.models.SessionModel')
+        self.logger.debug('Initializing SessionModel without data')
 
     def set(self, data):
         for key in data:
