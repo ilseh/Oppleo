@@ -4,6 +4,7 @@ import logging
 from . import db
 from sqlalchemy import func
 from nl.carcharging.models.base import Base, Session
+import json
 
 
 class SessionModel(Base):
