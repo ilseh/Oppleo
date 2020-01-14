@@ -1,25 +1,24 @@
-from flask import Flask, render_template, jsonify, Response, redirect, request, url_for, session
-from flask_socketio import SocketIO, emit
-from flask_login import LoginManager, login_required, login_user, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.exc import OperationalError
-from functools import wraps
-from config import app_config
-from nl.carcharging.models import db
-from nl.carcharging.views.SessionView import session_api as session_blueprint
-from nl.carcharging.views.SessionView import scheduler
-import os
-from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-import time
 import datetime
-import schedule
+import json
+import os
+from functools import wraps
+
+from flask import Flask, render_template, jsonify, redirect, request, url_for, session
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user
+from flask_socketio import SocketIO, emit
 from flask_wtf import FlaskForm
+from sqlalchemy.exc import OperationalError
+from werkzeug.security import check_password_hash
 from wtforms import StringField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Length
+
+from config import app_config
+from nl.carcharging.models import db
+from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
-import json
-from nl.carcharging.models.User import User
 from nl.carcharging.models.SessionModel import SessionModel
+from nl.carcharging.models.User import User
+from nl.carcharging.views.SessionView import session_api as session_blueprint
 
 # app initiliazation
 app = Flask(__name__)
