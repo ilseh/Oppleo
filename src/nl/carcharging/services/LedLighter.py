@@ -51,22 +51,22 @@ class LedLighter(object):
 
     def switch_to_light(self, light):
         self.lock.acquire()
-        self.current_light = light
         self.save_state()
+        self.current_light = light
         self.current_light.on()
         self.lock.release()
 
     def save_state(self):
-        if self.previous_light:
-            self.logger.debug('turning previous light off')
-            self.previous_light.off()
-            self.logger.debug('previous light is off')
-
         self.logger.debug("save state, start comparing")
         if self.previous_light != self.current_light:
             self.logger.debug("save state, previous light is different from current")
             self.previous_light = self.current_light
 
+
+        if self.previous_light:
+            self.logger.debug('turning previous light off')
+            self.previous_light.off()
+            self.logger.debug('previous light is off')
 
     def turn_current_light_off(self):
         if self.current_light == self.ledlightCharging:
