@@ -1,12 +1,3 @@
-from service import Service
-from injector import inject, Injector
-from apscheduler.schedulers.blocking import BlockingScheduler
-from nl.carcharging.utils.EnergyUtil import EnergyUtil
-from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
-from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-from nl.carcharging.config import Logger
-
-import os
 import logging
 import os
 import sys
@@ -15,9 +6,10 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from injector import inject, Injector
 from service import Service
 
+from nl.carcharging.config import Logger
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
-from nl.carcharging.services.EnergyUtil import EnergyUtil
+from nl.carcharging.utils.EnergyUtil import EnergyUtil
 
 PROCESS_NAME = 'measure_electricity_usage'
 LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
