@@ -10,7 +10,6 @@ from nl.carcharging.views.SessionView import session_api as session_blueprint
 from nl.carcharging.views.SessionView import scheduler
 import os
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-from nl.carcharging.services.EnergyUtil import EnergyUtil
 import time
 import datetime
 import schedule
