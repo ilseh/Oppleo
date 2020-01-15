@@ -52,7 +52,7 @@ class Raspberry():
             for entry in data:
                 if entry_name in entry:
                     return entry[entry_name]
-        except TypeError as te:
+        except TypeError:
             print('Data is not iterable')
 
         return "Unknown"
