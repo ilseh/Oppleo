@@ -4,13 +4,9 @@ import os
 from functools import wraps
 
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
-from flask_login import LoginManager, login_required, login_user, logout_user, current_user
+from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
-from flask_wtf import FlaskForm
 from sqlalchemy.exc import OperationalError
-from werkzeug.security import check_password_hash
-from wtforms import StringField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Length
 
 from config import app_config
 from nl.carcharging.models import db
@@ -51,107 +47,6 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.query.get(user_id)
 
-
-class LoginForm(FlaskForm):
-    username = StringField('username', validators=[DataRequired(), Length(min=5, max=12, message=None)])
-    password = StringField('password', validators=[DataRequired()])
-    remember_me = BooleanField('remember_me')
-    submit = SubmitField('Sign In')
-    # recaptcha = RecaptchaField()
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('errorpages/404.html'), 404
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if (request.method == 'GET'):
-#        username = Flask.request.values.get('user') # Your form's
-#        password = Flask.request.values.get('pass') # input names
-#        your_register_routine(username, password)
-        return render_template("login.html", form=LoginForm())
-
-
-    """For GET requests, display the login form. 
-    For POSTS, login the current user by processing the form.
-
-    """
-    print(db)
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.get(form.username.data)
-        if user:
-            if check_password_hash(user.password, form.password.data):
-                user.authenticated = True
-                db.session.add(user)
-                db.session.commit()
-                login_user(user, remember=form.remember_me.data)
-                return redirect(url_for('home'))
-    return render_template("login.html", form=form, msg="Login failed")
-
-def authenticated_resource(function):
-    @wraps(function)
-    def decorated(*args, **kwargs):
-        if (session.get('authenticated')):
-            return function(*args, **kwargs)
-        if (current_user.is_authenticated):
-            return function(*args, **kwargs)
-
-        # return abort(403) # unauthenticated
-        return redirect(url_for('login'))
-    return decorated
-
-@app.route("/logout", methods=["GET"])
-@login_required
-def logout():
-    """Logout the current user."""
-    user = current_user
-    user.authenticated = False
-    db.session.add(user)
-    db.session.commit()
-    logout_user()
-    return redirect(url_for('login'))
-
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
-
-@app.route("/usage")
-@app.route("/usage/")
-@app.route("/usage/<int:cnt>")
-@authenticated_resource
-def usage(cnt="undefined"):
-    return render_template("usage_table.html", cnt=cnt)
-
-
-@app.route("/usage_table")
-@app.route("/usage_table/")
-@app.route("/usage_table/<int:cnt>")
-@authenticated_resource
-def usage_table(cnt="undefined"):
-    return render_template("usage_table.html", cnt=cnt)
-
-
-@app.route("/usage_graph")
-@app.route("/usage_graph/")
-@app.route("/usage_graph/<int:cnt>")
-@authenticated_resource
-def usage_graph(cnt="undefined"):
-    return render_template("usage_graph.html", cnt=cnt)
-
-
-@app.route("/settings")
-@app.route("/settings/")
-@app.route("/settings/<int:active>")
-@authenticated_resource
-def settings(active=1):
-    rPi = Raspberry()
-    diag = Raspberry().get_all()
-    diag_json = json.dumps(diag)
-    return render_template("settings.html", active=active, diag=diag, diag_json=diag_json)
-
-
 @socketio.on("connect", namespace="/usage")
 def connect():
     emit("server_status", "server_up")
@@ -167,47 +62,11 @@ def handle_usage_event(json):
     print('received json: ' + str(json))
     return ( 'one', 2 )    # client callback
 
-@app.route("/usage_data")
-@app.route("/usage_data/")
-@app.route("/usage_data/<int:cnt>")
-def usage_data(cnt=100):
-    device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = "laadpaal_noord"
-    qr = device_measurement.get_last_n_saved(energy_device_id="laadpaal_noord",n=cnt)
-    qr_l = []
-    for o in qr:
-        qr_l.append(o.to_dict())  
 
-    return jsonify(qr_l)
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('errorpages/404.html'), 404
 
-# Cnt is a maximum to limit impact of this request
-@app.route("/usage_data_since/<path:since_timestamp>")
-@app.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
-def usage_data_since(since_timestamp, cnt=-1):
-    device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = "laadpaal_noord"
-    qr = device_measurement.get_last_n_saved_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
-    qr_l = []
-    for o in qr:
-        qr_l.append(o.to_dict())  
-
-    return jsonify(qr_l)
-
-# Cnt is a maximum to limit impact of this request
-@app.route("/charge_sessions")
-@app.route("/charge_sessions/")
-@app.route("/charge_sessions//<int:cnt>")
-@app.route("/charge_sessions/<path:since_timestamp>")
-@app.route("/charge_sessions/<path:since_timestamp>/<int:cnt>")
-def charge_sessions(since_timestamp=None, cnt=-1):
-    charge_sessions = SessionModel()
-    charge_sessions.energy_device_id = "laadpaal_noord"
-    qr = charge_sessions.get_last_n_sessions_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
-    qr_l = []
-    for o in qr:
-        qr_l.append(o.to_dict())
-
-    return jsonify(qr_l)
 
 
 class WebApp(object):
