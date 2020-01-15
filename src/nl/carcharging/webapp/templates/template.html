@@ -114,21 +114,21 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('charge_sessions') }}" class="stay">
+                            <a href="{{ url_for('webapp.charge_sessions') }}" class="stay">
                                 <i class="fas fa-file-invoice-dollar"></i> Laadsessies
                             </a>
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('usage') }}"><i class="fas fa-table"></i> Verbruik</a>
+                            <a href="{{ url_for('webapp.usage') }}"><i class="fas fa-table"></i> Verbruik</a>
                             <ul class="submenu">
                                 <li>
-                                    <a href="{{ url_for('usage_table' ) }}" class="stay">
+                                    <a href="{{ url_for('webapp.usage_table' ) }}" class="stay">
                                         <i class="fas fa-table"></i> Tabel
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('usage_graph' ) }}" class="stay">
+                                    <a href="{{ url_for('webapp.usage_graph' ) }}" class="stay">
                                         <i class="fas fa-chart-line"></i> Grafiek
                                     </a>
                                 </li>
@@ -136,30 +136,30 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('settings') }}"><i class="fas fa-sliders-h"></i> Instellingen</a>
+                            <a href="{{ url_for('webapp.settings') }}"><i class="fas fa-sliders-h"></i> Instellingen</a>
                             <ul class="submenu">
                                 <li>
-                                    <a href="{{ url_for('settings', active=1) }}" class="stay">
+                                    <a href="{{ url_for('webapp.settings', active=1) }}" class="stay">
                                         <i class="fas fa-charging-station"></i> Laadpunt
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('settings', active=2) }}" class="stay">
+                                    <a href="{{ url_for('webapp.settings', active=2) }}" class="stay">
                                         <i class="fas fa-tachometer-alt"></i> kWh meter
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('settings', active=3) }}" class="stay">
+                                    <a href="{{ url_for('webapp.settings', active=3) }}" class="stay">
                                         <i class="fas fa-network-wired"></i> Netwerk
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('settings', active=4) }}" class="stay">
+                                    <a href="{{ url_for('webapp.settings', active=4) }}" class="stay">
                                         <i class="fas fa-database"></i> Database
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('settings', active=5) }}" class="stay">
+                                    <a href="{{ url_for('webapp.settings', active=5) }}" class="stay">
                                         <i class="fas fa-stethoscope"></i> Diagnostics
                                     </a>
                                 </li>
@@ -177,7 +177,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('logout') }}" class="stay">
+                                    <a href="{{ url_for('webapp.logout') }}" class="stay">
                                         <i class="fas fa-sign-out-alt"></i> Sign out
                                     </a>
                                 </li>
