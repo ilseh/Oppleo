@@ -72,14 +72,13 @@
 
     <body>
 
-
       <header id="topnav">
 
         <div class="topbar-main">
             <div class="container-fluid">
 
                 <div class="logo">
-                    <a href="{{ url_for('index') }}" class="logo">
+                    <a href="{{ url_for('webapp.index') }}" class="logo">
                         <span class="logo-small"><i class="fas fa-charging-station"></i> </span>
                         <span class="logo-large"><i class="fas fa-charging-station"></i> EV Laadpunt</span>
                     </a>
@@ -111,7 +110,7 @@
                 <div id="navigation">
                     <ul class="navigation-menu">
                         <li class="has-submenu">
-                            <a href="{{ url_for('index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            <a href="{{ url_for('webapp.index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                         </li>
 
                         <li class="has-submenu">
@@ -168,12 +167,12 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('index') }}" class="stay">
+                            <a href="{{ url_for('webapp.index') }}" class="stay">
                                 <i class="fas fa-user-circle"></i>Account
                             </a>
                             <ul class="submenu">
                                 <li>
-                                    <a href="{{ url_for('index') }}" class="stay">
+                                    <a href="{{ url_for('webapp.index') }}" class="stay">
                                         <i class="fa fa-file-o"></i> Change password
                                     </a>
                                 </li>

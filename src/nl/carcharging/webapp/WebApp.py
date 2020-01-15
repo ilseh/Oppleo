@@ -20,8 +20,12 @@ from nl.carcharging.models.SessionModel import SessionModel
 from nl.carcharging.models.User import User
 from nl.carcharging.views.SessionView import session_api as session_blueprint
 
+from nl.carcharging.webapp.routes import webapp
+#import routes
+
 # app initiliazation
 app = Flask(__name__)
+
 
 app.config.from_object(app_config[os.getenv('CARCHARGING_ENV')])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -30,10 +34,14 @@ app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowi
 app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
 
 app.register_blueprint(session_blueprint, url_prefix='/api/v1/sessions')
+# The CarCharger root webapp
+app.register_blueprint(webapp) # no url_prefix
 
 socketio = SocketIO(app)
+#socketio = SocketIO(app, async_mode=async_mode)
 
 db.init_app(app)
+
 
 # flask-login
 login_manager = LoginManager()
@@ -51,6 +59,9 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign In')
     # recaptcha = RecaptchaField()
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('errorpages/404.html'), 404
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -101,14 +112,6 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/', methods=['GET'])
-def index():
-    return render_template("dashboard.html")
-
-@app.route("/home")
-@authenticated_resource
-def home():
-    return render_template("dashboard.html")
 
 @app.route("/about")
 def about():
@@ -207,7 +210,8 @@ def charge_sessions(since_timestamp=None, cnt=-1):
     return jsonify(qr_l)
 
 
-class MapTool(object):
+class WebApp(object):
+    # Count the message updates send through the websocket
     counter = 1
     most_recent = ""
 
@@ -215,13 +219,25 @@ class MapTool(object):
         self.thread = None
 
     def start_server(self):
-        print(f'{datetime.datetime.now()} - Starting websocket server...')
+        print(f'{datetime.datetime.now()} - Starting web server in separate thread...')
         socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
-    def start(self):
-        self.thread = socketio.start_background_task(self.start_server)
+    def websocket_start(self):
+        print(f'{datetime.datetime.now()} - Starting background task...')
+        while True:
+            socketio.sleep(7)
+            try:
+                webapp.websocket_send_usage_update("status_update")
+            except OperationalError as e:
+                # If the database is unavailable (or no access allowed),
+                # remain running untill the access is restored
+                print(f'Something wrong with the database! {e}')
 
-    def send_usage_update(self, type):
+    def start(self):
+        print(f'{datetime.datetime.now()} - Launching background task...')
+        self.thread = socketio.start_background_task(self.websocket_start)
+
+    def websocket_send_usage_update(self, type):
         print(f'{datetime.datetime.now()} - Checking usage data...')
 
         device_measurement = EnergyDeviceMeasureModel()  
@@ -229,26 +245,7 @@ class MapTool(object):
         qr = device_measurement.get_last_saved(energy_device_id="laadpaal_noord")
         if (self.most_recent != qr.get_created_at_str()):
             print(f'{datetime.datetime.now()} - Send msg {self.counter} via websocket...')
-            socketio.emit('status_update', { 'data':  
-                { "a_l1": qr.a_l1,
-                   "a_l2": qr.a_l2,
-                   "a_l3": qr.a_l3,
-                   "created_at": qr.get_created_at_str(),
-                   "energy_device_id": qr.energy_device_id,
-                   "hz": qr.hz,
-                   "kw_total": qr.kw_total,
-                   "kwh_l1": qr.kwh_l1,
-                   "kwh_l2": qr.kwh_l2,
-                   "kwh_l3": qr.kwh_l3,
-                   "p_l1": qr.p_l1,
-                   "p_l2": qr.p_l2,
-                   "p_l3": qr.p_l3,
-                   "v_l1": qr.v_l1,
-                   "v_l2": qr.v_l2,
-                   "v_l3": qr.v_l3
-                }}, 
-                namespace='/usage'
-            )
+            socketio.emit('status_update', { 'data': qr.to_str() }, namespace='/usage')
             self.most_recent = qr.get_created_at_str()
         else:
             print(f'{datetime.datetime.now()} - No change in usage at this time.')
@@ -260,21 +257,10 @@ class MapTool(object):
 
 
 if __name__ == "__main__":
-    maptool = MapTool()
-    maptool.start()
+    webapp = WebApp()
+    webapp.start()
 
-    while True:
-         socketio.sleep(7)
-         try:
-             maptool.send_usage_update("status_update")
-         except OperationalError as e:
-             # If the database is unavailable (or no access allowed), currently the entire app
-             # crashes. Should remain running untill the access is restored!
-             print(f'Something wrong with the database! {e}')
+    print(f'{datetime.datetime.now()} - Starting web server...')
+    socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
-    maptool.wait()
-
-#    socketio.run(app)
-#socketio.run(app, host='localhost', port=5000)
-#if __name__ == '__main__':
-#    socketio.run(app, host='0.0.0.0')
+    webapp.wait()
