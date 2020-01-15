@@ -14,6 +14,7 @@ from nl.carcharging.webapp.LoginForm import LoginForm
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.SessionModel import SessionModel
+from nl.carcharging.models.RfidModel import RfidModel
 
 
 
@@ -171,3 +172,22 @@ def charge_sessions(since_timestamp=None, cnt=-1):
         qr_l.append(o.to_dict())
 
     return jsonify(qr_l)
+
+
+# Cnt is a maximum to limit impact of this request
+@webapp.route("/rfid_tokens")
+@webapp.route("/rfid_tokens/")
+@webapp.route("/rfid_tokens/<path:format>")
+@authenticated_resource
+def rfid_tokens(format='html'):
+    rfids = RfidModel().get_all()
+    try:
+        rfid_list = []
+        for rfid in rfids:
+            rfid_list.append(rfid.to_str())
+    except Exception as e:
+        print("Exception " % e)
+    if (format.strip().lower() != 'json'):
+        return render_template("tokens.html", tokens=json.dumps(rfid_list))
+    else:
+        return jsonify(rfid_list)

@@ -1,4 +1,6 @@
 from datetime import datetime
+import logging
+import json
 
 from marshmallow import fields, Schema
 
@@ -10,16 +12,29 @@ class RfidModel(Base):
     __tablename__ = 'rfid'
 
     rfid = db.Column(db.String(100), primary_key=True)
-    allow = db.Column(db.Boolean)
+    enabled = db.Column(db.Boolean)
     created_at = db.Column(db.DateTime)
     last_used_at = db.Column(db.DateTime)
     name = db.Column(db.String(100))
-    vehicle = db.Column(db.String(100))
+    vehicle_make = db.Column(db.String(100))
+    vehicle_model = db.Column(db.String(100))
+    get_odometer = db.Column(db.Boolean)
     license_plate = db.Column(db.String(20))
     valid_from = db.Column(db.DateTime)
     valid_until = db.Column(db.DateTime)
 
-    def __init__(self, data):
+    api_access_token = db.Column(db.String(100))
+    api_token_type = db.Column(db.String(100))
+    api_created_at = db.Column(db.String(100))
+    api_expires_in = db.Column(db.String(100))
+    api_refresh_token = db.Column(db.String(100))
+
+    def __init__(self):
+        self.logger = logging.getLogger('nl.carcharging.models.RfidModel')
+        self.logger.debug('Initializing RfidModel without data')
+
+
+    def set(self, data):
         for key in data:
             setattr(self, key, data.get(key))
         self.allow = data.get('allow', False)
@@ -49,6 +64,27 @@ class RfidModel(Base):
 
     def __repr(self):
         return '<id {}>'.format(self.rfid)
+
+    def to_str(self):
+        return ({
+                "rfid": str(self.rfid),
+                "enabled": self.enabled,
+                "created_at": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None),
+                "last_used_at": (str(self.last_used_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.last_used_at is not None else None),
+                "name": str(self.name),
+                "vehicle_make": str(self.vehicle_make),
+                "vehicle_model": str(self.vehicle_model),
+                "get_odometer": str(self.get_odometer),
+                "license_plate": str(self.license_plate),
+                "valid_from": (str(self.valid_from.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_from is not None else None),
+                "valid_until": (str(self.valid_until.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_until is not None else None),
+                "api_access_token": str(self.api_access_token),
+                "api_token_type": str(self.api_token_type),
+                "api_created_at": str(self.api_created_at),
+                "api_expires_in": str(self.api_expires_in),
+                "api_refresh_token": str(self.api_refresh_token)
+            }
+        )
 
 class RfidSchema(Schema):
     """
