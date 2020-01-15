@@ -112,6 +112,27 @@ class EnergyDeviceMeasureModel(Base):
             )
         )
 
+    def to_str(self):
+        return ({
+                "energy_device_id": str(self.energy_device_id),
+                "created_at": str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")),
+                "kwh_l1": self.kwh_l1,
+                "kwh_l2": str(self.kwh_l2),
+                "kwh_l3": str(self.kwh_l3),
+                "a_l1": str(self.a_l1),
+                "a_l2": str(self.a_l2),
+                "a_l3": str(self.a_l3),
+                "p_l1": str(self.p_l1),
+                "p_l2": str(self.p_l2),
+                "p_l3": str(self.p_l3),
+                "v_l1": str(self.v_l1),
+                "v_l2": str(self.v_l2),
+                "v_l3": str(self.v_l3),
+                "kw_total": str(self.kw_total),
+                "hz": str(self.hz)
+            }
+        )
+
     # convert into dict:
     def to_dict(self):
         return ({
