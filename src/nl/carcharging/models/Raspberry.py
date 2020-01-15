@@ -48,9 +48,13 @@ class Raspberry():
         data = self.get_cpuinfo()
         if data is None:
             return "Unknown"
-        for entry in data:
-            if entry_name in entry:
-                return entry[entry_name]
+        try:
+            for entry in data:
+                if entry_name in entry:
+                    return entry[entry_name]
+        except TypeError as te:
+            print('Data is not iterable')
+
         return "Unknown"
 
     def get_serial(self):
