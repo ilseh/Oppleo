@@ -1,5 +1,5 @@
 {% extends "template.html" %}
-{% block title %}RFID Tokens{% endblock %}
+{% block title %}RFID Token - Bewerken{% endblock %}
 {% block head %}
   {% block jquery %} 
     {% include 'includes/include.jquery-3.3.1.html' %}
@@ -94,7 +94,7 @@
             
       $.ajax({
         type		: 'GET',
-        url			: '/rfid_tokens//json',
+        url			: '/rfid_tokens/json',
         dataType	: 'json',
             encode		: true
       }) // using the done promise callback
@@ -190,7 +190,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box">
-                <h4 class="page-title">Laadpassen</h4>
+                <h4 class="page-title">Laadpas gegevens</h4>
             </div>
         </div>
     </div>

@@ -177,17 +177,23 @@ def charge_sessions(since_timestamp=None, cnt=-1):
 # Cnt is a maximum to limit impact of this request
 @webapp.route("/rfid_tokens")
 @webapp.route("/rfid_tokens/")
-@webapp.route("/rfid_tokens/<path:format>")
+@webapp.route("/rfid_tokens//")
+@webapp.route("/rfid_tokens//<path:format>")
+@webapp.route("/rfid_tokens/<path:token>/")
+@webapp.route("/rfid_tokens/<path:token>/<path:format>")
 @authenticated_resource
-def rfid_tokens(format='html'):
-    rfids = RfidModel().get_all()
-    try:
+def rfid_tokens(format='html', token=None):
+    # Check if token exist, if not rfid is None
+    rfid = RfidModel().get_one(token)
+    if ((token == None) or (rfid == None)):
+        rfids = RfidModel().get_all()
         rfid_list = []
         for rfid in rfids:
             rfid_list.append(rfid.to_str())
-    except Exception as e:
-        print("Exception " % e)
-    if (format.strip().lower() != 'json'):
-        return render_template("tokens.html", tokens=json.dumps(rfid_list))
+        if (format.strip().lower() != 'json'):
+            return render_template("tokens.html", tokens=json.dumps(rfid_list))
+        else:
+            return jsonify(rfid_list)
     else:
-        return jsonify(rfid_list)
+        return render_template("token_edit.html", token=json.dumps(rfid.to_str()))
+        
