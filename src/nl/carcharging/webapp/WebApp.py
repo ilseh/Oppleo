@@ -6,9 +6,10 @@ from functools import wraps
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
 from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
+from flask_change_password import ChangePassword
 from sqlalchemy.exc import OperationalError
 
-from config import app_config
+from config import app_config, WebAppConfig
 from nl.carcharging.models import db
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
@@ -17,6 +18,7 @@ from nl.carcharging.models.User import User
 from nl.carcharging.views.SessionView import session_api as session_blueprint
 
 from nl.carcharging.webapp.routes import webapp
+
 #import routes
 
 # app initiliazation
@@ -38,6 +40,9 @@ socketio = SocketIO(app)
 
 db.init_app(app)
 
+# Init the ChangePassword from the flask-change-password plugin. Rules are in Route.py
+WebAppConfig.flask_change_password = ChangePassword(rules=WebAppConfig.password_rules)
+WebAppConfig.flask_change_password.init_app(app)
 
 # flask-login
 login_manager = LoginManager()

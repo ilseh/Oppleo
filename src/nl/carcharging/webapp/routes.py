@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, abort, request, url_for, redirect, jsonify, session
+from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session
+
+from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
 
 from jinja2.exceptions import TemplateNotFound
 from werkzeug.security import check_password_hash
@@ -6,7 +8,10 @@ from functools import wraps
 import json
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
+from flask_change_password import ChangePassword, ChangePasswordForm
 from flask_socketio import SocketIO, emit
+
+from config import app_config, WebAppConfig
 
 from nl.carcharging.models import db
 from nl.carcharging.models.User import User
@@ -17,11 +22,13 @@ from nl.carcharging.models.SessionModel import SessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 
 
-
 """ 
  - make sure all url_for routes point to this blueprint
 """
 webapp = Blueprint('webapp', __name__, template_folder='templates')
+
+
+
 
 @webapp.route('/', methods=['GET'])
 def index():
@@ -47,17 +54,13 @@ def page_not_found(e):
 
 @webapp.route('/login', methods=['GET', 'POST'])
 def login():
+    # For GET requests, display the login form. 
     if (request.method == 'GET'):
 #        username = Flask.request.values.get('user') # Your form's
 #        password = Flask.request.values.get('pass') # input names
 #        your_register_routine(username, password)
         return render_template("login.html", form=LoginForm())
-
-
-    """For GET requests, display the login form. 
-    For POSTS, login the current user by processing the form.
-
-    """
+    # For POST requests, login the current user by processing the form.
     print(db)
     form = LoginForm()
     if form.validate_on_submit():
@@ -109,6 +112,73 @@ def logout():
     logout_user()
     # return redirect(url_for('webapp.login'))
     return redirect(url_for('webapp.home'))
+
+
+@webapp.route("/change_password", methods=["GET", "POST"])
+@authenticated_resource
+def change_password():
+
+    """
+    password_template is de html die kan worden gebruikt als web form, maar die gebruik ik niet dus niet aanmaken
+    title hoeft ook niet hier
+    form heeft in form.errors per veld een array aan errors 
+       form.errors = { "password2": [ 
+                            'Field must be equal to password.'
+                            ]}
+    Geen error, dan bestaat het veld helemaal niet
+    """
+
+    title = 'Change Password'
+    form = ChangePasswordForm(username='admin', changing=True, title=title)
+    if (request.method == 'GET'):
+#        return render_template("change_password.html", form=ChangePasswordForm())
+        password_template = WebAppConfig.flask_change_password.change_password_template(form, submit_text='Update')
+        return render_template(
+            'change_password.html', 
+            password_template=password_template, 
+            title=title, 
+            form=form,
+            user=dict(username='admin'),
+            )
+
+
+    if form.validate_on_submit():
+        valid = WebAppConfig.flask_change_password.verify_password_change_form(form)
+        if valid:
+            return redirect(
+                        url_for(
+                            'page_changed', 
+                            title='changed', 
+                            new_password=form.password.data
+                            )
+                        )
+        # Not valid - error message
+        password_template = WebAppConfig.flask_change_password.change_password_template(form, submit_text='Update')
+        return render_template(
+            'change_password.html', 
+            password_template=password_template, 
+            title=title, 
+            form=form,
+            user=dict(username='admin'),
+            msg="Password change failed, maar waarom?"
+            )
+        """
+        password_template = flask_change_password.change_password_template(
+            form, 
+            submit_text='Change'
+            )
+        """
+    # Form not valid 
+    password_template = WebAppConfig.flask_change_password.change_password_template(form, submit_text='Update')
+    return render_template(
+        'change_password.html', 
+        password_template=password_template, 
+        title=title, 
+        form=form,
+        user=dict(username='admin'),
+        msg="Password change failed, maar waarom?"
+        )
+#    return redirect(url_for('webapp.home'))
 
 
 @webapp.route("/about")
