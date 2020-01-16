@@ -33,11 +33,13 @@ def index():
 @webapp.route("/home")
 #@authenticated_resource
 def home():
+    return redirect('/')
+    """
     try:
         return render_template('dashboard.html')
     except TemplateNotFound:
         abort(404)
-
+    """
 
 @webapp.errorhandler(404)
 def page_not_found(e):
@@ -66,7 +68,13 @@ def login():
                 db.session.add(user)
                 db.session.commit()
                 login_user(user, remember=form.remember_me.data)
-                return redirect(url_for('webapp.home'))
+                if 'login_next' in session:
+                    login_next = session['login_next']
+                    del session['login_next']
+                    return redirect(login_next)
+                else:
+                    # Return to the home page
+                    return redirect(url_for('webapp.home'))
     return render_template("login.html", form=form, msg="Login failed")
 
 def authenticated_resource(function):
@@ -76,13 +84,22 @@ def authenticated_resource(function):
             return function(*args, **kwargs)
         if (current_user.is_authenticated):
             return function(*args, **kwargs)
-
         # return abort(403) # unauthenticated
+        # Not allowed.
+        # delete old - never used - cookie
+        if 'login_next' in session:
+            del session['login_next']
+        # if somehow ended up at logout, don't forward to login
+        if (request.endpoint == "webapp.logout"):
+            return redirect(url_for('webapp.home'))
+        # Redirect to login but rememmber the original request 
+        session['login_next'] = request.full_path
         return redirect(url_for('webapp.login'))
     return decorated
 
 @webapp.route("/logout", methods=["GET"])
-@login_required
+@authenticated_resource
+#@login_required
 def logout():
     """Logout the current user."""
     user = current_user
@@ -90,7 +107,8 @@ def logout():
     db.session.add(user)
     db.session.commit()
     logout_user()
-    return redirect(url_for('webapp.login'))
+    # return redirect(url_for('webapp.login'))
+    return redirect(url_for('webapp.home'))
 
 
 @webapp.route("/about")
