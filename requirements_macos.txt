@@ -14,7 +14,6 @@ eventlet==0.25.1
 Flask==1.1.1
 Flask-APScheduler==1.11.0
 Flask-Bcrypt==0.7.1
-flask-change-password==0.0.7
 Flask-Injector==0.12.0
 Flask-Login==0.4.1
 Flask-Mail==0.9.1
@@ -56,6 +55,7 @@ python-engineio==3.11.1
 python-socketio==4.4.0
 pytz==2019.3
 requests==2.22.0
+schedule==0.6.0
 service==0.6.0
 setproctitle==1.1.10
 six==1.13.0
