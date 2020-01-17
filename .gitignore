@@ -6,3 +6,4 @@ env
 .coverage
 src/.DS_Store
 src/static/.DS_Store
+.DS_Store
