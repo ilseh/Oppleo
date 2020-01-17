@@ -6,4 +6,13 @@ env
 .coverage
 src/.DS_Store
 src/static/.DS_Store
+src/nl/carcharging/.DS_Store
+src/nl/carcharging/models/.DS_Store
+src/nl/carcharging/views/.DS_Store
+src/nl/carcharging/services/.DS_Store
+src/nl/carcharging/utils/.DS_Store
+src/nl/carcharging/api/.DS_Store
+src/nl/carcharging/config/.DS_Store
+src/nl/carcharging/daemon/.DS_Store
+src/nl/carcharging/webapp/.DS_Store
 .DS_Store
