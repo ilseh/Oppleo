@@ -129,11 +129,10 @@ def change_password():
     if not check_password_hash(current_user.password, form.current_password.data):
         # Current password correct
         form.current_password.errors = []
-        form.current_password.errors.append('Current password incorrect.')
+        form.current_password.errors.append('Het huidige admin wachtwoord is niet juist.')
         return render_template(
             'change_password.html', 
-            form=form,
-            msg="Current password incorrect"
+            form=form
             )
     if form.validate_on_submit():
         # Valid, change the password for the user now
