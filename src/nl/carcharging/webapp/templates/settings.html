@@ -353,12 +353,22 @@
                           <tr>
                             <td class="diag_pre"></td>
                             <td class="diag_name">IPv4</td class="diag_name">
+                            {% if 'eth0' in diag['ip'] %}
                             <td class="diag_value">{{ diag['ip']['eth0']['INET'][0]['addr'] }}</td class="diag_value">
+                            {% endif %}
+                            {% if 'en0' in diag['ip'] %}
+                            <td class="diag_value">{{ diag['ip']['en0']['INET'][0]['addr'] }}</td class="diag_value">
+                            {% endif %}
                           </tr>
                           <tr>
                             <td class="diag_pre"></td>
                             <td class="diag_name">IPv6</td class="diag_name">
+                            {% if 'eth0' in diag['ip'] %}
                             <td class="diag_value">{{ diag['ip']['eth0']['INET6'][0]['addr'] }}</td class="diag_name">
+                            {% endif %}
+                            {% if 'en0' in diag['ip'] %}
+                            <td class="diag_value">{{ diag['ip']['en0']['INET6'][0]['addr'] }}</td class="diag_name">
+                              {% endif %}
                           </tr>
                           <tr>
                             <td class="diag_pre"></td>

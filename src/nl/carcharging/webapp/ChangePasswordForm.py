@@ -2,20 +2,24 @@
 from flask_wtf import FlaskForm
 
 from wtforms import StringField, BooleanField, SubmitField, PasswordField
-from wtforms.validators import validators, DataRequired, Length, EqualTo
+from wtforms.validators import DataRequired, Length, EqualTo
 
 class ChangePasswordForm(FlaskForm):
-    # currently only supporting the single admin user
-    username = 'admin'
     current_password = StringField('Current password', validators=[
         DataRequired(),
-        Length(min=5, max=25),
+        Length(min=5, max=25)
         ])
+    show_current_password = BooleanField()
     new_password = PasswordField('New password', validators=[
         DataRequired(),
-        Length(min=8, max=25),
-        EqualTo('confirm', message='Passwords must match') 
+        Length(min=8, max=25)
         ])
-    confirm_password = PasswordField('Confirm password')
+    show_new_password = BooleanField()
+    confirm_password = PasswordField('Confirm password', validators=[
+        DataRequired(),
+        EqualTo('new_password', message='Passwords must match')
+    ])
+    show_confirm_password = BooleanField()
     submit = SubmitField('Update Password')
+
     # recaptcha = RecaptchaField()

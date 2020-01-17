@@ -3,7 +3,7 @@ from getpass import getpass
 import sys
 
 from flask import current_app
-from app import app, User, db
+from nl.carcharging.webapp.WebApp import app, User, db
 from werkzeug.security import generate_password_hash, check_password_hash
 
 def main():
