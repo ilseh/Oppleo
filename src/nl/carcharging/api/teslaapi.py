@@ -7,11 +7,17 @@ import logging
 class TeslaAPI:
     # defining the api-endpoint  
     API_BASE = 'https://owner-api.teslamotors.com'
-    API_AUTHENTICATION = '/oauth/token?grant_type=password' # POST
+    API_AUTHENTICATION = '/oauth/token' # POST
     API_VEHICLES = '/api/1/vehicles' # GET
     API_WAKE_UP = '/api/1/vehicles/{id}/wake_up' # POST
     API_VEHICLE_STATE = '/api/1/vehicles/{id}/data_request/vehicle_state' # GET
-    # All requests require a User-Agent header with any value provided. 
+    API_REVOKE = 'https://owner-api.teslamotors.com/oauth/revoke' # POST
+        # All requests require a User-Agent header with any value provided. 
+
+    API_AUTHENTICATION_GRANT_TYPE_PARAM = 'grant_type'
+    API_AUTHENTICATION_GRANT_TYPE_PASSWORD = 'password'
+    API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN = 'refresh_token'
+    ?grant_type=password
 
     # https://tesla-api.timdorr.com/api-basics/authentication
     # https://pastebin.com/pS7Z6yyP
@@ -26,6 +32,7 @@ class TeslaAPI:
     VEHICLE_STATE_ASLEEP = 'asleep'
     VEHICLE_STATE_AWAKE = 'online'
     VEHICLE_ID_PARAM = 'id_s'
+    VEHICLE_DISPLAY_NAME_PARAM = 'display_name'
 
     access_token = None
     token_type = None
@@ -42,11 +49,24 @@ class TeslaAPI:
         self.logger = logging.getLogger('TeslaAPI')
         self.logger.debug('TeslaApi.__init__')
 
+    def reset(self):
+        self.access_token = None
+        self.token_type = None
+        self.created_at = None 
+        self.expires_in = None
+        self.refresh_token = None
+        self.vehicle_list = None
+        self.selected_vehicle = None  
+        self.odometer = None
 
-    def authenticate(self):
+    def authenticate(self, username=None, password=None):
         self.logger.debug('authenticate() ' + self.API_AUTHENTICATION)
+        if (username==None or password==None):
+            self.logger.debug('Credentials to obtain token missing.)
+            return
+
         data = {
-            "grant_type": "password",
+            "grant_type": self.API_AUTHENTICATION_GRANT_TYPE_PASSWORD,
             "client_id": self.TESLA_CLIENT_ID,
             "client_secret": self.TESLA_CLIENT_SECRET,
             "email": "email",
@@ -56,7 +76,10 @@ class TeslaAPI:
         # 01 - Authenticate [POST]
         # sending post request and saving response as response object 
         r = requests.post(
-            url = self.API_BASE + self.API_AUTHENTICATION, 
+            url = self.API_BASE + 
+                  self.API_AUTHENTICATION + '?' + 
+                  self.API_AUTHENTICATION_GRANT_TYPE_PARAM + '=' +
+                  self.API_AUTHENTICATION_GRANT_TYPE_PASSWORD, 
             data = data
             ) 
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
@@ -98,7 +121,7 @@ class TeslaAPI:
         self.logger.debug("Vehicle count : %s " %response_dict['count'])
         self.vehicle_list = response_dict['response']
         for vehicle in self.vehicle_list:
-            self.logger.debug("The display_name (given vehicle name) is : %s " %vehicle['display_name']) 
+            self.logger.debug("The display_name (given vehicle name) is : %s " %vehicle[self.VEHICLE_DISPLAY_NAME_PARAM]) 
             self.logger.debug("Het id_s is : %s " %vehicle[self.VEHICLE_ID_PARAM]) 
             self.logger.debug("Het state is : %s " %vehicle[self.VEHICLE_STATE_PARAM]) 
             self.logger.debug("Het vehicle_id is : %s " %vehicle['vehicle_id']) 
@@ -195,3 +218,93 @@ class TeslaAPI:
             self.getVehicleState()
         return self.odometer
 
+
+    def refreshToken(self):
+        self.logger.debug('refreshToken() ' + self.API_AUTHENTICATION)
+        if (self.refresh_token==None):
+            self.logger.debug('Refresh token missing.)
+            return False
+            
+        data = {
+            "grant_type": self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN,
+            "client_id": self.TESLA_CLIENT_ID,
+            "client_secret": self.TESLA_CLIENT_SECRET,
+            "refresh_token": self.refresh_token
+        }
+
+        # 01 - Authenticate [POST]
+        # sending post request and saving response as response object 
+        r = requests.post(
+            url = self.API_BASE + 
+                  self.API_AUTHENTICATION + '?' + 
+                  self.API_AUTHENTICATION_GRANT_TYPE_PARAM + '=' +
+                  self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN, 
+            data = data
+            ) 
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
+        if (r.status_code != self.HTTP_200_OK):
+            return False
+
+        # extracting response text
+        response_dict = json.loads(r.text) 
+        self.access_token = response_dict['access_token']
+        self.token_type = response_dict['token_type']
+        self.created_at = response_dict['created_at'] 
+        self.expires_in = response_dict['expires_in']
+        self.refresh_token = response_dict['refresh_token']
+
+        self.logger.debug("{\n  'access_token': '%s',\n  'token_type': '%s',\n  'created_at': '%s',\n  'expires_in': '%s',\n  'refresh_token': '%s'\n}" %(self.access_token, self.token_type, self.created_at, self.expires_in, self.refresh_token))
+        return True
+
+
+    def revokeToken(self):
+        self.logger.debug("revokeToken()")
+
+        if (self.access_token == None):
+            self.logger.debug("No access_token to revoke")
+            return False
+
+        data = {
+            "token": self.access_token
+        }
+        r = requests.post(
+            url = self.API_BASE + self.API_REVOKE,
+            data = data
+            ) 
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
+        if (r.status_code != self.HTTP_200_OK):
+            self.logger.debug("Not successfull revoking token")
+            return False
+
+        self.reset()
+        return True
+
+   def hasValidToken(self):
+        self.logger.debug("has_valid_token()")
+        if (self.access_token is None):
+            self.logger.debug("token is None")
+            return False
+        date = datetime.datetime.fromtimestamp(self.created_at + self.expires_in) # / 1e3
+        today = date.today()
+        if (date > today):
+            self.logger.debug("token is still valid")
+            return True
+        self.logger.debug("token has expired")
+        return False
+
+
+    # Token valid for 45 days, refresh if token is valid for less than 31 days
+    def tokenRefreshCheck(self):
+        self.logger.debug("token_refresh_check()")
+        if (not self.hasValidToken()):
+            self.logger.debug("token is not valid")
+            # Report update if there is an invalid access_token
+            return (self.access_token != None)
+        date = datetime.datetime.fromtimestamp(rfid.api_created_at + rfid.api_expires_in) # / 1e3
+        today = date.today()
+        delta = datetime.timedelta(days=31)
+        if (today > (date - delta)):
+            self.logger.debug("Needs refresh")
+            return self.refreshToken()
+        self.logger.debug("Token does not need refreshing yet")
+        return False
