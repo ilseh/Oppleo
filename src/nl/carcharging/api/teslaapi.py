@@ -17,7 +17,6 @@ class TeslaAPI:
     API_AUTHENTICATION_GRANT_TYPE_PARAM = 'grant_type'
     API_AUTHENTICATION_GRANT_TYPE_PASSWORD = 'password'
     API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN = 'refresh_token'
-    ?grant_type=password
 
     # https://tesla-api.timdorr.com/api-basics/authentication
     # https://pastebin.com/pS7Z6yyP
