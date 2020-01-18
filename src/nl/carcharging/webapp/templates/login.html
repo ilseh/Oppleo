@@ -56,7 +56,20 @@
             cursor: pointer;
         }
         </style>
-    
+        <script>
+            jQuery(document).ready(function () {
+                $("button[id^=show_]").click(function() {
+                    id = $(this).attr('id').split("show_").pop()
+                    $('input[id='+id).attr(
+                        'type', 
+                        ( $('input[id='+id).attr('type') === "password" ? 'text' : 'password')
+                    )
+                    $(this).find('i').toggleClass('fa-eye')     // far fa-eye
+                    $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
+                })
+                $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+            })
+        </script>   
     </head>
     <body>
 
@@ -72,9 +85,11 @@
   </div>
   {% endif %}
 
-{% if form.errors %}
-{{ form.errors }}
-{% endif %}
+  {% if form.errors %}
+  <div class="text-center" style="color: #ef5350;">
+    <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ form.errors }}</span></span>
+  </div>
+  {% endif %}
 
 <form id="login-form" class="form-horizontal m-t-20" method="POST" action="/login">
     {{ form.csrf_token }}
@@ -83,7 +98,7 @@
           <div class="col-12">
               <div class="input-group">
                   <span class="input-group-addon"><i class="mdi mdi-account"></i></span>
-                  <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username">
+                  <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username" value="{% if form.username.data is not none %}{{ form.username.data }}{% endif %}">
               </div>
           </div>
       </div>
@@ -92,8 +107,20 @@
           <div class="col-12">
               <div class="input-group">
                   <span class="input-group-addon"><i class="mdi mdi-radar"></i></span>
-                  <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password">
-              </div>
+                  <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password" value="{% if form.password.data is not none %}{{ form.password.data }}{% endif %}">
+                  <span class="input-group-btn">
+                    <button 
+                        id="show_password"
+                        type="button" 
+                        class="btn waves-effect waves-light btn-primary" 
+                        data-toggle="tooltip" 
+                        data-placement="bottom" 
+                        data-html="true" 
+                        title="<em>Klik om de tekst zichtbaar te maken</em>"
+                        >
+                        <i class="far fa-eye"></i>
+                    </button>
+          </div>
           </div>
       </div>
 
