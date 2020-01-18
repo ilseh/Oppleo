@@ -149,6 +149,7 @@ class SessionModel(Base):
     def to_json(self):
         return (
             json.dumps({
+                "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
                 "start_time": str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")),
                 "rfid": self.rfid,
@@ -166,6 +167,7 @@ class SessionModel(Base):
     # convert into dict:
     def to_dict(self):
         return ( {
+            "id": str(self.id),
             "energy_device_id": str(self.energy_device_id),
             "start_time": (str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None),
             "rfid": self.rfid,

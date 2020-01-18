@@ -114,21 +114,11 @@
               $(this).toggleClass("text-info").fadeIn(50)
             })
           },
-          "columns": [
-            null, 
-            { "orderable": false },
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            { "orderable": false },
-            { "orderable": false },
-            { "orderable": false },
-            { "orderable": false }
-          ],
+          "columnDefs": [{
+            "targets": [1, 9, 10, 11, 12],
+            "sorting": false,
+            "orderable": false
+          }],
           "searching": false
         });
         dt.draw('full-reset')

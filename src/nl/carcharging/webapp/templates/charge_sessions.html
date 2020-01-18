@@ -1,5 +1,5 @@
 {% extends "template.html" %}
-{% block title %}Verbruik{% endblock %}
+{% block title %}Charge sessions{% endblock %}
 {% block head %}
   {% block jquery %} 
     {% include 'includes/include.jquery-3.3.1.html' %}
@@ -87,22 +87,14 @@
       )
     }
     var dt = undefined
-    function getSessionData( ts = undefined, n = undefined ) {
-      console.log(timestamp() + ' getSessionData()')
+    function getChargeSessions() {
+      console.log(timestamp() + ' getChargeSessions()')
     
 //      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
+            
       $.ajax({
         type		: 'GET',
-        url			: (Number.isInteger(n) ? 
-                    (Number.isInteger(ts) ? 
-                      '/charge_sessions/' + ts + '/' + n : 
-                      '/charge_sessions//' + n
-                    ) :
-                    (Number.isInteger(ts) ? 
-                      '/charge_sessions/' + ts : 
-                      '/charge_sessions'
-                    )
-                  ),
+        url			: '/charge_sessions///json',
         dataType	: 'json',
             encode		: true
       }) // using the done promise callback
@@ -111,9 +103,9 @@
         console.log(data)
   //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
 
-        dt = $('table#usage').DataTable( {
+        dt = $('table#charge_sessions').DataTable( {
           "pageLength": 25,
-          "order": [[ 0, "desc" ]],
+          "order": [[ 2, "desc" ]], // start_time
           dom: 'Blfrtip',
           buttons: [
             'copy', 
@@ -127,36 +119,91 @@
             'print'
           ],
           "createdRow": function(row, data, dataIndex) {
-//            $(row).addClass('text-info')
             $(row).toggleClass("text-info").fadeOut(800, function() {              
               $(this).toggleClass("text-info").fadeIn(50)
             })
           },
+          "columnDefs": [{
+            // This is for the Action column icons
+            "targets": 1,
+            "render": function (data, type, row) {
+              return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<a href="/rfid_tokens/' + data + '" target="_self">' + data + '</a>'
+            }
+          }, {
+            // This is for the Action column icons
+            "targets": 4,
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">' + data + 'km</span>'
+            }
+          }, {
+            "targets": [3, 6, 9],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">' + (Math.round(data * 10) /10) + 'kWh</span>'
+            }
+          }, {
+            "targets": [8, 10],
+            "render": function (data, type, row) {
+              return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">&euro; ' + (Math.round(data * 100) /100).toFixed(2) + '</span>'
+            }
+          }],
           "searching": false
-
         });
         dt.draw('full-reset')
         data.forEach(element => {
-//          console.log(element.a_l1)
 
-          $("span#energy_device_id").text("("+element.energy_device_id+")")
           dt.row.add([
-            element.created_at,
-            element.kw_total +'kWh',
-            element.kwh_l1 +'kWh',
-            element.kwh_l2 +'kWh',
-            element.kwh_l3 +'kWh',
-            element.a_l1 +'A',
-            element.a_l2 +'A',
-            element.a_l3 +'A',
-            element.p_l1 +'W',
-            element.p_l2 +'W',
-            element.p_l3 +'W',
-            element.v_l1 +'V',
-            element.v_l1 +'V',
-            element.v_l3 +'V',
-            element.hz +' Hz'
+            element.id,
+            element.rfid,
+            ( (typeof element.start_time === 'string' || element.start_time instanceof String) ?
+              element.start_time :
+              '-'
+            ),
+            ( (typeof element.start_value === 'string' || element.start_value instanceof String) ?
+              element.start_value :
+              '-'
+            ),
+            ( (typeof element.km === 'string' || element.km instanceof String) ?
+              element.km :
+              '-'
+            ),
+            ( (typeof element.end_time === 'string' || element.end_time instanceof String) ?
+              element.end_time :
+              '-'
+            ),
+            ( (typeof element.end_value === 'string' || element.end_value instanceof String) ?
+              element.end_value :
+              '-'
+            ),
+            element.energy_device_id,
+            ( (typeof element.tariff === 'string' || element.tariff instanceof String) ?
+              element.tariff :
+              '-'
+            ),
+            ( (typeof element.total_energy === 'string' || element.total_energy instanceof String) ?
+              element.total_energy :
+              '-'
+            ),
+            ( (typeof element.total_price === 'string' || element.total_price instanceof String) ?
+              element.total_price :
+              '-'
+            )
           ]).draw( false )
+          $('button#edit_' + element.rfid).click(function() {
+            //Do stuff when clicked
+            window.location = location + $(this).attr('id').split("_").pop();
+          })
         })
       })
       .fail(function() {
@@ -166,62 +213,11 @@
         // Check every 60 seconds
       })
     }
-    var socket = undefined
-    function startWebSocket() {
-      console.log(timestamp() + ' startWebSocket()')
-      // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
-      socket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/usage')
-      // this is a callback that triggers when the "my response" event is emitted by the server.
-      socket.on('status_update', function(msg) {
-        console.log('Received: ' + JSON.stringify(msg.data))
-
-        // Check if entry does not already exist. After a server restart the last entry is always re-sent. 
-        var entryExists = false
-        dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
-          var data = this.data()
-          if (data[0] === msg.data.created_at) {
-            console.log('Websocket data entry ['+msg.data.created_at+'] already in table through initial pull request.')
-            entryExists = true
-            // currently no way to stop the every() loop... (return false does not work)
-            return false
-          }
-        })
-        if (entryExists) {
-          return
-        }
-
-        dt.row.add([
-            msg.data.created_at,
-            msg.data.kw_total +'kWh',
-            msg.data.kwh_l1 +'kWh',
-            msg.data.kwh_l2 +'kWh',
-            msg.data.kwh_l3 +'kWh',
-            msg.data.a_l1 +'A',
-            msg.data.a_l2 +'A',
-            msg.data.a_l3 +'A',
-            msg.data.p_l1 +'W',
-            msg.data.p_l2 +'W',
-            msg.data.p_l3 +'W',
-            msg.data.v_l1 +'V',
-            msg.data.v_l1 +'V',
-            msg.data.v_l3 +'V',
-            msg.data.hz +'Hz'
-          ]).draw( false )
-      })
-      $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
-        $(this).toggleClass("testbg").fadeIn(0)
-      })
-    }
-    //example of triggering an event on click of a form submit button
-    function sendSocketMsg() {
-        socket.emit('my event', {data: $('#emit_data').val()});
-    }
 
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
-      getUsageData({{ cnt }})
-      startWebSocket()
+      getChargeSessions()
     })
 
     </script>
@@ -236,13 +232,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box">
-                <div class="btn-group pull-right">
-                    <ol class="breadcrumb hide-phone p-0 m-0">
-                        <li class="breadcrumb-item"><a href="#">Verbruik</a></li>
-                        <li class="breadcrumb-item active">Tabel</li>
-                    </ol>
-                </div>
-                <h4 class="page-title">Verbruik</h4>
+                <h4 class="page-title">Laad transacties</h4>
             </div>
         </div>
     </div>
@@ -252,24 +242,20 @@
     <div class="row">
       <div class="col-12">
         <div class="card-box table-responsive">
-          <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+          <table id="charge_sessions" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
-              <tr style="font-size: 14pt; font-weight: bold;">
-                <th rowspan="2" style="text-align: center;">Laadpunt</th>
-                <th rowspan="2" style="text-align: center;">ID</th>
-                <th colspan="2" style="text-align: center;">Start</th>
-                <th colspan="2" style="text-align: center;">Einde</th>
-                <th colspan="3" style="text-align: center;">Totaal</th>
-              </tr>
               <tr>
-                <th style="text-align: center;"></th style="text-align: center;">
-                <th style="text-align: center;">Tijd</th style="text-align: center;">
-                <th style="text-align: center;">kWh</th style="text-align: center;">
-                <th style="text-align: center;">Tijd</th style="text-align: center;">
-                <th style="text-align: center;">kWh</th style="text-align: center;">
-                <th style="text-align: center;">kWh</th style="text-align: center;">
-                <th style="text-align: center;">Tarief</th style="text-align: center;">
-                <th style="text-align: center;">Kosten</th style="text-align: center;">
+                <th style="text-align: center;">id</th>
+                <th style="text-align: center;">Laadpas</th>
+                <th style="text-align: center;">Starttijd</th>
+                <th style="text-align: center;">Startmeting</th>
+                <th style="text-align: center;">km stand</th>
+                <th style="text-align: center;">Eindtijd</th>
+                <th style="text-align: center;">Eindmeting</th>
+                <th style="text-align: center;">Laadpunt</th>
+                <th style="text-align: center;">Tarief</th>
+                <th style="text-align: center;">Verbruik</th>
+                <th style="text-align: center;">Prijs</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>

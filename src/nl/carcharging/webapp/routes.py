@@ -20,6 +20,7 @@ from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureMo
 from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.SessionModel import SessionModel
 from nl.carcharging.models.RfidModel import RfidModel
+from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
 from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 
 
@@ -194,7 +195,13 @@ def usage_graph(cnt="undefined"):
 def settings(active=1):
     diag = Raspberry().get_all()
     diag_json = json.dumps(diag)
-    return render_template("settings.html", active=active, diag=diag, diag_json=diag_json)
+    charger_config_str = ChargerConfigModel().get_config()[0].to_str()
+    return render_template("settings.html", 
+                active=active, 
+                diag=diag, 
+                diag_json=diag_json, 
+                charger_config=charger_config_str
+            )
 
 
 @webapp.route("/usage_data")
@@ -226,17 +233,28 @@ def usage_data_since(since_timestamp, cnt=-1):
 # Cnt is a maximum to limit impact of this request
 @webapp.route("/charge_sessions")
 @webapp.route("/charge_sessions/")
-@webapp.route("/charge_sessions//<int:cnt>")
+@webapp.route("/charge_sessions//")
+@webapp.route("/charge_sessions///")
 @webapp.route("/charge_sessions/<path:since_timestamp>")
+@webapp.route("/charge_sessions/<path:since_timestamp>/")
+@webapp.route("/charge_sessions/<path:since_timestamp>//")
 @webapp.route("/charge_sessions/<path:since_timestamp>/<int:cnt>")
-def charge_sessions(since_timestamp=None, cnt=-1):
+@webapp.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/")
+@webapp.route("/charge_sessions//<int:cnt>")
+@webapp.route("/charge_sessions//<int:cnt>/")
+@webapp.route("/charge_sessions///<path:format>")
+@webapp.route("/charge_sessions/<path:since_timestamp>//<path:format>")
+@webapp.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/<path:format>")
+@webapp.route("/charge_sessions//<int:cnt>/<path:format>")
+def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
+    if (format.strip().lower() != 'json'):
+        return render_template("charge_sessions.html")
     charge_sessions = SessionModel()
     charge_sessions.energy_device_id = "laadpaal_noord"
     qr = charge_sessions.get_last_n_sessions_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())
-
     return jsonify(qr_l)
 
 
@@ -249,17 +267,14 @@ def charge_sessions(since_timestamp=None, cnt=-1):
 @webapp.route("/rfid_tokens/<path:token>/<path:format>")
 @authenticated_resource
 def rfid_tokens(format='html', token=None):
+    if (format.strip().lower() != 'json'):
+        return render_template("tokens.html")
     # Check if token exist, if not rfid is None
+    rfid_list = []
     rfid = RfidModel().get_one(token)
     if ((token == None) or (rfid == None)):
         rfids = RfidModel().get_all()
-        rfid_list = []
         for rfid in rfids:
             rfid_list.append(rfid.to_str())
-        if (format.strip().lower() != 'json'):
-            return render_template("tokens.html", tokens=json.dumps(rfid_list))
-        else:
-            return jsonify(rfid_list)
-    else:
-        return render_template("token_edit.html", token=json.dumps(rfid.to_str()))
+    return jsonify(rfid_list)
         

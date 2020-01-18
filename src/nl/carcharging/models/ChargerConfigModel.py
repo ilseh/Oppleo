@@ -1,0 +1,59 @@
+import datetime
+import logging
+
+from marshmallow import fields, Schema
+
+from . import db
+from nl.carcharging.models.base import Base, Session
+
+
+class ChargerConfigModel(Base):
+    __tablename__ = 'charger_config'
+
+    charger_name = db.Column(db.String(100), primary_key=True)
+    charger_tariff = db.Column(db.Float)        # €/kWh
+    modified_at = db.Column(db.DateTime)        # Last config update
+
+    def __init__(self):
+        self.logger = logging.getLogger('nl.carcharging.models.ChargerConfigModel')
+        self.logger.debug('Initializing ChargerConfigModel without data')
+
+
+    def set(self, data):
+        for key in data:
+            setattr(self, key, data.get(key))
+        self.modified_at = datetime.datetime.now()
+
+    def save(self):
+        session = Session()
+        session.add(self)
+        session.commit()
+
+    def delete(self):
+        session = Session()
+        session.delete(self)
+        session.commit()
+
+    @staticmethod
+    def get_config():
+        session = Session()
+        # Should be only one, return last modified
+        return session.query(ChargerConfigModel) \
+            .order_by(ChargerConfigModel.modified_at.desc()).limit(1).all()
+
+    def __repr(self):
+        return self.to_str()
+
+    def to_str(self):
+        return ({
+                "charger_name": str(self.charger_name),
+                "charger_tariff": self.charger_tariff,
+                "modified_at": (str(self.modified_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.modified_at is not None else None)
+            }
+        )
+
+class ChargerConfigSchema(Schema):
+    """
+    ChargerConfigModel Schema
+    """
+    charger_tariff = fields.Float(dump_only=True)
