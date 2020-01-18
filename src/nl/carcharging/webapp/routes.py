@@ -42,12 +42,7 @@ def index():
 #@authenticated_resource
 def home():
     return redirect('/')
-    """
-    try:
-        return render_template('dashboard.html')
-    except TemplateNotFound:
-        abort(404)
-    """
+
 
 @webapp.errorhandler(404)
 def page_not_found(e):
@@ -143,6 +138,20 @@ def change_password():
         return render_template(
             'change_password_success.html', 
             )
+    # Translate errors
+    if ('new_password' in form.errors):
+        for i in range(len(form.errors['new_password'])):
+            if form.errors['new_password'][i] == "Field must be between 8 and 25 characters long.":
+                form.errors['new_password'][i] = "Wachtwoord moet tussen 8 en 25 karakters lang zijn."
+    if ('confirm_password' in form.errors):
+        for i in range(len(form.errors['confirm_password'])):
+            if form.errors['confirm_password'][i] == "Passwords must match":
+                form.errors['confirm_password'][i] = "Wachtwoord moet gelijk zijn aan het wachtwoord hierboven."
+    if ('csrf_token' in form.errors):
+        for i in range(len(form.errors['csrf_token'])):
+            if form.errors['csrf_token'][i] == "The CSRF token is invalid.":
+                form.errors['csrf_token'][i] = "Het CSRF token is verlopen. Herlaad de pagina om een nieuw token te genereren."
+
     # Not valid - error message
     return render_template(
         'change_password.html', 
