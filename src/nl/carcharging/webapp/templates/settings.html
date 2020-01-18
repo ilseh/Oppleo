@@ -311,7 +311,28 @@
 
                   <div class="tab-content">
                       <div class="tab-pane{% if active==1 %} active{% endif %}" id="v-charger">
-                          <p>Naam laadpunt: laadpunt_noord.</p>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th></th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>Naam laadpunt:</td>
+                              <td class="text-primary">{{ charger_config['charger_name'] }}</td>
+                            </tr>
+                            <tr>
+                              <td>Laadpunt tarief:</td>
+                              <td class="text-primary">&euro;  {{ charger_config['charger_tariff'] }}</td class="text-primary">
+                            </tr>
+                            <tr>
+                              <td>Laatste wijziging:</td>
+                              <td class="text-primary">{{ charger_config['modified_at'] }}</td class="text-primary"git>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                       <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
                           <p>Type: modbus</p>
