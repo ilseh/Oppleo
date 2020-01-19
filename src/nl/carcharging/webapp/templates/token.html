@@ -1,0 +1,393 @@
+{% extends "template.html" %}
+{% block title %}Vehicle Token{% endblock %}
+{% block jquery %} 
+  {% include 'includes/include.jquery-3.3.1.html' %}
+{% endblock %} 
+{% block head %}
+  {{ super() }}
+  
+  <!-- Datepicker, Date range picker, Bootstrap witch button -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
+
+  <!-- Moment, required for date range picker -->
+  <script src="{{ url_for('static', filename='plugins/moment/moment.js') }}"></script>
+
+  <!-- Datepicker, Date range picker, Bootstrap witch button -->
+  <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
+
+  <!-- Socket IO -->
+  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
+  <style>
+    .paginate_button {
+        padding: 0px !important;
+    }
+    tbody td {
+      padding: 2px 2px !important;
+      text-align: center;
+      background-color: #36404a;
+    }
+    div .dt-buttons {
+      margin-bottom: 10px;
+      margin-left: 3px;
+    }
+    table, table th, table td {
+      border: 0px !important;
+      border-bottom: 1px solid #434f5c !important;
+      /* border-bottom: 1px solid #e9ecef !important; */
+    }
+    table th {
+      border-right: 1px dashed #434f5c !important;
+    }
+  </style>
+
+  <script>
+    function timestamp() {
+      d = new Date();
+      return (d.getFullYear() + "-" + 
+             (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
+             (d.getDate()<10?'0':'') + d.getDate() + '.' + 
+             (d.getHours()<10?'0':'') + d.getHours() + ":" + 
+             (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
+             (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
+             (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
+      )
+    }
+    function getRfidTokens() {
+      console.log(timestamp() + ' getRfidTokens()')
+      $.ajax({
+        type		: 'GET',
+        url			: '/rfid_tokens//json',
+        dataType	: 'json',
+            encode		: true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+
+        $('button[data-toggle=tooltip]').tooltip({ 
+          boundary: 'window' 
+        })
+      })
+      .fail(function() {
+      })
+      .always(function() {
+      })
+    }
+
+    function showHideCredentials() {
+      if ($('input[name="get_odometer"]').prop('checked')) {
+        $('tr#oauth_email_row').show()
+        $('tr#oauth_password_row').show()
+      } else {
+        $('tr#oauth_email_row').hide()
+        $('tr#oauth_password_row').hide()
+      }
+    }
+
+    function setResetGetOdometer() {
+      if ($('input[name="vehicle_make"]').val().toLowerCase() == "tesla") {
+        $('input[name=get_odometer]').prop('disabled', false)
+        $('input[name=get_odometer]').attr('data-onstyle', "primary")
+        $('span#odo_2').hide()
+      } else {
+        $('input#get_odometer').bootstrapToggle('off')
+        $('input#get_odometer').prop('checked', false).change()
+        $('input[name=get_odometer]').prop('disabled', true)
+        $('input[name=get_odometer]').attr('data-onstyle', "secondary")
+        $('span#odo_2').show()
+      }
+    }
+
+    jQuery(document).ready(function () {
+      console.log(timestamp() + " file load completed!")
+
+      $('#valid-range').datepicker({
+          todayHighlight: true,
+          autoclose: true,
+          startDate : undefined,
+          endDate   : undefined,
+          format: "d MM yyyy"    // 7 January 2020
+      })
+      $("button[id^=show_]").click(function() {
+          id = $(this).attr('id').split("show_").pop()
+          $('input[id='+id).attr(
+              'type', 
+              ( $('input[id='+id).attr('type') === "password" ? 'text' : 'password')
+          )
+          $(this).find('i').toggleClass('fa-eye')     // far fa-eye
+          $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
+      })
+      $('button[data-toggle=tooltip]').tooltip({ 
+        boundary: 'window', 
+        trigger : 'hover'   // Allow button clicks
+      })
+      $('button[data-toggle="tooltip"]').on('click', function () {
+        $(this).tooltip('hide')
+      })
+      $('input#get_odometer').bootstrapToggle()
+      $('input#enabled').bootstrapToggle()
+
+      $('input[name="vehicle_make"]').on("change paste keyup", function() {
+        setResetGetOdometer()
+      })
+      $('input[name="get_odometer"]').on("change paste keyup", function() {
+        showHideCredentials()
+      })
+      showHideCredentials()
+      setResetGetOdometer()
+    })
+
+
+    </script>
+
+{% endblock %}
+{% block content %}
+
+<div class="wrapper" id="{{ var1 }}">
+  <div class="container-fluid">
+
+    <!-- Page-Title -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <h4 class="page-title">Laadpas</h4>
+            </div>
+        </div>
+    </div>
+    <!-- end page title end breadcrumb -->
+
+    <form id="rfid-change-form" class="form-horizontal m-t-20" method="POST" action="/rfid_tokens/{{ rfid_model['rfid'] }}/">
+        {{ form.csrf_token }}
+
+    <div class="row">
+      <div class="col-8">
+        <div class="card-box table-responsive">
+          <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+            <tr>
+              <th><h5>Pasnummer</h5></th>
+              <td class="text-primary" style="vertical-align: middle; text-align: left;"><h4 style="padding-left: 10px;">{{ rfid_model['rfid'] }}</h4padding-left: 10px;></td>
+            </tr>
+            <tr>
+              <th><h5>Naam</h5></th>
+              <td>
+                <input class="form-control" id="name" name="name" type="text" placeholder="Naam" 
+                       value="{% if rfid_model['name'] is not none %} {{ rfid_model['name'] }}{% endif %}">
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Actief</h5></th>
+              <td>
+                <div class="input-group">
+                  <span>
+                    <input type="checkbox" 
+                      {% if rfid_model['enabled'] %}checked{% endif %}
+                      name="enabled"
+                      id="enabled"
+                      data-toggle="toggle"
+                      data-on="<i class='far fa-thumbs-up'></i></i> AAN"
+                      data-off="<i class='far fa-thumbs-down'></i> UIT"
+                      data-onstyle="primary"
+                      data-offstyle="dark"
+                      data-size="sm"
+                      data-height="40"
+                      data-width="100"
+                    />
+                  </span>
+                  <span id="enabled_3" class="input-group-addon" style="width: 100%; background-color: #36404a; border: 0px; font-style: italic;">&nbsp;</span id="odo_1">
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Registratie</h5></th>
+              <td class="text-light" style="vertical-align: middle; text-align: left;">
+                <h5 style="padding-left: 10px;">
+                  <i class="far fa-calendar-alt"></i>&nbsp;
+                  {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
+                  &nbsp;
+                  <i class="far fa-clock"></i>&nbsp;
+                  {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
+                </h5>
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Laatst aangeboden</h5></th>
+              <td class="text-light" style="vertical-align: middle; text-align: left;">
+                <h5 style="padding-left: 10px;">
+                  <i class="far fa-calendar-alt"></i>&nbsp;
+                  {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
+                  &nbsp;
+                  <i class="far fa-clock"></i>&nbsp;
+                  {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
+                </h5 style="padding-left: 10px;">
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Toegestaan</h5></th>
+              <td>
+                <div class="input-daterange input-group" id="valid-range">
+                  <span class="input-group-addon bg-primary b-0 text-white">Van</span>
+                  <input type="text" class="form-control" name="valid_from" 
+                      value="{% if rfid_model['valid_from'] is not none %}{{ rfid_model['valid_from'] }}{% endif %}"/>
+                  <button class="input-group-addon bg-dark b-0 text-white"
+                    onclick="$('input[name=valid_from]').val(''); return false;">
+                    <i class="far fa-trash-alt"></i>
+                  </button>    
+                  <span class="input-group-addon bg-primary b-0 text-white">Tot</span>
+                  <input type="text" class="form-control" name="valid_until"
+                      value="{% if rfid_model['valid_until'] is not none %}{{ rfid_model['valid_until'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
+                  <button class="input-group-addon bg-dark b-0 text-white"
+                    onclick="$('input[name=valid_until]').val(''); return false;">
+                    <i class="far fa-trash-alt"></i>
+                  </button>    
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Merk</h5></th>
+              <td>
+                <input class="form-control" id="vehicle_make" name="vehicle_make" type="text" placeholder="Merk" list="car_makes"
+                         value="{% if rfid_model['vehicle_make'] is not none %}{{ rfid_model['vehicle_make'] }}{% endif %}">
+                <datalist id="car_makes">
+                  <option>Audi</option>
+                  <option>BMW</option>
+                  <option>Mercedes</option>
+                  <option>Peugeot</option>
+                  <option>Tesla</option>
+                </datalist>          
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Model</h5></th>
+              <td>
+                <input class="form-control" id="vehicle_model" name="vehicle_model" type="text" placeholder="Model" list="car_models"
+                         value="{% if rfid_model['vehicle_model'] is not none %}{{ rfid_model['vehicle_model'] }}{% endif %}">
+                <datalist id="car_models">
+                  <option>Model S</option>
+                  <option>Model X</option>
+                  <option>Model 3</option>
+                  <option>i3</option>
+                </datalist>          
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Kenteken</h5></th>
+              <td>
+                <input class="form-control" id="license_plate" name="license_plate" type="text" placeholder="Kenteken" 
+                       value="{% if rfid_model['license_plate'] is not none %} {{ rfid_model['license_plate'] }}{% endif %}">
+              </td>
+            </tr>
+            <tr>
+              <th><h5>Kilometerregistratie</h5></th>
+              <td>
+                <div class="input-group">
+                  <span>
+                    <input type="checkbox" 
+                      {% if rfid_model['get_odometer'] == True %}checked{% endif %}
+                      name="get_odometer"
+                      id="get_odometer"
+                      data-toggle="toggle"
+                      data-on="<i class='fas fa-exchange-alt'></i> AAN"
+                      data-off="<i class='fas fa-ban'></i> UIT"
+                      data-onstyle="primary"
+                      data-offstyle="dark"
+                      data-size="sm"
+                      data-height="40"
+                      data-width="100"
+                    />
+                  </span>
+                  <span id="odo_1" class="input-group-addon" style="width: 10%; background-color: #36404a; border: 0px;">&nbsp;</span>
+                  <span id="odo_2" class="input-group-addon" style="text-align: background-color: #36404a; border: 0px; left; font-style: italic;"><i class="mdi mdi-alert-outline"></i>&nbsp;Alleen beschikbaar voor Tesla</span>
+                  <span id="odo_3" class="input-group-addon" style="width: 100%; background-color: #36404a; border: 0px;">&nbsp;</span>
+                </div>
+              </td>
+            </tr>
+            <tr id="oauth_email_row">
+              <th><h5>E-mail</h5></th>
+              <td>
+                <div class="input-group">
+                  <span class="input-group-addon"><i class="mdi mdi-account"></i></span>
+                  <input class="form-control" id="oauth_email" name="oauth_email" type="text" placeholder="E-mail" value="">
+                </div>
+              </td>
+            </tr>
+            <tr id="oauth_password_row">
+              <th><h5>Wachtwoord</h5></th>
+              <td>
+                <div class="input-group">
+                  <span class="input-group-addon"><i class="mdi mdi-radar"></i></span>
+                  <input class="form-control" id="oauth_password" name="oauth_password" type="password" placeholder="Password" value="">
+                  <span class="input-group-btn">
+                    <button 
+                        id="show_oauth_password"
+                        type="button" 
+                        class="btn waves-effect waves-light btn-primary" 
+                        data-toggle="tooltip" 
+                        data-placement="bottom" 
+                        data-html="true" 
+                        title="<em>Klik om de tekst zichtbaar te maken</em>"
+                        >
+                        <i class="far fa-eye"></i>
+                    </button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <tr id="oauth_token_row1">
+              <th><h5><i class="fas fa-key"></i> OAuth token</h5></thid="oauth_password_row">
+              <td>
+                <div class="input-group">
+                  <span class="input-group-addon"><i class="fas fa-key"></i></span>
+                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic;">
+                    <i class="mdi mdi-alert-outline"></i>&nbsp;Geen OAuth token beschikbaar
+                  </span>
+                  <span id="odo_3" class="input-group-addon" style="width: 100%;">&nbsp;</span>
+                </div>
+              </td>
+            </tr>
+            <tr id="oauth_token_row2">
+              <th><h5><i class="fas fa-key"></i> OAuth token</h5></th id="oauth_token_row1">
+              <td>
+                <div class="input-group">
+                  <span class="input-group-addon"><i class="fas fa-key"></i></span>
+                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic;">
+                    <i class="fas fa-info-circle"></i>&nbsp;OAuth token verloopt 20 February 2020, 16:55u
+                  </span>
+                  <span class="input-group-btn">
+                    <button 
+                        id="refresh_token"
+                        type="button" 
+                        class="btn waves-effect waves-light btn-primary" 
+                        data-toggle="tooltip" 
+                        data-placement="bottom" 
+                        data-html="true" 
+                        title="<em>Klik om de het token te refreshen</em>"
+                        >
+                        <i class="fas fa-redo-alt"></i>
+                    </button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <div class="form-group text-right m-t-20">
+            <div class="col-xs-12">
+              <button class="btn btn-danger btn-custom w-md waves-effect waves-light" type="submit">Verwijderen</button>
+              <button class="btn btn-secondary btn-custom w-md waves-effect waves-light" type="button" onclick="window.location.href='/rfid_tokens/'">Annuleren</button>
+              <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Wijzigen</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div> <!-- end row -->
+    </form>
+
+  </div>
+</div>
+{% endblock %}

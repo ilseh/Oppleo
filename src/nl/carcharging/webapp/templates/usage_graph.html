@@ -1,9 +1,9 @@
 {% extends "template.html" %}
 {% block title %}Verbruik{% endblock %}
+{% block jquery %} 
+  {% include 'includes/include.jquery-3.3.1.html' %}
+{% endblock %} 
 {% block head %}
-  {% block jquery %} 
-    {% include 'includes/include.jquery-1.8.3.html' %}
-  {% endblock %} 
   {{ super() }}
 
   <!-- Required Flot prereq -->
