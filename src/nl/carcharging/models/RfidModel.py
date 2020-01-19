@@ -4,7 +4,7 @@ import json
 
 from marshmallow import fields, Schema
 
-from nl.carcharging.models.base import Base, Session
+from nl.carcharging.models.base import Base, DbSession
 from . import db
 
 
@@ -42,24 +42,24 @@ class RfidModel(Base):
         self.modified_at = data.get('last_used_at', datetime.now())
 
     def save(self):
-        session = Session()
-        session.add(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.add(self)
+        db_session.commit()
 
     def delete(self):
-        session = Session()
-        session.delete(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.delete(self)
+        db_session.commit()
 
     @staticmethod
     def get_all():
-        session = Session()
-        return session.query(RfidModel).all()
+        db_session = DbSession()
+        return db_session.query(RfidModel).all()
 
     @staticmethod
     def get_one(rfid):
-        session = Session()
-        return session.query(RfidModel)\
+        db_session = DbSession()
+        return db_session.query(RfidModel)\
             .filter(RfidModel.rfid == str(rfid)).first()
 
     def __repr(self):

@@ -3,17 +3,17 @@ import datetime
 import logging
 from . import db
 from sqlalchemy import func
-from nl.carcharging.models.base import Base, Session
+from nl.carcharging.models.base import Base, DbSession
 import json
 
 
-class SessionModel(Base):
+class ChargeSessionModel(Base):
     """
-    Session Model
+    Charge Session Model
     """
 
     # table name
-    __tablename__ = 'session'             # -> sessions
+    __tablename__ = 'charge_session'             # -> sessions
 
     id = db.Column(db.Integer, primary_key=True)
     rfid = db.Column(db.String(128), nullable=False)
@@ -62,85 +62,89 @@ class SessionModel(Base):
             self.tariff = round(self.total_price / self.total_energy, 1)
 
     def save(self):
-        session = Session()
-        session.add(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.add(self)
+        db_session.commit()
 
     def update(self, data):
         for key, item in data.items():
             setattr(self, key, item)
         self.modified_at = datetime.datetime.now()
 
-        session = Session()
-        session.commit()
+        db_session = DbSession()
+        db_session.commit()
 
     def delete(self):
-        session = Session()
-        session.delete(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.delete(self)
+        db_session.commit()
 
     @staticmethod
     def get_all_sessions():
-        session = Session()
-        return session.query.all()
+        db_session = DbSession()
+        return db_session.query(ChargeSessionModel).all()
 
     @staticmethod
-    def get_one_session(id):
-        session = Session()
-        return session.query.get(id)
+    def get_one_charge_session(id):
+        db_session = DbSession()
+        try:
+            return db_session.query(ChargeSessionModel) \
+                    .filter(ChargeSessionModel.id == id).limit(1).all()[0]
+        except:
+            return None
 
     @staticmethod
-    def get_latest_rfid_session(device, rfid=None):
-        session = Session()
-        qry_latest_id = session.query(func.max(SessionModel.id)).filter(SessionModel.energy_device_id == device)
+    def get_latest_charge_session(device, rfid=None):
+        db_session = DbSession()
+        qry_latest_id = db_session.query(func.max(ChargeSessionModel.id)).filter(ChargeSessionModel.energy_device_id == device)
         if rfid is not None:
-            qry_latest_id = qry_latest_id.filter(SessionModel.rfid == str(rfid))
-        latest_session = session.query(SessionModel).filter(SessionModel.id == qry_latest_id).first()
-        return latest_session
+            qry_latest_id = qry_latest_id.filter(ChargeSessionModel.rfid == str(rfid))
+        latest_charge_session = db_session.query(ChargeSessionModel).filter(ChargeSessionModel.id == qry_latest_id).first()
+        return latest_charge_session
 
     def __repr(self):
         return '<id {}>'.format(self.id)
 
     def get_last_n_sessions_since(self, energy_device_id=None, since_ts=None, n=-1):
-        session = Session()
+        db_session = DbSession()
         if ( n == -1 ):
             if ( since_ts == None ):
                 if ( energy_device_id == None ):
-                    return session.query(SessionModel) \
-                        .order_by(SessionModel.start_time.desc()).all()
+                    return db_session.query(ChargeSessionModel) \
+                        .order_by(ChargeSessionModel.start_time.desc()).all()
                 else: # filter energy_device_id
-                    return session.query(SessionModel) \
-                        .filter(SessionModel.energy_device_id == energy_device_id) \
-                        .order_by(SessionModel.start_time.desc()).all()
+                    return db_session.query(ChargeSessionModel) \
+                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                        .order_by(ChargeSessionModel.start_time.desc()).all()
             else: # filter since_ts
                 if ( energy_device_id == None ):
-                    return session.query(SessionModel) \
-                        .filter(SessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(SessionModel.start_time.desc()).all()
+                    return db_session.query(ChargeSessionModel) \
+                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                        .order_by(ChargeSessionModel.start_time.desc()).all()
                 else: # filter energy_device_id
-                    return session.query(SessionModel) \
-                        .filter(SessionModel.energy_device_id == energy_device_id) \
-                        .filter(SessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(SessionModel.start_time.desc()).all()
+                    return db_session.query(ChargeSessionModel) \
+                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                        .order_by(ChargeSessionModel.start_time.desc()).all()
         else: # limit n
             if ( since_ts == None ):
                 if ( energy_device_id == None ):
-                    return session.query(SessionModel) \
-                        .order_by(SessionModel.start_time.desc()).limit(n).all()
+                    return db_session.query(ChargeSessionModel) \
+                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
                 else: # filter energy_device_id
-                    return session.query(SessionModel) \
-                        .filter(SessionModel.energy_device_id == energy_device_id) \
-                        .order_by(SessionModel.start_time.desc()).limit(n).all()
+                    return db_session.query(ChargeSessionModel) \
+                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
             else: # filter since_ts
                 if ( energy_device_id == None ):
-                    return session.query(SessionModel) \
-                        .filter(SessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(SessionModel.start_time.desc()).limit(n).all()
+                    return db_session.query(ChargeSessionModel) \
+                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
                 else: # filter energy_device_id
-                    return session.query(SessionModel) \
-                        .filter(SessionModel.energy_device_id == energy_device_id) \
-                        .filter(SessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(SessionModel.start_time.desc()).limit(n).all()
+                    return session.query(ChargeSessionModel) \
+                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
 
     def date_str_to_datetime(self, date_time_str):
         return datetime.datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
@@ -181,7 +185,7 @@ class SessionModel(Base):
             }
         )
 
-class SessionSchema(Schema):
+class ChargeSessionSchema(Schema):
     """
     Session Schema
     """

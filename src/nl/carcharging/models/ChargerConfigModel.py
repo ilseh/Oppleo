@@ -4,7 +4,7 @@ import logging
 from marshmallow import fields, Schema
 
 from . import db
-from nl.carcharging.models.base import Base, Session
+from nl.carcharging.models.base import Base, DbSession
 
 
 class ChargerConfigModel(Base):
@@ -25,20 +25,20 @@ class ChargerConfigModel(Base):
         self.modified_at = datetime.datetime.now()
 
     def save(self):
-        session = Session()
-        session.add(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.add(self)
+        db_session.commit()
 
     def delete(self):
-        session = Session()
-        session.delete(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.delete(self)
+        db_session.commit()
 
     @staticmethod
     def get_config():
-        session = Session()
+        db_session = DbSession()
         # Should be only one, return last modified
-        return session.query(ChargerConfigModel) \
+        return db_session.query(ChargerConfigModel) \
             .order_by(ChargerConfigModel.modified_at.desc()).limit(1).all()
 
     def __repr(self):
