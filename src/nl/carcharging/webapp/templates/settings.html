@@ -409,10 +409,10 @@
                             <td class="diag_name">Disk</td class="diag_name">
                             <td class="diag_value">
                               <ul>
-                                <li><span>Total:</span><span>{{ diag['disk']['total'] }} MB</span></li>
-                                <li><span>Free:</span><span>{{ diag['disk']['free'] }} MB</span></li>
-                                <li><span>Used:</span><span>{{ diag['disk']['used'] }} MB</span></li>
-                                <li><span></span><span>{{ diag['disk']['percent'] }}%</span></li>
+                                <li><span>Total:</span><span>{{ diag['disk']['total']['size'] }} {{ diag['disk']['total']['unit'] }}</span></li>
+                                <li><span>Free:</span><span>{{ diag['disk']['free']['size'] }} {{ diag['disk']['free']['unit'] }}</span></li>
+                                <li><span>Used:</span><span>{{ diag['disk']['used']['size'] }} {{ diag['disk']['used']['unit'] }}</span></li>
+                                <li>{{ diag['disk']['percent'] }}% available</li>
                               </ul>
                             </td class="diag_name">
                           </tr>

@@ -139,21 +139,30 @@ class Raspberry():
             return None
         return mem
 
+    def format_size(self, val): # 18.983.407.616 - 18GB 18.983MB - 18.983.407KB - 18.983.407.616B
+        f = {}
+        f['size'] = val
+        f['unit'] = "Bytes"
+        if  f['size'] > 1024:
+            f['size'] = round(  f['size'] / 102.4 ) /10
+            f['unit'] = "KB"
+        if f['size'] > 1024:
+            f['size'] = round( f['size'] / 102.4 ) /10
+            f['unit'] = "MB"
+        if f['size'] > 1024:
+            f['size'] = round( f['size'] / 102.4 ) /10
+            f['unit'] = "GB"
+        if f['size'] > 1024:
+            f['size'] = round( f['size'] / 102.4 ) /10
+            f['unit'] = "TB"
+        return f 
+
     def get_disk(self):
         dsk = {}
         du = psutil.disk_usage('/')
-        dsk['free'] = round(
-            du.free /1024.0 /1024.0,
-            1
-        )
-        dsk['used'] = round(
-            du.used /1024.0 /1024.0,
-            1
-        )
-        dsk['total'] = round(
-            du.total /1024.0 /1024.0,
-            1
-        )
+        dsk['free'] = self.format_size(du.free)
+        dsk['used'] = self.format_size(du.used)
+        dsk['total'] = self.format_size(du.total)
         dsk['percent'] = \
             du.percent
         return dsk
