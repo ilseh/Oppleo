@@ -39,7 +39,7 @@ class ChargerConfigModel(Base):
         db_session = DbSession()
         # Should be only one, return last modified
         return db_session.query(ChargerConfigModel) \
-            .order_by(ChargerConfigModel.modified_at.desc()).limit(1).all()
+            .order_by(ChargerConfigModel.modified_at.desc()).first()
 
     def __repr(self):
         return self.to_str()

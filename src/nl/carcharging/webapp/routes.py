@@ -22,6 +22,7 @@ from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
 from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
+from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
 
 
 """ 
@@ -249,7 +250,7 @@ def usage_data_since(since_timestamp, cnt=-1):
 def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
     if (format.strip().lower() != 'json'):
         return render_template("charge_sessions.html")
-    charge_sessions = SessionModel()
+    charge_sessions = ChargeSessionModel()
     charge_sessions.energy_device_id = "laadpaal_noord"
     qr = charge_sessions.get_last_n_sessions_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
     qr_l = []
@@ -259,16 +260,36 @@ def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
 
 
 # Cnt is a maximum to limit impact of this request
-@webapp.route("/rfid_tokens")
-@webapp.route("/rfid_tokens/")
-@webapp.route("/rfid_tokens//")
-@webapp.route("/rfid_tokens//<path:format>")
-@webapp.route("/rfid_tokens/<path:token>/")
-@webapp.route("/rfid_tokens/<path:token>/<path:format>")
+@webapp.route("/rfid_tokens", methods=["GET"])
+@webapp.route("/rfid_tokens/", methods=["GET"])
+@webapp.route("/rfid_tokens//", methods=["GET"])
+@webapp.route("/rfid_tokens//<path:format>", methods=["GET"])
+@webapp.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
+@webapp.route("/rfid_tokens/<path:token>/<path:format>", methods=["GET"])
 @authenticated_resource
 def rfid_tokens(format='html', token=None):
     if (format.strip().lower() != 'json'):
-        return render_template("tokens.html")
+        if (token == None):
+            return render_template("tokens.html")
+        rfid_model = RfidModel().get_one(token)
+        if (rfid_model == None):
+            return render_template("tokens.html")
+        rfid_change_form = RfidChangeForm()
+        if (request.method == 'POST'):
+            # Update for specific token
+            if rfid_change_form.validate_on_submit():
+                pass
+            # TODO apply changes
+
+
+            return render_template("token.html",
+                    rfid_model=rfid_model,
+                    form=rfid_change_form
+                )        
+        return render_template("token.html",
+                    rfid_model=rfid_model,
+                    form=rfid_change_form
+                )        
     # Check if token exist, if not rfid is None
     rfid_list = []
     rfid = RfidModel().get_one(token)
