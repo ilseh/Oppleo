@@ -12,9 +12,10 @@ from config import app_config, WebAppConfig
 from nl.carcharging.models import db
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
-from nl.carcharging.models.SessionModel import SessionModel
+from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.User import User
-from nl.carcharging.views.SessionView import session_api as session_blueprint
+# TEST
+from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
 from nl.carcharging.webapp.routes import webapp
 
@@ -30,12 +31,12 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
 app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
 
-app.register_blueprint(session_blueprint, url_prefix='/api/v1/sessions')
 # The CarCharger root webapp
 app.register_blueprint(webapp) # no url_prefix
 
 socketio = SocketIO(app)
-#socketio = SocketIO(app, async_mode=async_mode)
+# Make it available through WebAppConfig
+WebAppConfig.socketio = socketio
 
 db.init_app(app)
 
@@ -118,6 +119,11 @@ class WebApp(object):
 if __name__ == "__main__":
     webapp = WebApp()
     webapp.start()
+
+    # Just as a test
+#    uotu = UpdateOdometerTeslaUtil()
+#    uotu.set_charge_session_id(10)
+#    uotu.start()
 
     print(f'{datetime.datetime.now()} - Starting web server...')
     socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')

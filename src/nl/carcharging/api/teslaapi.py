@@ -3,6 +3,7 @@ import requests
 import json
 import time
 import logging
+import datetime
 
 class TeslaAPI:
     # defining the api-endpoint  
@@ -61,7 +62,7 @@ class TeslaAPI:
     def authenticate(self, username=None, password=None):
         self.logger.debug('authenticate() ' + self.API_AUTHENTICATION)
         if (username==None or password==None):
-            self.logger.debug('Credentials to obtain token missing.)
+            self.logger.debug('Credentials to obtain token missing.')
             return
 
         data = {
@@ -221,7 +222,7 @@ class TeslaAPI:
     def refreshToken(self):
         self.logger.debug('refreshToken() ' + self.API_AUTHENTICATION)
         if (self.refresh_token==None):
-            self.logger.debug('Refresh token missing.)
+            self.logger.debug('Refresh token missing.')
             return False
             
         data = {
@@ -278,7 +279,7 @@ class TeslaAPI:
         self.reset()
         return True
 
-   def hasValidToken(self):
+    def hasValidToken(self):
         self.logger.debug("has_valid_token()")
         if (self.access_token is None):
             self.logger.debug("token is None")
@@ -299,10 +300,12 @@ class TeslaAPI:
             self.logger.debug("token is not valid")
             # Report update if there is an invalid access_token
             return (self.access_token != None)
-        date = datetime.datetime.fromtimestamp(rfid.api_created_at + rfid.api_expires_in) # / 1e3
-        today = date.today()
+        token_date = datetime.datetime.fromtimestamp(
+                        self.created_at + self.expires_in
+                        ) # / 1e3
+        today = datetime.datetime.now()
         delta = datetime.timedelta(days=31)
-        if (today > (date - delta)):
+        if (today > (token_date - delta)):
             self.logger.debug("Needs refresh")
             return self.refreshToken()
         self.logger.debug("Token does not need refreshing yet")

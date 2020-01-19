@@ -1,0 +1,1 @@
+ALTER TABLE session RENAME TO charge_session;

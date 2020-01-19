@@ -18,7 +18,7 @@ from nl.carcharging.models.User import User
 from nl.carcharging.webapp.LoginForm import LoginForm
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
-from nl.carcharging.models.SessionModel import SessionModel
+from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
 from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm

@@ -27,3 +27,4 @@ app_config = {
 # 
 class WebAppConfig(object):
     login_manager = None
+    socketio = None

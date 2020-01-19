@@ -4,7 +4,7 @@ import logging
 from marshmallow import fields, Schema
 
 from . import db
-from nl.carcharging.models.base import Base, Session
+from nl.carcharging.models.base import Base, DbSession
 import json
 
 
@@ -45,28 +45,28 @@ class EnergyDeviceMeasureModel(Base):
         self.created_at = data.get('created_at', datetime.datetime.now())
 
     def save(self):
-        session = Session()
-        session.add(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.add(self)
+        db_session.commit()
 
     def get_last_saved(self, energy_device_id):
         return self.get_last_n_saved(energy_device_id, 1)[0]
 
     def get_last_n_saved(self, energy_device_id, n):
-        session = Session()
-        return session.query(EnergyDeviceMeasureModel) \
+        db_session = DbSession()
+        return db_session.query(EnergyDeviceMeasureModel) \
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
 
     def get_last_n_saved_since(self, energy_device_id, since_ts, n=-1):
-        session = Session()
+        db_session = DbSession()
         if n == -1:
-            return session.query(EnergyDeviceMeasureModel) \
+            return db_session.query(EnergyDeviceMeasureModel) \
                 .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
                 .order_by(EnergyDeviceMeasureModel.created_at.desc()).all()
         else:
-            return session.query(EnergyDeviceMeasureModel) \
+            return db_session.query(EnergyDeviceMeasureModel) \
                 .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
                 .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()

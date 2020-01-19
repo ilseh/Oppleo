@@ -115,9 +115,21 @@
             })
           },
           "columnDefs": [{
-            "targets": [1, 9, 10, 11, 12],
+            "targets": [1, 9, 11, 12],
             "sorting": false,
             "orderable": false
+          }, {
+            "targets": [10],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              if (row[6].toLowerCase() != 'tesla') {
+                return '<i class="fas fa-ban" stype="cursor: not-allowed;"></i>'
+              }
+              return data == undefined || data === "None" ? 
+                '<i class="far fa-registered" stype="cursor: pointer;"></i>' : 
+                '<i class="fas fa-exchange-alt" stype="cursor: pointer;"></i>'
+            }
           }],
           "searching": false
         });
@@ -140,8 +152,8 @@
               element.last_used_at :
               '-'
             ),
-            ((element.make == undefined || element.make == 'None') ? '-' : element.make),
-            ((element.model == undefined || element.model == 'None') ? '-' : element.model),
+            ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
+            ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
             ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
             (element.get_odometer == true ? 'Ja' : 'Nee'),
             "Bla",
