@@ -63,7 +63,7 @@ class TeslaAPI:
         self.logger.debug('authenticate() ' + self.API_AUTHENTICATION)
         if (username==None or password==None):
             self.logger.debug('Credentials to obtain token missing.')
-            return
+            return False
 
         data = {
             "grant_type": self.API_AUTHENTICATION_GRANT_TYPE_PASSWORD,
@@ -95,7 +95,7 @@ class TeslaAPI:
         self.refresh_token = response_dict['refresh_token']
 
         self.logger.debug("{\n  'access_token': '%s',\n  'token_type': '%s',\n  'created_at': '%s',\n  'expires_in': '%s',\n  'refresh_token': '%s'\n}" %(self.access_token, self.token_type, self.created_at, self.expires_in, self.refresh_token))
-
+        return True
 
     def getVehicles(self):
         self.logger.debug("getVehicles: " + self.API_VEHICLES)

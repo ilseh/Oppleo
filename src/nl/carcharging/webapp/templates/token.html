@@ -57,21 +57,24 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    function getRfidTokens() {
-      console.log(timestamp() + ' getRfidTokens()')
+    function getOAuthToken() {
+      console.log(timestamp() + ' getOAuthToken()')
       $.ajax({
-        type		: 'GET',
-        url			: '/rfid_tokens//json',
+        type		  : 'POST',
+        url			  : '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json',
         dataType	: 'json',
-            encode		: true
+        encode		: true,
+        data      : {
+          csrf_token    : '{{ form.csrf_token.current_token }}',
+          oauth_email   : $('input#oauth_email').val(), 
+          oauth_password: $('input#oauth_password').val() 
+        }
       }) // using the done promise callback
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
 
-        $('button[data-toggle=tooltip]').tooltip({ 
-          boundary: 'window' 
-        })
+
       })
       .fail(function() {
       })
@@ -81,10 +84,21 @@
 
     function showHideCredentials() {
       if ($('input[name="get_odometer"]').prop('checked')) {
+        if (showHideCredentials.hiddenOAuthEmail != undefined) {
+          $('input#oauth_email').val(showHideCredentials.hiddenOAuthEmail)
+        }
         $('tr#oauth_email_row').show()
+        if (showHideCredentials.hiddenOAuthPassword != undefined) {
+          $('input#oauth_password').val(showHideCredentials.hiddenOAuthPassword)
+        }
         $('tr#oauth_password_row').show()
       } else {
+        // Clean them when hidden to prevent validation errors
+        showHideCredentials.hiddenOAuthEmail = $('input#oauth_email').val()
+        $('input#oauth_email').val("")
         $('tr#oauth_email_row').hide()
+        showHideCredentials.hiddenOAuthPassword = $('input#oauth_password').val()
+        $('input#oauth_password').val("")
         $('tr#oauth_password_row').hide()
       }
     }
@@ -137,6 +151,9 @@
       })
       $('input[name="get_odometer"]').on("change paste keyup", function() {
         showHideCredentials()
+      })
+      $('button#generate_token').on('click', function() {
+        getOAuthToken()
       })
       showHideCredentials()
       setResetGetOdometer()
@@ -301,7 +318,7 @@
                     />
                   </span>
                   <span id="odo_1" class="input-group-addon" style="width: 10%; background-color: #36404a; border: 0px;">&nbsp;</span>
-                  <span id="odo_2" class="input-group-addon" style="text-align: background-color: #36404a; border: 0px; left; font-style: italic;"><i class="mdi mdi-alert-outline"></i>&nbsp;Alleen beschikbaar voor Tesla</span>
+                  <span id="odo_2" class="input-group-addon" style="text-align: left; background-color: #36404a; border: 0px; font-style: italic;"><i class="mdi mdi-alert-outline"></i>&nbsp;Alleen beschikbaar voor Tesla</span>
                   <span id="odo_3" class="input-group-addon" style="width: 100%; background-color: #36404a; border: 0px;">&nbsp;</span>
                 </div>
               </td>
@@ -343,9 +360,22 @@
                 <div class="input-group">
                   <span class="input-group-addon"><i class="fas fa-key"></i></span>
                   <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic;">
-                    <i class="mdi mdi-alert-outline"></i>&nbsp;Geen OAuth token beschikbaar
+                    <i class="mdi mdi-alert-outline"></i>&nbsp;Genereer OAuth token met Tesla login gegevens.
                   </span>
                   <span id="odo_3" class="input-group-addon" style="width: 100%;">&nbsp;</span>
+                  <span class="input-group-btn">
+                    <button 
+                        id="generate_token"
+                        type="button" 
+                        class="btn waves-effect waves-light btn-primary" 
+                        data-toggle="tooltip" 
+                        data-placement="bottom" 
+                        data-html="true" 
+                        title="<em>Klik om een token aan te maken met de login gegevens.</em>"
+                        >
+                        <i class="fas fa-user-cog"></i>
+                    </button>
+                  </span>
                 </div>
               </td>
             </tr>
@@ -354,7 +384,7 @@
               <td>
                 <div class="input-group">
                   <span class="input-group-addon"><i class="fas fa-key"></i></span>
-                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic;">
+                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic; width: 100%;">
                     <i class="fas fa-info-circle"></i>&nbsp;OAuth token verloopt 20 February 2020, 16:55u
                   </span>
                   <span class="input-group-btn">
