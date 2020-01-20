@@ -44,6 +44,9 @@
     table th {
       border-right: 1px dashed #434f5c !important;
     }
+    .info-button-style {
+      cursor: help;
+    }
   </style>
 
   <script>
@@ -61,6 +64,7 @@
       10: 'November',
       11: 'December'
     }
+    var tokenPresent = {% if rfid_model["api_access_token"] is not none %}true{% else %}false{% endif %}
     function timestamp() {
       d = new Date();
       return (d.getFullYear() + "-" + 
@@ -74,17 +78,31 @@
     }
     function getOAuthToken() {
       console.log(timestamp() + ' getOAuthToken()')
+      getOrRefreshOAuthToken(true)
+    }
+    function refreshOAuthToken() {
+      console.log(timestamp() + ' refreshOAuthToken()')
+      getOrRefreshOAuthToken(false)
+    }
+    function getOrRefreshOAuthToken(generateToken = true) {
+      console.log(timestamp() + ' getOrRefreshOAuthToken('+generateToken+')')
+      var generateTokenUrl = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json'
+      var refreshTokenUrl = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth/json'
       // TODO: start spinner
+      var generateTokenData = {
+        csrf_token    : '{{ csrf_token() }}',
+        oauth_email   : $('input#oauth_email').val(), 
+        oauth_password: $('input#oauth_password').val() 
+      }
+      var refreshTokenData = {
+        csrf_token    : '{{ csrf_token() }}' 
+      }
       $.ajax({
         type		  : 'POST',
-        url			  : '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json',
+        url			  : (generateToken?generateTokenUrl:refreshTokenUrl),
         dataType	: 'json',
         encode		: true,
-        data      : {
-          csrf_token    : '{{ csrf_token() }}',
-          oauth_email   : $('input#oauth_email').val(), 
-          oauth_password: $('input#oauth_password').val() 
-        }
+        data      : (generateToken?generateTokenData:refreshTokenData)
       }) // using the done promise callback
       .done(function(res) {
         // log data to the console so we can see
@@ -92,13 +110,7 @@
         switch(res.status) {
           case 200: // Ok
             // Example: OAuth token verloopt 20 February 2020, 16:55u
-            d = new Date((res.created_at *1000) + (res.expires_in *1000)) // Sewconds to milliseconds
-            $('span#oauth_token_status').html('OAuth token verloopt ' + 
-              d.getDate() + ' ' + 
-              months[d.getMonth()] + ' ' + 
-              d.getFullYear() + ', ' +
-              d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
-            )
+            updateOAuthTokenStatus(new Date((res.created_at *1000) + (res.expires_in *1000))) // Seconds to milliseconds
             // Add vehicle list
             $('select#vehicle').find('option').remove().end()
             $.each(res.vehicles, function( index, vehicle ) {
@@ -174,7 +186,8 @@
     }
 
     function showHideCredentials() {
-      if ($('input[name="get_odometer"]').prop('checked')) {
+      if ($('input[name="get_odometer"]').prop('checked') &&
+          !tokenPresent) {
         if (showHideCredentials.hiddenOAuthEmail != undefined) {
           $('input#oauth_email').val(showHideCredentials.hiddenOAuthEmail)
         }
@@ -183,6 +196,7 @@
           $('input#oauth_password').val(showHideCredentials.hiddenOAuthPassword)
         }
         $('tr#oauth_password_row').show()
+        $('tr#token_button_row').fadeIn(600)
       } else {
         // Clean them when hidden to prevent validation errors
         showHideCredentials.hiddenOAuthEmail = $('input#oauth_email').val()
@@ -191,6 +205,7 @@
         showHideCredentials.hiddenOAuthPassword = $('input#oauth_password').val()
         $('input#oauth_password').val("")
         $('tr#oauth_password_row').hide()
+        $('tr#token_button_row').hide()        
       }
     }
 
@@ -206,6 +221,36 @@
         $('input[name=get_odometer]').attr('data-onstyle', "secondary")
         $('span#odo_2').show()
       }
+    }
+
+    // TODO: hide when there is a valid token
+    function setResetVehicleToken() {
+      if ($('input#get_odometer').prop('checked')) {
+        // Show, only if a token exists
+        if (tokenPresent) {
+          $('tr#vehicles_row').show()
+          $('tr#oauth_token_row').show()
+        } else {
+          // No active token, get one first
+          $('tr#vehicles_row').hide()
+          $('tr#oauth_token_row').hide()
+        }
+      } else {
+        // Hide when get odo disabled anyway
+        $('tr#vehicles_row').hide()
+        $('tr#oauth_token_row').hide()
+      }
+
+    }
+
+    function updateOAuthTokenStatus(d) {
+      // d is expiration date
+      $('span#oauth_token_status').html('Tesla autorisatie verloopt ' + 
+        d.getDate() + ' ' + 
+        months[d.getMonth()] + ' ' + 
+        d.getFullYear() + ', ' +
+        d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
+      )
     }
 
     jQuery(document).ready(function () {
@@ -228,7 +273,7 @@
           $(this).find('i').toggleClass('fa-eye')     // far fa-eye
           $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
       })
-      $('button[data-toggle=tooltip]').tooltip({ 
+      $('[data-toggle=tooltip]').tooltip({ 
         boundary: 'window', 
         trigger : 'hover'   // Allow button clicks
       })
@@ -243,12 +288,24 @@
       })
       $('input[name="get_odometer"]').on("change paste keyup", function() {
         showHideCredentials()
+        setResetVehicleToken()
       })
       $('button#generate_token').on('click', function() {
         getOAuthToken()
       })
+      $('button#refresh_token').on('click', function() {
+        refreshOAuthToken()
+      })
       showHideCredentials()
       setResetGetOdometer()
+      setResetVehicleToken()
+      {% if rfid_model['api_created_at'] is not none and rfid_model['api_expires_in'] is not none %}
+      updateOAuthTokenStatus(new Date(({{ rfid_model['api_created_at'] }} *1000) + ({{ rfid_model['api_expires_in'] }} *1000))) // Seconds to milliseconds
+      {% endif %}
+      $('.info-button-style').hover(
+       function(){ $(this).addClass('btn-success') },
+       function(){ $(this).removeClass('btn-success') }
+      )
     })
 
 
@@ -447,7 +504,7 @@
                     <button 
                         id="show_oauth_password"
                         type="button" 
-                        class="btn waves-effect waves-light btn-primary" 
+                        class="btn waves-effect waves-light btn-outline-primary" 
                         data-toggle="tooltip" 
                         data-placement="bottom" 
                         data-html="true" 
@@ -459,46 +516,74 @@
                 </div>
               </td>
             </tr>
-            <tr id="vehicles">
-              <th><h5>Voertuig</h5></th>
+            <tr id="token_button_row">
               <td>
-                <select class="form-control" id="vehicle" name="vehicle">
-                  <option value="-"></option>
-                </select>
+              </td>
+              <td>
+                <div class="text-center">
+                  <div class="btn-group">
+                    <button 
+                          id="generate_token"
+                          type="button" 
+                          class="btn waves-effect waves-light btn-primary" 
+                          data-toggle="tooltip" 
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="<em>Genereer een Tesla toegangs-token</em>"
+                          >
+                          <i class="fas fa-user-cog"></i>
+                          Genereer Tesla token
+                      </button>
+                  </div>
+                </div>
               </td>
             </tr>
-            <tr id="oauth_token_row1">
-              <th><h5><i class="fas fa-key"></i> OAuth token</h5></thid="oauth_password_row">
+            <tr id="vehicles_row">
+              <th><h5>Voertuig</h5></th>
+              <td>
+                <div class="input-group">
+                  <select class="form-control" id="vehicle" name="vehicle">
+                    <option value="-" style="font-style: italic;">Geen voertuigen...</option>
+                  </select>
+                  <span class="input-group-addon info-button-style"
+                        data-toggle="tooltip" 
+                        data-placement="bottom" 
+                        data-html="true" 
+                        title="Vernieuw de autorisatie of trek de autorisatie in en maak een nieuwe autorisatie aan om de actuele voertuiglijst op te halen."
+                        >
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                </div>
+              </td>
+            </tr>
+            <tr id="oauth_token_row">
+              <th><h5 style="background-color: #36404a !important;"><i class="fas fa-key"></i> OAuth token</h5></th>
               <td>
                 <div class="input-group">
                   <span class="input-group-addon"><i class="fas fa-key"></i></span>
-                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic;">
-                    <i class="mdi mdi-alert-outline"></i>&nbsp;Genereer OAuth token met Tesla login gegevens.
+                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic; width: 100%;">
+                    <i class="fas fa-info-circle"></i>&nbsp;<span id="oauth_token_status"></span>
                   </span>
-                  <span id="odo_3" class="input-group-addon" style="width: 100%;">&nbsp;</span>
+                  <span class="input-group-addon info-button-style"
+                        data-toggle="tooltip" 
+                        data-placement="bottom" 
+                        data-html="true" 
+                        title="De autorisatie wordt bij gebruik automatisch verlengt. De autorisatie verloopt automatisch als de pas 45 dagen niet is gebruikt."
+                        >
+                        <i class="fas fa-info-circle"></i>
+                    </span>
                   <span class="input-group-btn">
                     <button 
-                        id="generate_token"
+                        id="revoke_token"
                         type="button" 
                         class="btn waves-effect waves-light btn-primary" 
                         data-toggle="tooltip" 
                         data-placement="bottom" 
                         data-html="true" 
-                        title="<em>Klik om een token aan te maken met de login gegevens.</em>"
+                        title="<em>Klik om de het autorisatie in te trekken</em>"
                         >
-                        <i class="fas fa-user-cog"></i>
+                        <i class="fas fa-trash-alt"></i>
                     </button>
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr id="oauth_token_row2">
-              <th><h5><i class="fas fa-key"></i> OAuth token</h5></th id="oauth_token_row1">
-              <td>
-                <div class="input-group">
-                  <span class="input-group-addon"><i class="fas fa-key"></i></span>
-                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic; width: 100%;">
-                    <i class="fas fa-info-circle"></i>&nbsp;<span id="oauth_token_status">OAuth token verloopt 20 February 2020, 16:55u</span>
                   </span>
                   <span class="input-group-btn">
                     <button 
