@@ -1,4 +1,3 @@
-# importing the requests library 
 import requests 
 import json
 import time
@@ -59,9 +58,9 @@ class TeslaAPI:
         self.selected_vehicle = None  
         self.odometer = None
 
-    def authenticate(self, username=None, password=None):
+    def authenticate(self, email=None, password=None):
         self.logger.debug('authenticate() ' + self.API_AUTHENTICATION)
-        if (username==None or password==None):
+        if (email==None or password==None):
             self.logger.debug('Credentials to obtain token missing.')
             return False
 
@@ -69,8 +68,8 @@ class TeslaAPI:
             "grant_type": self.API_AUTHENTICATION_GRANT_TYPE_PASSWORD,
             "client_id": self.TESLA_CLIENT_ID,
             "client_secret": self.TESLA_CLIENT_SECRET,
-            "email": "email",
-            "password": "password"
+            "email": email,
+            "password": password
         }
 
         # 01 - Authenticate [POST]
@@ -100,8 +99,6 @@ class TeslaAPI:
     def getVehicles(self):
         self.logger.debug("getVehicles: " + self.API_VEHICLES)
 
-        if (self.access_token == None):
-            self.authenticate()
         if (self.access_token == None):
             return None
 

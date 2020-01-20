@@ -25,7 +25,6 @@ from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
 from nl.carcharging.api.TeslaApi import TeslaAPI
 
-
 """ 
  - make sure all url_for routes point to this blueprint
 """
@@ -303,40 +302,37 @@ def rfid_tokens(format='html', token=None):
 @webapp.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/json", methods=["POST"])
 @authenticated_resource
 def TeslaApi_GenerateOAuth(token=None):
+    # CSRF Token is valid
     rfid_model = RfidModel().get_one(token)
-    rfid_change_form = RfidChangeForm()
-
-    c1 = request.form['csrf_token']
-    c2 = rfid_change_form.csrf_token.current_token
-    c3 = (c1 == c2)
-
-    if ('csrf_token' not in request.form) or \
-       (request.form['csrf_token'] != rfid_change_form.csrf_token.current_token):
+    if ((token == None) or (rfid_model == None)):
+        # Nope, no token
         return jsonify({
-            'status': 'failed', 
-            'reason': 'Invalid csrf_token'
+            'status': 404, 
+            'reason': 'No known RFID token'
             })
+
     # Update for specific token
-    tesla_api = TeslaApi()
+    tesla_api = TeslaAPI()
     if tesla_api.authenticate(
-        username=request['form']['oauth_email'], 
-        password=request['form']['oauth_password']):
+        email=request.form['oauth_email'], 
+        password=request.form['oauth_password']):
+        # Obtained token
         rfid_model.api_access_token  = tesla_api.access_token        
         rfid_model.api_token_type    = tesla_api.token_type        
         rfid_model.api_created_at    = tesla_api.created_at        
         rfid_model.api_expires_in    = tesla_api.expires_in        
-        rfid_model.api_refresh_token = tesla_api.refresh_token        
-        # Obtained token
+        rfid_model.api_refresh_token = tesla_api.refresh_token
+        rfid_model.save()
         return jsonify({
-            'status': 'success', 
-            'token_type': tesla_api.token_type, 
-            'created_at': tesla_api.created_at, 
-            'expires_in': tesla_api.expires_in
+            'status': 200, 
+            'token_type': rfid_model.api_token_type, 
+            'created_at': rfid_model.api_created_at, 
+            'expires_in': rfid_model.api_expires_in
             })
     else:
         # Nope, no token
         return jsonify({
-            'status': 'failed', 
+            'status': 401, 
             'reason': 'Not authorized'
             })
 

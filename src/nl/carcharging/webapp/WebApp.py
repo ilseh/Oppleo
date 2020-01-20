@@ -8,6 +8,8 @@ from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
 from sqlalchemy.exc import OperationalError
 
+from flask_wtf.csrf import CsrfProtect
+
 from config import app_config, WebAppConfig
 from nl.carcharging.models import db
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
@@ -30,6 +32,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # import os; os.urandom(24)
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
 app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
+# https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
+CsrfProtect(app)
 
 # The CarCharger root webapp
 app.register_blueprint(webapp) # no url_prefix
