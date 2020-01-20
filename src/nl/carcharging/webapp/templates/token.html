@@ -5,7 +5,8 @@
 {% endblock %} 
 {% block head %}
   {{ super() }}
-  
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <!-- Datepicker, Date range picker, Bootstrap witch button -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.css') }}">
@@ -46,6 +47,20 @@
   </style>
 
   <script>
+    const months = {
+      0: 'Januari',
+      1: 'Februari',
+      2: 'Maart',
+      3: 'April',
+      4: 'Mei',
+      5: 'Juni',
+      6: 'Juli',
+      7: 'Augustus',
+      8: 'September',
+      9: 'Oktober',
+      10: 'November',
+      11: 'December'
+    }
     function timestamp() {
       d = new Date();
       return (d.getFullYear() + "-" + 
@@ -59,26 +74,90 @@
     }
     function getOAuthToken() {
       console.log(timestamp() + ' getOAuthToken()')
+      // TODO: start spinner
       $.ajax({
         type		  : 'POST',
         url			  : '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json',
         dataType	: 'json',
         encode		: true,
         data      : {
-          csrf_token    : '{{ form.csrf_token.current_token }}',
+          csrf_token    : '{{ csrf_token() }}',
           oauth_email   : $('input#oauth_email').val(), 
           oauth_password: $('input#oauth_password').val() 
         }
       }) // using the done promise callback
-      .done(function(data) {
+      .done(function(res) {
         // log data to the console so we can see
-        console.log(data)
+        console.log(res)
+        switch(res.status) {
+          case 200: // Ok
+            // Example: OAuth token verloopt 20 February 2020, 16:55u
+            d = new Date(res.created_at + res.expires_in)
+            $('span#oauth_token_status').html('OAuth token verloopt ' + 
+              d.getDate() + ' ' + 
+              months[d.getMonth()] + ' ' + 
+              d.getFullYear() + ', ' +
+              d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u')
+            break
+          case 401:
+            // Not Authorized - Tesla email/pw not correct
+            $('span#error-msg-title').html('Autorisatie fout.')
+            $('h5#error-msg-sub').html('Tesla e-mail of wachtwoord niet correct.')
+            $('tr#error-msg-row').show().delay(5000).queue(function(n) {
+              $(this).fadeOut(); n();
+            })
+            break
+          case 404:
+            // RFID Token not found
+            $('span#error-msg-title').html('Fout...')
+            $('h5#error-msg-sub').html('RFID token niet bekend.')
+            $('tr#error-msg-row').show().delay(5000).queue(function(n) {
+              $(this).fadeOut(); n();
+            })
+            break
+          default:
+            // ???
+            $('span#error-msg-title').html('Fout [' + res.status + ']')
+            $('h5#error-msg-sub').html('Onbekende fout opgetreden.')
+            $('tr#error-msg-row').show().delay(5000).queue(function(n) {
+              $(this).fadeOut(); n();
+            })
+        }
 
-
+        // TODO: remove spinner
       })
-      .fail(function() {
+      .fail(function(res) {
+        console.log(res)
+        $('h5#error-msg-sub').html('')
+        switch(res.status) {
+          case 400:
+            if (res.responseText.toLowerCase().includes('the csrf token is invalid')) {
+              $('span#error-msg-title').html('Het CSRF Token is niet geldig.')
+              $('h5#error-msg-sub').html('Ververs de pagina en probeer opnieuw.')
+            } else {
+              $('span#error-msg-title').html('400 - BAD REQUEST')
+            }
+            break
+          case 500:
+            $('span#error-msg-title').html('Internal Server Error [500]')
+            break
+          default:
+            $('span#error-msg-title').html('Failed. HTTP code [' + res.status + ']')
+            break
+        }
+        $('tr#error-msg-row').show().delay(5000).queue(function(n) {
+          $(this).fadeOut(); n();
+        })
+        /* HTTP STATUS 400 - BAD REQUEST due to CSRF token failure, responseText:
+          <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">↵
+            <title>400 Bad Request</title>↵
+            <h1>Bad Request</h1>↵
+            <p>The CSRF token is invalid.</p>↵
+        */
+        // TODO: remove spinner
       })
       .always(function() {
+        // TODO: remove spinner
       })
     }
 
@@ -119,6 +198,7 @@
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
+      $('tr#error-msg-row').hide()
 
       $('#valid-range').datepicker({
           todayHighlight: true,
@@ -165,7 +245,7 @@
 {% endblock %}
 {% block content %}
 
-<div class="wrapper" id="{{ var1 }}">
+<div class="wrapper">
   <div class="container-fluid">
 
     <!-- Page-Title -->
@@ -185,6 +265,19 @@
       <div class="col-8">
         <div class="card-box table-responsive">
           <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+            <tr id="error-msg-row">
+              <th colspan="2">
+                <div class="text-center" style="color: white; background-color: #ef5350; border-radius: 5px;">
+                    <span>
+                      <h4 style="font-weight: bold;">
+                        <i class="mdi mdi-alert-outline"></i>
+                        <span id="error-msg-title"></span>
+                      </h4>
+                      <h5 id="error-msg-sub"></h5>
+                    </span>
+                </div>
+              </th>
+            </tr>
             <tr>
               <th><h5>Pasnummer</h5></th>
               <td class="text-primary" style="vertical-align: middle; text-align: left;"><h4 style="padding-left: 10px;">{{ rfid_model['rfid'] }}</h4padding-left: 10px;></td>
@@ -385,7 +478,7 @@
                 <div class="input-group">
                   <span class="input-group-addon"><i class="fas fa-key"></i></span>
                   <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic; width: 100%;">
-                    <i class="fas fa-info-circle"></i>&nbsp;OAuth token verloopt 20 February 2020, 16:55u
+                    <i class="fas fa-info-circle"></i>&nbsp;<span id="oauth_token_status">OAuth token verloopt 20 February 2020, 16:55u</span>
                   </span>
                   <span class="input-group-btn">
                     <button 
