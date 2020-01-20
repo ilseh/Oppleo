@@ -327,7 +327,8 @@ def TeslaApi_GenerateOAuth(token=None):
             'status': 200, 
             'token_type': rfid_model.api_token_type, 
             'created_at': rfid_model.api_created_at, 
-            'expires_in': rfid_model.api_expires_in
+            'expires_in': rfid_model.api_expires_in,
+            'vehicles' : tesla_api.getVehicleNameIdList()
             })
     else:
         # Nope, no token

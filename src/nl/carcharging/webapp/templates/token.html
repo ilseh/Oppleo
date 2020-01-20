@@ -92,12 +92,24 @@
         switch(res.status) {
           case 200: // Ok
             // Example: OAuth token verloopt 20 February 2020, 16:55u
-            d = new Date(res.created_at + res.expires_in)
+            d = new Date((res.created_at *1000) + (res.expires_in *1000)) // Sewconds to milliseconds
             $('span#oauth_token_status').html('OAuth token verloopt ' + 
               d.getDate() + ' ' + 
               months[d.getMonth()] + ' ' + 
               d.getFullYear() + ', ' +
-              d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u')
+              d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
+            )
+            // Add vehicle list
+            $('select#vehicle').find('option').remove().end()
+            $.each(res.vehicles, function( index, vehicle ) {
+              $('select#vehicle').append(
+                  '<option value="' + vehicle.id + '">' + 
+                  vehicle.name + ' (VIN: ' + vehicle.vin + ')' +
+                  '</option>'
+                )
+            })
+            // Select the first vehicle
+            $('select#vehicle').prop("selectedIndex", 0);
             break
           case 401:
             // Not Authorized - Tesla email/pw not correct
@@ -445,6 +457,14 @@
                     </button>
                   </span>
                 </div>
+              </td>
+            </tr>
+            <tr id="vehicles">
+              <th><h5>Voertuig</h5></th>
+              <td>
+                <select class="form-control" id="vehicle" name="vehicle">
+                  <option value="-"></option>
+                </select>
               </td>
             </tr>
             <tr id="oauth_token_row1">
