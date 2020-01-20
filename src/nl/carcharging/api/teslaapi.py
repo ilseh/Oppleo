@@ -27,11 +27,17 @@ class TeslaAPI:
     HTTP_408_REQUEST_TIMEOUT = 408
 
     MAX_WAKE_UP_TRIES = 3
-    VEHICLE_STATE_PARAM = 'state'
-    VEHICLE_STATE_ASLEEP = 'asleep'
-    VEHICLE_STATE_AWAKE = 'online'
-    VEHICLE_ID_PARAM = 'id_s'
-    VEHICLE_DISPLAY_NAME_PARAM = 'display_name'
+    VEHICLE_LIST_STATE_PARAM = 'state'
+    VEHICLE_LIST_STATE_VALUE_ASLEEP = 'asleep'
+    VEHICLE_LIST_STATE_VALUE_AWAKE = 'online'
+    VEHICLE_LIST_STATE_VALUE_UNKNOWN = 'unknown'
+    VEHICLE_LIST_ID_PARAM = 'id_s'
+    VEHICLE_LIST_DISPLAY_NAME_PARAM = 'display_name'
+    VEHICLE_LIST_VIN_PARAM = 'vin'
+
+    VEHICLE_DETAILS_ODOMETER_PARAM = 'odometer'
+
+    VEHICLE_DETAILS_TOKEN = 'DETAILS_FROM_API_CALL'
 
     access_token = None
     token_type = None
@@ -40,9 +46,6 @@ class TeslaAPI:
     refresh_token = None
 
     vehicle_list = None
-    selected_vehicle = None  
-
-    odometer = None
 
     def __init__(self):
         self.logger = logging.getLogger('TeslaAPI')
@@ -55,8 +58,7 @@ class TeslaAPI:
         self.expires_in = None
         self.refresh_token = None
         self.vehicle_list = None
-        self.selected_vehicle = None  
-        self.odometer = None
+
 
     def authenticate(self, email=None, password=None):
         self.logger.debug('authenticate() ' + self.API_AUTHENTICATION)
@@ -96,102 +98,128 @@ class TeslaAPI:
         self.logger.debug("{\n  'access_token': '%s',\n  'token_type': '%s',\n  'created_at': '%s',\n  'expires_in': '%s',\n  'refresh_token': '%s'\n}" %(self.access_token, self.token_type, self.created_at, self.expires_in, self.refresh_token))
         return True
 
-    def getVehicles(self):
-        self.logger.debug("getVehicles: " + self.API_VEHICLES)
-
-        if (self.access_token == None):
-            return None
-
+    def getVehicleList(self, update=False):
+        self.logger.debug("getVehicleList: " + self.API_VEHICLES)
+        if (self.vehicle_list != None and not update):
+            return self.vehicle_list
+        # Reset
+        self.vehicle_list = None
         # 02 - Vehicles [GET]
         # If >1 then show list and select, otherwise pick the vehicle  
         # sending post request and saving response as response object 
-
         r = requests.get(
             url = self.API_BASE + self.API_VEHICLES,
             headers = { 'Authorization': self.token_type + ' ' + self.access_token }
             ) 
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
         if (r.status_code != self.HTTP_200_OK):
-            return False
-
+            return None
         response_dict = json.loads(r.text)
         self.logger.debug("Vehicle count : %s " %response_dict['count'])
         self.vehicle_list = response_dict['response']
         for vehicle in self.vehicle_list:
-            self.logger.debug("The display_name (given vehicle name) is : %s " %vehicle[self.VEHICLE_DISPLAY_NAME_PARAM]) 
-            self.logger.debug("Het id_s is : %s " %vehicle[self.VEHICLE_ID_PARAM]) 
-            self.logger.debug("Het state is : %s " %vehicle[self.VEHICLE_STATE_PARAM]) 
+            self.logger.debug("The display_name (given vehicle name) is : %s " %vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM]) 
+            self.logger.debug("Het id_s is : %s " %vehicle[self.VEHICLE_LIST_ID_PARAM]) 
+            self.logger.debug("Het state is : %s " %vehicle[self.VEHICLE_LIST_STATE_PARAM]) 
             self.logger.debug("Het vehicle_id is : %s " %vehicle['vehicle_id']) 
             self.logger.debug("Het VIN is : %s " %vehicle['vin'])
+        return self.vehicle_list
 
 
-    def selectVehicle(self):
-        self.logger.debug("selectVehicle")
-
-        if (self.vehicle_list == None):
-            self.getVehicles()
-
-        if (len(self.vehicle_list) > 0):
-            self.logger.debug("%d vehicles, selected vehicle 1 (index=0)" % len(self.vehicle_list))
-            self.selected_vehicle = 0
-
-
-    def vehicleState(self):
-        if ((self.vehicle_list is not None) and 
-            (self.selected_vehicle is not None) and
-            (len(self.vehicle_list) > 0)):
-            return self.vehicle_list[self.selected_vehicle][self.VEHICLE_STATE_PARAM]
+    def getVehicleWithId(self, id=None):
+        self.logger.debug("getVehicleWithId")
+        if id is None:
+            return None
+        vehicle_list = self.getVehicleList()
+        if (vehicle_list == None):
+            return None
+        for vehicle in vehicle_list:
+            if id == vehicle[self.VEHICLE_LIST_ID_PARAM]:
+                self.logger.debug("%d vehicles, selected vehicle id %s" % (len(vehicle_list), id))
+                return vehicle
+        return None
 
 
-    def wakeUpVehicle(self):
-        self.logger.debug("wakeUpVehicle: " + self.API_WAKE_UP)
+    def getVehicleNameIdList(self):
+        self.logger.debug("getVehicleNameIdList")
+        vehicle_list = self.getVehicleList()
+        if (vehicle_list == None):
+            return []   # Empty list
+        nid = []
+        for vehicle in vehicle_list:
+            nid.append( { 
+                'id': vehicle[self.VEHICLE_LIST_ID_PARAM],
+                'name': vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM],
+                'vin': vehicle[self.VEHICLE_LIST_VIN_PARAM]
+             })
+        return nid
+
+
+    def vehicleDetailssWithId(self, id=None):
+        if id == None:
+            return self.VEHICLE_LIST_STATE_VALUE_UNKNOWN
+
+        # TODO
+        return None
+
+
+    def wakeUpVehicleWithId(self, id=None):
+        self.logger.debug("wakeUpVehicleWithId: " + self.API_WAKE_UP)
+        vehicle = self.getVehicleWithId(id)
+        if vehicle == None:
+            return False
         wake_up_tries = 0
-        while ((self.vehicle_list[self.selected_vehicle][self.VEHICLE_STATE_PARAM] == self.VEHICLE_STATE_ASLEEP) and (wake_up_tries < self.MAX_WAKE_UP_TRIES)):
+        while ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and 
+                (wake_up_tries < self.MAX_WAKE_UP_TRIES)):
             wake_up_tries += 1
             # 03 Wake it up, otherwise the STATE call will timeout
             r = requests.post(
-                url = self.API_BASE + self.API_WAKE_UP.replace('{id}', self.vehicle_list[self.selected_vehicle][self.VEHICLE_ID_PARAM]),
+                url = self.API_BASE + self.API_WAKE_UP.replace('{id}', vehicle[self.VEHICLE_LIST_ID_PARAM]),
                 headers = { 'Authorization': self.token_type + ' ' + self.access_token }
                 ) 
             self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
             if (r.status_code != self.HTTP_200_OK):
                 return False
             response_dict = json.loads(r.text)
-            self.vehicle_list[self.selected_vehicle][self.VEHICLE_STATE_PARAM] = response_dict['response'][self.VEHICLE_STATE_PARAM]
-            self.logger.debug("On try %d the state is now %s " % (wake_up_tries, self.vehicle_list[self.selected_vehicle][self.VEHICLE_STATE_PARAM]))
-            if (self.vehicle_list[self.selected_vehicle][self.VEHICLE_STATE_PARAM] == self.VEHICLE_STATE_AWAKE):
+            vehicle[self.VEHICLE_LIST_STATE_PARAM] = response_dict['response'][self.VEHICLE_LIST_STATE_PARAM]
+            self.logger.debug("On try %d the state is now %s " % (wake_up_tries, vehicle[self.VEHICLE_LIST_STATE_PARAM]))
+            if (vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_AWAKE):
                 return True
             self.logger.debug("Wait 5 seconds to try again...")
             time.sleep(5)
 
-        if ((self.vehicle_list[self.selected_vehicle][self.VEHICLE_STATE_PARAM] == self.VEHICLE_STATE_ASLEEP) and (wake_up_tries >= self.MAX_WAKE_UP_TRIES)):
+        if ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and 
+            (wake_up_tries >= self.MAX_WAKE_UP_TRIES)):
             self.logger.debug("Could not wake up the car...") 
             return False
         return True
 
-    def vehicleIsAsleep(self):
-        return ((len(self.vehicle_list) > 0) and
-                (self.VEHICLE_STATE_PARAM in self.vehicle_list[self.selected_vehicle]) and
-                (self.vehicle_list[self.selected_vehicle][self.VEHICLE_STATE_PARAM] == self.VEHICLE_STATE_ASLEEP))
+
+    def vehicleWithIdIsAsleep(self, id=None):
+        self.logger.debug("vehicleWithIdIsAsleep()")
+        vehicle = self.getVehicleWithId(id)
+        if vehicle == None:
+            self.logger.debug("Cannot determine. Vehicle not found.")
+            return False
+        self.logger.debug("Vehicle state {}.".format(vehicle[self.VEHICLE_LIST_STATE_PARAM]))
+        return (vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP)
 
 
-    def getVehicleState(self):
-        self.logger.debug("getVehicleState()")
-
-        if (self.selected_vehicle == None):
-            self.getVehicles()
-            self.selectVehicle()
-        if (self.selectVehicle == None):
-            self.logger.debug("No vehickes...")   
+    def getVehicleDetailsWithId(self, id=None, update=False):
+        self.logger.debug("getVehicleDetailsWithId()")
+        vehicle = self.getVehicleWithId(id)
+        if id == None or vehicle == None:
             return None
-        if (self.vehicleIsAsleep()):
-            # Wake up
-            if (not self.wakeUpVehicle()):
-                return None
-
-        self.logger.debug("getVehicleState() - continue")
-        url = self.API_BASE + self.API_VEHICLE_STATE.replace('{id}', self.vehicle_list[self.selected_vehicle][self.VEHICLE_ID_PARAM])
-        self.logger.debug("getVehicleState() - %s" % url)
+        # Existing?
+        if (self.VEHICLE_DETAILS_TOKEN in vehicle) and (vehicle[self.VEHICLE_DETAILS_TOKEN] != None) and (not update):
+            return vehicle[self.VEHICLE_DETAILS_TOKEN]
+        # Needs to be awake
+        if (self.vehicleWithIdIsAsleep(id) and 
+                not self.wakeUpVehicleWithId(id)):
+            return None
+        self.logger.debug("getVehicleDetailsWithId() - awake")
+        url = self.API_BASE + self.API_VEHICLE_STATE.replace('{id}', id)
+        self.logger.debug("getVehicleDetailsWithId() - %s" % url)
         # 04 Get the milage
         r = requests.get(
             url = url,
@@ -204,16 +232,21 @@ class TeslaAPI:
                 self.logger.warning("Error: " % response_dict['error'])
             return None
 
+        # TODO WAAR LAAT JE DIT?
         response_dict = json.loads(r.text)
-        self.odometer = response_dict['response']['odometer']
-        self.logger.debug("Odometer : %s " % self.odometer)
+        vehicle[self.VEHICLE_DETAILS_TOKEN] = response_dict['response']
+        self.logger.debug("Odometer : %s " % response_dict['response'][self.VEHICLE_DETAILS_ODOMETER_PARAM])
+        return response_dict['response']
 
 
-    def getOdometer(self):
-        self.logger.debug("getOdometer()")
-        if (self.odometer == None):
-            self.getVehicleState()
-        return self.odometer
+    def getOdometerWithId(self, id=None):
+        self.logger.debug("getOdometerWithId()")
+        if id is None:
+            return None
+        vehicle_details = self.getVehicleDetailsWithId(id)
+        if vehicle_details == None:
+            return None
+        return vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM]
 
 
     def refreshToken(self):
