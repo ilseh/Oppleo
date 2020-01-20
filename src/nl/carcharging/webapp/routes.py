@@ -24,7 +24,7 @@ from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
 from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
 from nl.carcharging.api.TeslaApi import TeslaAPI
-
+from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 """ 
  - make sure all url_for routes point to this blueprint
 """
@@ -274,6 +274,7 @@ def rfid_tokens(format='html', token=None):
         rfid_model = RfidModel().get_one(token)
         if (rfid_model == None):
             return render_template("tokens.html")
+        rfid_model.cleanupOldToken()    # Remove any expired token info
         rfid_change_form = RfidChangeForm()
         print('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
         if (request.method == 'POST'):
@@ -290,13 +291,19 @@ def rfid_tokens(format='html', token=None):
                     form=rfid_change_form
                 )        
     # Check if token exist, if not rfid is None
-    rfid_list = []
-    rfid_model = RfidModel().get_one(token)
-    if ((token == None) or (rfid_model == None)):
+    if (token == None):
+        rfid_list = []
         rfid_models = RfidModel().get_all()
         for rfid_model in rfid_models:
+            rfid_model.cleanupOldToken()    # Remove any expired token info
             rfid_list.append(rfid_model.to_str())
-    return jsonify(rfid_list)
+        return jsonify(rfid_list)
+    # Specific token
+    rfid_model = RfidModel().get_one(token)
+    if (rfid_model == None):
+        return jsonify({})
+    rfid_model.cleanupOldToken()    # Remove any expired token info
+    return jsonify(rfid_model.to_str())
 
 
 @webapp.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/json", methods=["POST"])
@@ -317,11 +324,7 @@ def TeslaApi_GenerateOAuth(token=None):
         email=request.form['oauth_email'], 
         password=request.form['oauth_password']):
         # Obtained token
-        rfid_model.api_access_token  = tesla_api.access_token        
-        rfid_model.api_token_type    = tesla_api.token_type        
-        rfid_model.api_created_at    = tesla_api.created_at        
-        rfid_model.api_expires_in    = tesla_api.expires_in        
-        rfid_model.api_refresh_token = tesla_api.refresh_token
+        UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(tesla_api, rfid_model)
         rfid_model.save()
         return jsonify({
             'status': 200, 
@@ -333,12 +336,38 @@ def TeslaApi_GenerateOAuth(token=None):
     else:
         # Nope, no token
         return jsonify({
-            'status': 401, 
+            'status': 401,  
             'reason': 'Not authorized'
             })
 
 
-@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["GET"])
+@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth/json", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RefreshOAuth(token=None):
-    pass
+    # CSRF Token is valid
+    rfid_model = RfidModel().get_one(token)
+    if ((token == None) or (rfid_model == None)):
+        # Nope, no token
+        return jsonify({
+            'status': 404, 
+            'reason': 'No known RFID token'
+            })
+    # Update for specific token
+    tesla_api = TeslaAPI()
+    UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model, tesla_api)
+    if not tesla_api.refreshToken():
+        return jsonify({
+            'status': 500,
+            'reason': 'Refresh failed'
+            })
+    # Refresh succeeded, Obtained token
+    UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(tesla_api, rfid_model)
+    rfid_model.save()
+
+    return jsonify({
+        'status': 200, 
+        'token_type': rfid_model.api_token_type, 
+        'created_at': rfid_model.api_created_at, 
+        'expires_in': rfid_model.api_expires_in,
+        'vehicles' : tesla_api.getVehicleNameIdList()
+        })
