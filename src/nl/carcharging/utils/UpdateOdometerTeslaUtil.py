@@ -4,7 +4,7 @@ from flask_socketio import SocketIO
 
 from config import WebAppConfig
 
-from nl.carcharging.api.TeslaApi import TeslaAPI 
+from nl.carcharging.api.TeslaApi import TeslaAPI
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 
@@ -45,7 +45,7 @@ class UpdateOdometerTeslaUtil:
             return
         # Valid token?
         tApi = TeslaAPI()
-        self.copy_token_from_rfid_model_to_api(rfid_model=rfid_model, tesla_api=tApi)
+        UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model=rfid_model, tesla_api=tApi)
         if (not tApi.hasValidToken()):
             self.logger.debug("Token has expired.")
             # TODO Notify someone
@@ -60,19 +60,20 @@ class UpdateOdometerTeslaUtil:
         if tApi.checkTokenRefresh():
             # Token refreshed, store in rfid
             self.logger.debug("Token refreshed")
-            self.copy_token_from_api_to_rfid_model(tApi, rfid_model)
+            UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(tApi, rfid_model)
             rfid_model.commit()
             self.logger.debug("Refreshed token stored in rfid")
         
-
-    def copy_token_from_rfid_model_to_api(self, rfid_model, tesla_api):
+    @staticmethod
+    def copy_token_from_rfid_model_to_api(rfid_model, tesla_api):
         tesla_api.access_token  = rfid_model.api_access_token        
         tesla_api.token_type    = rfid_model.api_token_type        
         tesla_api.created_at    = rfid_model.api_created_at        
         tesla_api.expires_in    = rfid_model.api_expires_in        
         tesla_api.refresh_token = rfid_model.api_refresh_token        
 
-    def copy_token_from_api_to_rfid_model(self, tesla_api, rfid_model):
+    @staticmethod
+    def copy_token_from_api_to_rfid_model(tesla_api, rfid_model):
         rfid_model.api_access_token  = tesla_api.access_token        
         rfid_model.api_token_type    = tesla_api.token_type        
         rfid_model.api_created_at    = tesla_api.created_at        

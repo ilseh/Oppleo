@@ -44,6 +44,24 @@ class RfidModel(Base):
         self.created_at = data.get('created_at', datetime.now())
         self.modified_at = data.get('last_used_at', datetime.now())
 
+
+    def cleanupOldToken(self):
+        #self.logger.debug("cleanupOldToken()")
+        if (self.api_access_token is None):
+            self.logger.debug("token is None")
+            return
+        date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
+        today = date.today()
+        if (date < today):
+            self.logger.debug("Token is expired. Deleting.")
+            self.api_access_token = None
+            self.api_created_at = None
+            self.api_expires_in = None
+            self.api_token_type = None
+            self.api_refresh_token = None
+            self.save()
+
+
     def save(self):
         db_session = DbSession()
         db_session.add(self)
