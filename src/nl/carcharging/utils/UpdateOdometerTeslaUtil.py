@@ -45,7 +45,7 @@ class UpdateOdometerTeslaUtil:
             return
         # Valid token?
         tApi = TeslaAPI()
-        self.copy_token_from_rfid_model_to_api(rfid_model=rfid_model, testla_api=tApi)
+        self.copy_token_from_rfid_model_to_api(rfid_model=rfid_model, tesla_api=tApi)
         if (not tApi.hasValidToken()):
             self.logger.debug("Token has expired.")
             # TODO Notify someone
@@ -65,16 +65,16 @@ class UpdateOdometerTeslaUtil:
             self.logger.debug("Refreshed token stored in rfid")
         
 
-    def copy_token_from_rfid_model_to_api(self, rfid_model, testla_api):
-        testla_api.access_token  = rfid_model.api_access_token        
-        testla_api.token_type    = rfid_model.api_token_type        
-        testla_api.created_at    = rfid_model.api_created_at        
-        testla_api.expires_in    = rfid_model.api_expires_in        
-        testla_api.refresh_token = rfid_model.api_refresh_token        
+    def copy_token_from_rfid_model_to_api(self, rfid_model, tesla_api):
+        tesla_api.access_token  = rfid_model.api_access_token        
+        tesla_api.token_type    = rfid_model.api_token_type        
+        tesla_api.created_at    = rfid_model.api_created_at        
+        tesla_api.expires_in    = rfid_model.api_expires_in        
+        tesla_api.refresh_token = rfid_model.api_refresh_token        
 
-    def copy_token_from_api_to_rfid_model(self, testla_api, rfid_model):
-        rfid_model.api_access_token  = testla_api.access_token        
-        rfid_model.api_token_type    = testla_api.token_type        
-        rfid_model.api_created_at    = testla_api.created_at        
-        rfid_model.api_expires_in    = testla_api.expires_in        
-        rfid_model.api_refresh_token = testla_api.refresh_token        
+    def copy_token_from_api_to_rfid_model(self, tesla_api, rfid_model):
+        rfid_model.api_access_token  = tesla_api.access_token        
+        rfid_model.api_token_type    = tesla_api.token_type        
+        rfid_model.api_created_at    = tesla_api.created_at        
+        rfid_model.api_expires_in    = tesla_api.expires_in        
+        rfid_model.api_refresh_token = tesla_api.refresh_token        

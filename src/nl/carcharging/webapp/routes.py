@@ -23,6 +23,7 @@ from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
 from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
+from nl.carcharging.api.TeslaApi import TeslaAPI
 
 
 """ 
@@ -275,13 +276,12 @@ def rfid_tokens(format='html', token=None):
         if (rfid_model == None):
             return render_template("tokens.html")
         rfid_change_form = RfidChangeForm()
+        print('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
         if (request.method == 'POST'):
             # Update for specific token
             if rfid_change_form.validate_on_submit():
+                # TODO apply changes
                 pass
-            # TODO apply changes
-
-
             return render_template("token.html",
                     rfid_model=rfid_model,
                     form=rfid_change_form
@@ -292,10 +292,56 @@ def rfid_tokens(format='html', token=None):
                 )        
     # Check if token exist, if not rfid is None
     rfid_list = []
-    rfid = RfidModel().get_one(token)
-    if ((token == None) or (rfid == None)):
-        rfids = RfidModel().get_all()
-        for rfid in rfids:
-            rfid_list.append(rfid.to_str())
+    rfid_model = RfidModel().get_one(token)
+    if ((token == None) or (rfid_model == None)):
+        rfid_models = RfidModel().get_all()
+        for rfid_model in rfid_models:
+            rfid_list.append(rfid_model.to_str())
     return jsonify(rfid_list)
-        
+
+
+@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/json", methods=["POST"])
+@authenticated_resource
+def TeslaApi_GenerateOAuth(token=None):
+    rfid_model = RfidModel().get_one(token)
+    rfid_change_form = RfidChangeForm()
+
+    c1 = request.form['csrf_token']
+    c2 = rfid_change_form.csrf_token.current_token
+    c3 = (c1 == c2)
+
+    if ('csrf_token' not in request.form) or \
+       (request.form['csrf_token'] != rfid_change_form.csrf_token.current_token):
+        return jsonify({
+            'status': 'failed', 
+            'reason': 'Invalid csrf_token'
+            })
+    # Update for specific token
+    tesla_api = TeslaApi()
+    if tesla_api.authenticate(
+        username=request['form']['oauth_email'], 
+        password=request['form']['oauth_password']):
+        rfid_model.api_access_token  = tesla_api.access_token        
+        rfid_model.api_token_type    = tesla_api.token_type        
+        rfid_model.api_created_at    = tesla_api.created_at        
+        rfid_model.api_expires_in    = tesla_api.expires_in        
+        rfid_model.api_refresh_token = tesla_api.refresh_token        
+        # Obtained token
+        return jsonify({
+            'status': 'success', 
+            'token_type': tesla_api.token_type, 
+            'created_at': tesla_api.created_at, 
+            'expires_in': tesla_api.expires_in
+            })
+    else:
+        # Nope, no token
+        return jsonify({
+            'status': 'failed', 
+            'reason': 'Not authorized'
+            })
+
+
+@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["GET"])
+@authenticated_resource
+def TeslaApi_RefreshOAuth(token=None):
+    pass
