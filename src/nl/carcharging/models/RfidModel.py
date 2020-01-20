@@ -29,6 +29,9 @@ class RfidModel(Base):
     api_expires_in = db.Column(db.String(100))
     api_refresh_token = db.Column(db.String(100))
 
+    vehicle_id = db.Column(db.String(100))
+    vehicle_vin = db.Column(db.String(100))
+
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.RfidModel')
         self.logger.debug('Initializing RfidModel without data')
@@ -82,7 +85,9 @@ class RfidModel(Base):
                 "api_token_type": str(self.api_token_type),
                 "api_created_at": str(self.api_created_at),
                 "api_expires_in": str(self.api_expires_in),
-                "api_refresh_token": str(self.api_refresh_token)
+                "api_refresh_token": str(self.api_refresh_token),
+                "vehicle_id": str(self.vehicle_id),
+                "vehicle_vin": str(self.vehicle_vin)
             }
         )
 
@@ -91,11 +96,20 @@ class RfidSchema(Schema):
     Rfid Schema
     """
     rfid = fields.Str(required=True)
-    allow = fields.Bool(dump_only=True)
+    enabled = fields.Bool(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
-    last_used = fields.DateTime(dump_only=True)
+    last_used_at = fields.DateTime(dump_only=True)
     name = fields.Str(required=True)
-    vehicle = fields.Str(required=True)
+    vehicle_make = fields.Str(required=True)
+    vehicle_model = fields.Str(required=True)
+    get_odometer = fields.Bool(dump_only=True)
     license_plate = fields.Str(required=True)
     valid_from = fields.DateTime(dump_only=True)
     valid_until = fields.DateTime(dump_only=True)
+    api_access_token = fields.Str(required=True)
+    api_token_type = fields.Str(required=True)
+    api_created_at = fields.Str(required=True)
+    api_expires_in = fields.Str(required=True)
+    api_refresh_token = fields.Str(required=True)
+    vehicle_id = fields.Str(required=True)
+    vehicle_vin = fields.Str(required=True)
