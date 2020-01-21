@@ -6,7 +6,20 @@ from marshmallow import fields, Schema
 
 from nl.carcharging.models.base import Base, DbSession
 from . import db
+from sqlalchemy import orm
 
+"""
+# Alternatively, catch reload events
+from sqlalchemy.events import event
+
+@event.listens_for(RfidModel, 'load')
+def RfidModel_load(target, context):
+    print('RfidModel load')
+
+@event.listens_for(RfidModel, 'refresh')
+def RfidModel_refresh(target, context, attrs):
+    print('RfidModel refresh')
+"""
 
 class RfidModel(Base):
     __tablename__ = 'rfid'
@@ -29,12 +42,19 @@ class RfidModel(Base):
     api_expires_in = db.Column(db.String(100))
     api_refresh_token = db.Column(db.String(100))
 
+    vehicle_name = db.Column(db.String(100))
     vehicle_id = db.Column(db.String(100))
     vehicle_vin = db.Column(db.String(100))
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.RfidModel')
         self.logger.debug('Initializing RfidModel without data')
+
+    # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
+    @orm.reconstructor   
+    def init_on_load(self):
+        # Make sure the init does not reset any values, those are taken from the db
+        self.__init__()
 
 
     def set(self, data):
@@ -104,6 +124,7 @@ class RfidModel(Base):
                 "api_created_at": str(self.api_created_at),
                 "api_expires_in": str(self.api_expires_in),
                 "api_refresh_token": str(self.api_refresh_token),
+                "vehicle_name": str(self.vehicle_name),
                 "vehicle_id": str(self.vehicle_id),
                 "vehicle_vin": str(self.vehicle_vin)
             }
@@ -129,5 +150,7 @@ class RfidSchema(Schema):
     api_created_at = fields.Str(required=True)
     api_expires_in = fields.Str(required=True)
     api_refresh_token = fields.Str(required=True)
+    vehicle_name = fields.Str(required=True)
     vehicle_id = fields.Str(required=True)
     vehicle_vin = fields.Str(required=True)
+

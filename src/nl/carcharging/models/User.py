@@ -1,5 +1,5 @@
 from nl.carcharging.models import db
-
+from sqlalchemy import orm
 
 class User(db.Model):
     """
@@ -9,6 +9,14 @@ class User(db.Model):
     username = db.Column(db.String, primary_key=True)
     password = db.Column(db.String)
     authenticated = db.Column(db.Boolean, default=False)
+
+    def __init__(self):
+        pass
+    
+    # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
+    @orm.reconstructor   
+    def init_on_load(self):
+        pass
 
     def is_active(self):
         """True, as all users are active."""

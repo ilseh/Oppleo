@@ -4,6 +4,7 @@ import logging
 from marshmallow import fields, Schema
 
 from . import db
+from sqlalchemy import orm
 from nl.carcharging.models.base import Base, DbSession
 
 
@@ -18,6 +19,10 @@ class ChargerConfigModel(Base):
         self.logger = logging.getLogger('nl.carcharging.models.ChargerConfigModel')
         self.logger.debug('Initializing ChargerConfigModel without data')
 
+    # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
+    @orm.reconstructor   
+    def init_on_load(self):
+        self.__init__()
 
     def set(self, data):
         for key in data:

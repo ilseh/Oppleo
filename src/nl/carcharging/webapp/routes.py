@@ -281,7 +281,31 @@ def rfid_tokens(format='html', token=None):
             # Update for specific token
             if rfid_change_form.validate_on_submit():
                 # TODO apply changes
-                pass
+                # rfid - given
+                rfid_model.enabled = rfid_change_form.enabled.data
+                # created_at - updated by the system
+                # last_used_at - updated by the system
+                rfid_model.name = rfid_change_form.name.data
+                rfid_model.vehicle_make = rfid_change_form.vehicle_make.data
+                rfid_model.vehicle_model = rfid_change_form.vehicle_model.data
+                rfid_model.get_odometer = rfid_change_form.get_odometer.data
+                rfid_model.license_plate = rfid_change_form.license_plate.data
+                rfid_model.valid_from = rfid_change_form.valid_from.data
+                rfid_model.valid_until = rfid_change_form.valid_until.data
+                # api_access_token - updated via ajax
+                # api_token_type - updated via ajax
+                # api_created_at - updated via ajax
+                # api_expires_in - updated via ajax
+                # api_refresh_token - updated via ajax
+                rfid_model.vehicle_name = rfid_change_form.vehicle_name.data
+                rfid_model.vehicle_id = rfid_change_form.vehicle_id.data
+                rfid_model.vehicle_vin = rfid_change_form.vehicle_vin.data
+                rfid_model.save()
+
+                # Return to the rfid tokens page
+                return redirect(url_for('webapp.rfid_tokens', format='html', token=None))
+
+            # TODO - what went wrong? message!
             return render_template("token.html",
                     rfid_model=rfid_model,
                     form=rfid_change_form
