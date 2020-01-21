@@ -542,6 +542,9 @@
               <th><h5>Voertuig</h5></th>
               <td>
                 <div class="input-group">
+                  <input type="hidden" id="vehicle_name" name="vehicle_name" value="{{ rfid_form['vehicle_name'] }}" />
+                  <input type="hidden" id="vehicle_id" name="vehicle_id" value="{{ rfid_form['vehicle_id'] }}" />
+                  <input type="hidden" id="vehicle_vin" name="vehicle_id" value="{{ rfid_form['vehicle_vin'] }}" />
                   <select class="form-control" id="vehicle" name="vehicle">
                     <option value="-" style="font-style: italic;">Geen voertuigen...</option>
                   </select>
