@@ -2,7 +2,7 @@ from marshmallow import fields, Schema
 
 from nl.carcharging.models.base import Base, Session
 from . import db
-
+from sqlalchemy import orm
 
 class EnergyDeviceModel(Base):
     """
@@ -18,6 +18,11 @@ class EnergyDeviceModel(Base):
 
     def __init__(self, data):
         self.energy_device_id = data.get('energy_device_id')
+
+    # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
+    @orm.reconstructor   
+    def init_on_load(self):
+        pass
 
     def save(self):
         session = Session()
