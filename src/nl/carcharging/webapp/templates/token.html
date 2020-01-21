@@ -84,6 +84,7 @@
       console.log(timestamp() + ' refreshOAuthToken()')
       getOrRefreshOAuthToken(false)
     }
+    var vehicleList = []
     function getOrRefreshOAuthToken(generateToken = true) {
       console.log(timestamp() + ' getOrRefreshOAuthToken('+generateToken+')')
       var generateTokenUrl = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json'
@@ -113,13 +114,29 @@
             updateOAuthTokenStatus(new Date((res.created_at *1000) + (res.expires_in *1000))) // Seconds to milliseconds
             // Add vehicle list
             $('select#vehicle').find('option').remove().end()
+            var selectedVehicleName = $('input#vehicle_name').val()
+            var selectedVehicleVin = $('input#vehicle_vin').val()
+            var selectedVehicleInList = false
+            vehicleList.length = 0
             $.each(res.vehicles, function( index, vehicle ) {
               $('select#vehicle').append(
                   '<option value="' + vehicle.id + '">' + 
                   vehicle.name + ' (VIN: ' + vehicle.vin + ')' +
                   '</option>'
                 )
+              vehicleList.push({
+                'name': vehicle.name,
+                'id': vehicle.id,
+                'vin': vehicle.vin
+              })
+              selectedVehicleInList = selectedVehicleInList || ((vehicle.name == selectedVehicleName) && (vehicle.vin == selectedVehicleVin))
             })
+            if (!selectedVehicleInList){
+              // New values
+              $('input#vehicle_name').val(vehicleList.length > 0 ? vehicleList[0].name : '')
+              $('input#vehicle_id').val(vehicleList.length > 0 ? vehicleList[0].id : '')
+              $('input#vehicle_vin').val(vehicleList.length > 0 ? vehicleList[0].vin : '')
+            }
             // Select the first vehicle
             $('select#vehicle').prop("selectedIndex", 0);
             break
@@ -295,6 +312,19 @@
       })
       $('button#refresh_token').on('click', function() {
         refreshOAuthToken()
+      })
+      $('select#vehicle').on('change', function() {
+        $('input#vehicle_name').val()
+        $('input#vehicle_id').val()
+        $('input#vehicle_vin').val()
+        $.each( vehicleList, function( index, vehicleInList ) {
+          if ($(this).val() == 
+              (vehicleInList.name + ' (VIN: ' + vehicleInList.vin + ')')) {
+            $('input#vehicle_name').val(vehicleInList.name)
+            $('input#vehicle_id').val(vehicleInList.id)
+            $('input#vehicle_vin').val(vehicleInList.vin)
+          }
+        })
       })
       showHideCredentials()
       setResetGetOdometer()
@@ -542,11 +572,11 @@
               <th><h5>Voertuig</h5></th>
               <td>
                 <div class="input-group">
-                  <input type="hidden" id="vehicle_name" name="vehicle_name" value="{{ rfid_form['vehicle_name'] }}" />
-                  <input type="hidden" id="vehicle_id" name="vehicle_id" value="{{ rfid_form['vehicle_id'] }}" />
-                  <input type="hidden" id="vehicle_vin" name="vehicle_id" value="{{ rfid_form['vehicle_vin'] }}" />
+                  <input type="hidden" id="vehicle_name" name="vehicle_name" value="{% if rfid_model['vehicle_name'] is not none %}{{ rfid_model['vehicle_name'] }}{% endif %}" />
+                  <input type="hidden" id="vehicle_id" name="vehicle_id" value="{% if rfid_model['vehicle_id'] is not none %}{{ rfid_model['vehicle_id'] }}{% endif %}" />
+                  <input type="hidden" id="vehicle_vin" name="vehicle_id" value="{% if rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_vin'] }}{% endif %}" />
                   <select class="form-control" id="vehicle" name="vehicle">
-                    <option value="-" style="font-style: italic;">Geen voertuigen...</option>
+                    <option value="-" style="font-style: italic;">{% if rfid_model['vehicle_name'] is not none and rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_name'] }} (VIN: {{ rfid_model['vehicle_vin'] }}){% else %}Geen voertuigen...{% endif %}</option>
                   </select>
                   <span class="input-group-addon info-button-style"
                         data-toggle="tooltip" 
