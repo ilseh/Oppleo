@@ -1,0 +1,24 @@
+# CarChargeWebApp as Default server 
+#
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+
+	# SSL configuration
+	#
+	# listen 443 ssl default_server;
+	# listen [::]:443 ssl default_server;
+	#
+	# Not serving files. Can it do without a root?
+	root /var/www/html;
+	# and without default files?
+	index index.html
+	server_name _;
+	location / {
+
+	        include uwsgi_params;
+		# Use socket for communication with uWSGI. /var/run is the proper location
+		uwsgi_pass unix:/var/run/uwsgi/CarChargerWebApp.sock;
+		# try_files $uri $uri/ =404;
+	}
+}
