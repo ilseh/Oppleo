@@ -145,7 +145,8 @@
   //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
       })
       .always(function() {
-        // Check every 60 seconds
+        // Remove spinner
+        $('.spinner').hide()
       })
     }
 

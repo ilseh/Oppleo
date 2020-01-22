@@ -100,7 +100,7 @@
     var vehicleList = []
     function getRefreshOrRevokeOAuthToken(cnf = GENERATE) {
       console.log(timestamp() + ' getRefreshOrRevokeOAuthToken('+cnf+')')
-      // TODO: start spinner
+      // Start spinner
       $('.spinner').show()
       var url
       var data
@@ -204,8 +204,6 @@
               $(this).fadeOut(); n();
             })
         }
-
-        // TODO: remove spinner
       })
       .fail(function(res) {
         console.log(res)
@@ -235,10 +233,9 @@
             <h1>Bad Request</h1>↵
             <p>The CSRF token is invalid.</p>↵
         */
-        // TODO: remove spinner
       })
       .always(function() {
-        // TODO: remove spinner
+        // Remove spinner
         $('.spinner').hide()
       })
     }
@@ -702,7 +699,6 @@
 
           <div class="form-group text-right m-t-20">
             <div class="col-xs-12">
-              <button class="btn btn-danger btn-custom w-md waves-effect waves-light" type="submit">Verwijderen</button>
               <button class="btn btn-secondary btn-custom w-md waves-effect waves-light" type="button" onclick="window.location.href='/rfid_tokens/'">Annuleren</button>
               <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Wijzigen</button>
             </div>

@@ -139,7 +139,7 @@
             })
           },
           "columnDefs": [{
-            "targets": [1, 9, 11, 12],
+            "targets": [1, 9, 11],
             "sorting": false,
             "orderable": false
           }, {
@@ -163,8 +163,7 @@
                        '<span data-toggle="tooltip" \
                               data-placement="bottom" \
                               data-html="true" \
-                              title="<em>Registreer</em>" \
-                              onclick="window.location.href=\'/rfid_tokens/' + row[0] + '\'" \
+                              title="<em>Geen autorisatie</em>" \
                               > \
                               <i class="far fa-registered"></i> \
                         </span>' : 
@@ -172,7 +171,6 @@
                               data-placement="bottom" \
                               data-html="true" \
                               title="<em>' + t + '</em>" \
-                              onclick="window.location.href=\'/rfid_tokens/' + row[0] + '\'" \
                               > \
                               <i class="fas fa-exchange-alt"></i> \
                         </span>'
@@ -203,10 +201,9 @@
             ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
             ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
             ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
-            (element.get_odometer == true ? 'Ja' : 'Nee'),
+            (element.get_odometer === "True" ? 'Ja' : 'Nee'),
             (element.api_access_token + '|' + element.api_created_at + '|' + element.api_expires_in),
-            '<button id="edit_' + element.rfid + '">Edit</button>',
-            '<button >Delete</button>'
+            '<button class="btn btn-outline-primary btn-sm" id="edit_' + element.rfid + '">Edit</button>'
           ]).draw( false )
           $('button#edit_' + element.rfid).click(function() {
             //Do stuff when clicked
@@ -219,7 +216,8 @@
   //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
       })
       .always(function() {
-        // Check every 60 seconds
+        // Remove spinner
+        $('.spinner').hide()
       })
     }
 
@@ -228,15 +226,8 @@
     var dialog;
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
-
-
       getRfidTokens()
-
     })
-
-
-
-
     </script>
 
 {% endblock %}
@@ -250,7 +241,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box">
-                <h4 class="page-title">Auto OAuth token</h4>
+                <h4 class="page-title">Laadpassen</h4>
             </div>
         </div>
     </div>
@@ -274,7 +265,6 @@
                 <th style="text-align: center;">Kenteken</th>
                 <th style="text-align: center;">Update km stand</th>
                 <th style="text-align: center;">Token</th>
-                <th style="text-align: center;"></th>
                 <th style="text-align: center;"></th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
