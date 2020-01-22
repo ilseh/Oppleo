@@ -280,7 +280,6 @@ def rfid_tokens(format='html', token=None):
         if (request.method == 'POST'):
             # Update for specific token
             if rfid_change_form.validate_on_submit():
-                # TODO apply changes
                 # rfid - given
                 rfid_model.enabled = rfid_change_form.enabled.data
                 # created_at - updated by the system
@@ -288,7 +287,11 @@ def rfid_tokens(format='html', token=None):
                 rfid_model.name = rfid_change_form.name.data
                 rfid_model.vehicle_make = rfid_change_form.vehicle_make.data
                 rfid_model.vehicle_model = rfid_change_form.vehicle_model.data
-                rfid_model.get_odometer = rfid_change_form.get_odometer.data
+                # only accept odometer if token and id
+                rfid_model.get_odometer = (rfid_change_form.get_odometer.data and 
+                                           rfid_model.hasValidToken() and 
+                                           rfid_change_form.vehicle_id.data is not None and
+                                           len(rfid_change_form.vehicle_id.data) > 0)
                 rfid_model.license_plate = rfid_change_form.license_plate.data
                 rfid_model.valid_from = rfid_change_form.valid_from.data
                 rfid_model.valid_until = rfid_change_form.valid_until.data
@@ -297,9 +300,15 @@ def rfid_tokens(format='html', token=None):
                 # api_created_at - updated via ajax
                 # api_expires_in - updated via ajax
                 # api_refresh_token - updated via ajax
-                rfid_model.vehicle_name = rfid_change_form.vehicle_name.data
-                rfid_model.vehicle_id = rfid_change_form.vehicle_id.data
-                rfid_model.vehicle_vin = rfid_change_form.vehicle_vin.data
+                rfid_model.vehicle_name = None if rfid_change_form.vehicle_name.data is None or \
+                                                  len(rfid_change_form.vehicle_name.data) == 0 \
+                                               else rfid_change_form.vehicle_name.data
+                rfid_model.vehicle_id = None if rfid_change_form.vehicle_id.data is None or \
+                                                len(rfid_change_form.vehicle_id.data) == 0 \
+                                             else rfid_change_form.vehicle_id.data
+                rfid_model.vehicle_vin = None if rfid_change_form.vehicle_vin.data is None or \
+                                                 len(rfid_change_form.vehicle_vin.data) == 0 \
+                                              else rfid_change_form.vehicle_vin.data
                 rfid_model.save()
 
                 # Return to the rfid tokens page
@@ -394,4 +403,35 @@ def TeslaApi_RefreshOAuth(token=None):
         'created_at': rfid_model.api_created_at, 
         'expires_in': rfid_model.api_expires_in,
         'vehicles' : tesla_api.getVehicleNameIdList()
+        })
+
+@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth/json", methods=["POST"])
+@authenticated_resource
+def TeslaApi_RevokeOAuth(token=None):
+    # CSRF Token is valid
+    rfid_model = RfidModel().get_one(token)
+    if ((token == None) or (rfid_model == None)):
+        # Nope, no token
+        return jsonify({
+            'status': 404, 
+            'reason': 'No known RFID token'
+            })
+    # Update for specific token
+    tesla_api = TeslaAPI()
+    UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model, tesla_api)
+    if not tesla_api.revokeToken():
+        return jsonify({
+            'status': 500,
+            'reason': 'Revoke failed'
+            })
+    # Revoke succeeded, remove token
+    UpdateOdometerTeslaUtil.clean_token_rfid_model(rfid_model)
+    rfid_model.save()
+
+    return jsonify({
+        'status': 200, 
+        'token_type': '', 
+        'created_at': '', 
+        'expires_in': '',
+        'vehicles' : ''
         })

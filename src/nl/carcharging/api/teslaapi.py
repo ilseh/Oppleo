@@ -11,7 +11,7 @@ class TeslaAPI:
     API_VEHICLES = '/api/1/vehicles' # GET
     API_WAKE_UP = '/api/1/vehicles/{id}/wake_up' # POST
     API_VEHICLE_STATE = '/api/1/vehicles/{id}/data_request/vehicle_state' # GET
-    API_REVOKE = 'https://owner-api.teslamotors.com/oauth/revoke' # POST
+    API_REVOKE = '/oauth/revoke' # POST
         # All requests require a User-Agent header with any value provided. 
 
     API_AUTHENTICATION_GRANT_TYPE_PARAM = 'grant_type'
@@ -310,7 +310,7 @@ class TeslaAPI:
         return True
 
     def hasValidToken(self):
-        self.logger.debug("has_valid_token()")
+        self.logger.debug("hasValidToken()")
         if (self.access_token is None):
             self.logger.debug("token is None")
             return False

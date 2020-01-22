@@ -47,6 +47,24 @@
     .info-button-style {
       cursor: help;
     }
+    .input-text-only {
+      text-align: left;
+      font-style: italic; 
+      width: 100%; 
+      background-color: #36404a !important;
+      border: 0px !important;
+       ::-webkit-input-placeholder { /* WebKit browsers */
+        color:    #36404a;
+      }
+      :-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+        color:    #36404a;
+      }
+      ::-moz-placeholder { /* Mozilla Firefox 19+ */
+        color:    #36404a;
+      }
+      :-ms-input-placeholder { /* Internet Explorer 10+ */
+        color:    #36404a;
+      }
   </style>
 
   <script>
@@ -76,34 +94,44 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    function getOAuthToken() {
-      console.log(timestamp() + ' getOAuthToken()')
-      getOrRefreshOAuthToken(true)
-    }
-    function refreshOAuthToken() {
-      console.log(timestamp() + ' refreshOAuthToken()')
-      getOrRefreshOAuthToken(false)
-    }
+    const GENERATE = 1
+    const REFRESH = 2
+    const REVOKE = 3
     var vehicleList = []
-    function getOrRefreshOAuthToken(generateToken = true) {
-      console.log(timestamp() + ' getOrRefreshOAuthToken('+generateToken+')')
-      var generateTokenUrl = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json'
-      var refreshTokenUrl = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth/json'
+    function getRefreshOrRevokeOAuthToken(cnf = GENERATE) {
+      console.log(timestamp() + ' getRefreshOrRevokeOAuthToken('+cnf+')')
       // TODO: start spinner
-      var generateTokenData = {
-        csrf_token    : '{{ csrf_token() }}',
-        oauth_email   : $('input#oauth_email').val(), 
-        oauth_password: $('input#oauth_password').val() 
-      }
-      var refreshTokenData = {
-        csrf_token    : '{{ csrf_token() }}' 
+      $('.spinner').show()
+      var url
+      var data
+      switch(cnf) {
+        case GENERATE:
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json'
+          data = {
+            csrf_token    : '{{ csrf_token() }}',
+            oauth_email   : $('input#oauth_email').val(), 
+            oauth_password: $('input#oauth_password').val() 
+          }
+          break
+        case REFRESH:
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth/json'
+          data = {
+            csrf_token    : '{{ csrf_token() }}' 
+          }
+          break
+        case REVOKE:
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RevokeOAuth/json'
+          data = {
+            csrf_token    : '{{ csrf_token() }}' 
+          }
+          break
       }
       $.ajax({
         type		  : 'POST',
-        url			  : (generateToken?generateTokenUrl:refreshTokenUrl),
+        url			  : url,
         dataType	: 'json',
         encode		: true,
-        data      : (generateToken?generateTokenData:refreshTokenData)
+        data      : data
       }) // using the done promise callback
       .done(function(res) {
         // log data to the console so we can see
@@ -117,6 +145,7 @@
             var selectedVehicleName = $('input#vehicle_name').val()
             var selectedVehicleVin = $('input#vehicle_vin').val()
             var selectedVehicleInList = false
+            var selectedVehicleIndexInList = -1
             vehicleList.length = 0
             $.each(res.vehicles, function( index, vehicle ) {
               $('select#vehicle').append(
@@ -130,6 +159,7 @@
                 'vin': vehicle.vin
               })
               selectedVehicleInList = selectedVehicleInList || ((vehicle.name == selectedVehicleName) && (vehicle.vin == selectedVehicleVin))
+              selectedVehicleIndexInList = ((vehicle.name == selectedVehicleName) && (vehicle.vin == selectedVehicleVin)) ? index : selectedVehicleIndexInList
             })
             if (!selectedVehicleInList){
               // New values
@@ -137,8 +167,18 @@
               $('input#vehicle_id').val(vehicleList.length > 0 ? vehicleList[0].id : '')
               $('input#vehicle_vin').val(vehicleList.length > 0 ? vehicleList[0].vin : '')
             }
-            // Select the first vehicle
-            $('select#vehicle').prop("selectedIndex", 0);
+            tokenPresent = (vehicleList.length != 0)
+            if (vehicleList.length == 0) {
+              $('select#vehicle').append(
+                  '<option value="None">Geen voertuigen...</option>'
+                )
+            }
+            // Select the vehicle, or the first if any
+            $('select#vehicle').prop("selectedIndex", 
+              selectedVehicleIndexInList == -1 ? 0 : selectedVehicleIndexInList
+            )
+            showHideCredentials()
+            setResetVehicleToken()
             break
           case 401:
             // Not Authorized - Tesla email/pw not correct
@@ -199,6 +239,7 @@
       })
       .always(function() {
         // TODO: remove spinner
+        $('.spinner').hide()
       })
     }
 
@@ -308,10 +349,13 @@
         setResetVehicleToken()
       })
       $('button#generate_token').on('click', function() {
-        getOAuthToken()
+        getRefreshOrRevokeOAuthToken(GENERATE)
       })
       $('button#refresh_token').on('click', function() {
-        refreshOAuthToken()
+        getRefreshOrRevokeOAuthToken(REFRESH)
+      })
+      $('button#revoke_token').on('click', function() {
+        getRefreshOrRevokeOAuthToken(REVOKE)
       })
       $('select#vehicle').on('change', function() {
         $('input#vehicle_name').val()
@@ -336,6 +380,7 @@
        function(){ $(this).addClass('btn-success') },
        function(){ $(this).removeClass('btn-success') }
       )
+      $('.spinner').hide()
     })
 
 
@@ -385,7 +430,7 @@
               <th><h5>Naam</h5></th>
               <td>
                 <input class="form-control" id="name" name="name" type="text" placeholder="Naam" 
-                       value="{% if rfid_model['name'] is not none %} {{ rfid_model['name'] }}{% endif %}">
+                       value="{% if rfid_model['name'] is not none %}{{ rfid_model['name'] }}{% endif %}">
               </td>
             </tr>
             <tr>
@@ -398,8 +443,8 @@
                       name="enabled"
                       id="enabled"
                       data-toggle="toggle"
-                      data-on="<i class='far fa-thumbs-up'></i></i> AAN"
-                      data-off="<i class='far fa-thumbs-down'></i> UIT"
+                      data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                      data-off="<i class='far fa-thumbs-down'></i> NEE"
                       data-onstyle="primary"
                       data-offstyle="dark"
                       data-size="sm"
@@ -413,26 +458,46 @@
             </tr>
             <tr>
               <th><h5>Registratie</h5></th>
-              <td class="text-light" style="vertical-align: middle; text-align: left;">
-                <h5 style="padding-left: 10px;">
-                  <i class="far fa-calendar-alt"></i>&nbsp;
-                  {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
-                  &nbsp;
-                  <i class="far fa-clock"></i>&nbsp;
-                  {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
-                </h5>
+              <td>
+                <div class="input-group">
+                  <span id="oauth_token" class="input-group-addon input-text-only">
+                    <i class="far fa-calendar-alt"></i>&nbsp;
+                    {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
+                    &nbsp;
+                    <i class="far fa-clock"></i>&nbsp;
+                    {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
+                  </span>
+                  <span class="input-group-addon info-button-style"
+                          data-toggle="tooltip" 
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="Eerste registratie van dit pasnummer op dit laadpunt. Automatisch gegenereerd."
+                          >
+                          <i class="fas fa-info-circle"></i>
+                  </span>
+                </div>
               </td>
             </tr>
             <tr>
               <th><h5>Laatst aangeboden</h5></th>
-              <td class="text-light" style="vertical-align: middle; text-align: left;">
-                <h5 style="padding-left: 10px;">
-                  <i class="far fa-calendar-alt"></i>&nbsp;
-                  {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
-                  &nbsp;
-                  <i class="far fa-clock"></i>&nbsp;
-                  {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
-                </h5 style="padding-left: 10px;">
+              <td>
+                <div class="input-group">
+                  <span id="oauth_token" class="input-group-addon input-text-only">
+                    <i class="far fa-calendar-alt"></i>&nbsp;
+                    {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
+                    &nbsp;
+                    <i class="far fa-clock"></i>&nbsp;
+                    {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
+                  </span>
+                  <span class="input-group-addon info-button-style"
+                          data-toggle="tooltip" 
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="Laatste gebruik van dit pasnummer op dit laadpunt. Automatisch gegenereerd."
+                          >
+                          <i class="fas fa-info-circle"></i>
+                  </span>
+                </div>
               </td>
             </tr>
             <tr>
@@ -487,7 +552,7 @@
               <th><h5>Kenteken</h5></th>
               <td>
                 <input class="form-control" id="license_plate" name="license_plate" type="text" placeholder="Kenteken" 
-                       value="{% if rfid_model['license_plate'] is not none %} {{ rfid_model['license_plate'] }}{% endif %}">
+                       value="{% if rfid_model['license_plate'] is not none %}{{ rfid_model['license_plate'] }}{% endif %}">
               </td>
             </tr>
             <tr>
@@ -574,7 +639,7 @@
                 <div class="input-group">
                   <input type="hidden" id="vehicle_name" name="vehicle_name" value="{% if rfid_model['vehicle_name'] is not none %}{{ rfid_model['vehicle_name'] }}{% endif %}" />
                   <input type="hidden" id="vehicle_id" name="vehicle_id" value="{% if rfid_model['vehicle_id'] is not none %}{{ rfid_model['vehicle_id'] }}{% endif %}" />
-                  <input type="hidden" id="vehicle_vin" name="vehicle_id" value="{% if rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_vin'] }}{% endif %}" />
+                  <input type="hidden" id="vehicle_vin" name="vehicle_vin" value="{% if rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_vin'] }}{% endif %}" />
                   <select class="form-control" id="vehicle" name="vehicle">
                     <option value="-" style="font-style: italic;">{% if rfid_model['vehicle_name'] is not none and rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_name'] }} (VIN: {{ rfid_model['vehicle_vin'] }}){% else %}Geen voertuigen...{% endif %}</option>
                   </select>
@@ -593,9 +658,8 @@
               <th><h5 style="background-color: #36404a !important;"><i class="fas fa-key"></i> OAuth token</h5></th>
               <td>
                 <div class="input-group">
-                  <span class="input-group-addon"><i class="fas fa-key"></i></span>
-                  <span id="oauth_token" class="input-group-addon" style="text-align: left; font-style: italic; width: 100%;">
-                    <i class="fas fa-info-circle"></i>&nbsp;<span id="oauth_token_status"></span>
+                  <span id="oauth_token" class="input-group-addon input-text-only">
+                    <i class="fas fa-key"></i>&nbsp;<span id="oauth_token_status"></span>
                   </span>
                   <span class="input-group-addon info-button-style"
                         data-toggle="tooltip" 

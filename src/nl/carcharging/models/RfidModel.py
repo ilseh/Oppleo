@@ -68,7 +68,7 @@ class RfidModel(Base):
     def cleanupOldToken(self):
         #self.logger.debug("cleanupOldToken()")
         if (self.api_access_token is None):
-            self.logger.debug("token is None")
+            self.logger.debug("Token is None")
             return
         date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
         today = date.today()
@@ -91,6 +91,20 @@ class RfidModel(Base):
         db_session = DbSession()
         db_session.delete(self)
         db_session.commit()
+
+    def hasValidToken(self):
+        self.logger.debug("hasValidToken()")
+        if (self.api_access_token is None):
+            self.logger.debug("Token is None")
+            return False
+        date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
+        today = date.today()
+        if (date > today):
+            self.logger.debug("Token is still valid")
+            return True
+        self.logger.debug("Token has expired")
+        self.cleanupOldToken()
+        return False
 
     @staticmethod
     def get_all():

@@ -79,3 +79,11 @@ class UpdateOdometerTeslaUtil:
         rfid_model.api_created_at    = tesla_api.created_at        
         rfid_model.api_expires_in    = tesla_api.expires_in        
         rfid_model.api_refresh_token = tesla_api.refresh_token        
+
+    @staticmethod
+    def clean_token_rfid_model(rfid_model):
+        rfid_model.api_access_token  = None        
+        rfid_model.api_token_type    = None        
+        rfid_model.api_created_at    = None       
+        rfid_model.api_expires_in    = None        
+        rfid_model.api_refresh_token = None      
