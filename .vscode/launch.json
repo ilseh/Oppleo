@@ -9,6 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
+            "pythonPath": "${config:python.pythonPath}:./src",
             "console": "integratedTerminal"
         },
         {
@@ -16,7 +17,7 @@
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "pythonPath": "${config:python.pythonPath}",
+            "pythonPath": "${config:python.pythonPath}:./src",
             "program": "./src/nl/carcharging/webapp/WebApp.py",
             "gevent": true,
             "cwd": "${workspaceFolder}",
