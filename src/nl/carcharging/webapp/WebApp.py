@@ -7,15 +7,18 @@ from flask import Flask, render_template, jsonify, redirect, request, url_for, s
 from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import event
 
 from flask_wtf.csrf import CsrfProtect
 
-from config import app_config, WebAppConfig
+from config import WebAppConfig
 from nl.carcharging.models import db
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.User import User
+from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+from nl.carcharging.models.RfidModel import RfidModel
 # TEST
 from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
@@ -27,8 +30,11 @@ from nl.carcharging.webapp.routes import webapp
 app = Flask(__name__)
 
 
-app.config.from_object(app_config[os.getenv('CARCHARGING_ENV')])
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config.from_object(
+    WebAppConfig.env[os.getenv(WebAppConfig.PARAM_ENV)]
+)
+#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 # import os; os.urandom(24)
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
 app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
@@ -72,6 +78,21 @@ def handle_usage_event(json):
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
+
+
+@event.listens_for(WebAppConfig.sqlalchemy_session, 'after_commit')
+def receive_after_commit(session):
+    print("'after_commit' event for sqlalchemy_engine")
+
+
+@event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
+def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
+    print("'after_insert' event for EnergyDeviceMeasureModel")
+
+
+@event.listens_for(RfidModel, 'after_update')
+def RfidModel_after_update(mapper, connection, target):
+    print("'after_update' event for RfidModel")
 
 
 class WebApp(object):

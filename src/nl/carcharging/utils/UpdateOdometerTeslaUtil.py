@@ -52,11 +52,12 @@ class UpdateOdometerTeslaUtil:
             return
 
         # get the odometer
-        charge_session.odometer = tApi.getOdometer()
+        charge_session.odometer = tApi.getOdometerWithId(rfid_model.vehicle_id)
         charge_session.commit()
         self.logger.debug("Obtained odometer {} for {} ".format(
             charge_session.odometer, 
-            tApi.vehicle_list[tApi.selected_vehicle][tApi.VEHICLE_DISPLAY_NAME_PARAM]))
+            rfid_model.vehicle_name
+            ))
         if tApi.checkTokenRefresh():
             # Token refreshed, store in rfid
             self.logger.debug("Token refreshed")

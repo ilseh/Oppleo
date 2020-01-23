@@ -17,6 +17,8 @@ class Production(Config):
     DEBUG = False
     TESTING = False
 
+# Global variable does work in werkzeug but not un uWSGI
+# Therefore added as static to WebAppConfig Class
 app_config = {
     'development': Development,
     'production': Production,
@@ -28,3 +30,13 @@ app_config = {
 class WebAppConfig(object):
     login_manager = None
     socketio = None
+
+    PARAM_ENV = 'CARCHARGING_ENV'
+    PARAM_DB_URL = 'DATABASE_URL'
+    env = {
+        'development': Development,
+        'production': Production,
+    }
+    sqlalchemy_engine = None
+    sqlalchemy_session_factory = None
+    sqlalchemy_session = None
