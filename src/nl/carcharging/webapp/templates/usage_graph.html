@@ -288,11 +288,8 @@
       .fail(function() {
       })
       .always(function() {
-<<<<<<< HEAD
         // Remove spinner
         $('.spinner').hide()
-=======
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
       })
     }
 
@@ -353,14 +350,9 @@
     }
 
     function formatDate(date) {
-<<<<<<< HEAD
       // Month from zero based (JS) to 1 based (Python)
       return (date.getDate() < 10 ? '0' : '') + date.getDate() + '/' +
              ((date.getMonth()+1) < 10 ? '0' : '') + (date.getMonth()+1) + '/' +
-=======
-      return (date.getDate() < 10 ? '0' : '') + date.getDate() + '/' +
-             (date.getMonth() < 10 ? '0' : '') + date.getMonth() + '/' +
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
              date.getFullYear() + ', ' + 
              (date.getHours() < 10 ? '0' : '') + date.getHours() + ':' +
              (date.getMinutes() < 10 ? '0' : '') + date.getMinutes() + ':' +
@@ -417,11 +409,7 @@
             <div id="portlet 1" class="panel-collapse collapse show">
                 <div class="portlet-body">
                     <div id="stecapg_1_flotgraph" style="height: 320px;" class="flot-chart"></div>
-<<<<<<< HEAD
                     <div id="stecapg_1_waiting" style="position: absolute; top: 50%; left: 50%; font-size: 30px;" class="flot-chart"> </div>
-=======
-                    <div id="stecapg_1_waiting" style="position: absolute; top: 50%; left: 50%; font-size: 30px;" class="flot-chart"> <i class="fas fa-spinner fa-spin fa-1x"></i> </div>
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
                 </div>
             </div>
         </div>

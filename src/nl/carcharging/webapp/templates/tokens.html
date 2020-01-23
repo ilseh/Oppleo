@@ -76,7 +76,6 @@
   </style>
 
   <script>
-<<<<<<< HEAD
     const months = {
       0: 'Januari',
       1: 'Februari',
@@ -91,8 +90,6 @@
       10: 'November',
       11: 'December'
     }
-=======
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
     function timestamp() {
       d = new Date();
       return (d.getFullYear() + "-" + 
@@ -104,7 +101,6 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-<<<<<<< HEAD
     function updateOAuthTokenStatus(d) {
       // d is expiration date
       return ('Tesla autorisatie verloopt ' + 
@@ -114,8 +110,6 @@
         d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
       )
     }
-=======
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
     var dt = undefined
     function getRfidTokens() {
       console.log(timestamp() + ' getRfidTokens()')
@@ -145,11 +139,7 @@
             })
           },
           "columnDefs": [{
-<<<<<<< HEAD
             "targets": [1, 9, 11],
-=======
-            "targets": [1, 9, 11, 12],
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
             "sorting": false,
             "orderable": false
           }, {
@@ -167,7 +157,6 @@
                               <i class="fas fa-ban"></i> \
                         </span>'
               }
-<<<<<<< HEAD
               const token_info = data.split('|')
               var t = updateOAuthTokenStatus(new Date((token_info[1] *1000) + (token_info[2] *1000))) 
               return ( (data == undefined || data == "None|None|None") ? 
@@ -185,25 +174,6 @@
                               > \
                               <i class="fas fa-exchange-alt"></i> \
                         </span>'
-=======
-              return ( (data == undefined || data == "None|None|None") ? 
-                       '<button data-toggle="tooltip" \
-                              data-placement="bottom" \
-                              data-html="true" \
-                              title="<em>Registreer</em>" \
-                              onclick="window.location.href=\'/rfid_tokens/' + row[0] + '\'" \
-                              > \
-                              <i class="far fa-registered"></i> \
-                        </button>' : 
-                       '<button data-toggle="tooltip" \
-                              data-placement="bottom" \
-                              data-html="true" \
-                              title="<em>' + data + '</em>" \
-                              onclick="window.location.href=\'/rfid_tokens/' + row[0] + '\'" \
-                              > \
-                              <i class="fas fa-exchange-alt"></i> \
-                        </button>'
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
               )
             }
           }],
@@ -215,11 +185,7 @@
           dt.row.add([
             element.rfid,
             (element.name == 'None' ? '-' : element.name),
-<<<<<<< HEAD
             (element.enabled ? "Ja" : "Nee"),
-=======
-            (element.enabled ? "Nee" : "Ja"),
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
             ( (typeof element.valid_from === 'string' || element.valid_from instanceof String) ?
               element.valid_from :
               '-'
@@ -235,7 +201,6 @@
             ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
             ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
             ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
-<<<<<<< HEAD
             (element.get_odometer === "True" ? 'Ja' : 'Nee'),
             (element.api_access_token + '|' + element.api_created_at + '|' + element.api_expires_in),
             '<button class="btn btn-outline-primary btn-sm" id="edit_' + element.rfid + '">Edit</button>'
@@ -243,16 +208,6 @@
           $('button#edit_' + element.rfid).click(function() {
             //Do stuff when clicked
             window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
-=======
-            (element.get_odometer == true ? 'Ja' : 'Nee'),
-            (element.api_created_at+'|'+element.api_expires_in+'|'+element.api_token_type),
-            '<button id="edit_' + element.rfid + '">Edit</button>',
-            '<button >Delete</button>'
-          ]).draw( false )
-          $('button#edit_' + element.rfid).click(function() {
-            //Do stuff when clicked
-            window.location = location + $(this).attr('id').split("_").pop();
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
           })
         })
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
@@ -261,12 +216,8 @@
   //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
       })
       .always(function() {
-<<<<<<< HEAD
         // Remove spinner
         $('.spinner').hide()
-=======
-        // Check every 60 seconds
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
       })
     }
 
@@ -275,20 +226,8 @@
     var dialog;
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
-<<<<<<< HEAD
       getRfidTokens()
     })
-=======
-
-
-      getRfidTokens()
-
-    })
-
-
-
-
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
     </script>
 
 {% endblock %}
@@ -302,11 +241,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box">
-<<<<<<< HEAD
                 <h4 class="page-title">Laadpassen</h4>
-=======
-                <h4 class="page-title">Auto OAuth token</h4>
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
             </div>
         </div>
     </div>
@@ -321,11 +256,7 @@
               <tr>
                 <th style="text-align: center;">Pasnummer</th>
                 <th style="text-align: center;">Naam</th>
-<<<<<<< HEAD
                 <th style="text-align: center;">Actief</th>
-=======
-                <th style="text-align: center;">Geblokkeerd</th>
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
                 <th style="text-align: center;">Geldig van</th>
                 <th style="text-align: center;">Geldig tot</th>
                 <th style="text-align: center;">Laatst gebruikt</th>
@@ -335,10 +266,6 @@
                 <th style="text-align: center;">Update km stand</th>
                 <th style="text-align: center;">Token</th>
                 <th style="text-align: center;"></th>
-<<<<<<< HEAD
-=======
-                <th style="text-align: center;"></th>
->>>>>>> 481d48c660637345d2734fa363bb8f63206eec09
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>
