@@ -6,7 +6,7 @@ After=syslog.target network.target
 ; Raspberry user for this service to run
 User=pi
 Group=www-data
-WorkingDirectory=/home/pi/development/RestfulCharging/src/nl/carcharging/webapp
+WorkingDirectory=/home/pi/development/RestfulCharging/src/nl/carcharging/daemon
 ;Environment="PATH=/home/pi/RestfullCharging/venv/bin“
 ExecStart=/home/pi/.local/bin/uwsgi --ini /home/pi/development/RestfulCharging/webapp/CarChargerWebApp.ini
 ; uwsgi --socket 0.0.0.0:5000 --protocol=http -w WebAppTestDaemon:app -H /home/pi/development/RestfulCharging/venv 
