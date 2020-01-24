@@ -1,6 +1,10 @@
 import datetime
 import json
 import os
+try:
+    import uwsgidecorators
+except ModuleNotFoundError:
+    print("! uwsgi and uwsgidecorators not loaded, not runnign under uWSGI...")
 from functools import wraps
 
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
@@ -8,6 +12,7 @@ from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import event
+
 
 from flask_wtf.csrf import CsrfProtect
 
@@ -53,46 +58,6 @@ db.init_app(app)
 # flask-login
 WebAppConfig.login_manager = LoginManager()
 WebAppConfig.login_manager.init_app(app)
-
-@WebAppConfig.login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(user_id)
-
-@socketio.on("connect", namespace="/usage")
-def connect():
-    emit("server_status", "server_up")
-    print("Client connected...")
-
-@socketio.on("disconnect", namespace="/usage")
-def disconnect():
-    print('Client disconnected.')
-
-# This event currently is not used, just for reference
-@socketio.on('my event', namespace='/usage')
-def handle_usage_event(json):
-    print('received json: ' + str(json))
-    return ( 'one', 2 )    # client callback
-
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('errorpages/404.html'), 404
-
-
-
-@event.listens_for(WebAppConfig.sqlalchemy_session, 'after_commit')
-def receive_after_commit(session):
-    print("'after_commit' event for sqlalchemy_engine")
-
-
-@event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
-def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
-    print("'after_insert' event for EnergyDeviceMeasureModel")
-
-
-@event.listens_for(RfidModel, 'after_update')
-def RfidModel_after_update(mapper, connection, target):
-    print("'after_update' event for RfidModel")
 
 
 class WebApp(object):
@@ -141,15 +106,66 @@ class WebApp(object):
         self.thread.join()
 
 
+@WebAppConfig.login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
+
+@socketio.on("connect", namespace="/usage")
+def connect():
+    emit("server_status", "server_up")
+    print("Client connected...")
+
+@socketio.on("disconnect", namespace="/usage")
+def disconnect():
+    print('Client disconnected.')
+
+# This event currently is not used, just for reference
+@socketio.on('my event', namespace='/usage')
+def handle_usage_event(json):
+    print('received json: ' + str(json))
+    return ( 'one', 2 )    # client callback
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('errorpages/404.html'), 404
+
+try:
+    @uwsgidecorators.postfork
+    def postFork():
+        print('postFork()')
+        webapp = WebApp()
+        print(f'{datetime.datetime.now()} - Starting Web Sockets...')
+        webapp.start()
+        webapp.wait()
+except NameError:
+    print("! @uwsgidecorators.postfork excluded...")
+
+@event.listens_for(EnergyDeviceMeasureModel, 'after_update')
+@event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
+def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
+    print("'after_insert' or 'after_update' event for EnergyDeviceMeasureModel")
+
+
+@event.listens_for(RfidModel, 'after_update')
+@event.listens_for(RfidModel, 'after_insert')
+def RfidModel_after_update(mapper, connection, target):
+    print("'after_insert' or 'after_update' event for RfidModel")
+
+
+
+
 if __name__ == "__main__":
     webapp = WebApp()
     webapp.start()
 
+    """
     # Just as a test
-#    uotu = UpdateOdometerTeslaUtil()
-#    uotu.set_charge_session_id(10)
-#    uotu.start()
-
+    uotu = UpdateOdometerTeslaUtil()
+    uotu.set_charge_session_id(12)
+    uotu.start()
+    """
+    
     print(f'{datetime.datetime.now()} - Starting web server...')
     socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 

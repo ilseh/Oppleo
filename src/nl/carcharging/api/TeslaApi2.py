@@ -246,7 +246,7 @@ class TeslaAPI:
         vehicle_details = self.getVehicleDetailsWithId(id)
         if vehicle_details == None:
             return None
-        return vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM]
+        return int(vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM])
 
 
     def refreshToken(self):
@@ -314,7 +314,7 @@ class TeslaAPI:
         if (self.access_token is None):
             self.logger.debug("token is None")
             return False
-        date = datetime.datetime.fromtimestamp(self.created_at + self.expires_in) # / 1e3
+        date = datetime.datetime.fromtimestamp(int(self.created_at) + int(self.expires_in)) # / 1e3
         today = date.today()
         if (date > today):
             self.logger.debug("token is still valid")
@@ -331,7 +331,7 @@ class TeslaAPI:
             # Report update if there is an invalid access_token
             return (self.access_token != None)
         token_date = datetime.datetime.fromtimestamp(
-                        self.created_at + self.expires_in
+                        int(self.created_at) + int(self.expires_in)
                         ) # / 1e3
         today = datetime.datetime.now()
         delta = datetime.timedelta(days=31)
