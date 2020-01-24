@@ -7,11 +7,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from functools import wraps
 import json
+import logging
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
 
-from config import app_config, WebAppConfig
+from config import WebAppConfig
 
 from nl.carcharging.models import db
 from nl.carcharging.models.User import User
@@ -30,6 +31,8 @@ from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 """
 webapp = Blueprint('webapp', __name__, template_folder='templates')
 
+logger = logging.getLogger('nl.carcharging.webapp.routes')
+logger.debug('Initializing routes')
 
 
 
@@ -59,7 +62,7 @@ def login():
 #        your_register_routine(username, password)
         return render_template("login.html", form=LoginForm())
     # For POST requests, login the current user by processing the form.
-    print(db)
+    logger.debug(db)
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.get(form.username.data)
@@ -276,7 +279,7 @@ def rfid_tokens(format='html', token=None):
             return render_template("tokens.html")
         rfid_model.cleanupOldToken()    # Remove any expired token info
         rfid_change_form = RfidChangeForm()
-        print('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
+        logger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
         if (request.method == 'POST'):
             # Update for specific token
             if rfid_change_form.validate_on_submit():

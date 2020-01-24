@@ -10,8 +10,8 @@ class Raspberry():
     """
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
-        self.logger.debug('Initializing EnergyDeviceMeasureModel without data')
+        self.logger = logging.getLogger('nl.carcharging.models.Raspberry')
+        self.logger.debug('Initializing Raspberry without data')
 
 
     def get_ip_info(self):
@@ -53,7 +53,7 @@ class Raspberry():
                 if entry_name in entry:
                     return entry[entry_name]
         except TypeError:
-            print('Data is not iterable')
+            logger.debug('Data is not iterable')
 
         return "Unknown"
 

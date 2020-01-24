@@ -1,10 +1,17 @@
 import datetime
 import json
 import os
+import logging
+from config import WebAppConfig
+
+WebAppConfig.initLogger('CarChargerWebApp')
+logger = logging.getLogger('nl.carcharging.webapp.WebApp')
+logger.debug('Initializing WebApp')
+
 try:
     import uwsgidecorators
 except ModuleNotFoundError:
-    print("! uwsgi and uwsgidecorators not loaded, not runnign under uWSGI...")
+    logger.debug('! uwsgi and uwsgidecorators not loaded, not running under uWSGI...')
 from functools import wraps
 
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
@@ -16,7 +23,6 @@ from sqlalchemy import event
 
 from flask_wtf.csrf import CsrfProtect
 
-from config import WebAppConfig
 from nl.carcharging.models import db
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
@@ -60,45 +66,50 @@ WebAppConfig.login_manager = LoginManager()
 WebAppConfig.login_manager.init_app(app)
 
 
-class WebApp(object):
+class WebAppSocketIO(object):
     # Count the message updates send through the websocket
     counter = 1
     most_recent = ""
 
     def __init__(self):
+        self.logger = logging.getLogger('nl.carcharging.models.SessionModel')
+        self.logger.debug('Initializing SessionModel without data')
+
         self.thread = None
 
     def start_server(self):
-        print(f'{datetime.datetime.now()} - Starting web server in separate thread...')
+        logger.debug('Initializing WebApp')
+
+        logger.debug('Starting web server in separate thread...')
         socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
     def websocket_start(self):
-        print(f'{datetime.datetime.now()} - Starting background task...')
+        logger.debug('Starting background task...')
         while True:
             socketio.sleep(7)
             try:
-                webapp.websocket_send_usage_update("status_update")
+                self.websocket_send_usage_update("status_update")
             except OperationalError as e:
                 # If the database is unavailable (or no access allowed),
                 # remain running untill the access is restored
-                print(f'Something wrong with the database! {e}')
+                logger.debug(f'Something wrong with the database! {e}')
 
     def start(self):
-        print(f'{datetime.datetime.now()} - Launching background task...')
+        logger.debug('Launching background task...')
         self.thread = socketio.start_background_task(self.websocket_start)
 
     def websocket_send_usage_update(self, type):
-        print(f'{datetime.datetime.now()} - Checking usage data...')
+        logger.debug('Checking usage data...')
 
         device_measurement = EnergyDeviceMeasureModel()  
         device_measurement.energy_device_id = "laadpaal_noord"
         qr = device_measurement.get_last_saved(energy_device_id="laadpaal_noord")
         if (self.most_recent != qr.get_created_at_str()):
-            print(f'{datetime.datetime.now()} - Send msg {self.counter} via websocket...')
+            logger.debug(f'Send msg {self.counter} via websocket...')
             socketio.emit('status_update', { 'data': qr.to_str() }, namespace='/usage')
             self.most_recent = qr.get_created_at_str()
         else:
-            print(f'{datetime.datetime.now()} - No change in usage at this time.')
+            logger.debug('No change in usage at this time.')
 
         self.counter += 1
 
@@ -113,16 +124,16 @@ def load_user(user_id):
 @socketio.on("connect", namespace="/usage")
 def connect():
     emit("server_status", "server_up")
-    print("Client connected...")
+    logger.debug("Client connected...")
 
 @socketio.on("disconnect", namespace="/usage")
 def disconnect():
-    print('Client disconnected.')
+    logger.debug('Client disconnected.')
 
 # This event currently is not used, just for reference
 @socketio.on('my event', namespace='/usage')
 def handle_usage_event(json):
-    print('received json: ' + str(json))
+    logger.debug('received json: ' + str(json))
     return ( 'one', 2 )    # client callback
 
 
@@ -133,31 +144,31 @@ def page_not_found(e):
 try:
     @uwsgidecorators.postfork
     def postFork():
-        print('postFork()')
-        webapp = WebApp()
-        print(f'{datetime.datetime.now()} - Starting Web Sockets...')
-        webapp.start()
-        webapp.wait()
+        logger.debug('postFork()')
+        webAppSocketIO = WebAppSocketIO()
+        logger.debug('Starting Web Sockets...')
+        webAppSocketIO.start()
+        webAppSocketIO.wait()
 except NameError:
-    print("! @uwsgidecorators.postfork excluded...")
+    logger.debug("! @uwsgidecorators.postfork excluded...")
 
 @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
 @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
 def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
-    print("'after_insert' or 'after_update' event for EnergyDeviceMeasureModel")
+    logger.debug("'after_insert' or 'after_update' event for EnergyDeviceMeasureModel")
 
 
 @event.listens_for(RfidModel, 'after_update')
 @event.listens_for(RfidModel, 'after_insert')
 def RfidModel_after_update(mapper, connection, target):
-    print("'after_insert' or 'after_update' event for RfidModel")
+    logger.debug("'after_insert' or 'after_update' event for RfidModel")
 
 
 
 
 if __name__ == "__main__":
-    webapp = WebApp()
-    webapp.start()
+    webAppSocketIO = WebAppSocketIO()
+    webAppSocketIO.start()
 
     """
     # Just as a test
@@ -166,7 +177,7 @@ if __name__ == "__main__":
     uotu.start()
     """
     
-    print(f'{datetime.datetime.now()} - Starting web server...')
+    logger.debug('Starting web server...')
     socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
-    webapp.wait()
+    webAppSocketIO.wait()

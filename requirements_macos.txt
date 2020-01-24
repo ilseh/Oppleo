@@ -65,6 +65,7 @@ typing==3.7.4.1
 typing-extensions==3.7.4.1
 tzlocal==2.0.0
 urllib3==1.25.7
+uWSGI==2.0.18
 Werkzeug==0.16.0
 wrapt==1.11.2
 WTForms==2.2.1

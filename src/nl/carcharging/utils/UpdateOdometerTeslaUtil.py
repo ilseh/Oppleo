@@ -19,8 +19,8 @@ class UpdateOdometerTeslaUtil:
     charge_session_id = None
 
     def __init__(self):
-        self.logger = logging.getLogger('UpdateOdometerTesla')
-        self.logger.debug('UpdateOdometerTesla.__init__')
+        self.logger = logging.getLogger('UpdateOdometerTeslaUtil')
+        self.logger.debug('UpdateOdometerTeslaUtil.__init__')
         self.thread = None
 
     def set_charge_session_id(self, charge_session_id=None):
