@@ -1,6 +1,9 @@
 # Reaspberry config
+echo "Update config"
+echo "...stopping nginx..."
+sudo systemctl stop nginx
 echo "uWSGI"
-echo "...stopping uWSGI..."
+echo "...stopping uWSGI CarChargerWebApp..."
 sudo systemctl stop CarChargerWebApp
 echo "...installing CarChargerWebApp.service for uWSGI"
 sudo cp CarChargerWebApp.service /etc/systemd/system/CarChargerWebApp.service
