@@ -29,31 +29,31 @@ from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 """ 
  - make sure all url_for routes point to this blueprint
 """
-webapp = Blueprint('webapp', __name__, template_folder='templates')
+flaskRoutes = Blueprint('flaskRoutes', __name__, template_folder='templates')
 
 logger = logging.getLogger('nl.carcharging.webapp.routes')
 logger.debug('Initializing routes')
 
 
 
-@webapp.route('/', methods=['GET'])
+@flaskRoutes.route('/', methods=['GET'])
 def index():
     try:
         return render_template('dashboard.html')
     except TemplateNotFound:
         abort(404)
 
-@webapp.route("/home")
+@flaskRoutes.route("/home")
 #@authenticated_resource
 def home():
     return redirect('/')
 
 
-@webapp.errorhandler(404)
+@flaskRoutes.errorhandler(404)
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
-@webapp.route('/login', methods=['GET', 'POST'])
+@flaskRoutes.route('/login', methods=['GET', 'POST'])
 def login():
     # For GET requests, display the login form. 
     if (request.method == 'GET'):
@@ -78,7 +78,7 @@ def login():
                     return redirect(login_next)
                 else:
                     # Return to the home page
-                    return redirect(url_for('webapp.home'))
+                    return redirect(url_for('flaskRoutes.home'))
     return render_template("login.html", form=form, msg="Login failed")
 
 def authenticated_resource(function):
@@ -94,14 +94,14 @@ def authenticated_resource(function):
         if 'login_next' in session:
             del session['login_next']
         # if somehow ended up at logout, don't forward to login
-        if (request.endpoint == "webapp.logout"):
-            return redirect(url_for('webapp.home'))
+        if (request.endpoint == "flaskRoutes.logout"):
+            return redirect(url_for('flaskRoutes.home'))
         # Redirect to login but rememmber the original request 
         session['login_next'] = request.full_path
-        return redirect(url_for('webapp.login'))
+        return redirect(url_for('flaskRoutes.login'))
     return decorated
 
-@webapp.route("/logout", methods=["GET"])
+@flaskRoutes.route("/logout", methods=["GET"])
 @authenticated_resource
 #@login_required
 def logout():
@@ -111,11 +111,11 @@ def logout():
     db.session.add(user)
     db.session.commit()
     logout_user()
-    # return redirect(url_for('webapp.login'))
-    return redirect(url_for('webapp.home'))
+    # return redirect(url_for('flaskRoutes.login'))
+    return redirect(url_for('flaskRoutes.home'))
 
 
-@webapp.route("/change_password", methods=["GET", "POST"])
+@flaskRoutes.route("/change_password", methods=["GET", "POST"])
 @authenticated_resource
 def change_password():
     if (request.method == 'GET'):
@@ -164,42 +164,42 @@ def change_password():
         )
 
 
-@webapp.route("/about")
+@flaskRoutes.route("/about")
 def about():
     return render_template("about.html")
 
-@webapp.route("/usage")
-@webapp.route("/usage/")
-@webapp.route("/usage/<int:cnt>")
+@flaskRoutes.route("/usage")
+@flaskRoutes.route("/usage/")
+@flaskRoutes.route("/usage/<int:cnt>")
 @authenticated_resource
 def usage(cnt="undefined"):
     return render_template("usage_table.html", cnt=cnt)
 
 
-@webapp.route("/usage_table")
-@webapp.route("/usage_table/")
-@webapp.route("/usage_table/<int:cnt>")
+@flaskRoutes.route("/usage_table")
+@flaskRoutes.route("/usage_table/")
+@flaskRoutes.route("/usage_table/<int:cnt>")
 @authenticated_resource
 def usage_table(cnt="undefined"):
     return render_template("usage_table.html", cnt=cnt)
 
 
-@webapp.route("/usage_graph")
-@webapp.route("/usage_graph/")
-@webapp.route("/usage_graph/<int:cnt>")
+@flaskRoutes.route("/usage_graph")
+@flaskRoutes.route("/usage_graph/")
+@flaskRoutes.route("/usage_graph/<int:cnt>")
 @authenticated_resource
 def usage_graph(cnt="undefined"):
     return render_template("usage_graph.html", cnt=cnt)
 
 
-@webapp.route("/settings")
-@webapp.route("/settings/")
-@webapp.route("/settings/<int:active>")
+@flaskRoutes.route("/settings")
+@flaskRoutes.route("/settings/")
+@flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
     diag = Raspberry().get_all()
     diag_json = json.dumps(diag)
-    charger_config_str = ChargerConfigModel().get_config()[0].to_str()
+    charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
                 active=active, 
                 diag=diag, 
@@ -208,9 +208,9 @@ def settings(active=1):
             )
 
 
-@webapp.route("/usage_data")
-@webapp.route("/usage_data/")
-@webapp.route("/usage_data/<int:cnt>")
+@flaskRoutes.route("/usage_data")
+@flaskRoutes.route("/usage_data/")
+@flaskRoutes.route("/usage_data/<int:cnt>")
 def usage_data(cnt=100):
     device_measurement = EnergyDeviceMeasureModel()
     device_measurement.energy_device_id = "laadpaal_noord"
@@ -222,8 +222,8 @@ def usage_data(cnt=100):
     return jsonify(qr_l)
 
 # Cnt is a maximum to limit impact of this request
-@webapp.route("/usage_data_since/<path:since_timestamp>")
-@webapp.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
+@flaskRoutes.route("/usage_data_since/<path:since_timestamp>")
+@flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
 def usage_data_since(since_timestamp, cnt=-1):
     device_measurement = EnergyDeviceMeasureModel()
     device_measurement.energy_device_id = "laadpaal_noord"
@@ -235,21 +235,21 @@ def usage_data_since(since_timestamp, cnt=-1):
     return jsonify(qr_l)
 
 # Cnt is a maximum to limit impact of this request
-@webapp.route("/charge_sessions")
-@webapp.route("/charge_sessions/")
-@webapp.route("/charge_sessions//")
-@webapp.route("/charge_sessions///")
-@webapp.route("/charge_sessions/<path:since_timestamp>")
-@webapp.route("/charge_sessions/<path:since_timestamp>/")
-@webapp.route("/charge_sessions/<path:since_timestamp>//")
-@webapp.route("/charge_sessions/<path:since_timestamp>/<int:cnt>")
-@webapp.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/")
-@webapp.route("/charge_sessions//<int:cnt>")
-@webapp.route("/charge_sessions//<int:cnt>/")
-@webapp.route("/charge_sessions///<path:format>")
-@webapp.route("/charge_sessions/<path:since_timestamp>//<path:format>")
-@webapp.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/<path:format>")
-@webapp.route("/charge_sessions//<int:cnt>/<path:format>")
+@flaskRoutes.route("/charge_sessions")
+@flaskRoutes.route("/charge_sessions/")
+@flaskRoutes.route("/charge_sessions//")
+@flaskRoutes.route("/charge_sessions///")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>//")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/")
+@flaskRoutes.route("/charge_sessions//<int:cnt>")
+@flaskRoutes.route("/charge_sessions//<int:cnt>/")
+@flaskRoutes.route("/charge_sessions///<path:format>")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>//<path:format>")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/<path:format>")
+@flaskRoutes.route("/charge_sessions//<int:cnt>/<path:format>")
 def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
     if (format.strip().lower() != 'json'):
         return render_template("charge_sessions.html")
@@ -263,12 +263,12 @@ def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
 
 
 # Cnt is a maximum to limit impact of this request
-@webapp.route("/rfid_tokens", methods=["GET"])
-@webapp.route("/rfid_tokens/", methods=["GET"])
-@webapp.route("/rfid_tokens//", methods=["GET"])
-@webapp.route("/rfid_tokens//<path:format>", methods=["GET"])
-@webapp.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
-@webapp.route("/rfid_tokens/<path:token>/<path:format>", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens/", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens//", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens//<path:format>", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/<path:format>", methods=["GET"])
 @authenticated_resource
 def rfid_tokens(format='html', token=None):
     if (format.strip().lower() != 'json'):
@@ -315,7 +315,7 @@ def rfid_tokens(format='html', token=None):
                 rfid_model.save()
 
                 # Return to the rfid tokens page
-                return redirect(url_for('webapp.rfid_tokens', format='html', token=None))
+                return redirect(url_for('flaskRoutes.rfid_tokens', format='html', token=None))
 
             # TODO - what went wrong? message!
             return render_template("token.html",
@@ -342,7 +342,7 @@ def rfid_tokens(format='html', token=None):
     return jsonify(rfid_model.to_str())
 
 
-@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/json", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/json", methods=["POST"])
 @authenticated_resource
 def TeslaApi_GenerateOAuth(token=None):
     # CSRF Token is valid
@@ -377,7 +377,7 @@ def TeslaApi_GenerateOAuth(token=None):
             })
 
 
-@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth/json", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth/json", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RefreshOAuth(token=None):
     # CSRF Token is valid
@@ -408,7 +408,7 @@ def TeslaApi_RefreshOAuth(token=None):
         'vehicles' : tesla_api.getVehicleNameIdList()
         })
 
-@webapp.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth/json", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth/json", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RevokeOAuth(token=None):
     # CSRF Token is valid

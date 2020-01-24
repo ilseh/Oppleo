@@ -33,40 +33,42 @@ from nl.carcharging.models.RfidModel import RfidModel
 # TEST
 from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
-from nl.carcharging.webapp.routes import webapp
+from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
 #import routes
 
 # app initiliazation
-app = Flask(__name__)
+flaskApp = Flask(__name__)
+# Make it available through WebAppConfig
+WebAppConfig.flaskApp = flaskApp
 
-
-app.config.from_object(
+flaskApp.config.from_object(
     WebAppConfig.env[os.getenv(WebAppConfig.PARAM_ENV)]
 )
-#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+#flaskApp.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+flaskApp.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 # import os; os.urandom(24)
-app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
-app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
+flaskApp.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
+flaskApp.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
+
 # https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
-CsrfProtect(app)
+CsrfProtect(flaskApp)
 
-# The CarCharger root webapp
-app.register_blueprint(webapp) # no url_prefix
+# The CarCharger root flaskRoutes
+flaskApp.register_blueprint(flaskRoutes) # no url_prefix
 
-socketio = SocketIO(app)
+flaskAppSocketIO = SocketIO(flaskApp)
 # Make it available through WebAppConfig
-WebAppConfig.socketio = socketio
+WebAppConfig.flaskAppSocketIO = flaskAppSocketIO
 
-db.init_app(app)
+db.init_app(flaskApp)
 
 # flask-login
 WebAppConfig.login_manager = LoginManager()
-WebAppConfig.login_manager.init_app(app)
+WebAppConfig.login_manager.init_app(flaskApp)
 
 
-class WebAppSocketIO(object):
+class WebSocketThread(object):
     # Count the message updates send through the websocket
     counter = 1
     most_recent = ""
@@ -77,16 +79,10 @@ class WebAppSocketIO(object):
 
         self.thread = None
 
-    def start_server(self):
-        logger.debug('Initializing WebApp')
-
-        logger.debug('Starting web server in separate thread...')
-        socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
-
     def websocket_start(self):
         logger.debug('Starting background task...')
         while True:
-            socketio.sleep(7)
+            flaskAppSocketIO.sleep(7)
             try:
                 self.websocket_send_usage_update("status_update")
             except OperationalError as e:
@@ -96,7 +92,7 @@ class WebAppSocketIO(object):
 
     def start(self):
         logger.debug('Launching background task...')
-        self.thread = socketio.start_background_task(self.websocket_start)
+        self.thread = flaskAppSocketIO.start_background_task(self.websocket_start)
 
     def websocket_send_usage_update(self, type):
         logger.debug('Checking usage data...')
@@ -106,7 +102,7 @@ class WebAppSocketIO(object):
         qr = device_measurement.get_last_saved(energy_device_id="laadpaal_noord")
         if (self.most_recent != qr.get_created_at_str()):
             logger.debug(f'Send msg {self.counter} via websocket...')
-            socketio.emit('status_update', { 'data': qr.to_str() }, namespace='/usage')
+            flaskAppSocketIO.emit('status_update', { 'data': qr.to_str() }, namespace='/usage')
             self.most_recent = qr.get_created_at_str()
         else:
             logger.debug('No change in usage at this time.')
@@ -121,23 +117,23 @@ class WebAppSocketIO(object):
 def load_user(user_id):
     return User.query.get(user_id)
 
-@socketio.on("connect", namespace="/usage")
+@flaskAppSocketIO.on("connect", namespace="/usage")
 def connect():
     emit("server_status", "server_up")
     logger.debug("Client connected...")
 
-@socketio.on("disconnect", namespace="/usage")
+@flaskAppSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
     logger.debug('Client disconnected.')
 
 # This event currently is not used, just for reference
-@socketio.on('my event', namespace='/usage')
+@flaskAppSocketIO.on('my event', namespace='/usage')
 def handle_usage_event(json):
     logger.debug('received json: ' + str(json))
     return ( 'one', 2 )    # client callback
 
 
-@app.errorhandler(404)
+@flaskApp.errorhandler(404)
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
@@ -145,12 +141,13 @@ try:
     @uwsgidecorators.postfork
     def postFork():
         logger.debug('postFork()')
-        webAppSocketIO = WebAppSocketIO()
+        wsThread = WebSocketThread()
         logger.debug('Starting Web Sockets...')
-        webAppSocketIO.start()
-        webAppSocketIO.wait()
+        wsThread.start()
+        wsThread.wait()
 except NameError:
     logger.debug("! @uwsgidecorators.postfork excluded...")
+
 
 @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
 @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
@@ -164,11 +161,9 @@ def RfidModel_after_update(mapper, connection, target):
     logger.debug("'after_insert' or 'after_update' event for RfidModel")
 
 
-
-
 if __name__ == "__main__":
-    webAppSocketIO = WebAppSocketIO()
-    webAppSocketIO.start()
+    wsThread = WebSocketThread()
+    wsThread.start()
 
     """
     # Just as a test
@@ -178,6 +173,6 @@ if __name__ == "__main__":
     """
     
     logger.debug('Starting web server...')
-    socketio.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
+    flaskAppSocketIO.run(flaskApp, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
-    webAppSocketIO.wait()
+    wsThread.wait()
