@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 import logging
-from config import WebAppConfig
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 WebAppConfig.initLogger('CarChargerWebApp')
 logger = logging.getLogger('nl.carcharging.webapp.WebApp')
