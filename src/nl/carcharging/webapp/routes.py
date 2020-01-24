@@ -12,7 +12,7 @@ import logging
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
 
-from config import WebAppConfig
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 from nl.carcharging.models import db
 from nl.carcharging.models.User import User
