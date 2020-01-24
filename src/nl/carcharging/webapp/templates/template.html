@@ -115,7 +115,7 @@
             <div class="container-fluid">
 
                 <div class="logo">
-                    <a href="{{ url_for('webapp.index') }}" class="logo">
+                    <a href="{{ url_for('flaskRoutes.index') }}" class="logo">
                         <span class="logo-small"><i class="fas fa-charging-station"></i> </span>
                         <span class="logo-large"><i class="fas fa-charging-station"></i> EV Laadpunt</span>
                     </a>
@@ -147,31 +147,31 @@
                 <div id="navigation">
                     <ul class="navigation-menu">
                         <li class="has-submenu">
-                            <a href="{{ url_for('webapp.index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            <a href="{{ url_for('flaskRoutes.index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('webapp.charge_sessions') }}" class="stay">
+                            <a href="{{ url_for('flaskRoutes.charge_sessions') }}" class="stay">
                                 <i class="fas fa-file-invoice-dollar"></i> Laadsessies
                             </a>
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('webapp.rfid_tokens') }}" class="stay">
+                            <a href="{{ url_for('flaskRoutes.rfid_tokens') }}" class="stay">
                                 <i class="fas fa-credit-card"></i> Laadpassen
                             </a>
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('webapp.usage') }}"><i class="fas fa-table"></i> Verbruik</a>
+                            <a href="{{ url_for('flaskRoutes.usage') }}"><i class="fas fa-table"></i> Verbruik</a>
                             <ul class="submenu">
                                 <li>
-                                    <a href="{{ url_for('webapp.usage_table' ) }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.usage_table' ) }}" class="stay">
                                         <i class="fas fa-table"></i> Tabel
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('webapp.usage_graph' ) }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.usage_graph' ) }}" class="stay">
                                         <i class="fas fa-chart-line"></i> Grafiek
                                     </a>
                                 </li>
@@ -179,30 +179,30 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('webapp.settings') }}"><i class="fas fa-sliders-h"></i> Instellingen</a>
+                            <a href="{{ url_for('flaskRoutes.settings') }}"><i class="fas fa-sliders-h"></i> Instellingen</a>
                             <ul class="submenu">
                                 <li>
-                                    <a href="{{ url_for('webapp.settings', active=1) }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.settings', active=1) }}" class="stay">
                                         <i class="fas fa-charging-station"></i> Laadpunt
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('webapp.settings', active=2) }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.settings', active=2) }}" class="stay">
                                         <i class="fas fa-tachometer-alt"></i> kWh meter
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('webapp.settings', active=3) }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.settings', active=3) }}" class="stay">
                                         <i class="fas fa-network-wired"></i> Netwerk
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('webapp.settings', active=4) }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.settings', active=4) }}" class="stay">
                                         <i class="fas fa-database"></i> Database
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('webapp.settings', active=5) }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.settings', active=5) }}" class="stay">
                                         <i class="fas fa-stethoscope"></i> Diagnostics
                                     </a>
                                 </li>
@@ -210,25 +210,25 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('webapp.index') }}" class="stay">
+                            <a href="{{ url_for('flaskRoutes.index') }}" class="stay">
                                 <i class="fas fa-user-circle"></i>Account
                             </a>
                             <ul class="submenu">
                                 {% if current_user.is_authenticated %}
                                 <li>
-                                    <a href="{{ url_for('webapp.change_password') }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.change_password') }}" class="stay">
                                         <i class="fa fa-key"></i> Change password
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('webapp.logout') }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.logout') }}" class="stay">
                                         <i class="fas fa-sign-out-alt"></i> Sign out
                                     </a>
                                 </li>
                                 {% endif %}
                                 {% if not current_user.is_authenticated %}
                                 <li>
-                                    <a href="{{ url_for('webapp.login') }}" class="stay">
+                                    <a href="{{ url_for('flaskRoutes.login') }}" class="stay">
                                         <i class="fas fa-sign-in-alt"></i> Login
                                     </a>
                                 </li>

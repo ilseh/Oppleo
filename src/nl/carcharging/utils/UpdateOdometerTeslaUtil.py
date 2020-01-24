@@ -2,7 +2,7 @@ import logging
 import datetime
 from flask_socketio import SocketIO
 
-from config import WebAppConfig
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 from nl.carcharging.api.TeslaApi import TeslaAPI
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel

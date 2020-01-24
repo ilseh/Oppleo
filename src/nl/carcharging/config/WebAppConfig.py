@@ -29,7 +29,8 @@ app_config = {
 # 
 class WebAppConfig(object):
     login_manager = None
-    socketio = None
+    flaskApp = None
+    flaskAppSocketIO = None
 
     PARAM_ENV = 'CARCHARGING_ENV'
     PARAM_DB_URL = 'DATABASE_URL'

@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 import os
 
-from config import WebAppConfig
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 engine = create_engine(os.getenv(WebAppConfig.PARAM_DB_URL), pool_pre_ping=True)
 
