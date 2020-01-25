@@ -24,15 +24,14 @@ from sqlalchemy import event
 from flask_wtf.csrf import CsrfProtect
 
 from nl.carcharging.models import db
-from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-from nl.carcharging.models.Raspberry import Raspberry
-from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
-from nl.carcharging.models.User import User
-from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-from nl.carcharging.models.RfidModel import RfidModel
+import nl.carcharging.models.EnergyDeviceMeasureModel
+import nl.carcharging.models.Raspberry
+import nl.carcharging.models.ChargeSessionModel
+import nl.carcharging.models.User
+import nl.carcharging.models.EnergyDeviceMeasureModel
+import nl.carcharging.models.RfidModel
 # TEST
-from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
-
+import nl.carcharging.utils.UpdateOdometerTeslaUtil
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
 #import routes
