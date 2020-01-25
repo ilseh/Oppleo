@@ -42,6 +42,8 @@ def index():
         return render_template('dashboard.html')
     except TemplateNotFound:
         abort(404)
+    except Exception as e:
+        pass
 
 @flaskRoutes.route("/home")
 #@authenticated_resource
@@ -56,21 +58,25 @@ def page_not_found(e):
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
 def login():
     # For GET requests, display the login form. 
+    logger.debug('/login ' + request.method)
     if (request.method == 'GET'):
 #        username = Flask.request.values.get('user') # Your form's
 #        password = Flask.request.values.get('pass') # input names
 #        your_register_routine(username, password)
         return render_template("login.html", form=LoginForm())
     # For POST requests, login the current user by processing the form.
-    logger.debug(db)
+    #logger.debug(db)
     form = LoginForm()
+    logger.debug('login form created')
     if form.validate_on_submit():
+        logger.debug('loginForm valid on submit')
         user = User.query.get(form.username.data)
+        logger.debug('loginForm valid on submit')
         if user:
             if check_password_hash(user.password, form.password.data):
                 user.authenticated = True
-#                db.session.add(user)
-#                db.session.commit()
+                db.session.add(user)
+                db.session.commit()
                 login_user(user, remember=form.remember_me.data)
                 if 'login_next' in session:
                     login_next = session['login_next']
