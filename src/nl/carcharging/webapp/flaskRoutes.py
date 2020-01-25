@@ -69,8 +69,8 @@ def login():
         if user:
             if check_password_hash(user.password, form.password.data):
                 user.authenticated = True
-                db.session.add(user)
-                db.session.commit()
+#                db.session.add(user)
+#                db.session.commit()
                 login_user(user, remember=form.remember_me.data)
                 if 'login_next' in session:
                     login_next = session['login_next']
