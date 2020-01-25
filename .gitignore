@@ -2,6 +2,7 @@
 __pycache__
 venv
 env
+.DS_Store
 .pytest_cache
 .coverage
 src/.DS_Store
@@ -15,4 +16,5 @@ src/nl/carcharging/api/.DS_Store
 src/nl/carcharging/config/.DS_Store
 src/nl/carcharging/daemon/.DS_Store
 src/nl/carcharging/webapp/.DS_Store
-.DS_Store
+# DON'T SEND THE INI FILE WITH PASSWORDS TO GITHUB !!!
+src/nl/carcharging/config/carcharger.ini
