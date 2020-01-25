@@ -73,18 +73,25 @@ def login():
         user = User.query.get(form.username.data)
         logger.debug('loginForm valid on submit')
         if user:
+            logger.debug('if user:')
             if check_password_hash(user.password, form.password.data):
+                logger.debug('check_password_hash ok')
                 user.authenticated = True
+                logger.debug('place in db.session')
                 db.session.add(user)
                 db.session.commit()
+                logger.debug('login_user')
                 login_user(user, remember=form.remember_me.data)
                 if 'login_next' in session:
+                    logger.debug('login_next')
                     login_next = session['login_next']
                     del session['login_next']
                     return redirect(login_next)
                 else:
                     # Return to the home page
+                    logger.debug('flaskRoutes.home')
                     return redirect(url_for('flaskRoutes.home'))
+    logger.debug('nothing of that all')
     return render_template("login.html", form=form, msg="Login failed")
 
 def authenticated_resource(function):
