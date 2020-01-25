@@ -138,6 +138,7 @@ def handle_usage_event(json):
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
+"""
 try:
     @uwsgidecorators.postfork
     def postFork():
@@ -148,7 +149,7 @@ try:
         wsThread.wait()
 except NameError:
     logger.debug("! @uwsgidecorators.postfork excluded...")
-
+"""
 
 @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
 @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
