@@ -375,6 +375,7 @@ def TeslaApi_GenerateOAuth(token=None):
     # CSRF Token is valid
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
+    logger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -412,6 +413,7 @@ def TeslaApi_RefreshOAuth(token=None):
     # CSRF Token is valid
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
+    logger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -445,6 +447,7 @@ def TeslaApi_RevokeOAuth(token=None):
     # CSRF Token is valid
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
+    logger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
