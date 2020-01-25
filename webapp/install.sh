@@ -35,5 +35,5 @@ sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 echo "...Testing config..."
 sudo nginx -t
 echo "...restarting nginx"
-sudo systemctl restart nginx
+sudo systemctl start nginx
 sudo systemctl status nginx
