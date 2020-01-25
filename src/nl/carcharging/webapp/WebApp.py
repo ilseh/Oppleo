@@ -47,7 +47,7 @@ WebAppConfig.app = app
 
 #app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = WebAppConfig.DEBUG
+app.config['SQLALCHEMY_DATABASE_URI'] = WebAppConfig.DATABASE_URL
 app.config['EXPLAIN_TEMPLATE_LOADING'] = True
 # import os; os.urandom(24)
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
@@ -167,7 +167,7 @@ def RfidModel_after_update(mapper, connection, target):
 
 if __name__ == "__main__":
     wsThread = WebSocketThread()
-    wsThread.start()
+#    wsThread.start()
 
     
     logger.debug('Starting web server...')
