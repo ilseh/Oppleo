@@ -29,7 +29,7 @@ from sqlalchemy import event
 
 from flask_wtf.csrf import CSRFProtect
 
-from nl.carcharging.models import db
+from nl.carcharging.models.__init__ import db
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
@@ -48,6 +48,7 @@ WebAppConfig.app = app
 #app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = WebAppConfig.DEBUG
+app.config['EXPLAIN_TEMPLATE_LOADING'] = True
 # import os; os.urandom(24)
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
 app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
@@ -116,6 +117,7 @@ class WebSocketThread(object):
 
 @WebAppConfig.login_manager.user_loader
 def load_user(user_id):
+    u = User.query.get(user_id)
     return User.query.get(user_id)
 
 @appSocketIO.on("connect", namespace="/usage")

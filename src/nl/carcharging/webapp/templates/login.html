@@ -68,6 +68,9 @@
                     $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
                 })
                 $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+                $('button#cancel').click(function(){
+                    window.history.back()
+                })
                 // Remove spinner
                 $('.spinner').hide()
             })
@@ -141,8 +144,8 @@
 
       <div class="form-group text-right m-t-20">
           <div class="col-xs-12">
-              <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Log In
-              </button>
+            <button id="cancel" class="btn btn-secondary btn-custom w-md waves-effect waves-light" type="button">Annuleren</button>
+            <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Log In</button>
           </div>
       </div>
 
