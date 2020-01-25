@@ -273,13 +273,13 @@ def usage_data_since(since_timestamp, cnt=-1):
 @flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/")
 @flaskRoutes.route("/charge_sessions//<int:cnt>")
 @flaskRoutes.route("/charge_sessions//<int:cnt>/")
-@flaskRoutes.route("/charge_sessions///<path:format>")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>//<path:format>")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/<path:format>")
-@flaskRoutes.route("/charge_sessions//<int:cnt>/<path:format>")
+@flaskRoutes.route("/charge_sessions///<path:req_format>")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>//<path:req_format>")
+@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/<path:req_format>")
+@flaskRoutes.route("/charge_sessions//<int:cnt>/<path:req_format>")
 @authenticated_resource
-def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
-    if (format.strip().lower() != 'json'):
+def charge_sessions(since_timestamp=None, cnt=-1, req_format='html'):
+    if (req_format.strip().lower() != 'json'):
         return render_template("charge_sessions.html")
     charge_sessions = ChargeSessionModel()
     charge_sessions.energy_device_id = "laadpaal_noord"
@@ -294,12 +294,13 @@ def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
 @flaskRoutes.route("/rfid_tokens", methods=["GET"])
 @flaskRoutes.route("/rfid_tokens/", methods=["GET"])
 @flaskRoutes.route("/rfid_tokens//", methods=["GET"])
-@flaskRoutes.route("/rfid_tokens//<path:format>", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens//<path:req_format>", methods=["GET"])
 @flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
-@flaskRoutes.route("/rfid_tokens/<path:token>/<path:format>", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/<path:req_format>", methods=["GET"])
 @authenticated_resource
-def rfid_tokens(format='html', token=None):
-    if (format.strip().lower() != 'json'):
+def rfid_tokens(req_format='html', token=None):
+    logger.debug('/rfid_tokens method: ' + request.method + ' token: ' + token + ' format: ' + req_format)
+    if (req_format.strip().lower() != 'json'):
         if (token == None):
             return render_template("tokens.html")
         rfid_model = RfidModel().get_one(token)
@@ -343,7 +344,7 @@ def rfid_tokens(format='html', token=None):
                 rfid_model.save()
 
                 # Return to the rfid tokens page
-                return redirect(url_for('flaskRoutes.rfid_tokens', format='html', token=None))
+                return redirect(url_for('flaskRoutes.rfid_tokens', req_format='html', token=None))
 
             # TODO - what went wrong? message!
             return render_template("token.html",
