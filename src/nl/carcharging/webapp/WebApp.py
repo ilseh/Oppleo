@@ -1,20 +1,18 @@
 import datetime
 import json
-import os
 import logging
 from nl.carcharging.config.WebAppConfig import WebAppConfig
-
-import sys
-print(' 0 sys.version %s : ' % sys.version)
-
-print(' 1 WebAppConfig.PARAM_ENV: %s ' % WebAppConfig.PARAM_ENV)
-print(' 1 os.getenv(WebAppConfig.PARAM_ENV): %s ' % os.getenv(WebAppConfig.PARAM_ENV))
-print(' 1 WebAppConfig.env[os.getenv(WebAppConfig.PARAM_ENV)]: %s' % WebAppConfig.env[os.getenv(WebAppConfig.PARAM_ENV)])
-
 
 WebAppConfig.initLogger('CarChargerWebApp')
 logger = logging.getLogger('nl.carcharging.webapp.WebApp')
 logger.debug('Initializing WebApp')
+
+import sys
+print('sys.version %s : ' % sys.version)
+logger.debug('sys.version %s : ' % sys.version)
+
+WebAppConfig.loadConfig()
+
 
 try:
     import uwsgidecorators
@@ -32,14 +30,12 @@ from sqlalchemy import event
 from flask_wtf.csrf import CsrfProtect
 
 from nl.carcharging.models import db
-import nl.carcharging.models.EnergyDeviceMeasureModel
-import nl.carcharging.models.Raspberry
-import nl.carcharging.models.ChargeSessionModel
-import nl.carcharging.models.User
-import nl.carcharging.models.EnergyDeviceMeasureModel
-import nl.carcharging.models.RfidModel
-# TEST
-import nl.carcharging.utils.UpdateOdometerTeslaUtil
+from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+from nl.carcharging.models.Raspberry import Raspberry
+from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
+from nl.carcharging.models.User import User
+from nl.carcharging.models.RfidModel import RfidModel
+
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
 #import routes
@@ -49,9 +45,6 @@ flaskApp = Flask(__name__)
 # Make it available through WebAppConfig
 WebAppConfig.flaskApp = flaskApp
 
-flaskApp.config.from_object(
-    WebAppConfig.env[os.getenv(WebAppConfig.PARAM_ENV)]
-)
 #flaskApp.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 flaskApp.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 # import os; os.urandom(24)
@@ -172,12 +165,6 @@ if __name__ == "__main__":
     wsThread = WebSocketThread()
     wsThread.start()
 
-    """
-    # Just as a test
-    uotu = UpdateOdometerTeslaUtil()
-    uotu.set_charge_session_id(12)
-    uotu.start()
-    """
     
     logger.debug('Starting web server...')
     flaskAppSocketIO.run(flaskApp, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
