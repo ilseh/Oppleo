@@ -299,7 +299,7 @@ def charge_sessions(since_timestamp=None, cnt=-1, req_format='html'):
 @flaskRoutes.route("/rfid_tokens/<path:token>/<path:req_format>", methods=["GET"])
 @authenticated_resource
 def rfid_tokens(req_format='html', token=None):
-    logger.debug('/rfid_tokens method: ' + request.method + ' token: ' + token + ' format: ' + req_format)
+    logger.debug('/rfid_tokens method: {} token: {} format: {}'.format(request.method, token, req_format))
     if (req_format.strip().lower() != 'json'):
         if (token == None):
             return render_template("tokens.html")
