@@ -93,7 +93,11 @@ def login():
                         logger.debug('flaskRoutes.home')
                         return redirect(url_for('flaskRoutes.home'))
         except Exception as e:
-            logger.debug(e.msg)
+            logger.debug(type(e))
+            logger.debug(e.args)
+            logger.debug(e)
+
+
     logger.debug('nothing of that all')
     return render_template("login.html", form=form, msg="Login failed")
 
