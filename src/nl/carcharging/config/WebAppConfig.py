@@ -41,8 +41,9 @@ class WebAppConfig(object):
     TESTING = False
 
     login_manager = None
-    flaskApp = None
-    flaskAppSocketIO = None
+    # Flask app
+    app = None  
+    appSocketIO = None
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -74,51 +75,39 @@ class WebAppConfig(object):
             return
 
         # Read the ini file
+        if not WebAppConfig.ini_settings.has_section(WebAppConfig.INI_MAIN):
+            WebAppConfig.logger.debug('Ini file has no ' + WebAppConfig.INI_MAIN + ' section.')
+            return
+
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)
         if mainSectionDict is None:
             return
 
         # Which target is active?
-        if not WebAppConfig.INI_TARGET_PARAM.lower() in mainSectionDict:
+        if not WebAppConfig.ini_settings.has_option(WebAppConfig.INI_MAIN, WebAppConfig.INI_TARGET_PARAM):
             WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_TARGET_PARAM + ' in ' + WebAppConfig.INI_MAIN)
         else:
-            targetSectionName = mainSectionDict[WebAppConfig.INI_TARGET_PARAM.lower()]
-            targetSectionDict = WebAppConfig.configSectionMap(targetSectionName)
-
-            if not WebAppConfig.INI_DATABASE_URL.lower() in targetSectionDict:
-                WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_DATABASE_URL + ' in ' + targetSectionName)
-            WebAppConfig.DATABASE_URL = targetSectionDict[WebAppConfig.INI_DATABASE_URL.lower()]
-
-            if not WebAppConfig.INI_ENERGY_DEVICE_ID.lower() in targetSectionDict:
-                WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_ENERGY_DEVICE_ID + ' in ' + targetSectionName)
-            WebAppConfig.ENERGY_DEVICE_ID = targetSectionDict[WebAppConfig.INI_ENERGY_DEVICE_ID.lower()]
-
-            if not WebAppConfig.INI_PYTHONPATH.lower() in targetSectionDict:
-                WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_PYTHONPATH + ' in ' + targetSectionName)
-            WebAppConfig.PYTHONPATH = targetSectionDict[WebAppConfig.INI_PYTHONPATH.lower()]
-
-            if not WebAppConfig.INI_SQLALCHEMY_DATABASE_URI.lower() in targetSectionDict:
-                WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_SQLALCHEMY_DATABASE_URI + ' in ' + targetSectionName)
-            WebAppConfig.SQLALCHEMY_DATABASE_URI = targetSectionDict[WebAppConfig.INI_SQLALCHEMY_DATABASE_URI.lower()]
-
+            targetSectionName = WebAppConfig.getOption(WebAppConfig.INI_MAIN, WebAppConfig.INI_TARGET_PARAM)
+            if not WebAppConfig.ini_settings.has_section(targetSectionName):
+                WebAppConfig.logger.debug('Ini file has no ' + targetSectionName + ' section.')
+            else:
+                WebAppConfig.DATABASE_URL = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_DATABASE_URL)
+                WebAppConfig.ENERGY_DEVICE_ID = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_ENERGY_DEVICE_ID)
+                WebAppConfig.PYTHONPATH = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_PYTHONPATH)
+                WebAppConfig.SQLALCHEMY_DATABASE_URI = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_SQLALCHEMY_DATABASE_URI)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)
-
-        if not WebAppConfig.INI_ENV_PARAM.lower() in mainSectionDict:
+        if not WebAppConfig.ini_settings.has_option(WebAppConfig.INI_MAIN, WebAppConfig.INI_ENV_PARAM):
             WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_ENV_PARAM + ' in ' + WebAppConfig.INI_MAIN)
-        else: 
-            envSectionName = mainSectionDict[WebAppConfig.INI_ENV_PARAM.lower()]
-            WebAppConfig.PRODUCTION = ( envSectionName.lower() == WebAppConfig.INI_IS_PROD )
-            envSectionDict = WebAppConfig.configSectionMap(envSectionName)
-
-            if not WebAppConfig.INI_DEBUG.lower() in envSectionDict:
-                WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_DEBUG + ' in ' + envSectionDict)
-            WebAppConfig.DEBUG = envSectionDict[WebAppConfig.INI_DEBUG.lower()]
-
-            if not WebAppConfig.INI_TESTING.lower() in envSectionDict:
-                WebAppConfig.logger.error('Ini file ERROR: No ' + WebAppConfig.INI_TESTING + ' in ' + envSectionDict)
-            WebAppConfig.TESTING = envSectionDict[WebAppConfig.INI_TESTING.lower()]
+        else:
+            envSectionName = WebAppConfig.getOption(WebAppConfig.INI_MAIN, WebAppConfig.INI_ENV_PARAM)
+            if not WebAppConfig.ini_settings.has_section(envSectionName):
+                WebAppConfig.logger.debug('Ini file has no ' + envSectionName + ' section.')
+            else:
+                WebAppConfig.PRODUCTION = ( envSectionName.lower() == WebAppConfig.INI_IS_PROD )
+                WebAppConfig.DEBUG = WebAppConfig.getBooleanOption(envSectionName, WebAppConfig.INI_DEBUG, False)
+                WebAppConfig.TESTING = WebAppConfig.getBooleanOption(envSectionName, WebAppConfig.INI_TESTING, False)
 
 
     @staticmethod
@@ -128,6 +117,20 @@ class WebAppConfig(object):
         Logger.init_log(WebAppConfig.PROCESS_NAME, WebAppConfig.LOG_FILE)
         WebAppConfig.logger = logging.getLogger('nl.carcharging.webapp.WebApp')
 
+
+    @staticmethod
+    def getBooleanOption(section, option, default=False):
+        if not WebAppConfig.ini_settings.has_option(section, option):
+            WebAppConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            return default
+        return WebAppConfig.ini_settings.getboolean(section, option)
+
+    @staticmethod
+    def getOption(section, option, default=''):
+        if not WebAppConfig.ini_settings.has_option(section, option):
+            WebAppConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            return default
+        return WebAppConfig.ini_settings.get(section, option)
 
     @staticmethod
     def configSectionMap(section):

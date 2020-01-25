@@ -27,7 +27,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy import event
 
 
-from flask_wtf.csrf import CsrfProtect
+from flask_wtf.csrf import CSRFProtect
 
 from nl.carcharging.models import db
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
@@ -41,31 +41,32 @@ from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 #import routes
 
 # app initiliazation
-flaskApp = Flask(__name__)
+app = Flask(__name__)
 # Make it available through WebAppConfig
-WebAppConfig.flaskApp = flaskApp
+WebAppConfig.app = app
 
-#flaskApp.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-flaskApp.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+app.config['SQLALCHEMY_DATABASE_URI'] = WebAppConfig.DEBUG
 # import os; os.urandom(24)
-flaskApp.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
-flaskApp.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
+app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
+app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
 
 # https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
-CsrfProtect(flaskApp)
+CSRFProtect(app)
 
 # The CarCharger root flaskRoutes
-flaskApp.register_blueprint(flaskRoutes) # no url_prefix
+app.register_blueprint(flaskRoutes) # no url_prefix
 
-flaskAppSocketIO = SocketIO(flaskApp)
+appSocketIO = SocketIO(app)
 # Make it available through WebAppConfig
-WebAppConfig.flaskAppSocketIO = flaskAppSocketIO
+WebAppConfig.appSocketIO = appSocketIO
 
-db.init_app(flaskApp)
+db.init_app(app)
 
 # flask-login
 WebAppConfig.login_manager = LoginManager()
-WebAppConfig.login_manager.init_app(flaskApp)
+WebAppConfig.login_manager.init_app(app)
 
 
 class WebSocketThread(object):
@@ -82,7 +83,7 @@ class WebSocketThread(object):
     def websocket_start(self):
         logger.debug('Starting background task...')
         while True:
-            flaskAppSocketIO.sleep(7)
+            appSocketIO.sleep(7)
             try:
                 self.websocket_send_usage_update("status_update")
             except OperationalError as e:
@@ -92,7 +93,7 @@ class WebSocketThread(object):
 
     def start(self):
         logger.debug('Launching background task...')
-        self.thread = flaskAppSocketIO.start_background_task(self.websocket_start)
+        self.thread = appSocketIO.start_background_task(self.websocket_start)
 
     def websocket_send_usage_update(self, type):
         logger.debug('Checking usage data...')
@@ -102,7 +103,7 @@ class WebSocketThread(object):
         qr = device_measurement.get_last_saved(energy_device_id="laadpaal_noord")
         if (self.most_recent != qr.get_created_at_str()):
             logger.debug(f'Send msg {self.counter} via websocket...')
-            flaskAppSocketIO.emit('status_update', { 'data': qr.to_str() }, namespace='/usage')
+            appSocketIO.emit('status_update', { 'data': qr.to_str() }, namespace='/usage')
             self.most_recent = qr.get_created_at_str()
         else:
             logger.debug('No change in usage at this time.')
@@ -117,23 +118,23 @@ class WebSocketThread(object):
 def load_user(user_id):
     return User.query.get(user_id)
 
-@flaskAppSocketIO.on("connect", namespace="/usage")
+@appSocketIO.on("connect", namespace="/usage")
 def connect():
     emit("server_status", "server_up")
     logger.debug("Client connected...")
 
-@flaskAppSocketIO.on("disconnect", namespace="/usage")
+@appSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
     logger.debug('Client disconnected.')
 
 # This event currently is not used, just for reference
-@flaskAppSocketIO.on('my event', namespace='/usage')
+@appSocketIO.on('my event', namespace='/usage')
 def handle_usage_event(json):
     logger.debug('received json: ' + str(json))
     return ( 'one', 2 )    # client callback
 
 
-@flaskApp.errorhandler(404)
+@app.errorhandler(404)
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
@@ -167,6 +168,6 @@ if __name__ == "__main__":
 
     
     logger.debug('Starting web server...')
-    flaskAppSocketIO.run(flaskApp, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
+    appSocketIO.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
     wsThread.wait()
