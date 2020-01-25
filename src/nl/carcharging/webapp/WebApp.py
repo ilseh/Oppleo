@@ -4,6 +4,14 @@ import os
 import logging
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
+import sys
+print(' 0 sys.version %s : ' % sys.version)
+
+print(' 1 WebAppConfig.PARAM_ENV: %s ' % WebAppConfig.PARAM_ENV)
+print(' 1 os.getenv(WebAppConfig.PARAM_ENV): %s ' % os.getenv(WebAppConfig.PARAM_ENV))
+print(' 1 WebAppConfig.env[os.getenv(WebAppConfig.PARAM_ENV)]: %s' % WebAppConfig.env[os.getenv(WebAppConfig.PARAM_ENV)])
+
+
 WebAppConfig.initLogger('CarChargerWebApp')
 logger = logging.getLogger('nl.carcharging.webapp.WebApp')
 logger.debug('Initializing WebApp')
