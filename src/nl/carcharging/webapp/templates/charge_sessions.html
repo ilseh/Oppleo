@@ -93,10 +93,16 @@
 //      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
             
       $.ajax({
-        type		: 'GET',
-        url			: '/charge_sessions///json',
-        dataType	: 'json',
-            encode		: true
+        type		    : 'GET',
+        url			    : '/charge_sessions',
+        contentType : "application/json",
+        dataType	  : 'json',
+        encode		  : true,
+        data        : {
+          // from  - [optional] earliest startTime
+          // to    - [optional] latest startTime
+          // limit - [optional] max number of entries
+        },
       }) // using the done promise callback
       .done(function(data) {
         // log data to the console so we can see

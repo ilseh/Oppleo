@@ -264,26 +264,25 @@ def usage_data_since(since_timestamp, cnt=-1):
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/charge_sessions")
 @flaskRoutes.route("/charge_sessions/")
-@flaskRoutes.route("/charge_sessions//")
-@flaskRoutes.route("/charge_sessions///")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>//")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/")
-@flaskRoutes.route("/charge_sessions//<int:cnt>")
-@flaskRoutes.route("/charge_sessions//<int:cnt>/")
-@flaskRoutes.route("/charge_sessions///<path:req_format>")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>//<path:req_format>")
-@flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/<path:req_format>")
-@flaskRoutes.route("/charge_sessions//<int:cnt>/<path:req_format>")
 @authenticated_resource
-def charge_sessions(since_timestamp=None, cnt=-1, req_format='html'):
-    if (req_format.strip().lower() != 'json'):
+def charge_sessions(since_timestamp=None):
+    jsonRequested = ('CONTENT_TYPE' in request.environ and 
+                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
+    if (not jsonRequested):
         return render_template("charge_sessions.html")
+    # Request parameters
+    # TODO - format request params and hand to model
+    req_from  = request.args['from'] if 'from' in request.args else None
+    req_to    = request.args['to'] if 'to' in request.args else None
+    req_limit = request.args['limit'] if 'limit' in request.args else None
+
     charge_sessions = ChargeSessionModel()
     charge_sessions.energy_device_id = "laadpaal_noord"
-    qr = charge_sessions.get_last_n_sessions_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
+    qr = charge_sessions.get_last_n_sessions_since(
+        energy_device_id="laadpaal_noord",
+        since_ts=None,
+        n=-1
+        )
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())
