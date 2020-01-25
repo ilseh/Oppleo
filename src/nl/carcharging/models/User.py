@@ -1,7 +1,10 @@
 from nl.carcharging.models import db
 from sqlalchemy import orm
+from nl.carcharging.models.base import Base, DbSession
 
-class User(db.Model):
+
+#class User(db.Model):
+class User(Base, db.Model):
     """
     """
     __tablename__ = 'users'
