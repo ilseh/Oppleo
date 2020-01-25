@@ -212,7 +212,8 @@
         })
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
-      .fail(function() {
+      .fail(function(data) {
+        console.log(data)
   //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
       })
       .always(function() {

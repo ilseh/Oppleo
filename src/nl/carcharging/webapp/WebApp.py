@@ -117,7 +117,6 @@ class WebSocketThread(object):
 
 @WebAppConfig.login_manager.user_loader
 def load_user(user_id):
-    u = User.query.get(user_id)
     return User.query.get(user_id)
 
 @appSocketIO.on("connect", namespace="/usage")
