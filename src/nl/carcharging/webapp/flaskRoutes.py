@@ -250,6 +250,7 @@ def usage_data_since(since_timestamp, cnt=-1):
 @flaskRoutes.route("/charge_sessions/<path:since_timestamp>//<path:format>")
 @flaskRoutes.route("/charge_sessions/<path:since_timestamp>/<int:cnt>/<path:format>")
 @flaskRoutes.route("/charge_sessions//<int:cnt>/<path:format>")
+@authenticated_resource
 def charge_sessions(since_timestamp=None, cnt=-1, format='html'):
     if (format.strip().lower() != 'json'):
         return render_template("charge_sessions.html")
