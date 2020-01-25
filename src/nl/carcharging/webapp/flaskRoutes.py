@@ -73,7 +73,7 @@ def login():
         user = User.query.get(form.username.data)
         logger.debug('loginForm valid on submit')
         try:
-            if user:
+            if user is not None:
                 logger.debug('if user:')
                 if check_password_hash(user.password, form.password.data):
                     logger.debug('check_password_hash ok')
