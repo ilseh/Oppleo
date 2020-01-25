@@ -106,7 +106,7 @@
       var data
       switch(cnf) {
         case GENERATE:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/json'
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth'
           data = {
             csrf_token    : '{{ csrf_token() }}',
             oauth_email   : $('input#oauth_email').val(), 
@@ -114,24 +114,25 @@
           }
           break
         case REFRESH:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth/json'
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth'
           data = {
             csrf_token    : '{{ csrf_token() }}' 
           }
           break
         case REVOKE:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RevokeOAuth/json'
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RevokeOAuth'
           data = {
             csrf_token    : '{{ csrf_token() }}' 
           }
           break
       }
       $.ajax({
-        type		  : 'POST',
-        url			  : url,
-        dataType	: 'json',
-        encode		: true,
-        data      : data
+        type		    : 'POST',
+        url			    : url,
+        dataType	  : 'json',
+        contentType : "application/json",
+        encode		  : true,
+        data        : data
       }) // using the done promise callback
       .done(function(res) {
         // log data to the console so we can see

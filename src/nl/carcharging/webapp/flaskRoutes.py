@@ -293,14 +293,13 @@ def charge_sessions(since_timestamp=None, cnt=-1, req_format='html'):
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/rfid_tokens", methods=["GET"])
 @flaskRoutes.route("/rfid_tokens/", methods=["GET"])
-@flaskRoutes.route("/rfid_tokens//", methods=["GET"])
-@flaskRoutes.route("/rfid_tokens//<path:req_format>", methods=["GET"])
-@flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
-@flaskRoutes.route("/rfid_tokens/<path:token>/<path:req_format>", methods=["GET"])
+@flaskRoutes.route("/rfid_tokens/<path:token>", methods=["GET", "POST"])
 @authenticated_resource
-def rfid_tokens(req_format='html', token=None):
-    logger.debug('/rfid_tokens method: {} token: {} format: {}'.format(request.method, token, req_format))
-    if (req_format.strip().lower() != 'json'):
+def rfid_tokens(token=None):
+    jsonRequested = ('CONTENT_TYPE' in request.environ and 
+                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
+    logger.debug('/rfid_tokens method: {} token: {} jsonRequested: {}'.format(request.method, token, jsonRequested))
+    if (not jsonRequested):
         if (token == None):
             return render_template("tokens.html")
         rfid_model = RfidModel().get_one(token)
@@ -371,10 +370,12 @@ def rfid_tokens(req_format='html', token=None):
     return jsonify(rfid_model.to_str())
 
 
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/json", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_GenerateOAuth(token=None):
     # CSRF Token is valid
+    jsonRequested = ('CONTENT_TYPE' in request.environ and 
+                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -406,10 +407,12 @@ def TeslaApi_GenerateOAuth(token=None):
             })
 
 
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth/json", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RefreshOAuth(token=None):
     # CSRF Token is valid
+    jsonRequested = ('CONTENT_TYPE' in request.environ and 
+                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -437,10 +440,12 @@ def TeslaApi_RefreshOAuth(token=None):
         'vehicles' : tesla_api.getVehicleNameIdList()
         })
 
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth/json", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RevokeOAuth(token=None):
     # CSRF Token is valid
+    jsonRequested = ('CONTENT_TYPE' in request.environ and 
+                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
