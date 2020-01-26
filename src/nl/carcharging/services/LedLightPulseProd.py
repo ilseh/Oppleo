@@ -3,11 +3,9 @@ import threading
 import time
 
 from nl.carcharging.services.LedLightProdHardware import LedLightProdHardware
+from nl.carcharging.utils.GenericUtil import GenericUtil
 
-try:
-    import RPi.GPIO as GPIO
-except RuntimeError:
-    logging.debug('Assuming dev env')
+GenericUtil.importGpio()
 
 PULSE_LED_MIN = 3
 PULSE_LED_MAX = 98

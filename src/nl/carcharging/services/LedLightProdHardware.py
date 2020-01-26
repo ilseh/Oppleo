@@ -1,10 +1,9 @@
 import logging
 import threading
 
-try:
-    import RPi.GPIO as GPIO
-except RuntimeError:
-    logging.debug('Assuming dev env')
+from nl.carcharging.utils.GenericUtil import GenericUtil
+
+GPIO = GenericUtil.importGpio()
 
 
 class LedLightProdHardware(object):

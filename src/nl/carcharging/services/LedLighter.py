@@ -2,10 +2,9 @@ import threading
 import time
 import logging
 
-try:
-    import RPi.GPIO as GPIO
-except RuntimeError:
-    logging.debug('Assuming dev env')
+from nl.carcharging.utils.GenericUtil import GenericUtil
+
+GPIO = GenericUtil.importGpio()
 
 from nl.carcharging.services.LedLight import LedLight
 
