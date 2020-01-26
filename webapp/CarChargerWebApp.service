@@ -1,18 +1,24 @@
 [Unit]
-Description=uWSGI instance CarCharger Web Application
+Description=CarCharger Web Application
 After=syslog.target network.target
 
 [Service]
 ; Raspberry user for this service to run
+# run as web user
+#User=www-data
 User=pi
 Group=www-data
-;WorkingDirectory=/home/pi/development/RestfulCharging/src/nl/carcharging/webapp
+# process starts, doesn't exit unless failing
+Type=simple
+
 WorkingDirectory=/home/pi/development/RestfulCharging/src/
-;WorkingDirectory=/home/pi/development/RestfulCharging/webapp/
 
 ;Environment="PATH=/home/pi/RestfullCharging/venv/bin“
-ExecStart=/home/pi/.local/bin/uwsgi --ini /home/pi/development/RestfulCharging/webapp/CarChargerWebApp.ini
-; uwsgi --socket 0.0.0.0:5000 --protocol=http -w WebAppTestDaemon:app -H /home/pi/development/RestfulCharging/venv 
+ExecStart=/home/pi/development/RestfulCharging/venv/bin/python3 nl/carcharger/webapp/WebApp.py socketserver
+
 
 [Install]
-WantedBy=multi-user.target
+# start with default stuff when we enable automatic startup
+WantedBy=default.target
+#WantedBy=multi-user.target
+
