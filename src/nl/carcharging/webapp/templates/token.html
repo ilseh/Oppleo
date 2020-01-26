@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
 
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/carcharger.css') }}">
+
   <!-- Moment, required for date range picker -->
   <script src="{{ url_for('static', filename='plugins/moment/moment.js') }}"></script>
 
@@ -22,50 +24,6 @@
 
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
-
-  <style>
-    .paginate_button {
-        padding: 0px !important;
-    }
-    tbody td {
-      padding: 2px 2px !important;
-      text-align: center;
-      background-color: #36404a;
-    }
-    div .dt-buttons {
-      margin-bottom: 10px;
-      margin-left: 3px;
-    }
-    table, table th, table td {
-      border: 0px !important;
-      border-bottom: 1px solid #434f5c !important;
-      /* border-bottom: 1px solid #e9ecef !important; */
-    }
-    table th {
-      border-right: 1px dashed #434f5c !important;
-    }
-    .info-button-style {
-      cursor: help;
-    }
-    .input-text-only {
-      text-align: left;
-      font-style: italic; 
-      width: 100%; 
-      background-color: #36404a !important;
-      border: 0px !important;
-       ::-webkit-input-placeholder { /* WebKit browsers */
-        color:    #36404a;
-      }
-      :-moz-placeholder { /* Mozilla Firefox 4 to 18 */
-        color:    #36404a;
-      }
-      ::-moz-placeholder { /* Mozilla Firefox 19+ */
-        color:    #36404a;
-      }
-      :-ms-input-placeholder { /* Internet Explorer 10+ */
-        color:    #36404a;
-      }
-  </style>
 
   <script>
     const months = {

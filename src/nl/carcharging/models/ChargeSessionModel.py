@@ -147,7 +147,7 @@ class ChargeSessionModel(Base):
                         .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
                         .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
                 else: # filter energy_device_id
-                    return session.query(ChargeSessionModel) \
+                    return db_session.query(ChargeSessionModel) \
                         .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
                         .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
                         .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()

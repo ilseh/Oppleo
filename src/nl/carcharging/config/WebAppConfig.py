@@ -54,6 +54,9 @@ class WebAppConfig(object):
     PROCESS_NAME = 'PythonProc'
     LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
 
+    # The time between database queries for energy state updates
+    device_measurement_check_interval = 7
+
     @staticmethod
     def loadConfig(filename='carcharger.ini'):
         if WebAppConfig.logger is None:

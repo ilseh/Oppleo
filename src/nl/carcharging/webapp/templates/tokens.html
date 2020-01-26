@@ -14,6 +14,8 @@
   <!-- Responsive datatable examples -->
   <link href="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
 
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/carcharger.css') }}">
+
   <!-- Required datatable js -->
   <script src="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.js') }}"></script>
@@ -35,45 +37,6 @@
   
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
-
-  <style>
-    .paginate_button {
-        padding: 0px !important;
-    }
-    tbody td {
-      padding: 2px 2px !important;
-      text-align: center;
-      background-color: #36404a;
-    }
-    div .dataTables_info {
-      color: #98a6ad !important;
-      margin-left: 5px;
-    }
-    div .dt-buttons {
-      margin-bottom: 10px;
-      margin-left: 3px;
-    }
-    div .dataTables_length {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 100%;
-    }
-    div .dataTables_length label {
-      font-size: smaller;
-      margin-left: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 100%;
-      color: #98a6ad !important;
-    }
-    div .dataTables_length label select {
-      width: 80px;
-      margin-left: 10px;
-      margin-right: 10px;
-    }
-  </style>
 
   <script>
     const months = {

@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import signal
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 WebAppConfig.initLogger('CarChargerWebApp')
@@ -74,17 +75,26 @@ class WebSocketThread(object):
     # Count the message updates send through the websocket
     counter = 1
     most_recent = ""
+    sigterm = False
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.SessionModel')
         self.logger.debug('Initializing SessionModel without data')
 
+        signal.signal(signal.SIGTERM, self.sig_handler)
+        signal.signal(signal.SIGINT, self.sig_handler)
         self.thread = None
+
+
+    def sig_handler(self):
+        logger.debug('Termination signalled...')
+        self.sigterm = True
+
 
     def websocket_start(self):
         logger.debug('Starting background task...')
-        while True:
-            appSocketIO.sleep(7)
+        while not self.sigterm:
+            appSocketIO.sleep(WebAppConfig.device_measurement_check_interval)
             try:
                 self.websocket_send_usage_update("status_update")
             except OperationalError as e:
@@ -139,7 +149,7 @@ def handle_usage_event(json):
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
-"""
+
 try:
     @uwsgidecorators.postfork
     def postFork():
@@ -150,7 +160,7 @@ try:
         wsThread.wait()
 except NameError:
     logger.debug("! @uwsgidecorators.postfork excluded...")
-"""
+
 
 @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
 @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
