@@ -38,28 +38,32 @@ logger.debug('Initializing routes')
 
 @flaskRoutes.route('/', methods=['GET'])
 def index():
+    logger.debug('/ {}'.format(request.method))
     try:
         return render_template('dashboard.html')
     except TemplateNotFound:
         abort(404)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug('/  - exception')
+        logger.debug(e)
 
 @flaskRoutes.route("/home")
 #@authenticated_resource
 def home():
+    logger.debug('/home {}'.format(request.method))
     return redirect('/')
 
 
 @flaskRoutes.errorhandler(404)
 def page_not_found(e):
+    logger.debug('404 page not found error handler')
     return render_template('errorpages/404.html'), 404
 
 
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
 def login():
     # For GET requests, display the login form. 
-    logger.debug('/login ' + request.method)
+    logger.debug('/login {}'.format(request.method))
     if (request.method == 'GET'):
         return render_template("login.html", form=LoginForm())
     # For POST requests, login the current user by processing the form.
@@ -128,6 +132,7 @@ def authenticated_resource(function):
 @authenticated_resource
 #@login_required
 def logout():
+    logger.debug('/logout {}'.format(request.method))
     """Logout the current user."""
     user = current_user
     user.authenticated = False
@@ -141,6 +146,7 @@ def logout():
 @flaskRoutes.route("/change_password", methods=["GET", "POST"])
 @authenticated_resource
 def change_password():
+    logger.debug('/change_password {}'.format(request.method))
     if (request.method == 'GET'):
         return render_template(
             'change_password.html', 
@@ -189,12 +195,14 @@ def change_password():
 
 @flaskRoutes.route("/about")
 def about():
+    logger.debug('/about {}'.format(request.method))
     return render_template("about.html")
 
 @flaskRoutes.route("/usage")
 @flaskRoutes.route("/usage/")
 @flaskRoutes.route("/usage/<int:cnt>")
 def usage(cnt="undefined"):
+    logger.debug('/usage ' + request.method)
     return render_template("usage_table.html", cnt=cnt)
 
 
@@ -202,6 +210,7 @@ def usage(cnt="undefined"):
 @flaskRoutes.route("/usage_table/")
 @flaskRoutes.route("/usage_table/<int:cnt>")
 def usage_table(cnt="undefined"):
+    logger.debug('/usage_table {} {}'.format(active, request.method))
     return render_template("usage_table.html", cnt=cnt)
 
 
@@ -210,6 +219,7 @@ def usage_table(cnt="undefined"):
 @flaskRoutes.route("/usage_graph/<int:cnt>")
 @authenticated_resource
 def usage_graph(cnt="undefined"):
+    logger.debug('/usage_graph {} {}'.format(cnt, request.method))
     return render_template("usage_graph.html", cnt=cnt)
 
 
@@ -218,6 +228,7 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
+    logger.debug('/settings {} {}'.format(active, request.method))
     diag = Raspberry().get_all()
     diag_json = json.dumps(diag)
     charger_config_str = ChargerConfigModel().get_config().to_str()
@@ -233,6 +244,7 @@ def settings(active=1):
 @flaskRoutes.route("/usage_data/")
 @flaskRoutes.route("/usage_data/<int:cnt>")
 def usage_data(cnt=100):
+    logger.debug('/usage_data {} {}'.format(cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
     device_measurement.energy_device_id = "laadpaal_noord"
     qr = device_measurement.get_last_n_saved(energy_device_id="laadpaal_noord",n=cnt)
@@ -246,6 +258,7 @@ def usage_data(cnt=100):
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>")
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
 def usage_data_since(since_timestamp, cnt=-1):
+    logger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
     device_measurement.energy_device_id = "laadpaal_noord"
     qr = device_measurement.get_last_n_saved_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
@@ -260,6 +273,7 @@ def usage_data_since(since_timestamp, cnt=-1):
 @flaskRoutes.route("/charge_sessions/")
 @authenticated_resource
 def charge_sessions(since_timestamp=None):
+    logger.debug('/charge_sessions {} {}'.format(since_timestamp, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     if (not jsonRequested):
@@ -289,6 +303,7 @@ def charge_sessions(since_timestamp=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>", methods=["GET", "POST"])
 @authenticated_resource
 def rfid_tokens(token=None):
+    logger.debug('/rfid_tokens {} {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     logger.debug('/rfid_tokens method: {} token: {} jsonRequested: {}'.format(request.method, token, jsonRequested))
@@ -364,9 +379,9 @@ def rfid_tokens(token=None):
 
 
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])
-@authenticated_resource
+@authenticated_resource  # CSRF Token is valid
 def TeslaApi_GenerateOAuth(token=None):
-    # CSRF Token is valid
+    logger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     logger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
@@ -404,7 +419,7 @@ def TeslaApi_GenerateOAuth(token=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RefreshOAuth(token=None):
-    # CSRF Token is valid
+    logger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     logger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
@@ -438,7 +453,7 @@ def TeslaApi_RefreshOAuth(token=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RevokeOAuth(token=None):
-    # CSRF Token is valid
+    logger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     logger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
