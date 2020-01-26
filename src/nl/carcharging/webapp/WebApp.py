@@ -4,12 +4,12 @@ import logging
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 WebAppConfig.initLogger('CarChargerWebApp')
-logger = logging.getLogger('nl.carcharging.webapp.WebApp')
-logger.debug('Initializing WebApp')
+webApplogger = logging.getLogger('nl.carcharging.webapp.WebApp')
+webApplogger.debug('Initializing WebApp')
 
 import sys
 print('sys.version %s : ' % sys.version)
-logger.debug('sys.version %s : ' % sys.version)
+webApplogger.debug('sys.version %s : ' % sys.version)
 
 WebAppConfig.loadConfig()
 
@@ -17,7 +17,7 @@ WebAppConfig.loadConfig()
 try:
     import uwsgidecorators
 except ModuleNotFoundError:
-    logger.debug('! uwsgi and uwsgidecorators not loaded, not running under uWSGI...')
+    webApplogger.debug('! uwsgi and uwsgidecorators not loaded, not running under uWSGI...')
 from functools import wraps
 
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
@@ -79,17 +79,20 @@ def load_user(user_id):
 
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
+    global webApplogger
     emit("server_status", "server_up")
-    logger.debug("Client connected...")
+    webApplogger.debug("Client connected...")
 
 @appSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
-    logger.debug('Client disconnected.')
+    global webApplogger
+    webApplogger.debug('Client disconnected.')
 
 # This event currently is not used, just for reference
 @appSocketIO.on('my event', namespace='/usage')
 def handle_usage_event(json):
-    logger.debug('received json: ' + str(json))
+    global webApplogger
+    webApplogger.debug('received json: ' + str(json))
     return ( 'one', 2 )    # client callback
 
 
@@ -103,30 +106,33 @@ try:
     def postFork():
         global wsThread
         global appSocketIO
-        logger.debug('postFork()')
-        logger.debug('Starting Web Sockets...')
+        global webApplogger
+        webApplogger.debug('postFork()')
+        webApplogger.debug('Starting Web Sockets...')
         wsThread.start(appSocketIO)
         wsThread.wait()
 except NameError:
-    logger.debug("! @uwsgidecorators.postfork excluded...")
+    webApplogger.debug("! @uwsgidecorators.postfork excluded...")
 
 
 @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
 @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
 def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
-    logger.debug("'after_insert' or 'after_update' event for EnergyDeviceMeasureModel")
+    global webApplogger
+    webApplogger.debug("'after_insert' or 'after_update' event for EnergyDeviceMeasureModel")
 
 
 @event.listens_for(RfidModel, 'after_update')
 @event.listens_for(RfidModel, 'after_insert')
 def RfidModel_after_update(mapper, connection, target):
-    logger.debug("'after_insert' or 'after_update' event for RfidModel")
+    global webApplogger
+    webApplogger.debug("'after_insert' or 'after_update' event for RfidModel")
     
 
 if __name__ == "__main__":
     wsThread.start(appSocketIO)
 
-    logger.debug('Starting web server...')
+    webApplogger.debug('Starting web server...')
     appSocketIO.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
     wsThread.wait()
