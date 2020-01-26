@@ -12,7 +12,7 @@ def init_log(process_name, log_file):
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s -  %(threadName)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(process)d %(processName)s - %(threadName)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
     # add the handlers to the logger
