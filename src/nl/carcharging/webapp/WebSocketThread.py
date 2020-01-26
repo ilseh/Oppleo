@@ -1,4 +1,5 @@
 import logging
+import signal
 
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.config.WebAppConfig import WebAppConfig
@@ -28,9 +29,15 @@ class WebSocketThread(object):
                 self.logger.debug(f'Something wrong with the database! {e}')
         self.logger.debug(f'Terminating thread')
 
+    def sig_handler(self, signum, frame):
+        self.logger.debug('Termination signalled ({})...'.format(signum))
+        self.sigterm = True
+
     def start(self, app):
         self.logger.debug('Launching background task...')
         self.app = app
+        signal.signal(signal.SIGTERM, self.sig_handler)
+        signal.signal(signal.SIGINT, self.sig_handler)
         self.thread = self.app.start_background_task(self.websocket_start)
 
     def websocket_send_usage_update(self, type):
