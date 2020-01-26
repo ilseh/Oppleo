@@ -1,6 +1,8 @@
 import logging
 import os
 
+from nl.carcharging.config.WebAppConfig import WebAppConfig
+
 PROD = 'production'
 
 
@@ -8,12 +10,19 @@ class GenericUtil(object):
 
     @staticmethod
     def isProd():
-        env_name = os.getenv('CARCHARGING_ENV')
-        return env_name.lower() == PROD
+        if WebAppConfig.ini_settings is None:
+            WebAppConfig.loadConfig()
+        return WebAppConfig.PRODUCTION
+        # env_name = os.getenv('CARCHARGING_ENV')
+        # return env_name.lower() == PROD
 
     @staticmethod
     def getMeasurementDevice():
-        return os.getenv('ENERGY_DEVICE_ID')
+        # Configured in nl.cargarging.config.carcharger.ini file
+        if WebAppConfig.ini_settings is None:
+            WebAppConfig.loadConfig()
+        return WebAppConfig.ENERGY_DEVICE_ID
+        #return os.getenv('ENERGY_DEVICE_ID')
 
     @staticmethod
     def importGpio():
