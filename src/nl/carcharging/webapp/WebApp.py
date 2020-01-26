@@ -14,11 +14,6 @@ webApplogger.debug('sys.version %s : ' % sys.version)
 WebAppConfig.loadConfig()
 
 
-try:
-    import uwsgidecorators
-except ModuleNotFoundError:
-    webApplogger.debug('! uwsgi and uwsgidecorators not loaded, not running under uWSGI...')
-from functools import wraps
 
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
 from flask_login import LoginManager
@@ -101,20 +96,6 @@ def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
 
-try:
-    @uwsgidecorators.postfork
-    def postFork():
-        global wsThread
-        global appSocketIO
-        global webApplogger
-        webApplogger.debug('postFork()')
-        webApplogger.debug('Starting Web Sockets...')
-        wsThread.start(appSocketIO)
-        wsThread.wait()
-except NameError:
-    webApplogger.debug("! @uwsgidecorators.postfork excluded...")
-
-
 @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
 @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
 def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
@@ -132,8 +113,28 @@ def RfidModel_after_update(mapper, connection, target):
 if __name__ == "__main__":
     wsThread.start(appSocketIO)
 
-    webApplogger.debug('Starting web server...')
-    appSocketIO.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
+    print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
+        .format(
+            WebAppConfig.httpHost, 
+            WebAppConfig.httpPort,
+            WebAppConfig.DEBUG,
+            WebAppConfig.useReloader
+            )
+        )
+    webApplogger.debug('Starting web server on {}:{} (debug:{}, use_reloader={})...'
+        .format(
+            WebAppConfig.httpHost, 
+            WebAppConfig.httpPort,
+            WebAppConfig.DEBUG,
+            WebAppConfig.useReloader
+            )
+        )
+    appSocketIO.run(app, 
+                    port=WebAppConfig.httpPort, 
+                    debug=WebAppConfig.DEBUG, 
+                    use_reloader=WebAppConfig.useReloader, 
+                    host=WebAppConfig.httpHost
+                    )
 
     wsThread.wait()
 

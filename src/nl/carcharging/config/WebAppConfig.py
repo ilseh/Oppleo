@@ -20,6 +20,9 @@ class WebAppConfig(object):
     INI_ENERGY_DEVICE_ID = 'ENERGY_DEVICE_ID'
     INI_PYTHONPATH = 'PYTHONPATH'
     INI_SQLALCHEMY_DATABASE_URI = 'SQLALCHEMY_DATABASE_URI'
+    INI_HTTP_HOST = 'HTTP_HOST'
+    INI_HTTP_PORT = 'HTTP_PORT'
+    INI_USE_RELOADER = 'USE_RELOADER'
 
     INI_IS_PROD = 'Production'
 
@@ -44,6 +47,9 @@ class WebAppConfig(object):
     # Flask app
     app = None  
     appSocketIO = None
+    httpHost = '0.0.0.0'  
+    httpPort = 80
+    useReloader = False
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -98,6 +104,9 @@ class WebAppConfig(object):
                 WebAppConfig.ENERGY_DEVICE_ID = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_ENERGY_DEVICE_ID)
                 WebAppConfig.PYTHONPATH = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_PYTHONPATH)
                 WebAppConfig.SQLALCHEMY_DATABASE_URI = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_SQLALCHEMY_DATABASE_URI)
+                WebAppConfig.httpHost = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_HTTP_HOST)
+                WebAppConfig.httpPort = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_HTTP_PORT, 80)
+                WebAppConfig.useReloader = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_USE_RELOADER, False)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)
@@ -127,6 +136,13 @@ class WebAppConfig(object):
             WebAppConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
             return default
         return WebAppConfig.ini_settings.getboolean(section, option)
+
+    @staticmethod
+    def getIntOption(section, option, default=0):
+        if not WebAppConfig.ini_settings.has_option(section, option):
+            WebAppConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            return default
+        return WebAppConfig.ini_settings.getint(section, option)
 
     @staticmethod
     def getOption(section, option, default=''):
