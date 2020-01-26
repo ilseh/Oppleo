@@ -1,0 +1,70 @@
+.paginate_button {
+    padding: 0px !important;
+}
+tbody td {
+    padding: 2px 2px !important;
+    text-align: center;
+    background-color: #36404a;
+}
+div .dt-buttons {
+    margin-bottom: 10px;
+    margin-left: 3px;
+}
+table, table th, table td {
+    border: 0px !important;
+    border-bottom: 1px solid #434f5c !important;
+    /* border-bottom: 1px solid #e9ecef !important; */
+}
+table th {
+    border-right: 1px dashed #434f5c !important;
+}
+.info-button-style {
+    cursor: help;
+}
+.input-text-only {
+    text-align: left;
+    font-style: italic; 
+    width: 100%; 
+    background-color: #36404a !important;
+    border: 0px !important;
+    ::-webkit-input-placeholder { /* WebKit browsers */
+        color:    #36404a;
+    }
+    ::-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+        color:    #36404a;
+    }
+    ::-moz-placeholder { /* Mozilla Firefox 19+ */
+        color:    #36404a;
+    }
+    ::-ms-input-placeholder { /* Internet Explorer 10+ */
+        color:    #36404a;
+    }
+}
+div .dataTables_info {
+  color: #98a6ad !important;
+  margin-left: 5px;
+}
+div .dt-buttons {
+  margin-bottom: 10px;
+  margin-left: 3px;
+}
+div .dataTables_length {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+div .dataTables_length label {
+  font-size: smaller;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  color: #98a6ad !important;
+}
+div .dataTables_length label select {
+  width: 80px;
+  margin-left: 10px;
+  margin-right: 10px;
+}

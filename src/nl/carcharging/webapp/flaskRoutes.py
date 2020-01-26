@@ -42,7 +42,7 @@ def index():
         return render_template('dashboard.html')
     except TemplateNotFound:
         abort(404)
-    except Exception as e:
+    except Exception:
         pass
 
 @flaskRoutes.route("/home")
@@ -55,25 +55,14 @@ def home():
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
 
-"""
-        next = flask.request.args.get('next')
-        # is_safe_url should check if the url is safe for redirects.
-        # See http://flask.pocoo.org/snippets/62/ for an example.
-        if not is_safe_url(next):
-            return flask.abort(400)
-"""
 
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
 def login():
     # For GET requests, display the login form. 
     logger.debug('/login ' + request.method)
     if (request.method == 'GET'):
-#        username = Flask.request.values.get('user') # Your form's
-#        password = Flask.request.values.get('pass') # input names
-#        your_register_routine(username, password)
         return render_template("login.html", form=LoginForm())
     # For POST requests, login the current user by processing the form.
-    #logger.debug(db)
     form = LoginForm()
     logger.debug('login form created')
     if form.validate_on_submit():
@@ -93,9 +82,14 @@ def login():
                     logger.debug('login_user')
                     login_user(user, remember=form.remember_me.data)
                     if 'login_next' in session:
-                        logger.debug('login_next')
+                        logger.debug('login_next: %s' % session['login_next'])
                         login_next = session['login_next']
                         del session['login_next']
+                        # TODO
+                        #if not is_safe_url(next):
+                        #    logger.debug('login_next is not fafe, redirect to home instead')
+                        #    # return app.abort(400)
+                        #    return redirect(url_for('flaskRoutes.index'))
                         return redirect(login_next)
                     else:
                         # Return to the home page
