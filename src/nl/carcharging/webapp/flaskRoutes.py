@@ -12,8 +12,6 @@ import logging
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
 
-from nl.carcharging.config.WebAppConfig import WebAppConfig
-
 from nl.carcharging.models import db
 from nl.carcharging.models.User import User
 from nl.carcharging.webapp.LoginForm import LoginForm
@@ -31,81 +29,85 @@ from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 """
 flaskRoutes = Blueprint('flaskRoutes', __name__, template_folder='templates')
 
-logger = logging.getLogger('nl.carcharging.webapp.routes')
-logger.debug('Initializing routes')
+flaskRoutesLogger = logging.getLogger('nl.carcharging.webapp.flaskRoutes')
+flaskRoutesLogger.debug('Initializing routes')
 
 
 
 @flaskRoutes.route('/', methods=['GET'])
 def index():
-    logger.debug('/ {}'.format(request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/ {}'.format(request.method))
     try:
         return render_template('dashboard.html')
     except TemplateNotFound:
         abort(404)
     except Exception as e:
-        logger.debug('/  - exception')
-        logger.debug(e)
+        flaskRoutesLogger.debug('/  - exception')
+        flaskRoutesLogger.debug(e)
 
 @flaskRoutes.route("/home")
 #@authenticated_resource
 def home():
-    logger.debug('/home {}'.format(request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/home {}'.format(request.method))
     return redirect('/')
 
 
 @flaskRoutes.errorhandler(404)
 def page_not_found(e):
-    logger.debug('404 page not found error handler')
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('404 page not found error handler')
     return render_template('errorpages/404.html'), 404
 
 
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
 def login():
     # For GET requests, display the login form. 
-    logger.debug('/login {}'.format(request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/login {}'.format(request.method))
     if (request.method == 'GET'):
         return render_template("login.html", form=LoginForm())
     # For POST requests, login the current user by processing the form.
     form = LoginForm()
-    logger.debug('login form created')
+    flaskRoutesLogger.debug('login form created')
     if form.validate_on_submit():
-        logger.debug('loginForm valid on submit')
+        flaskRoutesLogger.debug('loginForm valid on submit')
         user = User.query.get(form.username.data)
-        logger.debug('loginForm valid on submit')
+        flaskRoutesLogger.debug('loginForm valid on submit')
         try:
-            logger.debug('form.username.data = ' + form.username.data)
+            flaskRoutesLogger.debug('form.username.data = ' + form.username.data)
             if user is not None:
-                logger.debug('if user:')
+                flaskRoutesLogger.debug('if user:')
                 if check_password_hash(user.password, form.password.data):
-                    logger.debug('check_password_hash ok')
+                    flaskRoutesLogger.debug('check_password_hash ok')
                     user.authenticated = True
-                    logger.debug('place in db.session')
+                    flaskRoutesLogger.debug('place in db.session')
                     db.session.add(user)
                     db.session.commit()
-                    logger.debug('login_user')
+                    flaskRoutesLogger.debug('login_user')
                     login_user(user, remember=form.remember_me.data)
                     if 'login_next' in session:
-                        logger.debug('login_next: %s' % session['login_next'])
+                        flaskRoutesLogger.debug('login_next: %s' % session['login_next'])
                         login_next = session['login_next']
                         del session['login_next']
                         # TODO
                         #if not is_safe_url(next):
-                        #    logger.debug('login_next is not fafe, redirect to home instead')
+                        #    flaskRoutesLogger.debug('login_next is not fafe, redirect to home instead')
                         #    # return app.abort(400)
                         #    return redirect(url_for('flaskRoutes.index'))
                         return redirect(login_next)
                     else:
                         # Return to the home page
-                        logger.debug('flaskRoutes.home')
+                        flaskRoutesLogger.debug('flaskRoutes.home')
                         return redirect(url_for('flaskRoutes.home'))
         except Exception as e:
-            logger.debug(type(e))
-            logger.debug(e.args)
-            logger.debug(e)
+            flaskRoutesLogger.debug(type(e))
+            flaskRoutesLogger.debug(e.args)
+            flaskRoutesLogger.debug(e)
 
 
-    logger.debug('nothing of that all')
+    flaskRoutesLogger.debug('nothing of that all')
     return render_template("login.html", form=form, msg="Login failed")
 
 def authenticated_resource(function):
@@ -132,7 +134,8 @@ def authenticated_resource(function):
 @authenticated_resource
 #@login_required
 def logout():
-    logger.debug('/logout {}'.format(request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/logout {}'.format(request.method))
     """Logout the current user."""
     user = current_user
     user.authenticated = False
@@ -146,7 +149,8 @@ def logout():
 @flaskRoutes.route("/change_password", methods=["GET", "POST"])
 @authenticated_resource
 def change_password():
-    logger.debug('/change_password {}'.format(request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/change_password {}'.format(request.method))
     if (request.method == 'GET'):
         return render_template(
             'change_password.html', 
@@ -195,14 +199,16 @@ def change_password():
 
 @flaskRoutes.route("/about")
 def about():
-    logger.debug('/about {}'.format(request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/about {}'.format(request.method))
     return render_template("about.html")
 
 @flaskRoutes.route("/usage")
 @flaskRoutes.route("/usage/")
 @flaskRoutes.route("/usage/<int:cnt>")
 def usage(cnt="undefined"):
-    logger.debug('/usage ' + request.method)
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/usage ' + request.method)
     return render_template("usage_table.html", cnt=cnt)
 
 
@@ -210,7 +216,8 @@ def usage(cnt="undefined"):
 @flaskRoutes.route("/usage_table/")
 @flaskRoutes.route("/usage_table/<int:cnt>")
 def usage_table(cnt="undefined"):
-    logger.debug('/usage_table {} {}'.format(active, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/usage_table {} {}'.format(cnt, request.method))
     return render_template("usage_table.html", cnt=cnt)
 
 
@@ -219,7 +226,8 @@ def usage_table(cnt="undefined"):
 @flaskRoutes.route("/usage_graph/<int:cnt>")
 @authenticated_resource
 def usage_graph(cnt="undefined"):
-    logger.debug('/usage_graph {} {}'.format(cnt, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/usage_graph {} {}'.format(cnt, request.method))
     return render_template("usage_graph.html", cnt=cnt)
 
 
@@ -228,7 +236,8 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-    logger.debug('/settings {} {}'.format(active, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
     diag = Raspberry().get_all()
     diag_json = json.dumps(diag)
     charger_config_str = ChargerConfigModel().get_config().to_str()
@@ -244,7 +253,8 @@ def settings(active=1):
 @flaskRoutes.route("/usage_data/")
 @flaskRoutes.route("/usage_data/<int:cnt>")
 def usage_data(cnt=100):
-    logger.debug('/usage_data {} {}'.format(cnt, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/usage_data {} {}'.format(cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
     device_measurement.energy_device_id = "laadpaal_noord"
     qr = device_measurement.get_last_n_saved(energy_device_id="laadpaal_noord",n=cnt)
@@ -258,7 +268,8 @@ def usage_data(cnt=100):
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>")
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
 def usage_data_since(since_timestamp, cnt=-1):
-    logger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
     device_measurement.energy_device_id = "laadpaal_noord"
     qr = device_measurement.get_last_n_saved_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
@@ -273,7 +284,8 @@ def usage_data_since(since_timestamp, cnt=-1):
 @flaskRoutes.route("/charge_sessions/")
 @authenticated_resource
 def charge_sessions(since_timestamp=None):
-    logger.debug('/charge_sessions {} {}'.format(since_timestamp, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/charge_sessions {} {}'.format(since_timestamp, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     if (not jsonRequested):
@@ -303,10 +315,11 @@ def charge_sessions(since_timestamp=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>", methods=["GET", "POST"])
 @authenticated_resource
 def rfid_tokens(token=None):
-    logger.debug('/rfid_tokens {} {}'.format(token, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/rfid_tokens {} {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
-    logger.debug('/rfid_tokens method: {} token: {} jsonRequested: {}'.format(request.method, token, jsonRequested))
+    flaskRoutesLogger.debug('/rfid_tokens method: {} token: {} jsonRequested: {}'.format(request.method, token, jsonRequested))
     if (not jsonRequested):
         if (token == None):
             return render_template("tokens.html")
@@ -315,7 +328,7 @@ def rfid_tokens(token=None):
             return render_template("tokens.html")
         rfid_model.cleanupOldToken()    # Remove any expired token info
         rfid_change_form = RfidChangeForm()
-        logger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
+        flaskRoutesLogger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
         if (request.method == 'POST'):
             # Update for specific token
             if rfid_change_form.validate_on_submit():
@@ -381,10 +394,11 @@ def rfid_tokens(token=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
 def TeslaApi_GenerateOAuth(token=None):
-    logger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth {}'.format(token, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
-    logger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -419,10 +433,11 @@ def TeslaApi_GenerateOAuth(token=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RefreshOAuth(token=None):
-    logger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth {}'.format(token, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
-    logger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -453,10 +468,11 @@ def TeslaApi_RefreshOAuth(token=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RevokeOAuth(token=None):
-    logger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth {}'.format(token, request.method))
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
-    logger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
