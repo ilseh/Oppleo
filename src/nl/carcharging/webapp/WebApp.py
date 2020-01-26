@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-import signal
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 WebAppConfig.initLogger('CarChargerWebApp')
@@ -50,7 +49,7 @@ WebAppConfig.app = app
 #app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = WebAppConfig.DATABASE_URL
-app.config['EXPLAIN_TEMPLATE_LOADING'] = True
+app.config['EXPLAIN_TEMPLATE_LOADING'] = False
 # import os; os.urandom(24)
 app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
 app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
@@ -122,22 +121,13 @@ def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
 @event.listens_for(RfidModel, 'after_insert')
 def RfidModel_after_update(mapper, connection, target):
     logger.debug("'after_insert' or 'after_update' event for RfidModel")
-
-
-def sig_handler(signal_number, current_stack_frame):
-    global wsThread
-    logger.debug('Termination signalled...')
-    wsThread.sigterm = True
-
+    
 
 if __name__ == "__main__":
-
-    signal.signal(signal.SIGTERM, sig_handler)
-    signal.signal(signal.SIGINT, sig_handler)
-
     wsThread.start(appSocketIO)
 
     logger.debug('Starting web server...')
     appSocketIO.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
     wsThread.wait()
+
