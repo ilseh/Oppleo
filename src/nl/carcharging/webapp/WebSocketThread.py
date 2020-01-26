@@ -18,6 +18,7 @@ class WebSocketThread(object):
         self.thread = None
 
     def websocket_start(self):
+        global WebAppConfig
         self.logger.debug('Starting background task...')
         while not self.sigterm:
             self.app.sleep(WebAppConfig.device_measurement_check_interval)
@@ -30,17 +31,21 @@ class WebSocketThread(object):
         self.logger.debug(f'Terminating thread')
 
     def sig_handler(self, signum, frame):
+        print('Termination signalled ({})...'.format(signum))
         self.logger.debug('Termination signalled ({})...'.format(signum))
         self.sigterm = True
 
     def start(self, app):
         self.logger.debug('Launching background task...')
         self.app = app
-        signal.signal(signal.SIGTERM, self.sig_handler)
-        signal.signal(signal.SIGINT, self.sig_handler)
+        self.logger.debug('Defining SIGTERM and SIGINT signal handlers...')
+        #signal.signal(signal.SIGTERM, self.sig_handler)
+        #signal.signal(signal.SIGINT, self.sig_handler)
+        self.logger.debug('start_background_task()')
         self.thread = self.app.start_background_task(self.websocket_start)
 
     def websocket_send_usage_update(self, type):
+        global WebAppConfig
         self.logger.debug('Checking usage data...')
 
         device_measurement = EnergyDeviceMeasureModel()  
