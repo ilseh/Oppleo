@@ -36,6 +36,7 @@ from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.User import User
 from nl.carcharging.models.RfidModel import RfidModel
+from nl.carcharging.webapp.WebSocketThread import WebSocketThread
 
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
@@ -70,59 +71,7 @@ db.init_app(app)
 WebAppConfig.login_manager = LoginManager()
 WebAppConfig.login_manager.init_app(app)
 
-
-class WebSocketThread(object):
-    # Count the message updates send through the websocket
-    counter = 1
-    most_recent = ""
-    sigterm = False
-
-    def __init__(self):
-        self.logger = logging.getLogger('nl.carcharging.models.SessionModel')
-        self.logger.debug('Initializing SessionModel without data')
-
-        signal.signal(signal.SIGTERM, self.sig_handler)
-        signal.signal(signal.SIGINT, self.sig_handler)
-        self.thread = None
-
-
-    def sig_handler(self):
-        logger.debug('Termination signalled...')
-        self.sigterm = True
-
-
-    def websocket_start(self):
-        logger.debug('Starting background task...')
-        while not self.sigterm:
-            appSocketIO.sleep(WebAppConfig.device_measurement_check_interval)
-            try:
-                self.websocket_send_usage_update("status_update")
-            except OperationalError as e:
-                # If the database is unavailable (or no access allowed),
-                # remain running untill the access is restored
-                logger.debug(f'Something wrong with the database! {e}')
-
-    def start(self):
-        logger.debug('Launching background task...')
-        self.thread = appSocketIO.start_background_task(self.websocket_start)
-
-    def websocket_send_usage_update(self, type):
-        logger.debug('Checking usage data...')
-
-        device_measurement = EnergyDeviceMeasureModel()  
-        device_measurement.energy_device_id = "laadpaal_noord"
-        qr = device_measurement.get_last_saved(energy_device_id="laadpaal_noord")
-        if (self.most_recent != qr.get_created_at_str()):
-            logger.debug(f'Send msg {self.counter} via websocket...')
-            appSocketIO.emit('status_update', { 'data': qr.to_str() }, namespace='/usage')
-            self.most_recent = qr.get_created_at_str()
-        else:
-            logger.debug('No change in usage at this time.')
-
-        self.counter += 1
-
-    def wait(self):
-        self.thread.join()
+wsThread = WebSocketThread()
 
 
 @WebAppConfig.login_manager.user_loader
@@ -153,10 +102,11 @@ def page_not_found(e):
 try:
     @uwsgidecorators.postfork
     def postFork():
+        global wsThread
+        global appSocketIO
         logger.debug('postFork()')
-        wsThread = WebSocketThread()
         logger.debug('Starting Web Sockets...')
-        wsThread.start()
+        wsThread.start(appSocketIO)
         wsThread.wait()
 except NameError:
     logger.debug("! @uwsgidecorators.postfork excluded...")
@@ -174,11 +124,19 @@ def RfidModel_after_update(mapper, connection, target):
     logger.debug("'after_insert' or 'after_update' event for RfidModel")
 
 
-if __name__ == "__main__":
-    wsThread = WebSocketThread()
-#    wsThread.start()
+def sig_handler(signal_number, current_stack_frame):
+    global wsThread
+    logger.debug('Termination signalled...')
+    wsThread.sigterm = True
 
-    
+
+if __name__ == "__main__":
+
+    signal.signal(signal.SIGTERM, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
+
+    wsThread.start(appSocketIO)
+
     logger.debug('Starting web server...')
     appSocketIO.run(app, port=5000, debug=True, use_reloader=False, host='0.0.0.0')
 
