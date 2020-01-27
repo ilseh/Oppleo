@@ -41,5 +41,4 @@ class EvseReader(object):
 
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            self.logger.error('Could not start EvseReader loop: %s', ex)
-            self.logger.error(exc_type, fname, exc_tb.tb_lineno)
+            self.logger.error('Could not start EvseReader loop: %s %s %s %s', ex, exc_type, fname, exc_tb.tb_lineno)
