@@ -15,6 +15,7 @@ class Raspberry():
 
 
     def get_ip_info(self):
+        self.logger.("get_ip_info()")
         i_ids = netifaces.interfaces()
         r = {}
         for i_id in i_ids:
@@ -29,15 +30,18 @@ class Raspberry():
         return r
 
     def get_os(self):
+        self.logger.("get_os()")
         return os.uname()
 
     def get_hardware(self):
+        self.logger.("get_hardware()")
         hw = {}
         for key, value in get_cpu_info().items():
             hw[key] = value
         return hw
 
     def get_model_old(self):
+        self.logger.("get_model_old()")
         data = self.get_hardware()
         for entry in data:
             if "Model" in entry:
@@ -45,6 +49,7 @@ class Raspberry():
         return "Unknown"
 
     def get_cpuinfo_entry(self, entry_name="Unknown"):
+        self.logger.("get_cpuinfo_entry()")
         data = self.get_cpuinfo()
         if data is None:
             return "Unknown"
@@ -58,15 +63,19 @@ class Raspberry():
         return "Unknown"
 
     def get_serial(self):
+        self.logger.("get_serial()")
         return self.get_cpuinfo_entry('Serial')
 
     def get_revision(self):
+        self.logger.("get_revision()")
         return self.get_cpuinfo_entry('Revision')
 
     def get_model(self):
+        self.logger.("get_model()")
         return self.get_cpuinfo_entry('Model')
 
     def get_cpuinfo(self):
+        self.logger.("get_cpuinfo()")
         cpu = {}
         i = 0
         cpu[i] = {}
@@ -87,6 +96,7 @@ class Raspberry():
         return cpu
 
     def get_revision_old(self):
+        self.logger.("get_revision_old()")
         # Extract board revision from cpuinfo file
         myrevision = "0000"
         try:
@@ -102,9 +112,11 @@ class Raspberry():
         return myrevision
 
     def get_cpu_percent(self):
+        self.logger.("get_cpu_percent()")
         return str(psutil.cpu_percent())
 
     def get_virtual_memory(self):
+        self.logger.("get_virtual_memory()")
         mem = {}
         vmem = psutil.virtual_memory()
         mem['available'] = round(
@@ -120,6 +132,7 @@ class Raspberry():
         return mem
 
     def get_physical_memory(self):
+        self.logger.("get_physical_memory()")
         mem = {}
         i = 0
         mem[i] = {}
@@ -140,6 +153,7 @@ class Raspberry():
         return mem
 
     def format_size(self, val): # 18.983.407.616 - 18GB 18.983MB - 18.983.407KB - 18.983.407.616B
+        self.logger.("format_size()")
         f = {}
         f['size'] = val
         f['unit'] = "Bytes"
@@ -158,6 +172,7 @@ class Raspberry():
         return f 
 
     def get_disk(self):
+        self.logger.("get_disk()")
         dsk = {}
         du = psutil.disk_usage('/')
         dsk['free'] = self.format_size(du.free)
@@ -168,6 +183,7 @@ class Raspberry():
         return dsk
 
     def get_all(self):
+        self.logger.("get_all()")
         data = {}
         data['ip'] = self.get_ip_info()
         data['revision'] = self.get_revision()
