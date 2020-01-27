@@ -1,5 +1,4 @@
 
-
 import logging
 
 from nl.carcharging.services.EvseReaderProd import EvseReaderProd, EvseState
@@ -24,7 +23,6 @@ class EvseReaderDev(object):
 
 class EvseReader(object):
 
-
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
         if GenericUtil.isProd():
@@ -35,4 +33,7 @@ class EvseReader(object):
             self.reader = EvseReaderDev()
 
     def loop(self, cb_until, cb_result):
-        self.reader.loop(cb_until, cb_result)
+        try:
+            self.reader.loop(cb_until, cb_result)
+        except Exception as ex:
+            self.logger.error('Could not start EvseReader loop: %s', ex)
