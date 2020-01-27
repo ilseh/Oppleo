@@ -1,5 +1,7 @@
 
 import logging
+import os
+import sys
 
 from nl.carcharging.services.EvseReaderProd import EvseReaderProd, EvseState
 from nl.carcharging.utils.GenericUtil import GenericUtil
@@ -36,4 +38,8 @@ class EvseReader(object):
         try:
             self.reader.loop(cb_until, cb_result)
         except Exception as ex:
+
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             self.logger.error('Could not start EvseReader loop: %s', ex)
+            self.logger.error(exc_type, fname, exc_tb.tb_lineno)
