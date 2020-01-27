@@ -41,7 +41,7 @@ class EvseReaderUtil:
         self._pwm_frequency = None
         self._pwm_pulse_width_microseconds = None
 
-        self.logger.debug('Setting callback')
+        self.logger.debug('Setting callback gpio %s, pigpio %s', gpio, pigpio)
         self._cb = pi.callback(gpio, pigpio.EITHER_EDGE, self._cbf)
         self.logger.debug('Setting callback done')
 
