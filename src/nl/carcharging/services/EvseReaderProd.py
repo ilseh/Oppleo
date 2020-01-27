@@ -72,11 +72,13 @@ class EvseReaderProd:
 
     def loop(self, cb_until, cb_result):
 
+        self.logger.debug('In loop, doing setup GPIO');
         GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
         GPIO.setup(6, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         pigpio_pi = pigpio.pi()
 
+        self.logger.debug('Init EvseReaderUtil')
         evse_reader = EvseReaderUtil(pigpio_pi, PWM_GPIO)
 
         evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
