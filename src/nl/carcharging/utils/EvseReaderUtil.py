@@ -25,6 +25,7 @@ class EvseReaderUtil:
       the old reading has no effect.  This may be used to
       smooth the data.
       """
+        self.logger = logging.getLogger('nl.carcharging.utils.EvseReaderUtil')
         self.pi = pi
         self.gpio = gpio
 
@@ -40,7 +41,9 @@ class EvseReaderUtil:
         self._pwm_frequency = None
         self._pwm_pulse_width_microseconds = None
 
+        self.logger.debug('Setting callback')
         self._cb = pi.callback(gpio, pigpio.EITHER_EDGE, self._cbf)
+        self.logger.debug('Setting callback done')
 
     def _cbf(self, gpio, level, tick):
 
