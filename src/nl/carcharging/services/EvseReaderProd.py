@@ -78,7 +78,6 @@ class EvseReaderProd:
 
         pigpio_pi = pigpio.pi()
 
-        self.logger.debug('Init EvseReaderUtil')
         evse_reader = EvseReaderUtil(pigpio_pi, PWM_GPIO)
         self.logger.debug('Init EvseReaderUtil done')
 
