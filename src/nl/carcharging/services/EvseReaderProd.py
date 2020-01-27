@@ -80,6 +80,7 @@ class EvseReaderProd:
 
         self.logger.debug('Init EvseReaderUtil')
         evse_reader = EvseReaderUtil(pigpio_pi, PWM_GPIO)
+        self.logger.debug('Init EvseReaderUtil done')
 
         evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
 
