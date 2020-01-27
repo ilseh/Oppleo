@@ -313,6 +313,7 @@ def charge_sessions(since_timestamp=None):
 @flaskRoutes.route("/rfid_tokens", methods=["GET"])
 @flaskRoutes.route("/rfid_tokens/", methods=["GET"])
 @flaskRoutes.route("/rfid_tokens/<path:token>", methods=["GET", "POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
 @authenticated_resource
 def rfid_tokens(token=None):
     global flaskRoutesLogger
