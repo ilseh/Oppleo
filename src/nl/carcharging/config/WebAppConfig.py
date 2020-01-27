@@ -80,7 +80,9 @@ class WebAppConfig(object):
             print('Looking for ini file ' + configFile)
             WebAppConfig.ini_settings.read_file(open(configFile, "r"))
         except FileNotFoundError:
-            WebAppConfig.logger.debug('Ini file not found.')
+            WebAppConfig.logger.debug('Ini file not found!!!')
+            print('Ini file not found!!!')
+            os._exit(-1)
             return
 
         # Read the ini file

@@ -73,6 +73,29 @@
         d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
       )
     }
+    // Convert 06/01/2020, 00:00:00 to 6 Januari 2020
+    function formatDbDateTimeStr2Date( dS ) {
+      if ( (typeof dS !== 'string' && !(dS instanceof String)) ||
+          dS === null ||
+          dS === undefined
+         ) 
+         return '-'
+      dsp1 = dS.split(', ')
+      dEls = dsp1[0].split('/')
+      return parseInt(dEls[0]) + ' ' + months[parseInt(dEls[1])-1] + ' ' + dEls[2]
+    }
+    // Convert 06/01/2020, 00:00:00 to 6 Januari 2020 00:00u
+    function formatDbDateTimeStr2DateTime( dS ) {
+      if ( (typeof dS !== 'string' && !(dS instanceof String)) ||
+          dS === null ||
+          dS === undefined
+         ) 
+         return '-'
+      dsp1 = dS.split(', ')
+      tEls = dsp1[1].split(':')
+      return formatDbDateTimeStr2Date(dS) + ' ' +
+             tEls[0].trim() + ':' + tEls[1] + 'u'
+    }
     var dt = undefined
     function getRfidTokens() {
       console.log(timestamp() + ' getRfidTokens()')
@@ -146,22 +169,17 @@
         dt.draw('full-reset')
         data.forEach(element => {
 
+          if (typeof element.valid_from === 'string' || element.valid_from instanceof String) {
+            d = new Date(element.valid_from)
+          }
+          var dateToStr = ''
           dt.row.add([
             element.rfid,
             (element.name == 'None' ? '-' : element.name),
             (element.enabled ? "Ja" : "Nee"),
-            ( (typeof element.valid_from === 'string' || element.valid_from instanceof String) ?
-              element.valid_from :
-              '-'
-            ),
-            ( (typeof element.valid_until === 'string' || element.valid_until instanceof String) ?
-              element.valid_until :
-              '-'
-            ),
-            ( (typeof element.last_used_at === 'string' || element.last_used_at instanceof String) ?
-              element.last_used_at :
-              '-'
-            ),
+            formatDbDateTimeStr2Date(element.valid_from),
+            formatDbDateTimeStr2Date(element.valid_until),
+            formatDbDateTimeStr2DateTime(element.last_used_at),
             ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
             ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
             ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
