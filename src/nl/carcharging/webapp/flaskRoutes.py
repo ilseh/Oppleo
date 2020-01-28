@@ -12,6 +12,8 @@ import logging
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
 
+from nl.carcharging.config.WebAppConfig import WebAppConfig
+
 from nl.carcharging.models import db
 from nl.carcharging.models.User import User
 from nl.carcharging.webapp.LoginForm import LoginForm
@@ -39,7 +41,10 @@ def index():
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/ {}'.format(request.method))
     try:
-        return render_template('dashboard.html')
+        return render_template(
+            'dashboard.html',
+            webappconfig=WebAppConfig
+            )
     except TemplateNotFound:
         abort(404)
     except Exception as e:
@@ -323,10 +328,16 @@ def rfid_tokens(token=None):
     flaskRoutesLogger.debug('/rfid_tokens method: {} token: {} jsonRequested: {}'.format(request.method, token, jsonRequested))
     if (not jsonRequested):
         if (token == None):
-            return render_template("tokens.html")
+            return render_template(
+                'tokens.html', 
+                webappconfig=WebAppConfig
+                )
         rfid_model = RfidModel().get_one(token)
         if (rfid_model == None):
-            return render_template("tokens.html")
+            return render_template(
+                'tokens.html', 
+                webappconfig=WebAppConfig
+            )
         rfid_model.cleanupOldToken()    # Remove any expired token info
         rfid_change_form = RfidChangeForm()
         flaskRoutesLogger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
@@ -370,11 +381,13 @@ def rfid_tokens(token=None):
             # TODO - what went wrong? message!
             return render_template("token.html",
                     rfid_model=rfid_model,
-                    form=rfid_change_form
+                    form=rfid_change_form,
+                    webappconfig=WebAppConfig
                 )        
         return render_template("token.html",
                     rfid_model=rfid_model,
-                    form=rfid_change_form
+                    form=rfid_change_form,
+                    webappconfig=WebAppConfig
                 )        
     # Check if token exist, if not rfid is None
     if (token == None):

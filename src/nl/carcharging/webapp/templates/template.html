@@ -48,7 +48,7 @@
 		<meta name="msapplication-starturl" content="/">
 
         <script>
-            var factor_Whkm = 162
+            var factor_Whkm = {% if webappconfig is not none %}{{ webappconfig.factor_Whkm }}{% else %}162{% endif %}
         </script>
 
         <style>
