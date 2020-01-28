@@ -28,3 +28,5 @@ def init_log(process_name, log_file):
     log_file = open(log_file, "a")
 
     sys.stdout = log_file
+
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> logfile????')
