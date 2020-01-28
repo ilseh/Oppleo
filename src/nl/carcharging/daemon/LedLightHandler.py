@@ -244,6 +244,7 @@ def main():
     logger = logging.getLogger(PROCESS_NAME)
     logger.info('Starting for environment %s' % env_name)
 
+
     if len(sys.argv) != 2:
         sys.exit('Invalid COMMAND %s, give an argument, ie \'start\'' % sys.argv[0])
 
