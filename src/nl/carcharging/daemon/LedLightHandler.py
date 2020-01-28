@@ -97,7 +97,7 @@ class LedLightHandler(Service):
 
             sys.stdout = log_file
 
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> logfile????')
+            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> logfile thread????')
             self.evse_reader.loop(self.got_sigterm, lambda evse_state: self.try_handle_charging(evse_state))
         except Exception as ex:
             self.logger.exception('Could not start evse reader loop')
