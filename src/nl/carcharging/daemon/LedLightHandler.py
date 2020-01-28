@@ -87,7 +87,7 @@ class LedLightHandler(Service):
         #                                           args=(self.got_sigterm,
         #                                                 lambda evse_state: self.try_handle_charging(evse_state)))
 
-        thread_for_evse_reader = threading.Thread(target=self.start_evse_reader_loop_in_thread)
+        thread_for_evse_reader = threading.Thread(target=self.start_evse_reader_loop)
         thread_for_evse_reader.start()
 
     def start_evse_reader_loop(self):
