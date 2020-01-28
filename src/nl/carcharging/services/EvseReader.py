@@ -39,5 +39,4 @@ class EvseReader(object):
         try:
             self.reader.loop(cb_until, cb_result)
         except Exception as ex:
-            self.logger.exception('Could not start EvseReader loop: %s', ex)
-            traceback.print_exc()
+            self.logger.exception('Could not start EvseReader loop')
