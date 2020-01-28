@@ -23,6 +23,7 @@ class WebAppConfig(object):
     INI_HTTP_HOST = 'HTTP_HOST'
     INI_HTTP_PORT = 'HTTP_PORT'
     INI_USE_RELOADER = 'USE_RELOADER'
+    INI_FACTOR_WHKM = 'FACTOR_WHKM'
 
     INI_IS_PROD = 'Production'
 
@@ -50,6 +51,10 @@ class WebAppConfig(object):
     httpHost = '0.0.0.0'  
     httpPort = 80
     useReloader = False
+    # Factor to calculate km/h equivalent of Wh per km
+    # Tesla is using 162, which matches the in-car screen
+    # Actual average over first 16.836 km on Tesla Model 3 is 181.8
+    factor_Whkm = 162
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -109,6 +114,7 @@ class WebAppConfig(object):
                 WebAppConfig.httpHost = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_HTTP_HOST)
                 WebAppConfig.httpPort = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_HTTP_PORT, 80)
                 WebAppConfig.useReloader = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_USE_RELOADER, False)
+                WebAppConfig.factor_Whkm = WebAppConfig.getFloatOption(targetSectionName, WebAppConfig.INI_FACTOR_WHKM, 162)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)
@@ -145,6 +151,13 @@ class WebAppConfig(object):
             WebAppConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
             return default
         return WebAppConfig.ini_settings.getint(section, option)
+
+    @staticmethod
+    def getFloatOption(section, option, default=0):
+        if not WebAppConfig.ini_settings.has_option(section, option):
+            WebAppConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            return default
+        return WebAppConfig.ini_settings.getfloat(section, option)
 
     @staticmethod
     def getOption(section, option, default=''):
