@@ -462,7 +462,7 @@
                 <div class="input-daterange input-group" id="valid-range">
                   <span class="input-group-addon bg-primary b-0 text-white">Van</span>
                   <input type="text" class="form-control" name="valid_from" 
-                      value="{% if rfid_model['valid_from'] is not none %}{{ rfid_model['valid_from'] }}{% endif %}"/>
+                      value="{% if rfid_model['valid_from'] is not none %}{{ rfid_model['valid_from'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
                   <button class="input-group-addon bg-dark b-0 text-white"
                     onclick="$('input[name=valid_from]').val(''); return false;">
                     <i class="far fa-trash-alt"></i>
