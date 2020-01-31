@@ -20,3 +20,5 @@ src/nl/carcharging/webapp/.DS_Store
 src/nl/carcharging/config/carcharger.ini
 # DON'T SEND THE CURL CMD FILE WITH UNIFI PASSWORDS TO GITHUB !!!
 snapshot/grab_img.sh
+# Don't store the service file, generate a new one at each platform
+webapp/CarChargerWebApp.service

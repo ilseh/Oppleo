@@ -10,9 +10,9 @@ User=pi
 Group=www-data
 # process starts, doesn't exit unless failing
 Type=simple
-WorkingDirectory=/Users/frans/Projects/RestfulCharging/src/
+WorkingDirectory=#WORKINGDIR_PLACEHOLDER/src/
 ; By using the python3 cmd in the venv we do not need to set a vertial environment Environment= (baked in)
-ExecStart=/Users/frans/Projects/RestfulCharging/venv/bin/python3 nl/carcharger/webapp/WebApp.py socketserver
+ExecStart=#WORKINGDIR_PLACEHOLDER/venv/bin/python3 nl/carcharger/webapp/WebApp.py socketserver
 
 [Install]
 # start with default stuff when we enable automatic startup
