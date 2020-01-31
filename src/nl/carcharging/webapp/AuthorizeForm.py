@@ -1,12 +1,10 @@
 
 from flask_wtf import FlaskForm
 
-from wtforms import StringField, BooleanField, SubmitField
+from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 
-class LoginForm(FlaskForm):
-    username = StringField('username', validators=[DataRequired()])
+class AuthorizeForm(FlaskForm):
     password = StringField('password', validators=[DataRequired()])
-    remember_me = BooleanField('remember_me')
     submit = SubmitField('Sign In')
     # recaptcha = RecaptchaField()
