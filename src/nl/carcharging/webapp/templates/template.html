@@ -237,29 +237,34 @@
                                 {% if current_user.is_authenticated %}
                                 <li>
                                     <a href="{{ url_for('flaskRoutes.change_password') }}" class="stay">
-                                        <i class="fa fa-key"></i> Change password
+                                        <i class="fa fa-key"></i> Wijzig wachtwoord
                                     </a>
+                                </li>
+                                <li class="has-submenu">
+                                    <a href="#"><i class="fas fa-exclamation-triangle"></i> Beheer</a>
+                                    <ul class="submenu">
+                                        <li>
+                                            <a href="{{ url_for('flaskRoutes.reboot') }}" class="stay">
+                                                <i class="fas fa-redo-alt"></i> Herstarten
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url_for('flaskRoutes.shutdown') }}" class="stay">
+                                                <i class="fas fa-power-off"></i> Uitschakelen
+                                            </a>
+                                        </li>        
+                                    </ul>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('flaskRoutes.logout') }}" class="stay">
-                                        <i class="fas fa-sign-out-alt"></i> Sign out
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.reboot') }}" class="stay">
-                                        <i class="fas fa-redo-alt"></i> Herstarten
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.shutdown') }}" class="stay">
-                                        <i class="fas fa-power-off"></i> Uitschakelen
+                                        <i class="fas fa-sign-out-alt"></i> Afmelden
                                     </a>
                                 </li>
                                 {% endif %}
                                 {% if not current_user.is_authenticated %}
                                 <li>
                                     <a href="{{ url_for('flaskRoutes.login') }}" class="stay">
-                                        <i class="fas fa-sign-in-alt"></i> Login
+                                        <i class="fas fa-sign-in-alt"></i> Aanmelden
                                     </a>
                                 </li>
                                 {% endif %}
