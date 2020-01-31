@@ -102,11 +102,14 @@ def login():
                         flaskRoutesLogger.debug('login_next: %s' % session['login_next'])
                         login_next = session['login_next']
                         del session['login_next']
-                        # TODO
-                        #if not is_safe_url(next):
-                        #    flaskRoutesLogger.debug('login_next is not fafe, redirect to home instead')
-                        #    # return app.abort(400)
-                        #    return redirect(url_for('flaskRoutes.index'))
+
+                        from urllib.parse import urlparse
+                        # only allow relative paths, so there cannot be a netloc (host)
+                        if bool(urlparse(login_next).netloc):
+                            # do not allow this 
+                            flaskRoutesLogger.debug('login_next: {} not allowed. Using default route'.format(login_next))
+                            return redirect(url_for('flaskRoutes.home'))
+                        # Safe next
                         return redirect(login_next)
                     else:
                         # Return to the home page
