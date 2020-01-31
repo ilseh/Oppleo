@@ -1,3 +1,4 @@
+import os
 from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session
 
 from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
@@ -17,6 +18,7 @@ from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.models import db
 from nl.carcharging.models.User import User
 from nl.carcharging.webapp.LoginForm import LoginForm
+from nl.carcharging.webapp.AuthorizeForm import AuthorizeForm
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
@@ -221,6 +223,69 @@ def about():
     return render_template("about.html",
                 webappconfig=WebAppConfig
                 )
+
+
+@flaskRoutes.route("/shutdown", methods=["GET", "POST"])
+@flaskRoutes.route("/shutdown/", methods=["GET", "POST"])
+@authenticated_resource
+def shutdown():
+    global flaskRoutesLogger, WebAppConfig
+    # For GET requests, display the authorize form. 
+    flaskRoutesLogger.debug('/shutdown {}'.format(request.method))
+    if (request.method == 'GET'):
+        return render_template("authorize.html", 
+            form=AuthorizeForm(),
+            requesttitle="Uitschakelen",
+            webappconfig=WebAppConfig
+            )
+    # For POST requests, login the current user by processing the form.
+    form = AuthorizeForm()
+    if form.validate_on_submit() and \
+       check_password_hash(current_user.password, form.password.data):
+        flaskRoutesLogger.debug('Shutdown requested. Shutting down...')
+#        os.system('sudo shutdown now')
+        return render_template("shuttingdown.html", 
+                    webappconfig=WebAppConfig
+                    )
+    else:
+        return render_template("authorize.html", 
+                form=form, 
+                requesttitle="Uitschakelen",
+                errormsg="Het wachtwoord is onjuist",
+                webappconfig=WebAppConfig
+                )
+
+
+@flaskRoutes.route("/reboot", methods=["GET", "POST"])
+@flaskRoutes.route("/reboot/", methods=["GET", "POST"])
+@authenticated_resource
+def reboot():
+    global flaskRoutesLogger, WebAppConfig
+    # For GET requests, display the authorize form. 
+    flaskRoutesLogger.debug('/reboot {}'.format(request.method))
+    if (request.method == 'GET'):
+        return render_template("authorize.html", 
+            form=AuthorizeForm(),
+            requesttitle="Herstarten",
+            webappconfig=WebAppConfig
+            )
+    # For POST requests, login the current user by processing the form.
+    form = AuthorizeForm()
+    if form.validate_on_submit() and \
+       check_password_hash(current_user.password, form.password.data):
+        flaskRoutesLogger.debug('Reboot requested. Rebooting now...')
+        # os.system('sudo reboot')
+        return render_template("rebooting.html", 
+                    webappconfig=WebAppConfig
+                    )
+    else:
+        return render_template("authorize.html", 
+                form=form, 
+                requesttitle="Herstarten",
+                errormsg="Het wachtwoord is onjuist",
+                webappconfig=WebAppConfig
+                )
+
 
 @flaskRoutes.route("/usage")
 @flaskRoutes.route("/usage/")
