@@ -13,7 +13,7 @@ source $PRJDIR/venv/bin/activate
 echo " make sure pip is up to date..."
 pip install --upgrade pip > /dev/null 2>&1
 echo " install psycopg2..."
-pip install psycopg2-binary 
+pip install psycopg2-binary > /dev/null 2>&1
 echo " set SSL library for C compiler..."
 export LDFLAGS="-L/usr/local/opt/openssl/lib"
 # Check if this is on a Raspberry
