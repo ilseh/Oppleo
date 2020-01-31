@@ -19,9 +19,7 @@ export LDFLAGS="-L/usr/local/opt/openssl/lib"
 # Check if this is on a Raspberry
 raspberry=false
 if [ -f '/proc/cpuinfo' ]; then
-    echo '/proc/cpuinfo exist'
     if grep -q 'Raspberry' /proc/cpuinfo; then
-        echo 'found'
         raspberry=true
     fi
 fi
