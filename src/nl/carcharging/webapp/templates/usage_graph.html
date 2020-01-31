@@ -194,7 +194,7 @@
             axisLabelUseCanvas: true,
             axisLabelColor: '#FF0000',
             tickFormatter: function (val, axis) {
-              return val + ' (' + Math.round((parseFloat(val)*230) / factor_Whkm) + 'km/u)'
+              return Math.round(val) + ' (' + Math.round((parseFloat(val)*230) / factor_Whkm) + 'km/u)'
             },
             font: { 
               size: 11,
