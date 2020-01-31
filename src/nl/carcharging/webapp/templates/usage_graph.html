@@ -154,8 +154,27 @@
         flotObj = $.plot($("#stecapg_1_flotgraph"), flotDataset, {
           xaxis: { 
             timezone: 'browser',
+{% if req_period is not none %}
+  {% if req_period | int < 24 %}
+            tickSize: [ 1, 'hour' ],
+            timeformat: '%H:%M', // %H:%M",
+  {% elif req_period | int < 48 %}
+            tickSize: [ 2, 'hour' ],
+            timeformat: '%H:%M', // %H:%M",
+  {% elif req_period | int < 200 %}
+            tickSize: [ 6, 'hour' ],
+            timeformat: '%e %b %H:%M', // %H:%M",
+  {% elif req_period | int < 500 %}
             tickSize: [ 1, 'day' ],
             timeformat: '%e %b', // %H:%M",
+  {% else %}
+            tickSize: [ 7, 'day' ],
+            timeformat: '%e %b', // %H:%M",
+  {% endif %}
+{% else %}
+            tickSize: [ 1, 'day' ],
+            timeformat: '%e %b', // %H:%M",
+{% endif %}
             color: "#98a6ad", // Color of the horizontal line (not the numbers)
             font: { 
               size: 11,
@@ -216,7 +235,7 @@
             enableTouch: true
           },
           legend: {
-            position: 'ne',
+            position: 'nw',
             show: true,
             backgroundOpacity: 0.9,
             noColumns: 1
@@ -362,10 +381,14 @@
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       var from_timestamp = new Date()
-      from_timestamp.setDate(from_timestamp.getDate()-7)
+{% if req_period is not none %}
+      from_timestamp.setHours(from_timestamp.getHours()-{{ req_period }})
+{% else %}
+      from_timestamp.setHours(from_timestamp.getHours()-(7*24))
+{% endif %}
 {% if (cnt != None) and (cnt != 'undefined') %}
       getUsageData(
-        formatDate, 
+        formatDate(from_timestamp), 
         {{ cnt }}
       )
 {% else %}

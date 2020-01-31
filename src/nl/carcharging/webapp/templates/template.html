@@ -170,10 +170,30 @@
                                         <i class="fas fa-table"></i> Tabel
                                     </a>
                                 </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.usage_graph' ) }}" class="stay">
-                                        <i class="fas fa-chart-line"></i> Grafiek
-                                    </a>
+                                <li class="has-submenu">
+                                    <a href="{{ url_for('flaskRoutes.usage_graph', period=24) }}"><i class="fas fa-chart-line"></i> Grafieken</a>
+                                    <ul class="submenu">
+                                        <li>
+                                            <a href="{{ url_for('flaskRoutes.usage_graph', period=6) }}" class="stay">
+                                                <i class="fas fa-chart-line"></i> Afgelopen 6 uur
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url_for('flaskRoutes.usage_graph', period=24) }}" class="stay">
+                                                <i class="fas fa-chart-line"></i> Afgelopen 24u
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url_for('flaskRoutes.usage_graph', period=168) }}" class="stay">
+                                                <i class="fas fa-chart-line"></i> Afgelopen week
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url_for('flaskRoutes.usage_graph', period=744) }}" class="stay">
+                                                <i class="fas fa-chart-line"></i> Afgelopen maand
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </li>
                             </ul>
                         </li>
