@@ -28,7 +28,7 @@ if [ "$raspberry" = true ]; then
     echo " - installing raspberry dependencies incl mfrc522, RPi.GPIO, and spidev..."
     pip install -r $PRJDIR/requirements_raspberry.txt > /dev/null 2>&1
     echo " - preparing service file CarChargerWebApp.service from template by updating path..."
-    sed 's?#WORKINGDIR_PLACEHOLDER?'$PRJDIR'?' < $DIR/CarChargerWebApp.service.template >$DIR/CarChargerWebApp.service
+    sed 's?#WORKINGDIR_PLACEHOLDER?'$PRJDIR'?'g < $DIR/CarChargerWebApp.service.template >$DIR/CarChargerWebApp.service
     echo " - stopping CarChargerWebApp if running..."
     sudo systemctl stop CarChargerWebApp
     echo " - Update config/ installing CarChargerWebApp.service for systemd..."
