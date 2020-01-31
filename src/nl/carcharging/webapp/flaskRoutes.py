@@ -252,9 +252,11 @@ def usage_table(cnt="undefined"):
 @authenticated_resource
 def usage_graph(cnt="undefined"):
     global flaskRoutesLogger, WebAppConfig
-    flaskRoutesLogger.debug('/usage_graph {} {}'.format(cnt, request.method))
+    req_period = request.args['period'] if 'period' in request.args else None
+    flaskRoutesLogger.debug('/usage_graph cnt:{} method:{} type:{}'.format(cnt, request.method, req_period))
     return render_template("usage_graph.html", 
                 cnt=cnt,
+                req_period=req_period,
                 webappconfig=WebAppConfig
                 )
 
