@@ -38,7 +38,7 @@ flaskRoutesLogger.debug('Initializing routes')
 
 @flaskRoutes.route('/', methods=['GET'])
 def index():
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/ {}'.format(request.method))
     try:
         return render_template(
@@ -63,16 +63,20 @@ def home():
 def page_not_found(e):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('404 page not found error handler')
+    # No need for webappconfig=WebAppConfig
     return render_template('errorpages/404.html'), 404
 
 
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
 def login():
     # For GET requests, display the login form. 
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/login {}'.format(request.method))
     if (request.method == 'GET'):
-        return render_template("login.html", form=LoginForm())
+        return render_template("login.html", 
+            form=LoginForm(),
+            webappconfig=WebAppConfig
+            )
     # For POST requests, login the current user by processing the form.
     form = LoginForm()
     flaskRoutesLogger.debug('login form created')
@@ -113,7 +117,11 @@ def login():
 
 
     flaskRoutesLogger.debug('nothing of that all')
-    return render_template("login.html", form=form, msg="Login failed")
+    return render_template("login.html", 
+                form=form, 
+                msg="Login failed",
+                webappconfig=WebAppConfig
+                )
 
 def authenticated_resource(function):
     @wraps(function)
@@ -154,12 +162,13 @@ def logout():
 @flaskRoutes.route("/change_password", methods=["GET", "POST"])
 @authenticated_resource
 def change_password():
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/change_password {}'.format(request.method))
     if (request.method == 'GET'):
         return render_template(
             'change_password.html', 
-            form=ChangePasswordForm()
+            form=ChangePasswordForm(),
+            webappconfig=WebAppConfig
             )
 
     form = ChangePasswordForm()
@@ -170,7 +179,8 @@ def change_password():
         form.current_password.errors.append('Het huidige admin wachtwoord is niet juist.')
         return render_template(
             'change_password.html', 
-            form=form
+            form=form,
+            webappconfig=WebAppConfig
             )
     if form.validate_on_submit():
         # Valid, change the password for the user now
@@ -180,6 +190,7 @@ def change_password():
         db.session.commit()
         return render_template(
             'change_password_success.html', 
+            webappconfig=WebAppConfig
             )
     # Translate errors
     if ('new_password' in form.errors):
@@ -198,32 +209,41 @@ def change_password():
     # Not valid - error message
     return render_template(
         'change_password.html', 
-        form=form
+        form=form,
+        webappconfig=WebAppConfig
         )
 
 
 @flaskRoutes.route("/about")
 def about():
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/about {}'.format(request.method))
-    return render_template("about.html")
+    return render_template("about.html",
+                webappconfig=WebAppConfig
+                )
 
 @flaskRoutes.route("/usage")
 @flaskRoutes.route("/usage/")
 @flaskRoutes.route("/usage/<int:cnt>")
 def usage(cnt="undefined"):
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/usage ' + request.method)
-    return render_template("usage_table.html", cnt=cnt)
+    return render_template("usage_table.html", 
+                cnt=cnt,
+                webappconfig=WebAppConfig
+                )
 
 
 @flaskRoutes.route("/usage_table")
 @flaskRoutes.route("/usage_table/")
 @flaskRoutes.route("/usage_table/<int:cnt>")
 def usage_table(cnt="undefined"):
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/usage_table {} {}'.format(cnt, request.method))
-    return render_template("usage_table.html", cnt=cnt)
+    return render_template("usage_table.html", 
+                cnt=cnt,
+                webappconfig=WebAppConfig
+                )
 
 
 @flaskRoutes.route("/usage_graph")
@@ -231,9 +251,12 @@ def usage_table(cnt="undefined"):
 @flaskRoutes.route("/usage_graph/<int:cnt>")
 @authenticated_resource
 def usage_graph(cnt="undefined"):
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/usage_graph {} {}'.format(cnt, request.method))
-    return render_template("usage_graph.html", cnt=cnt)
+    return render_template("usage_graph.html", 
+                cnt=cnt,
+                webappconfig=WebAppConfig
+                )
 
 
 @flaskRoutes.route("/settings")
@@ -241,7 +264,7 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
     diag = Raspberry().get_all()
     diag_json = json.dumps(diag)
@@ -250,7 +273,8 @@ def settings(active=1):
                 active=active, 
                 diag=diag, 
                 diag_json=diag_json, 
-                charger_config=charger_config_str
+                charger_config=charger_config_str,
+                webappconfig=WebAppConfig
             )
 
 
@@ -289,12 +313,14 @@ def usage_data_since(since_timestamp, cnt=-1):
 @flaskRoutes.route("/charge_sessions/")
 @authenticated_resource
 def charge_sessions(since_timestamp=None):
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/charge_sessions {} {}'.format(since_timestamp, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     if (not jsonRequested):
-        return render_template("charge_sessions.html")
+        return render_template("charge_sessions.html",
+                    webappconfig=WebAppConfig
+                    )
     # Request parameters
     # TODO - format request params and hand to model
     req_from  = request.args['from'] if 'from' in request.args else None
@@ -321,7 +347,7 @@ def charge_sessions(since_timestamp=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
 @authenticated_resource
 def rfid_tokens(token=None):
-    global flaskRoutesLogger
+    global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/rfid_tokens {} {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
@@ -374,10 +400,8 @@ def rfid_tokens(token=None):
                                                  len(rfid_change_form.vehicle_vin.data) == 0 \
                                               else rfid_change_form.vehicle_vin.data
                 rfid_model.save()
-
                 # Return to the rfid tokens page
                 return redirect(url_for('flaskRoutes.rfid_tokens', req_format='html', token=None))
-
             # TODO - what went wrong? message!
             return render_template("token.html",
                     rfid_model=rfid_model,

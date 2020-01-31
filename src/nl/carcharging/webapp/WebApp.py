@@ -18,6 +18,7 @@ WebAppConfig.loadConfig()
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
 from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
+from threading import Lock
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import event
 
@@ -65,7 +66,10 @@ db.init_app(app)
 WebAppConfig.login_manager = LoginManager()
 WebAppConfig.login_manager.init_app(app)
 
+threadLock = Lock()
 wsThread = WebSocketThread()
+
+wsClientCnt = 0
 
 
 @WebAppConfig.login_manager.user_loader
@@ -74,14 +78,28 @@ def load_user(user_id):
 
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
-    global webApplogger
+    global webApplogger, threadLock, wsClientCnt, wsThread, appSocketIO
+    with threadLock:
+        wsClientCnt += 1
+        webApplogger.debug('socketio.connect wsClientCnt {}'.format(wsClientCnt))
+        if wsClientCnt == 1:
+            webApplogger.debug('Starting thread')
+            wsThread.start(appSocketIO)
     emit("server_status", "server_up")
     webApplogger.debug("Client connected...")
 
 @appSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
-    global webApplogger
+    global webApplogger, threadLock, wsClientCnt, wsThread, appSocketIO
     webApplogger.debug('Client disconnected.')
+    with threadLock:
+        wsClientCnt -= 1
+        webApplogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
+        if wsClientCnt == 0:
+            # stop thread
+            webApplogger.debug('Requesting thread stop')
+            wsThread.stop()
+
 
 # This event currently is not used, just for reference
 @appSocketIO.on('my event', namespace='/usage')
@@ -111,7 +129,7 @@ def RfidModel_after_update(mapper, connection, target):
     
 
 if __name__ == "__main__":
-    wsThread.start(appSocketIO)
+    ##    wsThread.start(appSocketIO)
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
