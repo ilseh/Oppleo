@@ -99,6 +99,36 @@
       width: 100px;
       text-align: right;
     }
+    .set_title {
+      padding-left: 100px;
+      padding-bottom: 20px;
+    }
+    .set_name {
+      text-align: left;
+      padding-left: 110px;
+      /* background-color: red; */
+      text-decoration: underline;
+    }
+    .set_val {
+      text-align: left;
+      padding-left: 140px;
+      display: flex;
+    }
+    .set_val_last {
+      padding-bottom: 20px;
+    }
+    .set_val_name {
+      width: 120px;
+/*      background-color: royalblue; */
+      text-align: right;
+      padding-right: 20px;
+    }
+    .set_val_val {
+      text-align: left;
+      width: 200px;
+/*      background-color: sandybrown; */
+      padding-left: 20px;
+    }
   </style>
 
   <script>
@@ -310,122 +340,190 @@
                         <a href="#v-database" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-database"></i> Database</a>
                       </li>
                       <li class="nav-item">
+                        <a href="#v-hardware" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-microchip"></i> Hardware</a>
+                      </li>
+                      <li class="nav-item">
                         <a href="#v-diagnostics" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
                       </li>
                   </ul>
 
                   <div class="tab-content">
                       <div class="tab-pane{% if active==1 %} active{% endif %}" id="v-charger">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th></th>
-                              <th></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td>Naam laadpunt:</td>
-                              <td class="text-primary">{{ charger_config['charger_name'] }}</td>
-                            </tr>
-                            <tr>
-                              <td>Laadpunt tarief:</td>
-                              <td class="text-primary">&euro;  {{ charger_config['charger_tariff'] }}</td class="text-primary">
-                            </tr>
-                            <tr>
-                              <td>Laatste wijziging:</td>
-                              <td class="text-primary">{{ charger_config['modified_at'] }}</td class="text-primary"git>
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div>
+                          <div>
+                            <h3 class="set_title text-dark"><i class="fas fa-charging-station"></i> Laadpunt</h3 class="set_name text-dark">
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Naam laadpunt:</div>
+                            <div class="text-primary set_val set_val_last">{{ charger_config['charger_name'] }}</div>
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Laadpunt tarief:</div >
+                            <div class="text-primary set_val set_val_last">&euro;  {{ charger_config['charger_tariff'] }}</div>
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Laatste wijziging:</div>
+                            <div class="text-primary set_val set_val_last">{{ charger_config['modified_at'] }}</div>
+                          </div>
+                        </div>
                       </div>
                       <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
-                          <p>Type: modbus</p>
-                          <p>ID: 1</p>
-                          <p>Parity:</p>
-                          <p>Stop bit.</p>
-                          <p>Snelheid: 9600 baud.</p>
+                        <div>
+                          <div>
+                            <h3 class="set_title text-dark"><i class="fas fa-tachometer-alt"></i> kWh meter</h3 class="set_name text-dark">
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Modbus:</div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">ID:</div>
+                              <div class="set_val_val">1</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Mode:</div>
+                              <div class="set_val_val">RTU</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Snelheid:</div>
+                              <div class="set_val_val">9600</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Byte size:</div>
+                              <div class="set_val_val">8</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Stop bits:</div>
+                              <div class="set_val_val">1</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Parity:</div>
+                              <div class="set_val_val">None</div>
+                            </div>
+                            <div class="text-primary set_val set_val_last">
+                              <div class="set_val_name">Timeout:</div>
+                              <div class="set_val_val">1</div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="tab-pane{% if active==3 %} active{% endif %}" id="v-netwerk">
-                        <p>Wifi: disabled</p>
-                        <p>LAN: enabled</p>
-                        <p>dchp/fixed</p>
-                        <p>IP: 10.0.1.160</p>
-                        <p>SSL: disabled</p>
-                        <p>IPTables: </p>
-                      </div>
-                      <div class="tab-pane{% if active==4 %} active{% endif %}" id="v-database">
-                        <p>Type: Postgress (restart)</p>
-                        <p></p>
-                        <p>Access: local (vs IP)</p>
-                        <p>- IP access: 10.0.0.0/16 (10.0.1.161/32)</p>
-                      </div>
-                      <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-diagnostics">
 
-                        <table>
-                          <tr>
-                            <td colspan="3" style="text-align: left;">Diagnostics</td>
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">Model</td>
-                            <td class="diag_value">{{ diag['model'] }}</td>
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">Revision</td class="diag_name">
-                            <td class="diag_value">{{ diag['revision'] }}</td class="diag_value">
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">IPv4</td class="diag_name">
-                            {% if 'eth0' in diag['ip'] %}
-                            <td class="diag_value">{{ diag['ip']['eth0']['INET'][0]['addr'] }}</td class="diag_value">
-                            {% endif %}
-                            {% if 'en0' in diag['ip'] %}
-                            <td class="diag_value">{{ diag['ip']['en0']['INET'][0]['addr'] }}</td class="diag_value">
-                            {% endif %}
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">IPv6</td class="diag_name">
-                            {% if 'eth0' in diag['ip'] %}
-                            <td class="diag_value">{{ diag['ip']['eth0']['INET6'][0]['addr'] }}</td class="diag_name">
-                            {% endif %}
-                            {% if 'en0' in diag['ip'] %}
-                            <td class="diag_value">{{ diag['ip']['en0']['INET6'][0]['addr'] }}</td class="diag_name">
+                      <div class="tab-pane{% if active==3 %} active{% endif %}" id="v-network">
+                        <div>
+                          <div>
+                            <h3 class="set_title text-dark"><i class="fas fa-network-wired"></i> Netwerk</h3 class="set_name text-dark">
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Netwerk:</div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Wifi:</div>
+                              <div class="set_val_val">disabled</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">LAN:</div>
+                              <div class="set_val_val">enabled</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">IPv4:</div>
+                              {% if 'eth0' in diag['ip'] %}
+                              <div class="set_val_val">{{ diag['ip']['eth0']['INET'][0]['addr'] }}</div>
                               {% endif %}
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">OS</td class="diag_name">
-                            <td class="diag_value">
-                              <ul>
-                                <li>{{ diag['os'][0] }}</li>
-                                <li>{{ diag['os'][1] }}</li>
-                                <li>{{ diag['os'][2] }}</li>
-                                <li>{{ diag['os'][3] }}</li>
-                                <li>{{ diag['os'][4] }}</li>
-                              </ul>
-                            </td class="diag_name">
-                          </tr>
-                          <tr>
-                            <td class="diag_pre"></td>
-                            <td class="diag_name">Disk</td class="diag_name">
-                            <td class="diag_value">
-                              <ul>
-                                <li><span>Total:</span><span>{{ diag['disk']['total']['size'] }} {{ diag['disk']['total']['unit'] }}</span></li>
-                                <li><span>Free:</span><span>{{ diag['disk']['free']['size'] }} {{ diag['disk']['free']['unit'] }}</span></li>
-                                <li><span>Used:</span><span>{{ diag['disk']['used']['size'] }} {{ diag['disk']['used']['unit'] }}</span></li>
-                                <li>{{ diag['disk']['percent'] }}% available</li>
-                              </ul>
-                            </td class="diag_name">
-                          </tr>
-                        </table>
-                        <button type="button" id="diag_detail_button" class="btn btn-primary waves-effect waves-light">Show details</button>
-                        <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
-
+                              {% if 'en0' in diag['ip'] %}
+                              <div class="set_val_val">{{ diag['ip']['en0']['INET'][0]['addr'] }}</div>
+                              {% endif %}
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">IPv6:</div>
+                              {% if 'eth0' in diag['ip'] %}
+                              <div class="set_val_val">{{ diag['ip']['eth0']['INET6'][0]['addr'] }}</div>
+                              {% endif %}
+                              {% if 'en0' in diag['ip'] %}
+                              <div class="set_val_val">{{ diag['ip']['en0']['INET6'][0]['addr'] }}</div>
+                              {% endif %}
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">SSL:</div>
+                              <div class="set_val_val">disabled</div>
+                            </div>
+                            <div class="text-primary set_val set_val_last">
+                              <div class="set_val_name">IPTables:</div>
+                              <div class="set_val_val">-</div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
+
+
+                      <div class="tab-pane{% if active==4 %} active{% endif %}" id="v-database">
+                        <div>
+                          <div>
+                            <h3 class="set_title text-dark"><i class="fas fa-network-wired"></i> Database</h3 class="set_name text-dark">
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Postgres:</div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Access:</div>
+                              <div class="set_val_val">local</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-hardware">
+                        <div>
+                          <div>
+                            <h3 class="set_title text-dark"><i class="fas fa-microchip"></i> Hardware</h3 class="set_name text-dark">
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Hardware:</div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Model:</div>
+                              <div class="set_val_val">{{ diag['model'] }}</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Revision:</div>
+                              <div class="set_val_val">{{ diag['revision'] }}</div>
+                            </div>
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">OS:</div>
+                            <div class="text-primary set_val">{{ diag['os'][0] }}</div>
+                            <div class="text-primary set_val">{{ diag['os'][1] }}</div>
+                            <div class="text-primary set_val">{{ diag['os'][2] }}</div>
+                            <div class="text-primary set_val">{{ diag['os'][3] }}</div>
+                            <div class="text-primary set_val">{{ diag['os'][4] }}</div>
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Disk:</div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Total:</div>
+                              <div class="set_val_val">{{ diag['disk']['total']['size'] }} {{ diag['disk']['total']['unit'] }}</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Free:</div>
+                              <div class="set_val_val">{{ diag['disk']['free']['size'] }} {{ diag['disk']['free']['unit'] }}</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Used:</div>
+                              <div class="set_val_val">{{ diag['disk']['used']['size'] }} {{ diag['disk']['used']['unit'] }}</div>
+                            </div>
+                            <div class="text-primary set_val"> {{ diag['disk']['percent'] }}% available</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      
+                      <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-diagnostics">
+                        <div>
+                          <div>
+                            <h3 class="set_title text-dark"><i class="fas fa-network-wired"></i> Diagnostics</h3 class="set_name text-dark">
+                          </div>
+
+                          <div>
+                            <button type="button" id="diag_detail_button" class="btn btn-primary waves-effect waves-light">Show details</button>
+                            <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                 </div>
               </div>
           </div>
