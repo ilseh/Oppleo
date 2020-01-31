@@ -146,24 +146,24 @@
             <div class="container-fluid">
                 <div id="navigation">
                     <ul class="navigation-menu">
-                        <li class="has-submenu">
+                        <li>
                             <a href="{{ url_for('flaskRoutes.index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                         </li>
 
-                        <li class="has-submenu">
+                        <li>
                             <a href="{{ url_for('flaskRoutes.charge_sessions') }}" class="stay">
                                 <i class="fas fa-file-invoice-dollar"></i> Laadsessies
                             </a>
                         </li>
 
-                        <li class="has-submenu">
+                        <li>
                             <a href="{{ url_for('flaskRoutes.rfid_tokens') }}" class="stay">
                                 <i class="fas fa-credit-card"></i> Laadpassen
                             </a>
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('flaskRoutes.usage') }}"><i class="fas fa-table"></i> Verbruik</a>
+                            <a href="#"><i class="fas fa-table"></i> Verbruik</a>
                             <ul class="submenu">
                                 <li>
                                     <a href="{{ url_for('flaskRoutes.usage_table' ) }}" class="stay">
@@ -171,7 +171,7 @@
                                     </a>
                                 </li>
                                 <li class="has-submenu">
-                                    <a href="{{ url_for('flaskRoutes.usage_graph', period=24) }}"><i class="fas fa-chart-line"></i> Grafieken</a>
+                                    <a href="#"><i class="fas fa-chart-line"></i> Grafieken</a>
                                     <ul class="submenu">
                                         <li>
                                             <a href="{{ url_for('flaskRoutes.usage_graph', period=6) }}" class="stay">
@@ -199,7 +199,7 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('flaskRoutes.settings') }}"><i class="fas fa-sliders-h"></i> Instellingen</a>
+                            <a href="#"><i class="fas fa-sliders-h"></i> Instellingen</a>
                             <ul class="submenu">
                                 <li>
                                     <a href="{{ url_for('flaskRoutes.settings', active=1) }}" class="stay">
@@ -230,7 +230,7 @@
                         </li>
 
                         <li class="has-submenu">
-                            <a href="{{ url_for('flaskRoutes.index') }}" class="stay">
+                            <a href="#">
                                 <i class="fas fa-user-circle"></i>Account
                             </a>
                             <ul class="submenu">
