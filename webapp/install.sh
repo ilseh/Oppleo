@@ -32,7 +32,7 @@ if [ "$raspberry" = true ]; then
     echo " - stopping CarChargerWebApp if running..."
     sudo systemctl stop CarChargerWebApp
     echo " - Update config/ installing CarChargerWebApp.service for systemd..."
-    sudo cp CarChargerWebApp.service /etc/systemd/system/CarChargerWebApp.service
+    sudo cp $DIR/CarChargerWebApp.service /etc/systemd/system/CarChargerWebApp.service
     echo " - reloading daemon config..."
     sudo systemctl daemon-reload
     echo " - starting CarChargerWebApp systemd daemon..."
