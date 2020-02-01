@@ -12,7 +12,10 @@ Group=www-data
 # process starts, doesn't exit unless failing
 Type=simple
 WorkingDirectory=#WORKINGDIR_PLACEHOLDER/src/
-; By using the python3 cmd in the venv we do not need to set a vertial environment Environment= (baked in)
+
+Environment=PYTHONPATH=#WORKINGDIR_PLACEHOLDER/src
+Environment=#WORKINGDIR_PLACEHOLDER/src
+
 ExecStart=#WORKINGDIR_PLACEHOLDER/venv/bin/python3 #WORKINGDIR_PLACEHOLDER/src/nl/carcharging/webapp/WebApp.py socketserver
 
 [Install]
