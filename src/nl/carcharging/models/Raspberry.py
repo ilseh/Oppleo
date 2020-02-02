@@ -111,16 +111,17 @@ class Raspberry():
         self.logger.debug("get_virtual_memory()")
         mem = {}
         vmem = psutil.virtual_memory()
-        mem['available'] = round(
-            vmem.available /1024.0 /1024.0,
-            1
-        )
-        mem['total'] = round(
-            vmem.total /1024.0 /1024.0,
-            1
-        )
-        mem['percent'] = \
-            vmem.percent
+        mem['available'] = vmem.available
+        mem['total'] = vmem.total
+        mem['percent'] = vmem.percent
+        try:
+            mem['totalFormatted'] = self.format_size( vmem.total )
+        except:
+            self.logger.debug("totalFormatted could not be formatted")
+        try:
+            mem['availableFormatted'] = self.format_size( vmem.available )
+        except:
+            self.logger.debug("availableFormatted could not be formatted")
         return mem
 
     def get_physical_memory(self):
