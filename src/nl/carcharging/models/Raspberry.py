@@ -54,8 +54,10 @@ class Raspberry():
             self.logger.debug('Data = None, returning Unknown')
             return "Unknown"
         try:
+            self.logger.debug('Data is -{}-'.format(data))
             for entry in data:
                 self.logger.debug('Entry is -{}-'.format(entry_name))
+                self.logger.debug('Value of -{}- is -{}-'.format(entry_name, entry[entry_name]))
                 if entry_name in entry:
                     self.logger.debug('Found entry {}, returning {}'.format(entry_name, entry[entry_name]))
                     return entry[entry_name]
