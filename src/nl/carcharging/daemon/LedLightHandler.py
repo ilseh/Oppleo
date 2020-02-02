@@ -83,11 +83,7 @@ class LedLightHandler(Service):
             self.ledlighter.error()
 
     def start_evse_reader_loop_in_thread(self):
-        # thread_for_evse_reader = threading.Thread(target=self.evse_reader.loop, name="Read evse state",
-        #                                           args=(self.got_sigterm,
-        #                                                 lambda evse_state: self.try_handle_charging(evse_state)))
-
-        thread_for_evse_reader = threading.Thread(target=self.start_evse_reader_loop)
+        thread_for_evse_reader = threading.Thread(target=self.start_evse_reader_loop, name='thread-evse-reader')
         thread_for_evse_reader.start()
 
     def start_evse_reader_loop(self):
@@ -97,8 +93,9 @@ class LedLightHandler(Service):
 
             sys.stdout = log_file
 
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> logfile thread????')
+            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> printing logfile thread????')
             self.evse_reader.loop(self.got_sigterm, lambda evse_state: self.try_handle_charging(evse_state))
+            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> flushing stdout', flush=True)
         except Exception as ex:
             self.logger.exception('Could not start evse reader loop')
 
