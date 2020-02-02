@@ -142,7 +142,29 @@ class Raspberry():
         except:
             self.logger.debug('Could not open /proc/meminfo to get cpu and raspberry revision info...')
             return None
+        # MemTotal
+        try:
+            mem['MemTotalFormatted'] = self.format_size(
+                                            int(mem['MemTotal'].strip().split(' ')[0]) * 1000
+                                            )
+        except:
+            pass
+        # MemFree
+        try:
+            mem['MemFreeFormatted'] = self.format_size(
+                                            int(mem['MemFree'].strip().split(' ')[0]) * 1000
+                                            )
+        except:
+            pass
+        # MemAvailable
+        try:
+            mem['MemAvailableFormatted'] = self.format_size(
+                                            int(mem['MemAvailable'].strip().split(' ')[0]) * 1000
+                                            )
+        except:
+            pass
         return mem
+
 
     def format_size(self, val): # 18.983.407.616 - 18GB 18.983MB - 18.983.407KB - 18.983.407.616B
         self.logger.debug("format_size()")
