@@ -133,15 +133,21 @@ class Raspberry():
             for line in f:
                 if line not in ['\n', '\r\n']:
                     line_parts = line.split(':')
+                    self.logger.debug('{} = {}'.format(line_parts[0].strip(), line_parts[1].strip()))
                     mem[i][line_parts[0].strip()] = line_parts[1].strip()
                 else:
                     i += 1
                     mem[i] = {}
-
             f.close()
         except:
             self.logger.debug('Could not open /proc/meminfo to get cpu and raspberry revision info...')
             return None
+
+        #mem['MemTotal'] = '1986000 kB'
+        #mem['MemFree'] = '711336 kB'
+        #mem['MemAvailable'] = '1468868 kB'
+
+        self.logger.debug("get_physical_memory() capture {}".format(mem))
         # MemTotal
         try:
             mem['MemTotalFormatted'] = self.format_size(
