@@ -79,8 +79,10 @@ class Raspberry():
         i = 0
         cpu[i] = {}
         try:
+            self.logger.debug("Open /proc/cpuinfo to read...")
             f = open('/proc/cpuinfo','r')
             for line in f:
+                self.logger.debug("Line: {} ...".format(line))
                 if line not in ['\n', '\r\n']:
                     line_parts = line.split(':')
                     cpu[i][line_parts[0].strip()] = line_parts[1].strip()
