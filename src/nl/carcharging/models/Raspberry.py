@@ -136,25 +136,19 @@ class Raspberry():
         except:
             self.logger.debug('Could not open /proc/meminfo to get cpu and raspberry revision info...')
             return None
-
-        #mem['MemTotal'] = '1986000 kB'
-        #mem['MemFree'] = '711336 kB'
-        #mem['MemAvailable'] = '1468868 kB'
-
-        self.logger.debug("get_physical_memory() capture {}".format(mem))
         # MemTotal
         try:
             self.logger.debug("mem['MemTotal']: {}".format(mem['MemTotal']))
             l = mem['MemTotal'].strip().split(' ')
             self.logger.debug("MemTotalFormatted l: {}".format(l))
             self.logger.debug("MemTotalFormatted l[0]: {}".format(l[0]))
-            mem['MemTotalFormatted'] = self.format_size( int(l[0]) * 1000 )
+            mem['MemTotalFormatted'] = self.format_size( int(mem['MemTotal'].strip().split(' ')[0]) * 1000 )
         except:
             self.logger.debug("MemTotalFormatted could not be formatted")
         # MemFree
         try:
             mem['MemFreeFormatted'] = self.format_size(
-                                            int(mem['MemFree'].strip().split(' ')[0]) * 1000
+                                            int((mem['MemFree'].strip().split(' '))[0]) * 1000
                                             )
         except:
             self.logger.debug("MemFreeFormatted could not be formatted")
