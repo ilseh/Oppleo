@@ -48,17 +48,20 @@ class Raspberry():
         return "Unknown"
 
     def get_cpuinfo_entry(self, entry_name="Unknown"):
-        self.logger.debug("get_cpuinfo_entry()")
+        self.logger.debug("get_cpuinfo_entry() entry_name={}".format(entry_name))
         data = self.get_cpuinfo()
         if data is None:
+            self.logger.debug('Data = None, returning Unknown')
             return "Unknown"
         try:
             for entry in data:
                 if entry_name in entry:
+                    self.logger.debug('Found entry {}, returning {}'.format(entry_name, entry[entry_name]))
                     return entry[entry_name]
         except TypeError:
-            logger.debug('Data is not iterable')
+            self.logger.debug('Data is not iterable')
 
+        self.logger.debug('Returning Unknown')
         return "Unknown"
 
     def get_serial(self):
@@ -94,6 +97,7 @@ class Raspberry():
         except:
             self.logger.debug('Could not open /proc/cpuinfo to get cpu and raspberry revision info...')
             return None
+        self.logger.debug("Returning cpu: {}...".format(cpu))
         return cpu
 
 
