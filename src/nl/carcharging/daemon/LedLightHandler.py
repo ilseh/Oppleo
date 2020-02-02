@@ -1,15 +1,11 @@
-import logging
-import os
 import sys
 import threading
 import time
 from datetime import datetime
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from injector import inject, Injector
+from injector import inject
 from service import Service
 
-from nl.carcharging.config import Logger
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.services.Buzzer import Buzzer
@@ -27,11 +23,6 @@ GenericUtil.importMfrc522()
 
 
 PROCESS_NAME = 'rfid_reader'
-LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
-
-MAX_SECONDS_INTERVAL_CHARGING = 20
-
-scheduler = BackgroundScheduler()
 
 # TODO: make pid_dir configurable
 PID_DIR = '/tmp/'
@@ -247,46 +238,3 @@ class LedLightHandler(Service):
     def buzz_error(self):
         self.buzzer.buzz_other_thread(.1, 2)
 
-
-def main():
-    Logger.init_log(PROCESS_NAME, LOG_FILE)
-
-    env_name = os.getenv('CARCHARGING_ENV')
-
-    logger = logging.getLogger(PROCESS_NAME)
-    logger.info('Starting for environment %s' % env_name)
-
-
-    if len(sys.argv) != 2:
-        sys.exit('Invalid COMMAND %s, give an argument, ie \'start\'' % sys.argv[0])
-
-    cmd = sys.argv[1].lower()
-
-    logger.info('Received command: %s' % cmd)
-
-    injector = Injector()
-    service = injector.get(LedLightHandler)
-
-    if cmd == 'start':
-        service.start()
-        logger.debug('started')
-    elif cmd == 'debug':
-        service.run()
-    elif cmd == 'stop':
-        stopped = service.stop()
-        if not stopped:
-            sys.exit('Could not stop service, trying kill instead')
-    elif cmd == 'kill':
-        # GPIO.cleanup()
-        stopped = service.kill()
-    elif cmd == 'status':
-        if service.is_running():
-            print("Service is running.")
-        else:
-            print("Service is not running.")
-    else:
-        sys.exit('Unknown command "%s".' % cmd)
-
-
-if __name__ == '__main__':
-    main()

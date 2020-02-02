@@ -1,12 +1,9 @@
 import logging
-import os
-import sys
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-from injector import inject, Injector
+from injector import inject
 from service import Service
 
-from nl.carcharging.config import Logger
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.carcharging.utils.EnergyUtil import EnergyUtil
@@ -109,49 +106,3 @@ def is_measurement_older_than_1hour(old_measurement, new_measurement):
     diff = new_measurement.created_at - old_measurement.created_at
     return (diff.seconds / SECONDS_IN_HOUR) > 1
 
-
-def main():
-    Logger.init_log(PROCESS_NAME, LOG_FILE)
-    # logging.basicConfig(filename="/tmp/measurement_daemon.log")
-    # logging.basicConfig(level=logging.DEBUG)
-    # logging.basicConfig(filename='example.log', level=logging.NOTSET)
-
-    # logger = logging.getLogger('measure_electricity_usage_daemon')
-
-    env_name = os.getenv('CARCHARGING_ENV')
-
-    logger = logging.getLogger(PROCESS_NAME)
-    logger.info('Starting for environment %s' % env_name)
-
-    if len(sys.argv) != 2:
-        sys.exit('Invalid COMMAND %s, give an argument, ie \'start\'' % sys.argv[0])
-
-    cmd = sys.argv[1].lower()
-
-    logger.info('Received command: %s' % cmd)
-
-    injector = Injector()
-    service = injector.get(MeasureElectricityUsage)
-
-    if cmd == 'start':
-        service.start()
-        logger.debug('started')
-    elif cmd == 'debug':
-        service.run()
-    elif cmd == 'stop':
-        stopped = service.stop()
-        if not stopped:
-            sys.exit('Could not stop service, trying kill instead')
-    elif cmd == 'kill':
-        stopped = service.kill()
-    elif cmd == 'status':
-        if service.is_running():
-            print("Service is running.")
-        else:
-            print("Service is not running.")
-    else:
-        sys.exit('Unknown command "%s".' % cmd)
-
-
-if __name__ == '__main__':
-    main()
