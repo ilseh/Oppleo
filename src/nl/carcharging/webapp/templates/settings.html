@@ -536,7 +536,10 @@
                             </div>
                             {% endif %}
                             {% if ('disk' in diag and 'percent' in diag['disk']) %}
-                            <div class="text-primary set_val"> {{ diag['disk']['percent'] }}% in use</div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">&nbsp;</div>
+                              <div class="set_val_val_right">{{ diag['disk']['percent'] }}% in use</div>
+                            </div>
                             {% endif %}
                           </div>
                           <div>
