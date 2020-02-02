@@ -543,6 +543,27 @@
                             {% endif %}
                           </div>
                           <div>
+                            <div class="set_name text-dark">Memmory:</div>
+                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemTotalFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemTotalFormatted'] and 'unit' in diag['pmem']['MemTotalFormatted']) %}
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">MemTotal:</div>
+                              <div class="set_val_val_right">{{ diag['pmem']['MemTotalFormatted']['size'] }} {{ diag['pmem']['MemTotalFormatted']['unit'] }}</div>
+                            </div>
+                            {% endif %}
+                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemFreeFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemFreeFormatted'] and 'unit' in diag['pmem']['MemFreeFormatted']) %}
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">MemFree:</div>
+                              <div class="set_val_val_right">{{ diag['pmem']['MemFreeFormatted']['size'] }} {{ diag['pmem']['MemFreeFormatted']['unit'] }}</div>
+                            </div>
+                            {% endif %}
+                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemAvailableFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemAvailableFormatted'] and 'unit' in diag['pmem']['MemAvailableFormatted']) %}
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">MemAvailable:</div>
+                              <div class="set_val_val_right">{{ diag['pmem']['MemAvailableFormatted']['size'] }} {{ diag['pmem']['MemAvailableFormatted']['unit'] }}</div>
+                            </div>
+                            {% endif %}
+                          </div>                          
+                          <div>
                             <div class="set_name text-dark">Logfile:</div>
                             <div class="text-primary set_val">{{ webappconfig.LOG_FILE }}</div>
                           </div>
@@ -557,7 +578,7 @@
                           <div style="padding-left: 120px; padding-top: 30px; padding-bottom: 30px;">
                             <button type="button" id="diag_detail_button" class="btn btn-primary waves-effect waves-light">Show details</button>
                           </div>
-                          <div style="">
+                          <div>
                             <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
                           </div>
                         </div>
