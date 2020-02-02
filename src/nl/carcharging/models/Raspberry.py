@@ -49,18 +49,22 @@ class Raspberry():
 
     def get_cpuinfo_entry(self, entry_name="Unknown"):
         self.logger.debug("get_cpuinfo_entry() entry_name={}".format(entry_name))
-        data = self.get_cpuinfo()
-        if data is None:
-            self.logger.debug('Data = None, returning Unknown')
+        proc_list = self.get_cpuinfo()
+        if proc_list is None:
+            self.logger.debug('proc_list = None, returning Unknown')
             return "Unknown"
         try:
-            self.logger.debug('Data is -{}-'.format(data))
-            for entry in data:
-                self.logger.debug('Entry is -{}-'.format(entry_name))
-                self.logger.debug('Value of -{}- is -{}-'.format(entry_name, entry[entry_name]))
-                if entry_name in entry:
-                    self.logger.debug('Found entry {}, returning {}'.format(entry_name, entry[entry_name]))
-                    return entry[entry_name]
+            self.logger.debug('proc_list is -{}-'.format(proc_list))
+            # cpuinfo returns an entry per processor, plus an entry for the model
+            for proc_entry in proc_list:
+                self.logger.debug('proc_entry is -{}-'.format(proc_entry))
+                self.logger.debug('Value of -{}- is -{}-'.format(proc_entry, proc_list[proc_entry]))
+                for proc_data_entry in proc_entry:
+                    self.logger.debug('proc_data_entry is -{}-'.format(proc_data_entry))
+                    self.logger.debug('Value of -{}- is -{}-'.format(proc_data_entry, proc_entry[proc_data_entry]))
+                    if entry_name in proc_data_entry:
+                        self.logger.debug('Found entry {}, returning {}'.format(entry_name, proc_data_entry[entry_name]))
+                        return proc_data_entry[entry_name]
         except TypeError:
             self.logger.debug('Data is not iterable')
 
