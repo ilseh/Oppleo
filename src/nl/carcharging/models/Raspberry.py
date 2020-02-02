@@ -138,25 +138,17 @@ class Raspberry():
             return None
         # MemTotal
         try:
-            self.logger.debug("mem['MemTotal']: {}".format(mem['MemTotal']))
-            l = mem['MemTotal'].strip().split(' ')
-            self.logger.debug("MemTotalFormatted l: {}".format(l))
-            self.logger.debug("MemTotalFormatted l[0]: {}".format(l[0]))
             mem['MemTotalFormatted'] = self.format_size( int(mem['MemTotal'].strip().split(' ')[0]) * 1000 )
         except:
             self.logger.debug("MemTotalFormatted could not be formatted")
         # MemFree
         try:
-            mem['MemFreeFormatted'] = self.format_size(
-                                            int((mem['MemFree'].strip().split(' '))[0]) * 1000
-                                            )
+            mem['MemFreeFormatted'] = self.format_size( int(mem['MemFree'].strip().split(' ')[0]) * 1000 )
         except:
             self.logger.debug("MemFreeFormatted could not be formatted")
         # MemAvailable
         try:
-            mem['MemAvailableFormatted'] = self.format_size(
-                                            int(mem['MemAvailable'].strip().split(' ')[0]) * 1000
-                                            )
+            mem['MemAvailableFormatted'] = self.format_size( int(mem['MemAvailable'].strip().split(' ')[0]) * 1000 )
         except:
             self.logger.debug("MemAvailableFormatted could not be formatted")
         self.logger.debug("get_physical_memory() return {}".format(mem))
