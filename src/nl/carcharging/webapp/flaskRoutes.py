@@ -498,15 +498,13 @@ def rfid_tokens(token=None):
     rfid_model.cleanupOldToken()    # Remove any expired token info
     return jsonify(rfid_model.to_str())
 
-
+# Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
 def TeslaApi_GenerateOAuth(token=None):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth {}'.format(token, request.method))
-    jsonRequested = ('CONTENT_TYPE' in request.environ and 
-                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth method: {} token: {}'.format(token, request.method, token))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -537,15 +535,13 @@ def TeslaApi_GenerateOAuth(token=None):
             'reason': 'Not authorized'
             })
 
-
+# Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RefreshOAuth(token=None):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth {}'.format(token, request.method))
-    jsonRequested = ('CONTENT_TYPE' in request.environ and 
-                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth method: {} token: {}'.format(token, request.method, token))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -573,14 +569,13 @@ def TeslaApi_RefreshOAuth(token=None):
         'vehicles' : tesla_api.getVehicleNameIdList()
         })
 
+# Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RevokeOAuth(token=None):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth {}'.format(token, request.method))
-    jsonRequested = ('CONTENT_TYPE' in request.environ and 
-                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth method: {} token: {} jsonRequested: {}'.format(token, request.method, token, jsonRequested))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth method: {} token: {}'.format(token, request.method, token))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token

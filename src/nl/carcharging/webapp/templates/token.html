@@ -88,9 +88,14 @@
         type		    : 'POST',
         url			    : url,
         dataType	  : 'json',
-        contentType : "application/json",
         encode		  : true,
         data        : data
+/*        data      : {
+          csrf_token    : '{{ csrf_token() }}',
+          oauth_email   : $('input#oauth_email').val(), 
+          oauth_password: $('input#oauth_password').val() 
+        }
+*/
       }) // using the done promise callback
       .done(function(res) {
         // log data to the console so we can see
