@@ -342,7 +342,7 @@ def settings(active=1):
     return render_template("settings.html", 
                 active=active, 
                 diag=diag, 
-                diag_json=diag_json, 
+                diag_json=diag_json,
                 charger_config=charger_config_str,
                 webappconfig=WebAppConfig
             )
