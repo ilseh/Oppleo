@@ -129,6 +129,13 @@
 /*      background-color: sandybrown; */
       padding-left: 20px;
     }
+    .set_val_val_right {
+      text-align: right;
+      width: 100px;
+/*      background-color: sandybrown; */
+      padding-left: 20px;
+    }
+    
   </style>
 
   <script>
@@ -353,18 +360,28 @@
                           <div>
                             <h3 class="set_title text-dark"><i class="fas fa-charging-station"></i> Laadpunt</h3 class="set_name text-dark">
                           </div>
+                          {% if ('charger_name' in charger_config) %}
                           <div>
                             <div class="set_name text-dark">Naam laadpunt:</div>
                             <div class="text-primary set_val set_val_last">{{ charger_config['charger_name'] }}</div>
                           </div>
+                          {% endif %}
+                          <div>
+                            <div class="set_name text-dark">kWh Factor:</div >
+                            <div class="text-primary set_val set_val_last">{{ webappconfig.factor_Whkm }}</div>
+                          </div>
+                          {% if ('charger_tariff' in charger_config) %}
                           <div>
                             <div class="set_name text-dark">Laadpunt tarief:</div >
                             <div class="text-primary set_val set_val_last">&euro;  {{ charger_config['charger_tariff'] }}</div>
                           </div>
+                          {% endif %}
+                          {% if ('modified_at' in charger_config) %}
                           <div>
                             <div class="set_name text-dark">Laatste wijziging:</div>
                             <div class="text-primary set_val set_val_last">{{ charger_config['modified_at'] }}</div>
                           </div>
+                          {% endif %}
                         </div>
                       </div>
                       <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
@@ -413,45 +430,45 @@
                           </div>
                           <div>
                             <div class="set_name text-dark">Netwerk:</div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Wifi:</div>
-                              <div class="set_val_val">disabled</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">LAN:</div>
-                              <div class="set_val_val">enabled</div>
-                            </div>
+                            {% if ('ip' in diag and 'eth0' in diag['ip'] and 'INET' in diag['ip']['eth0'] and diag['ip']['eth0']['INET'] | length > 0 and 'addr' in diag['ip']['eth0']['INET'][0]) %}
                             <div class="text-primary set_val">
                               <div class="set_val_name">IPv4:</div>
-                              {% if 'eth0' in diag['ip'] %}
                               <div class="set_val_val">{{ diag['ip']['eth0']['INET'][0]['addr'] }}</div>
-                              {% endif %}
-                              {% if 'en0' in diag['ip'] %}
-                              <div class="set_val_val">{{ diag['ip']['en0']['INET'][0]['addr'] }}</div>
-                              {% endif %}
                             </div>
+                            {% endif %}
+                            {% if ('ip' in diag and 'en0' in diag['ip'] and 'INET' in diag['ip']['en0'] and diag['ip']['en0']['INET'] | length > 0 and 'addr' in diag['ip']['en0']['INET'][0]) %}
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">IPv4:</div>
+                              <div class="set_val_val">{{ diag['ip']['en0']['INET'][0]['addr'] }}</div>
+                            </div>
+                            {% endif %}
+                            {% if ('ip' in diag and 'eth0' in diag['ip'] and 'INET6' in diag['ip']['eth0'] and diag['ip']['eth0']['INET6'] | length > 0 and 'addr' in diag['ip']['eth0']['INET6'][0]) %}
                             <div class="text-primary set_val">
                               <div class="set_val_name">IPv6:</div>
-                              {% if 'eth0' in diag['ip'] %}
                               <div class="set_val_val">{{ diag['ip']['eth0']['INET6'][0]['addr'] }}</div>
-                              {% endif %}
-                              {% if 'en0' in diag['ip'] %}
+                            </div>
+                            {% endif %}
+                            {% if ('ip' in diag and 'en0' in diag['ip'] and 'INET6' in diag['ip']['en0'] and diag['ip']['en0']['INET6'] | length > 0 and 'addr' in diag['ip']['en0']['INET6'][0]) %}
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">IPv6:</div>
                               <div class="set_val_val">{{ diag['ip']['en0']['INET6'][0]['addr'] }}</div>
-                              {% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">HTTP Host:</div>
+                              <div class="set_val_val">{{ webappconfig.httpHost }}</div>
                             </div>
                             <div class="text-primary set_val">
-                              <div class="set_val_name">SSL:</div>
-                              <div class="set_val_val">disabled</div>
+                              <div class="set_val_name">HTTP Port:</div>
+                              <div class="set_val_val">{{ webappconfig.httpPort }}</div>
                             </div>
-                            <div class="text-primary set_val set_val_last">
-                              <div class="set_val_name">IPTables:</div>
-                              <div class="set_val_val">-</div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">Releoader:</div>
+                              <div class="set_val_val">{{ webappconfig.useReloader }}</div>
                             </div>
                           </div>
                         </div>
                       </div>
-
-
                       <div class="tab-pane{% if active==4 %} active{% endif %}" id="v-database">
                         <div>
                           <div>
@@ -460,13 +477,16 @@
                           <div>
                             <div class="set_name text-dark">Postgres:</div>
                             <div class="text-primary set_val">
-                              <div class="set_val_name">Access:</div>
-                              <div class="set_val_val">local</div>
+                              <div class="set_val_name">URL:</div>
+                              <div class="set_val_val">{{ webappconfig.DATABASE_URL }}</div>
+                            </div>
+                            <div class="text-primary set_val">
+                              <div class="set_val_name">SQLAlchemy:</div>
+                              <div class="set_val_val">{{ webappconfig.SQLALCHEMY_DATABASE_URI }}</div>
                             </div>
                           </div>
                         </div>
                       </div>
-
                       <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-hardware">
                         <div>
                           <div>
@@ -474,51 +494,67 @@
                           </div>
                           <div>
                             <div class="set_name text-dark">Hardware:</div>
+                            {% if ('model' in diag) %}
                             <div class="text-primary set_val">
                               <div class="set_val_name">Model:</div>
                               <div class="set_val_val">{{ diag['model'] }}</div>
                             </div>
+                            {% endif %}
+                            {% if ('revision' in diag) %}
                             <div class="text-primary set_val">
                               <div class="set_val_name">Revision:</div>
                               <div class="set_val_val">{{ diag['revision'] }}</div>
                             </div>
+                            {% endif %}
                           </div>
+                          {% if ('os' in diag) %}
                           <div>
                             <div class="set_name text-dark">OS:</div>
-                            <div class="text-primary set_val">{{ diag['os'][0] }}</div>
-                            <div class="text-primary set_val">{{ diag['os'][1] }}</div>
-                            <div class="text-primary set_val">{{ diag['os'][2] }}</div>
-                            <div class="text-primary set_val">{{ diag['os'][3] }}</div>
-                            <div class="text-primary set_val">{{ diag['os'][4] }}</div>
+                            {% for os_line in diag['os'] %}
+                            <div class="text-primary set_val">{{ os_line }}</div>
+                            {% endfor %}
                           </div>
+                          {% endif %}
                           <div>
                             <div class="set_name text-dark">Disk:</div>
+                            {% if ('disk' in diag and 'total' in diag['disk'] and 'size' in diag['disk']['total'] and 'unit' in diag['disk']['total']) %}
                             <div class="text-primary set_val">
                               <div class="set_val_name">Total:</div>
-                              <div class="set_val_val">{{ diag['disk']['total']['size'] }} {{ diag['disk']['total']['unit'] }}</div>
+                              <div class="set_val_val_right">{{ diag['disk']['total']['size'] }} {{ diag['disk']['total']['unit'] }}</div>
                             </div>
+                            {% endif %}
+                            {% if ('disk' in diag and 'free' in diag['disk'] and 'size' in diag['disk']['free'] and 'unit' in diag['disk']['free']) %}
                             <div class="text-primary set_val">
                               <div class="set_val_name">Free:</div>
-                              <div class="set_val_val">{{ diag['disk']['free']['size'] }} {{ diag['disk']['free']['unit'] }}</div>
+                              <div class="set_val_val_right">{{ diag['disk']['free']['size'] }} {{ diag['disk']['free']['unit'] }}</div>
                             </div>
+                            {% endif %}
+                            {% if ('disk' in diag and 'used' in diag['disk'] and 'size' in diag['disk']['used'] and 'unit' in diag['disk']['used']) %}
                             <div class="text-primary set_val">
                               <div class="set_val_name">Used:</div>
-                              <div class="set_val_val">{{ diag['disk']['used']['size'] }} {{ diag['disk']['used']['unit'] }}</div>
+                              <div class="set_val_val_right">{{ diag['disk']['used']['size'] }} {{ diag['disk']['used']['unit'] }}</div>
                             </div>
+                            {% endif %}
+                            {% if ('disk' in diag and 'percent' in diag['disk']) %}
                             <div class="text-primary set_val"> {{ diag['disk']['percent'] }}% available</div>
+                            {% endif %}
+                          </div>
+                          <div>
+                            <div class="set_name text-dark">Logfile:</div>
+                            <div class="text-primary set_val">{{ webappconfig.LOG_FILE }}</div>
                           </div>
                         </div>
                       </div>
-
-                      
                       <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-diagnostics">
                         <div>
                           <div>
                             <h3 class="set_title text-dark"><i class="fas fa-network-wired"></i> Diagnostics</h3 class="set_name text-dark">
                           </div>
 
-                          <div>
+                          <div style="padding-left: 120px; padding-top: 30px; padding-bottom: 30px;">
                             <button type="button" id="diag_detail_button" class="btn btn-primary waves-effect waves-light">Show details</button>
+                          </div>
+                          <div style="">
                             <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
                           </div>
                         </div>

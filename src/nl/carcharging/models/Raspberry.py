@@ -13,7 +13,6 @@ class Raspberry():
         self.logger = logging.getLogger('nl.carcharging.models.Raspberry')
         self.logger.debug('Initializing Raspberry without data')
 
-
     def get_ip_info(self):
         self.logger.debug("get_ip_info()")
         i_ids = netifaces.interfaces()
@@ -95,21 +94,6 @@ class Raspberry():
             return None
         return cpu
 
-    def get_revision_old(self):
-        self.logger.debug("get_revision_old()")
-        # Extract board revision from cpuinfo file
-        myrevision = "0000"
-        try:
-            f = open('/proc/cpuinfo','r')
-            for line in f:
-                if line[0:8]=='Revision':
-                    length=len(line)
-                    myrevision = line[11:length-1]
-            f.close()   
-        except:
-            myrevision = "0000"
-        
-        return myrevision
 
     def get_cpu_percent(self):
         self.logger.debug("get_cpu_percent()")
