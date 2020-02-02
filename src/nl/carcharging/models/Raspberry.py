@@ -126,18 +126,12 @@ class Raspberry():
     def get_physical_memory(self):
         self.logger.debug("get_physical_memory()")
         mem = {}
-        i = 0
-        mem[i] = {}
         try:
             f = open('/proc/meminfo','r')
             for line in f:
-                if line not in ['\n', '\r\n']:
-                    line_parts = line.split(':')
-                    self.logger.debug('{} = {}'.format(line_parts[0].strip(), line_parts[1].strip()))
-                    mem[i][line_parts[0].strip()] = line_parts[1].strip()
-                else:
-                    i += 1
-                    mem[i] = {}
+                line_parts = line.split(':')
+                self.logger.debug('{} = {}'.format(line_parts[0].strip(), line_parts[1].strip()))
+                mem[line_parts[0].strip()] = line_parts[1].strip()
             f.close()
         except:
             self.logger.debug('Could not open /proc/meminfo to get cpu and raspberry revision info...')
