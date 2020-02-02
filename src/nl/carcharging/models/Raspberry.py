@@ -150,6 +150,7 @@ class Raspberry():
         self.logger.debug("get_physical_memory() capture {}".format(mem))
         # MemTotal
         try:
+            self.logger.debug("mem['MemTotal']: {}".format(mem['MemTotal']))
             l = mem['MemTotal'].strip().split(' ')
             self.logger.debug("MemTotalFormatted l: {}".format(l))
             self.logger.debug("MemTotalFormatted l[0]: {}".format(l[0]))
