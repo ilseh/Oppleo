@@ -508,6 +508,7 @@
                             {% endif %}
                           </div>
                           {% if ('os' in diag) %}
+                          <div>&nbsp;</div>
                           <div>
                             <div class="set_name text-dark">OS:</div>
                             {% for os_line in diag['os'] %}
@@ -515,6 +516,7 @@
                             {% endfor %}
                           </div>
                           {% endif %}
+                          <div>&nbsp;</div>
                           <div>
                             <div class="set_name text-dark">Disk:</div>
                             {% if ('disk' in diag and 'total' in diag['disk'] and 'size' in diag['disk']['total'] and 'unit' in diag['disk']['total']) %}
@@ -542,6 +544,7 @@
                             </div>
                             {% endif %}
                           </div>
+                          <div>&nbsp;</div>
                           <div>
                             <div class="set_name text-dark">Memory:</div>
                             {% if ('pmem' in diag and diag['pmem'] is not none and 'MemTotalFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemTotalFormatted'] and 'unit' in diag['pmem']['MemTotalFormatted']) %}
@@ -563,6 +566,7 @@
                             </div>
                             {% endif %}
                           </div>                          
+                          <div>&nbsp;</div>
                           <div>
                             <div class="set_name text-dark">Logfile:</div>
                             <div class="text-primary set_val">{{ webappconfig.LOG_FILE }}</div>
