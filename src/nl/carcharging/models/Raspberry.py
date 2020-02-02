@@ -56,15 +56,16 @@ class Raspberry():
         try:
             self.logger.debug('proc_list is -{}-'.format(proc_list))
             # cpuinfo returns an entry per processor, plus an entry for the model
-            for proc_entry in proc_list:
-                self.logger.debug('proc_entry is -{}-'.format(proc_entry))
-                self.logger.debug('Value of -{}- is -{}-'.format(proc_entry, proc_list[proc_entry]))
-                for proc_data_entry in proc_entry:
-                    self.logger.debug('proc_data_entry is -{}-'.format(proc_data_entry))
-                    self.logger.debug('Value of -{}- is -{}-'.format(proc_data_entry, proc_entry[proc_data_entry]))
-                    if entry_name in proc_data_entry:
-                        self.logger.debug('Found entry {}, returning {}'.format(entry_name, proc_data_entry[entry_name]))
-                        return proc_data_entry[entry_name]
+
+            for proc_index in range(len(proc_list)):
+                self.logger.debug('proc_index is -{}-'.format(proc_index))
+                self.logger.debug('proc_entry is -{}-'.format(proc_list[proc_index]))
+                for proc_data_key in proc_list[proc_index]:
+                    self.logger.debug('proc_data_key is -{}-'.format(proc_data_key))
+                    self.logger.debug('Value of -{}- is -{}-'.format(proc_data_key, proc_list[proc_index][proc_data_key]))
+                    if entry_name == proc_data_key:
+                        self.logger.debug('Found entry {}, returning {}'.format(proc_data_key, proc_list[proc_index][proc_data_key]))
+                        return proc_list[proc_index][proc_data_key]
         except TypeError:
             self.logger.debug('Data is not iterable')
 
