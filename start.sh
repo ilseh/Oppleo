@@ -3,4 +3,4 @@ ABSDIR=$(dirname $ABSPATH)
 
 source "$ABSDIR/.profile"
 
-python3 "$ABSDIR/src/nl/carcharging/daemon/MeasureElectricityUsage.py" start
+python3 "$ABSDIR/src/nl/carcharging/runner/DevicesStarter.py" start

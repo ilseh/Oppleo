@@ -125,7 +125,7 @@ class WebAppConfig(object):
             if not WebAppConfig.ini_settings.has_section(envSectionName):
                 WebAppConfig.logger.debug('Ini file has no ' + envSectionName + ' section.')
             else:
-                WebAppConfig.PRODUCTION = ( envSectionName.lower() == WebAppConfig.INI_IS_PROD )
+                WebAppConfig.PRODUCTION = ( envSectionName.lower() == WebAppConfig.INI_IS_PROD.lower() )
                 WebAppConfig.DEBUG = WebAppConfig.getBooleanOption(envSectionName, WebAppConfig.INI_DEBUG, False)
                 WebAppConfig.TESTING = WebAppConfig.getBooleanOption(envSectionName, WebAppConfig.INI_TESTING, False)
 

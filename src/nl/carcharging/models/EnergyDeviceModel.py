@@ -1,6 +1,6 @@
 from marshmallow import fields, Schema
 
-from nl.carcharging.models.base import Base, Session
+from nl.carcharging.models.base import Base, DbSession
 from . import db
 from sqlalchemy import orm
 
@@ -25,23 +25,23 @@ class EnergyDeviceModel(Base):
         pass
 
     def save(self):
-        session = Session()
+        session = DbSession()
         session.add(self)
         session.commit()
 
     def delete(self):
-        session = Session()
+        session = DbSession()
         session.delete(self)
         session.commit()
 
     @staticmethod
     def get_all():
-        session = Session()
+        session = DbSession()
         return session.query(EnergyDeviceModel).all()
 
     @staticmethod
     def get_one(energy_device_id):
-        session = Session()
+        session = DbSession()
         return session.query(EnergyDeviceModel)\
             .filter(EnergyDeviceModel.energy_device_id == energy_device_id).first()
 

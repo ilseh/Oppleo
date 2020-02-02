@@ -4,10 +4,7 @@ import logging
 
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
-try:
-    import RPi.GPIO as GPIO
-except RuntimeError:
-    logging.debug('Assuming dev env')
+GPIO = GenericUtil.importGpio()
 
 buzzer = 23 # PIN 16/ GPIO23
 

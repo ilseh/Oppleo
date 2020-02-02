@@ -1,12 +1,9 @@
 import logging
 
 from nl.carcharging.services.LedLightProdHardware import LedLightProdHardware
+from nl.carcharging.utils.GenericUtil import GenericUtil
 
-try:
-    import RPi.GPIO as GPIO
-except RuntimeError:
-    logging.debug('Assuming dev env')
-
+GenericUtil.importGpio()
 
 # Interval in ms to update led light
 FREQ_MS_TO_UPDATE_LED = 10
