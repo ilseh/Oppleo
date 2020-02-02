@@ -89,9 +89,9 @@ class LedLightHandler(Service):
     def start_evse_reader_loop(self):
         # Redirect stdout to logfile
         try:
-            log_file = open('/tmp/test-print.log', "w")
-
-            sys.stdout = log_file
+            # log_file = open('/tmp/test-print.log', "w")
+            #
+            # sys.stdout = log_file
 
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> printing logfile thread????')
             self.evse_reader.loop(self.got_sigterm, lambda evse_state: self.try_handle_charging(evse_state))
