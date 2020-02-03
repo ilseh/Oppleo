@@ -1,18 +1,19 @@
-import requests 
+import requests
 import json
 import time
 import logging
 import datetime
 
+
 class TeslaAPI:
     # defining the api-endpoint  
     API_BASE = 'https://owner-api.teslamotors.com'
-    API_AUTHENTICATION = '/oauth/token' # POST
-    API_VEHICLES = '/api/1/vehicles' # GET
-    API_WAKE_UP = '/api/1/vehicles/{id}/wake_up' # POST
-    API_VEHICLE_STATE = '/api/1/vehicles/{id}/data_request/vehicle_state' # GET
-    API_REVOKE = '/oauth/revoke' # POST
-        # All requests require a User-Agent header with any value provided. 
+    API_AUTHENTICATION = '/oauth/token'  # POST
+    API_VEHICLES = '/api/1/vehicles'  # GET
+    API_WAKE_UP = '/api/1/vehicles/{id}/wake_up'  # POST
+    API_VEHICLE_STATE = '/api/1/vehicles/{id}/data_request/vehicle_state'  # GET
+    API_REVOKE = '/oauth/revoke'  # POST
+    # All requests require a User-Agent header with any value provided.
 
     API_AUTHENTICATION_GRANT_TYPE_PARAM = 'grant_type'
     API_AUTHENTICATION_GRANT_TYPE_PASSWORD = 'password'
@@ -41,28 +42,53 @@ class TeslaAPI:
 
     access_token = None
     token_type = None
-    created_at = None 
+    created_at = None
     expires_in = None
     refresh_token = None
 
     vehicle_list = None
 
     def __init__(self):
-        self.logger = logging.getLogger('TeslaAPI')
+        self.logger = logging.getLogger('nl.carcharging.api.TeslaAPI')
         self.logger.debug('TeslaApi.__init__')
 
     def reset(self):
         self.access_token = None
         self.token_type = None
-        self.created_at = None 
+        self.created_at = None
         self.expires_in = None
         self.refresh_token = None
         self.vehicle_list = None
 
+    def auth_post(self, data, grant_type_param_value):
+        r = requests.post(
+            url=self.API_BASE +
+                self.API_AUTHENTICATION + '?' +
+                self.API_AUTHENTICATION_GRANT_TYPE_PARAM + '=' +
+                grant_type_param_value,
+            data=data
+        )
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            return False
+
+        # extracting response text
+        response_dict = json.loads(r.text)
+        self.access_token = response_dict['access_token']
+        self.token_type = response_dict['token_type']
+        self.created_at = response_dict['created_at']
+        self.expires_in = response_dict['expires_in']
+        self.refresh_token = response_dict['refresh_token']
+
+        self.logger.debug(
+            "{\n  'access_token': '%s',\n  'token_type': '%s',\n  'created_at': '%s',\n  'expires_in': '%s',"
+            "\n  'refresh_token': '%s'\n}" %
+            (self.access_token, self.token_type, self.created_at, self.expires_in, self.refresh_token))
+        return True
 
     def authenticate(self, email=None, password=None):
         self.logger.debug('authenticate() ' + self.API_AUTHENTICATION)
-        if (email==None or password==None):
+        if email is None or password is None:
             self.logger.debug('Credentials to obtain token missing.')
             return False
 
@@ -76,27 +102,7 @@ class TeslaAPI:
 
         # 01 - Authenticate [POST]
         # sending post request and saving response as response object 
-        r = requests.post(
-            url = self.API_BASE + 
-                  self.API_AUTHENTICATION + '?' + 
-                  self.API_AUTHENTICATION_GRANT_TYPE_PARAM + '=' +
-                  self.API_AUTHENTICATION_GRANT_TYPE_PASSWORD, 
-            data = data
-            ) 
-        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
-        if (r.status_code != self.HTTP_200_OK):
-            return False
-
-        # extracting response text
-        response_dict = json.loads(r.text) 
-        self.access_token = response_dict['access_token']
-        self.token_type = response_dict['token_type']
-        self.created_at = response_dict['created_at'] 
-        self.expires_in = response_dict['expires_in']
-        self.refresh_token = response_dict['refresh_token']
-
-        self.logger.debug("{\n  'access_token': '%s',\n  'token_type': '%s',\n  'created_at': '%s',\n  'expires_in': '%s',\n  'refresh_token': '%s'\n}" %(self.access_token, self.token_type, self.created_at, self.expires_in, self.refresh_token))
-        return True
+        return self.auth_post(data, self.API_AUTHENTICATION_GRANT_TYPE_PASSWORD)
 
     def getVehicleList(self, update=False):
         self.logger.debug("getVehicleList: " + self.API_VEHICLES)
@@ -108,30 +114,30 @@ class TeslaAPI:
         # If >1 then show list and select, otherwise pick the vehicle  
         # sending post request and saving response as response object 
         r = requests.get(
-            url = self.API_BASE + self.API_VEHICLES,
-            headers = { 'Authorization': self.token_type + ' ' + self.access_token }
-            ) 
-        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
-        if (r.status_code != self.HTTP_200_OK):
+            url=self.API_BASE + self.API_VEHICLES,
+            headers={'Authorization': self.token_type + ' ' + self.access_token}
+        )
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
             return None
         response_dict = json.loads(r.text)
-        self.logger.debug("Vehicle count : %s " %response_dict['count'])
+        self.logger.debug("Vehicle count : %s " % response_dict['count'])
         self.vehicle_list = response_dict['response']
         for vehicle in self.vehicle_list:
-            self.logger.debug("The display_name (given vehicle name) is : %s " %vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM]) 
-            self.logger.debug("Het id_s is : %s " %vehicle[self.VEHICLE_LIST_ID_PARAM]) 
-            self.logger.debug("Het state is : %s " %vehicle[self.VEHICLE_LIST_STATE_PARAM]) 
-            self.logger.debug("Het vehicle_id is : %s " %vehicle['vehicle_id']) 
-            self.logger.debug("Het VIN is : %s " %vehicle['vin'])
+            self.logger.debug(
+                "The display_name (given vehicle name) is : %s " % vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM])
+            self.logger.debug("Het id_s is : %s " % vehicle[self.VEHICLE_LIST_ID_PARAM])
+            self.logger.debug("Het state is : %s " % vehicle[self.VEHICLE_LIST_STATE_PARAM])
+            self.logger.debug("Het vehicle_id is : %s " % vehicle['vehicle_id'])
+            self.logger.debug("Het VIN is : %s " % vehicle['vin'])
         return self.vehicle_list
-
 
     def getVehicleWithId(self, id=None):
         self.logger.debug("getVehicleWithId")
         if id is None:
             return None
         vehicle_list = self.getVehicleList()
-        if (vehicle_list == None):
+        if vehicle_list is None:
             return None
         for vehicle in vehicle_list:
             if id == vehicle[self.VEHICLE_LIST_ID_PARAM]:
@@ -139,82 +145,78 @@ class TeslaAPI:
                 return vehicle
         return None
 
-
     def getVehicleNameIdList(self):
         self.logger.debug("getVehicleNameIdList")
         vehicle_list = self.getVehicleList()
-        if (vehicle_list == None):
-            return []   # Empty list
+        if vehicle_list is None:
+            return []  # Empty list
         nid = []
         for vehicle in vehicle_list:
-            nid.append( { 
+            nid.append({
                 'id': vehicle[self.VEHICLE_LIST_ID_PARAM],
                 'name': vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM],
                 'vin': vehicle[self.VEHICLE_LIST_VIN_PARAM]
-             })
+            })
         return nid
 
-
     def vehicleDetailssWithId(self, id=None):
-        if id == None:
+        if id is None:
             return self.VEHICLE_LIST_STATE_VALUE_UNKNOWN
 
         # TODO
         return None
 
-
     def wakeUpVehicleWithId(self, id=None):
         self.logger.debug("wakeUpVehicleWithId: " + self.API_WAKE_UP)
         vehicle = self.getVehicleWithId(id)
-        if vehicle == None:
+        if vehicle is None:
             return False
         wake_up_tries = 0
-        while ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and 
-                (wake_up_tries < self.MAX_WAKE_UP_TRIES)):
+        while ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and
+               (wake_up_tries < self.MAX_WAKE_UP_TRIES)):
             wake_up_tries += 1
             # 03 Wake it up, otherwise the STATE call will timeout
             r = requests.post(
-                url = self.API_BASE + self.API_WAKE_UP.replace('{id}', vehicle[self.VEHICLE_LIST_ID_PARAM]),
-                headers = { 'Authorization': self.token_type + ' ' + self.access_token }
-                ) 
-            self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
-            if (r.status_code != self.HTTP_200_OK):
+                url=self.API_BASE + self.API_WAKE_UP.replace('{id}', vehicle[self.VEHICLE_LIST_ID_PARAM]),
+                headers={'Authorization': self.token_type + ' ' + self.access_token}
+            )
+            self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+            if r.status_code != self.HTTP_200_OK:
                 return False
             response_dict = json.loads(r.text)
             vehicle[self.VEHICLE_LIST_STATE_PARAM] = response_dict['response'][self.VEHICLE_LIST_STATE_PARAM]
-            self.logger.debug("On try %d the state is now %s " % (wake_up_tries, vehicle[self.VEHICLE_LIST_STATE_PARAM]))
-            if (vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_AWAKE):
+            self.logger.debug(
+                "On try %d the state is now %s " % (wake_up_tries, vehicle[self.VEHICLE_LIST_STATE_PARAM]))
+            if vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_AWAKE:
                 return True
             self.logger.debug("Wait 5 seconds to try again...")
             time.sleep(5)
 
-        if ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and 
-            (wake_up_tries >= self.MAX_WAKE_UP_TRIES)):
-            self.logger.debug("Could not wake up the car...") 
+        if ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and
+                (wake_up_tries >= self.MAX_WAKE_UP_TRIES)):
+            self.logger.debug("Could not wake up the car...")
             return False
         return True
-
 
     def vehicleWithIdIsAsleep(self, id=None):
         self.logger.debug("vehicleWithIdIsAsleep()")
         vehicle = self.getVehicleWithId(id)
-        if vehicle == None:
+        if vehicle is None:
             self.logger.debug("Cannot determine. Vehicle not found.")
             return False
         self.logger.debug("Vehicle state {}.".format(vehicle[self.VEHICLE_LIST_STATE_PARAM]))
-        return (vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP)
-
+        return vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP
 
     def getVehicleDetailsWithId(self, id=None, update=False):
         self.logger.debug("getVehicleDetailsWithId()")
         vehicle = self.getVehicleWithId(id)
-        if id == None or vehicle == None:
+        if id is None or vehicle is None:
             return None
         # Existing?
         if (self.VEHICLE_DETAILS_TOKEN in vehicle) and (vehicle[self.VEHICLE_DETAILS_TOKEN] != None) and (not update):
             return vehicle[self.VEHICLE_DETAILS_TOKEN]
         # Needs to be awake
-        if (self.vehicleWithIdIsAsleep(id) and 
+        if (self.vehicleWithIdIsAsleep(id) and
                 not self.wakeUpVehicleWithId(id)):
             return None
         self.logger.debug("getVehicleDetailsWithId() - awake")
@@ -222,14 +224,14 @@ class TeslaAPI:
         self.logger.debug("getVehicleDetailsWithId() - %s" % url)
         # 04 Get the milage
         r = requests.get(
-            url = url,
-            headers = { 'Authorization': self.token_type + ' ' + self.access_token }
-            ) 
-        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
-        if (r.status_code != self.HTTP_200_OK):
-            if (r.status_code == self.HTTP_408_REQUEST_TIMEOUT):
+            url=url,
+            headers={'Authorization': self.token_type + ' ' + self.access_token}
+        )
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
                 response_dict = json.loads(r.text)
-                self.logger.warning("Error: " % response_dict['error'])
+                self.logger.warning("Error: %s" % response_dict['error'])
             return None
 
         # TODO WAAR LAAT JE DIT?
@@ -238,23 +240,21 @@ class TeslaAPI:
         self.logger.debug("Odometer : %s " % response_dict['response'][self.VEHICLE_DETAILS_ODOMETER_PARAM])
         return response_dict['response']
 
-
     def getOdometerWithId(self, id=None):
         self.logger.debug("getOdometerWithId()")
         if id is None:
             return None
         vehicle_details = self.getVehicleDetailsWithId(id)
-        if vehicle_details == None:
+        if vehicle_details is None:
             return None
         return round(float(vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM]) * 1.609344)
 
-
     def refreshToken(self):
         self.logger.debug('refreshToken() ' + self.API_AUTHENTICATION)
-        if (self.refresh_token==None):
+        if self.refresh_token is None:
             self.logger.debug('Refresh token missing.')
             return False
-            
+
         data = {
             "grant_type": self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN,
             "client_id": self.TESLA_CLIENT_ID,
@@ -263,34 +263,13 @@ class TeslaAPI:
         }
 
         # 01 - Authenticate [POST]
-        # sending post request and saving response as response object 
-        r = requests.post(
-            url = self.API_BASE + 
-                  self.API_AUTHENTICATION + '?' + 
-                  self.API_AUTHENTICATION_GRANT_TYPE_PARAM + '=' +
-                  self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN, 
-            data = data
-            ) 
-        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
-        if (r.status_code != self.HTTP_200_OK):
-            return False
-
-        # extracting response text
-        response_dict = json.loads(r.text) 
-        self.access_token = response_dict['access_token']
-        self.token_type = response_dict['token_type']
-        self.created_at = response_dict['created_at'] 
-        self.expires_in = response_dict['expires_in']
-        self.refresh_token = response_dict['refresh_token']
-
-        self.logger.debug("{\n  'access_token': '%s',\n  'token_type': '%s',\n  'created_at': '%s',\n  'expires_in': '%s',\n  'refresh_token': '%s'\n}" %(self.access_token, self.token_type, self.created_at, self.expires_in, self.refresh_token))
-        return True
-
+        # sending post request and saving response as response object
+        return self.auth_post(data, self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN)
 
     def revokeToken(self):
         self.logger.debug("revokeToken()")
 
-        if (self.access_token == None):
+        if self.access_token is None:
             self.logger.debug("No access_token to revoke")
             return False
 
@@ -298,11 +277,11 @@ class TeslaAPI:
             "token": self.access_token
         }
         r = requests.post(
-            url = self.API_BASE + self.API_REVOKE,
-            data = data
-            ) 
-        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))   
-        if (r.status_code != self.HTTP_200_OK):
+            url=self.API_BASE + self.API_REVOKE,
+            data=data
+        )
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
             self.logger.debug("Not successfull revoking token")
             return False
 
@@ -311,31 +290,30 @@ class TeslaAPI:
 
     def hasValidToken(self):
         self.logger.debug("hasValidToken()")
-        if (self.access_token is None):
+        if self.access_token is None:
             self.logger.debug("token is None")
             return False
-        date = datetime.datetime.fromtimestamp(int(self.created_at) + int(self.expires_in)) # / 1e3
+        date = datetime.datetime.fromtimestamp(int(self.created_at) + int(self.expires_in))  # / 1e3
         today = date.today()
-        if (date > today):
+        if date > today:
             self.logger.debug("token is still valid")
             return True
         self.logger.debug("token has expired")
         return False
 
-
     # Token valid for 45 days, refresh if token is valid for less than 31 days
     def tokenRefreshCheck(self):
         self.logger.debug("token_refresh_check()")
-        if (not self.hasValidToken()):
+        if not self.hasValidToken():
             self.logger.debug("token is not valid")
             # Report update if there is an invalid access_token
-            return (self.access_token != None)
+            return self.access_token is not None
         token_date = datetime.datetime.fromtimestamp(
-                        int(self.created_at) + int(self.expires_in)
-                        ) # / 1e3
+            int(self.created_at) + int(self.expires_in)
+        )  # / 1e3
         today = datetime.datetime.now()
         delta = datetime.timedelta(days=31)
-        if (today > (token_date - delta)):
+        if today > (token_date - delta):
             self.logger.debug("Needs refresh")
             return self.refreshToken()
         self.logger.debug("Token does not need refreshing yet")
