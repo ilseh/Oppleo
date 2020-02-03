@@ -246,7 +246,7 @@ class TeslaAPI:
         vehicle_details = self.getVehicleDetailsWithId(id)
         if vehicle_details == None:
             return None
-        return int(vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM])
+        return round(float(vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM]) * 1.609344)
 
 
     def refreshToken(self):

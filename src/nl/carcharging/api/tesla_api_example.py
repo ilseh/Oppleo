@@ -1,3 +1,6 @@
+from flask import Flask
+from flask_socketio import SocketIO
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
 """
@@ -15,6 +18,15 @@ from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
  its own thread. It needs to run in an environment where this is allowed and
  threads are enabled.
  """
+
+# app initiliazation
+app = Flask(__name__)
+# Make it available through WebAppConfig
+WebAppConfig.app = app
+appSocketIO = SocketIO(app)
+# Make it available through WebAppConfig
+WebAppConfig.appSocketIO = appSocketIO
+
 
 # Instantiate the helper object
 uotu = UpdateOdometerTeslaUtil()
