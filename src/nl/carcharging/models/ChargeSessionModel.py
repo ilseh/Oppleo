@@ -102,9 +102,13 @@ class ChargeSessionModel(Base):
     @staticmethod
     def get_latest_charge_session(device, rfid=None):
         db_session = DbSession()
-        qry_latest_id = db_session.query(func.max(ChargeSessionModel.id)).filter(ChargeSessionModel.energy_device_id == device)
+        # Build query to get id of latest chargesession for this device.
+        qry_latest_id = db_session.query(func.max(ChargeSessionModel.id)).filter(ChargeSessionModel.energy_device_id ==
+                                                                                 device)
+        # If rfid is specified, expand the query with a filter on rfid.
         if rfid is not None:
             qry_latest_id = qry_latest_id.filter(ChargeSessionModel.rfid == str(rfid))
+        #  Now query the ChargeSession that we're interested in (latest for device or latest for device AND rfid).
         latest_charge_session = db_session.query(ChargeSessionModel).filter(ChargeSessionModel.id == qry_latest_id).first()
         return latest_charge_session
 
