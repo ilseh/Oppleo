@@ -28,7 +28,7 @@ class UpdateOdometerTeslaUtil:
 
     def start(self):
         self.logger.debug(f'{datetime.datetime.now()} - Launching background task...')
-        self.thread = WebAppConfig.socketio.start_background_task(self.update_odometer)
+        self.thread = WebAppConfig.appSocketIO.start_background_task(self.update_odometer)
 
     def update_odometer(self):
         # This method starts a thread which grabs the odometer value and updates the session table
@@ -55,7 +55,7 @@ class UpdateOdometerTeslaUtil:
         charge_session.km = tApi.getOdometerWithId(rfid_model.vehicle_id)
         charge_session.save()
         self.logger.debug("Obtained odometer {} for {} ".format(
-            charge_session.odometer, 
+            charge_session.km, 
             rfid_model.vehicle_name
             ))
         if tApi.tokenRefreshCheck():

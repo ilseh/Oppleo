@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "pythonPath": "${config:python.pythonPath}:./src",
+            "pythonPath": "${config:python.pythonPath}",
             "console": "integratedTerminal"
         },
         {
