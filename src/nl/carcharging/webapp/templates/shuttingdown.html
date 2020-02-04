@@ -36,6 +36,10 @@
     jQuery(document).ready(function () {
         setInterval(function(){
             switch (counter) {
+                case 1:
+                    $("#countdown").text("")
+                    counter--
+                    break
                 case 0:
                     // Server down
                     $("#countdown").text("")
