@@ -63,6 +63,7 @@ class EnergyDeviceMeasureModel(Base):
         return db_session.query(EnergyDeviceMeasureModel) \
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
+        db_session.close()
 
     def get_last_n_saved_since(self, energy_device_id, since_ts, n=-1):
         db_session = DbSession()
