@@ -276,8 +276,9 @@ def reboot():
     form = AuthorizeForm()
     if form.validate_on_submit() and \
        check_password_hash(current_user.password, form.password.data):
-        flaskRoutesLogger.debug('Reboot requested. Rebooting now...')
-        # os.system('sudo reboot')
+        flaskRoutesLogger.debug('Reboot requested and authorized. Rebooting in 2 seconds...')
+        # Simple os.system('sudo reboot') initiates reboot before a webpage can be returned
+        os.system("nohup sudo -b bash -c 'sleep 2; reboot' &>/dev/null")
         return render_template("rebooting.html", 
                     webappconfig=WebAppConfig
                     )
