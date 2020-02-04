@@ -425,7 +425,7 @@ def rfid_tokens(token=None):
     if (not jsonRequested):
         if (token == None):
             return render_template(
-                'tokens.html', 
+                'tokens.html',
                 webappconfig=WebAppConfig
                 )
         rfid_model = RfidModel().get_one(token)
