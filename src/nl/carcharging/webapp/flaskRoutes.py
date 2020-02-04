@@ -245,8 +245,9 @@ def shutdown():
     form = AuthorizeForm()
     if form.validate_on_submit() and \
        check_password_hash(current_user.password, form.password.data):
-        flaskRoutesLogger.debug('Shutdown requested. Shutting down...')
-#        os.system('sudo shutdown now')
+        flaskRoutesLogger.debug('Shutdown requested and authorized. Shutting down in 2 seconds...')
+        # Simple os.system('sudo shutdown now') initiates shutdown before a webpage can be returned
+        os.system("nohup sudo -b bash -c 'sleep 2; shutdown now' &>/dev/null")
         return render_template("shuttingdown.html", 
                     webappconfig=WebAppConfig
                     )
