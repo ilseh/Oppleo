@@ -86,6 +86,37 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
+    var rfidTokens = {}
+    function getRfidTokens() {
+      console.log(timestamp() + ' getRfidTokens()')            
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/rfid_tokens',
+        contentType : "application/json",
+        dataType	  : 'json',
+        encode		  : true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        $.each(data, function(i,val) {
+          rfidTokens[val.rfid] = val
+        })
+        // Invalidate to force re-render
+        dt.rows().invalidate()
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+      })
+      .fail(function() {
+      })
+      .always(function() {
+      })
+    }
+    function isData(val) {
+      return (val != undefined && val != null && val !== "None" && val !== '')
+    }
+    function addOnNewline(str, addition, newline) {
+      return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
+    }
     var dt = undefined
     function getChargeSessions() {
       console.log(timestamp() + ' getChargeSessions()')
@@ -133,9 +164,34 @@
             // This is for the Action column icons
             "targets": 1,
             "render": function (data, type, row) {
-              return data == undefined || data === "None" ? 
-                        "-" : 
-                        '<a href="/rfid_tokens/' + data + '" target="_self">' + data + '</a>'
+              txt = (data in rfidTokens && isData(rfidTokens[data].name) ? 
+                        rfidTokens[data].name : 
+                        ''
+                    )
+              txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_make) ? 
+                        addOnNewline(txt, rfidTokens[data].vehicle_make, '<br/>') : 
+                        txt
+                    )
+              txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_model) ? 
+                        txt + ' ' + rfidTokens[data].vehicle_model : 
+                        txt
+                    )
+              txt = (data in rfidTokens && isData(rfidTokens[data].license_plate) ? 
+                        addOnNewline(txt, rfidTokens[data].license_plate, '<br/>') : 
+                        txt
+                    )
+              t = (data in rfidTokens ? '<span data-toggle="tooltip" \
+                              data-placement="bottom" \
+                              data-html="true" \
+                              stype="cursor: pointer;" \
+                              title="<em>' +  txt + '</em>" \
+                              >': 
+                            '<span>'
+                  )
+              return (data == undefined || data === "None" ? 
+                        t + '<i class="fas fa-ban"></i></span>' : 
+                        t + '<a href="/rfid_tokens/' + data + '" target="_self">' + data + '</a></span>'
+                     )
             }
           }, {
             // This is for the Action column icons
@@ -211,6 +267,7 @@
             window.location = location + $(this).attr('id').split("_").pop();
           })
         })
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
   //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
@@ -225,6 +282,7 @@
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       getChargeSessions()
+      getRfidTokens()
     })
 
     </script>
