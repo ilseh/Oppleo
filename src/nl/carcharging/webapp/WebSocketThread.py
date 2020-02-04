@@ -42,6 +42,11 @@ class WebSocketThread(object):
                 lastRun = time.time() *1000.0
             self.app.sleep(0.1)
         self.logger.debug(f'Terminating thread')
+        # Releasing session if applicable
+        db_session = DbSession()
+        if (db_session is not None):
+            self.logger.debug(f'Closimg DbSession on this thread...')
+            db_session.remove()
 
     def start(self, app):
         self.stop_event.clear()
