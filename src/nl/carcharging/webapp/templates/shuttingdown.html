@@ -32,12 +32,23 @@
         <script src="{{ url_for('static', filename='plugins/notifications/notify-metro.js') }}"></script>
 
 <script>
-Query(document).ready(function ($) {
-	// Handler for .ready() called.
-	if ( document.referrer !== 'undefined' ) {
-		$.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Referrer ' + document.referrer);
-	}
-});
+    counter = 10
+    jQuery(document).ready(function () {
+        setInterval(function(){
+            switch (counter) {
+                case 0:
+                    // Server down
+                    $("#countdown").text("")
+                    $('h2#title').text('UITGESCHAKELD')
+                    $('h6#subtitle').text('Het systeem is afgesloten')
+                    break
+                default:
+                    // Wait for it...
+                    $("#countdown").text((counter--)-1)
+                    break
+            }
+        }, 1000)
+    })
 </script>
 
     </head>
@@ -68,8 +79,9 @@ Query(document).ready(function ($) {
 
                     <div class="col-lg-6">
                         <div class="message-box">
-                            <h2 class="m-b-0 text-dark">SHUTDOWN</h2>
-                            <h6>Het systeem wordt afgesloten</h6>
+                            <h2 class="m-b-0 text-dark" id="title">UITSCHAKELEN</h2>
+                            <h6 id="subtitle">Het systeem wordt afgesloten</h6>
+                            <h1 class="m-b-0 text-dark" id="countdown">10</h1>
                         </div>
                     </div>
                 </div>
