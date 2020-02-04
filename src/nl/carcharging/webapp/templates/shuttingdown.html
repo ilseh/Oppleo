@@ -41,6 +41,14 @@
                     $("#countdown").text("")
                     $('h2#title').text('UITGESCHAKELD')
                     $('h6#subtitle').text('Het systeem is afgesloten')
+                    // If the server comes up again, redirect to dashboard
+                    var xhr = new XMLHttpRequest()
+                    xhr.open("GET","/",false)
+                    xhr.send(null)
+                    if(xhr.status == 200) {
+                        // is online
+                        return window.location.href = '/'
+                    }   
                     break
                 default:
                     // Wait for it...
