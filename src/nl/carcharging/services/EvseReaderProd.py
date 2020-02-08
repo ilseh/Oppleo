@@ -27,7 +27,10 @@ class EvseState(enum.Enum):
 
 EVSE_MINLEVEL_STATE_CONNECTED = 8  # A dc lower than this indicates state A, higher state B
 
-EVSE_TIME_TO_PULSE = 500  # Min time between rising edges to be pulsing. Faster is ERROR
+EVSE_MIN_TIME_TO_PULSE = 500  # Min time im ms between rising edges to be pulsing. Faster is ERROR
+# Max time it takes to change direction when pulsing. If it's takes longer, assume it's changing it's level
+# (ie turned on) and is not pulsing. Value is chosen intuitively.
+EVSE_MAX_TIME_TO_PULSE = 4 * EVSE_MIN_TIME_TO_PULSE
 
 PWM_GPIO = 6  # 4
 SAMPLE_TIME = 0.05  # .05 sec
@@ -58,7 +61,20 @@ def is_current_measurement_interval_normal_pulse(evse_measurement_milliseconds):
     logger = logging.getLogger('nl.carcharging.services.EvseReaderProd')
     delta = current_time_milliseconds() - evse_measurement_milliseconds
     logger.debug('Normal pulse cycle? interval of change is calculated: %f' % delta)
-    return evse_measurement_milliseconds is not None and (delta >= EVSE_TIME_TO_PULSE)
+    return evse_measurement_milliseconds is not None \
+           and (EVSE_MAX_TIME_TO_PULSE > delta >= EVSE_MIN_TIME_TO_PULSE)
+
+
+def is_current_measurement_interval_error_pulse(evse_measurement_milliseconds):
+    '''
+    Error pulse goes faster than the normal pulse.
+    :param evse_measurement_milliseconds:
+    :return:
+    '''
+    logger = logging.getLogger('nl.carcharging.services.EvseReaderProd')
+    delta = current_time_milliseconds() - evse_measurement_milliseconds
+    logger.debug('Error pulse cycle? interval of change is calculated: %f' % delta)
+    return evse_measurement_milliseconds is not None and (delta < EVSE_MIN_TIME_TO_PULSE)
 
 
 def is_pulse_direction_changed(direction_current, direction_previous):
@@ -72,7 +88,7 @@ class EvseReaderProd:
 
     def loop(self, cb_until, cb_result):
 
-        self.logger.debug('In loop, doing setup GPIO');
+        self.logger.debug('In loop, doing setup GPIO')
         GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
         GPIO.setup(6, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
@@ -155,9 +171,10 @@ class EvseReaderProd:
                         'Direction of evse dutycycle changed. Current direction overall: %s' % evse_direction_overall.name)
                     if is_current_measurement_interval_normal_pulse(evse_direction_change_moment):
                         evse_state = EvseState.EVSE_STATE_CHARGING
-                    else:
-                        # Too fast, means error.
+                    elif is_current_measurement_interval_error_pulse(evse_direction_change_moment):
                         evse_state = EvseState.EVSE_STATE_ERROR
+                    else:
+                        self.logger.debug('Changed direction too slow, is not pulsing, assume only level changed.')
                     evse_direction_overall_previous = evse_direction_overall
                     evse_direction_change_moment = current_time_milliseconds()
 
