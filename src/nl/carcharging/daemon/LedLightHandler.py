@@ -177,6 +177,7 @@ class LedLightHandler(Service):
             self.buzz_ok()
             self.logger.debug("Stopping charging session for rfid %s" % rfid)
             rfid_latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
+            rfid_latest_session.end_time = datetime.now()
             rfid_latest_session.save()
         else:
             self.authorize(rfid)
