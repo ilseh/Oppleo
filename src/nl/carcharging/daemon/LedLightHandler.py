@@ -17,6 +17,7 @@ from nl.carcharging.services.LedLighter import LedLighter
 from nl.carcharging.services.RfidReader import RfidReader
 from nl.carcharging.utils.EnergyUtil import EnergyUtil
 from nl.carcharging.utils.GenericUtil import GenericUtil
+from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
 GenericUtil.importGpio()
 GenericUtil.importMfrc522()
@@ -45,7 +46,7 @@ class LedLightHandler(Service):
 
     @inject
     def __init__(self, energy_util: EnergyUtil, charger: Charger, ledlighter: LedLighter, buzzer: Buzzer, evse: Evse,
-                 evse_reader: EvseReader):
+                 evse_reader: EvseReader, tesla_util: UpdateOdometerTeslaUtil):
         super(LedLightHandler, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
 
         self.energy_util = energy_util
@@ -54,6 +55,7 @@ class LedLightHandler(Service):
         self.buzzer = buzzer
         self.evse = evse
         self.evse_reader = evse_reader
+        self.tesla_util = tesla_util
         self.is_status_charging = False
 
     def run(self):
@@ -175,6 +177,7 @@ class LedLightHandler(Service):
             self.buzz_ok()
             self.logger.debug("Stopping charging session for rfid %s" % rfid)
             rfid_latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
+            rfid_latest_session.end_time = datetime.now()
             rfid_latest_session.save()
         else:
             self.authorize(rfid)
@@ -191,9 +194,17 @@ class LedLightHandler(Service):
             session = ChargeSessionModel()
             session.set(data_for_session)
             session.save()
+            self.save_tesla_values_in_thread(charge_session_id=session.id)
             start_session = True
 
         self.update_charger_and_led(start_session)
+
+    def save_tesla_values_in_thread(self, charge_session_id):
+        self.tesla_util.set_charge_session_id(charge_session_id=charge_session_id)
+        # update_odometer takes some time, so put in own thread
+        thread_for_tesla_util = threading.Thread(target=self.tesla_util.update_odometer, name='thread-tesla-util')
+        thread_for_tesla_util.start()
+
 
     def has_rfid_open_session(self, rfid_latest_session):
         return not (rfid_latest_session is None or rfid_latest_session.end_value)
