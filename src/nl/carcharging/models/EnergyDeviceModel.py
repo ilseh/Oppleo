@@ -19,7 +19,7 @@ class EnergyDeviceModel(Base):
     bytesize = db.Column(db.Integer)
     parity = db.Column(db.String(1))
     stopbits = db.Column(db.Integer)
-    timeout_value = db.Column(db.Integer)
+    timeout = db.Column(db.Integer)
     debug = db.Column(db.Boolean)
     mode = db.Column(db.String(10))
 
@@ -66,7 +66,7 @@ class EnergyDeviceSchema(Schema):
     bytesize = fields.Int(dump_only=True)
     parity = fields.Str(dump_only=True)
     stopbits = fields.Int(dump_only=True)
-    timeout_value = fields.Int(dump_only=True)
+    timeout = fields.Int(dump_only=True)
     debug = fields.Bool(dump_only=True)
     mode = fields.Str(dump_only=True)
 
