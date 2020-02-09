@@ -13,8 +13,8 @@ try:
 except ModuleNotFoundError:
     if WebAppConfig.logger == None:
         WebAppConfig.initLogger('CarChargerWebApp')
-        webApplogger = logging.getLogger(LOGGER_PATH)
-    webApplogger.debug('EvseReaderProd: import pigpio caused ModuleNotFoundError!!!')
+        WebAppConfig = logging.getLogger(LOGGER_PATH)
+    WebAppConfig.debug('EvseReaderProd: import pigpio caused ModuleNotFoundError!!!')
 
 
 GPIO = GenericUtil.importGpio()
