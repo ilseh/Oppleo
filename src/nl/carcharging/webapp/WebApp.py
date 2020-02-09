@@ -142,8 +142,8 @@ if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
 
     # Start the Energy Device Monitor
-#    meuThread = MeasureElectricityUsageThread()
-#    meuThread.start(appSocketIO)
+    meuThread = MeasureElectricityUsageThread()
+    meuThread.start(appSocketIO)
 
     # Start the RFID Monitor
     chThread = ChargerHandlerThread(
@@ -156,7 +156,6 @@ if __name__ == "__main__":
                     tesla_util=UpdateOdometerTeslaUtil()
                 )
     chThread.start(appSocketIO)
-
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
