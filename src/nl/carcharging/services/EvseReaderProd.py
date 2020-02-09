@@ -94,6 +94,7 @@ class EvseReaderProd:
 
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
+        self.logger.setLevel(logging.ERROR)
 
     def loop(self, cb_until, cb_result):
         global WebAppConfig
