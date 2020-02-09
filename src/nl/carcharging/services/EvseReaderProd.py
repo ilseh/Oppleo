@@ -15,7 +15,7 @@ except ModuleNotFoundError:
         WebAppConfig.initLogger('CarChargerWebApp')
     evseProdLogger = logging.getLogger(LOGGER_PATH)
     evseProdLogger.debug('EvseReaderProd: import pigpio caused ModuleNotFoundError!!!')
-    
+
 
 GPIO = GenericUtil.importGpio()
 
@@ -145,7 +145,7 @@ class EvseReaderProd:
 
             self.logger.debug("In loop to read evse status")
 
-            WebAppConfig.app.sleep(SAMPLE_TIME)
+            WebAppConfig.appSocketIO.sleep(SAMPLE_TIME)
 
             evse_dcf = evse_reader.evse_value()
 
