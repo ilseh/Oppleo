@@ -1,6 +1,6 @@
 [Unit]
 Description=CarCharger Web Application
-After=syslog.target network.target
+After=syslog.target network.target pigpiod.service
 
 [Service]
 ; Raspberry user for this service to run
