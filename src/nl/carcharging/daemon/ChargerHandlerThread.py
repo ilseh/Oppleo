@@ -305,15 +305,16 @@ class ChargerHandlerThread(object):
             )
         if open_charge_session_for_device != None:
             self.logger.debug(f'energyUpdate() open charge session, updating usage...')
+            self.logger.debug('energyUpdate() device_measurement %S...' % str(device_measurement))
             # Update session usage
             open_charge_session_for_device.end_value = device_measurement.kw_total
-            self.logger.debug('energyUpdate() end_value to %s...' % device_measurement.end_value)
+            self.logger.debug('energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
             open_charge_session_for_device.total_energy = \
                 open_charge_session_for_device.end_value - open_charge_session_for_device.start_value
-            self.logger.debug('energyUpdate() total_energy to %s...' % device_measurement.total_energy)
+            self.logger.debug('energyUpdate() total_energy to %s...' % open_charge_session_for_device.total_energy)
             open_charge_session_for_device.total_price = \
                 round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
-            self.logger.debug('energyUpdate() total_price to %s...' % device_measurement.total_price)
+            self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
             open_charge_session_for_device.save() 
             # Emit changes via web socket
             self.counter += 1
