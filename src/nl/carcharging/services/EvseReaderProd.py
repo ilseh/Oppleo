@@ -1,5 +1,8 @@
 import time
-import pigpio
+try:
+    import pigpio
+except ModuleNotFoundError:
+    pass # Dev environment
 import enum
 import logging
 

@@ -30,6 +30,16 @@ class EnergyUtil:
         instrument.debug = False
         instrument.mode = minimalmodbus.MODE_RTU
 
+
+        # Get this from the database
+        instrument.serial.baudrate = device_data.baudrate
+        instrument.serial.bytesize = device_data.bytesize
+        instrument.serial.parity = device_data.parity
+        instrument.serial.stopbits = device_data.stopbits
+        instrument.serial.timeout = device_data.timeout
+        instrument.debug = device_data.debug
+        instrument.mode = device_data.mode
+
         return instrument
 
     def getMeasurementValue(self, energy_device_id):

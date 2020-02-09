@@ -3,7 +3,10 @@ import logging
 
 from nl.carcharging.config import Logger
 
-import pigpio
+try:
+    import pigpio
+except ModuleNotFoundError:
+    pass # Dev environment
 
 
 class EvseReaderUtil:

@@ -32,6 +32,8 @@ class GenericUtil(object):
             GPIO = PIO
         except RuntimeError:
             logging.debug('Can not import gpio, Assuming dev env')
+        except ModuleNotFoundError:
+            logging.debug('Can not import gpio, Assuming dev env')
 
         return GPIO
 
@@ -40,4 +42,6 @@ class GenericUtil(object):
         try:
             from mfrc522 import SimpleMFRC522
         except RuntimeError:
+            logging.debug('Can not import mfrc522, Assuming dev env')
+        except ModuleNotFoundError:
             logging.debug('Can not import mfrc522, Assuming dev env')

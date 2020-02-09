@@ -15,6 +15,13 @@ class EnergyDeviceModel(Base):
     energy_device_id = db.Column(db.String(100), primary_key=True)
     port_name = db.Column(db.String(100))
     slave_address = db.Column(db.Integer)
+    baudrate = db.Column(db.Integer)
+    bytesize = db.Column(db.Integer)
+    parity = db.Column(db.String(1))
+    stopbits = db.Column(db.Integer)
+    timeout_value = db.Column(db.Integer)
+    debug = db.Column(db.Boolean)
+    mode = db.Column(db.String(10))
 
     def __init__(self, data):
         self.energy_device_id = data.get('energy_device_id')
@@ -55,3 +62,11 @@ class EnergyDeviceSchema(Schema):
     energy_device_id = fields.Str(required=True)
     port_name = fields.Str(dump_only=True)
     slave_address = fields.Int(dump_only=True)
+    baudrate = fields.Int(dump_only=True)
+    bytesize = fields.Int(dump_only=True)
+    parity = fields.Str(dump_only=True)
+    stopbits = fields.Int(dump_only=True)
+    timeout_value = fields.Int(dump_only=True)
+    debug = fields.Bool(dump_only=True)
+    mode = fields.Str(dump_only=True)
+
