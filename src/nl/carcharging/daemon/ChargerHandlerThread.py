@@ -163,7 +163,7 @@ class ChargerHandlerThread(object):
             except Exception as ex:
                 self.logger.error("Could not execute run_read_rfid: %s" % ex)
                 self.buzz_error()
-                self.ledlighter.error(duration=1.5)
+                self.ledlighter.error(duration=1)
             time.sleep(.25)
         self.logger.info("Stopping RfidReader")
 
