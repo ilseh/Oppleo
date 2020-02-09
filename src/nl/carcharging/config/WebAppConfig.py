@@ -133,7 +133,8 @@ class WebAppConfig(object):
     @staticmethod
     def initLogger(process_name='PythonProc'):
         WebAppConfig.PROCESS_NAME = process_name
-        WebAppConfig.LOG_FILE = '/tmp/%s.log' % WebAppConfig.PROCESS_NAME
+#        WebAppConfig.LOG_FILE = '/tmp/%s.log' % WebAppConfig.PROCESS_NAME
+        WebAppConfig.LOG_FILE = '/home/pi/%s.log' % WebAppConfig.PROCESS_NAME
         Logger.init_log(WebAppConfig.PROCESS_NAME, WebAppConfig.LOG_FILE)
         WebAppConfig.logger = logging.getLogger('nl.carcharging.webapp.WebApp')
 
