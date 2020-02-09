@@ -113,6 +113,15 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.id == qry_latest_id).first()
         return latest_charge_session
 
+    @staticmethod
+    def get_open_charge_session_for_device(device):
+        db_session = DbSession()
+        # Build query to get id of latest chargesession for this device.
+        open_charge_session_for_device = db_session.query(ChargeSessionModel) \
+                            .filter(ChargeSessionModel.energy_device_id == device) \
+                            .filter(ChargeSessionModel.end_time == None)
+        return open_charge_session_for_device
+
     def __repr(self):
         return '<id {}>'.format(self.id)
 

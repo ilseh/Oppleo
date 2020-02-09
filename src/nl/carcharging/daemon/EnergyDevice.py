@@ -11,6 +11,8 @@ class EnergyDevice():
     interval = 10 # default value
     lastRun = 0
     appSocketIO = None
+    callbackList = []
+
 
     def __init__(self, energy_device_id=None, interval=10, energyUtil=None, appSocketIO=None):
         self.logger = logging.getLogger('nl.carcharging.daemon.EnergyDevice')
@@ -67,6 +69,8 @@ class EnergyDevice():
                 self.counter += 1
                 self.logger.debug(f'Send msg {self.counter} via websocket...')
                 self.appSocketIO.emit('status_update', { 'data': device_measurement.to_str() }, namespace='/usage')
+            # Callbacks to notify update
+            self.callback(device_measurement)
         else:
             self.logger.debug('Not saving new measurement because values of interest have not changed and last saved measurement'
                         ' is not older than 1 hour')
@@ -86,4 +90,13 @@ class EnergyDevice():
     def is_measurement_older_than_1hour(self, old_measurement, new_measurement):
         diff = new_measurement.created_at - old_measurement.created_at
         return (diff.seconds / SECONDS_IN_HOUR) > 1
+
+    # Callbacks called when new values are read
+    def addCallback(self, fn):
+        self.callbackList.append(fn)
+        
+    # Callbacks to notify update
+    def callback(self, device_measurement):
+        for callbackFn in self.callbackList:
+            callbackFn(device_measurement)
 

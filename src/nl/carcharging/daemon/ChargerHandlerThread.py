@@ -40,7 +40,7 @@ class ExpiredException(Exception):
 
 
 class ChargerHandlerThread(object):
-    app = None
+    appSocketIO = None
     logger = None
     evse_reader_thread = None
     rfid_reader_thread = None
@@ -54,6 +54,7 @@ class ChargerHandlerThread(object):
     tesla_util = None
     is_status_charging = False
     device = None
+    counter = 0
 
     def __init__(self, energy_util: EnergyUtil, charger: Charger, ledlighter: LedLighter, buzzer: Buzzer, evse: Evse,
                  evse_reader: EvseReader, tesla_util: UpdateOdometerTeslaUtil):
@@ -72,15 +73,15 @@ class ChargerHandlerThread(object):
         self.is_status_charging = False
 
 
-    def start(self, app):
+    def start(self, appSocketIO):
         self.stop_event.clear()
         self.logger.debug('Launching background task...')
-        self.app = app
+        self.appSocketIO = appSocketIO
         self.device = GenericUtil.getMeasurementDevice()
         self.logger.debug('start_background_task() - evseReaderLoop')
-        self.evse_reader_thread = self.app.start_background_task(self.evseReaderLoop)
+        self.evse_reader_thread = self.appSocketIO.start_background_task(self.evseReaderLoop)
         self.logger.debug('start_background_task() - rfidReaderLoop')
-        self.rfid_reader_thread = self.app.start_background_task(self.rfidReaderLoop)
+        self.rfid_reader_thread = self.appSocketIO.start_background_task(self.rfidReaderLoop)
         self.logger.debug('Done starting rfid reader and evse reader backgroubd tasks')
 
 
@@ -286,3 +287,26 @@ class ChargerHandlerThread(object):
     def buzz_error(self):
         self.buzzer.buzz_other_thread(.1, 2)
 
+    # Callback from MeasureElectricityUsageThread with updated EnergyDeviceMeasureModel
+    def energyUpdate(self, device_measurement):
+        self.logger.debug(f'energyUpdate() callback...')
+        # Open charge session for this energy device?
+        open_charge_session_for_device =
+            ChargeSessionModel.get_open_charge_session_for_device(
+                    device_measurement.energy_device_id
+            )
+        if open_charge_session_for_device != None:
+            self.logger.debug(f'energyUpdate() open charge session, updating usage...')
+            # Update session usage
+            open_charge_session_for_device.end_value = 
+            open_charge_session_for_device.total_energy = 
+                open_charge_session_for_device.end_value - open_charge_session_for_device.start_value
+            open_charge_session_for_device.total_price = 
+                round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
+            open_charge_session_for_device.save() 
+            # Emit changes via web socket
+            self.counter += 1
+            self.logger.debug(f'Send msg {self.counter} for charge_session update via websocket...')
+            self.appSocketIO.emit('status_update', { 'data': open_charge_session_for_device.to_str() }, namespace='/charge_session')
+
+        

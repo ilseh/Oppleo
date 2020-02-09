@@ -142,11 +142,8 @@ def RfidModel_after_update(mapper, connection, target):
 if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
 
-    # Start the Energy Device Monitor
+    # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
     meuThread = MeasureElectricityUsageThread()
-    meuThread.start(appSocketIO)
-
-    # Start the RFID Monitor
     chThread = ChargerHandlerThread(
                     energy_util=EnergyUtil(), 
                     charger=Charger(), 
@@ -156,6 +153,11 @@ if __name__ == "__main__":
                     evse_reader=EvseReader(), 
                     tesla_util=UpdateOdometerTeslaUtil()
                 )
+    meuThread.addCallback(chThread.energyUpdate)
+
+    # Start the Energy Device Monitor
+    meuThread.start(appSocketIO)
+    # Start the RFID Monitor
     chThread.start(appSocketIO)
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
