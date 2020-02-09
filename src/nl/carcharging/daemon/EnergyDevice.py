@@ -93,10 +93,13 @@ class EnergyDevice():
 
     # Callbacks called when new values are read
     def addCallback(self, fn):
+        self.logger.debug('EnergyDevice.addCallback()')
         self.callbackList.append(fn)
         
     # Callbacks to notify update
     def callback(self, device_measurement):
+        self.logger.debug('EnergyDevice.callback()')
         for callbackFn in self.callbackList:
+            self.logger.debug('EnergyDevice.callback() calling')
             callbackFn(device_measurement)
 

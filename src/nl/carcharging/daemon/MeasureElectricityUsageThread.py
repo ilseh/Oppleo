@@ -61,7 +61,9 @@ class MeasureElectricityUsageThread(object):
 
     # Callbacks called when new values are read
     def addCallback(self, fn):
+        self.logger.debug('MeasureElectricityUsageThread.addCallback()...')
         for energyDevice in self.energyDeviceList:
+            self.logger.debug('MeasureElectricityUsageThread.addCallback() to energyDevice...')
             energyDevice.addCallback(fn)
 
 
