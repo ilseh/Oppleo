@@ -11,6 +11,9 @@ def init_log(process_name, log_file, daemons=[]):
     # create file handler which logs even debug messages
     fh = logging.FileHandler(log_file)
     fh.setLevel(logging.DEBUG)
+    fh.setLevel(
+        nl.carcharging.services.EvseReaderProd
+    )
     # create console handler with a higher log level
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)

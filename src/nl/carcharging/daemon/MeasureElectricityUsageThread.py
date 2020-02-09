@@ -8,21 +8,22 @@ from nl.carcharging.daemon.EnergyDevice import EnergyDevice
 
 
 class MeasureElectricityUsageThread(object):
-    app = None
+    appSocketIO = None
     stop_event = None
     energyDeviceList = []
+
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.daemon.MeasureElectricityUsageThread')
         self.thread = None
         self.stop_event = threading.Event()
 
-    def start(self, app):
+    def start(self, appSocketIO):
         self.stop_event.clear()
         self.logger.debug('Launching background task...')
-        self.app = app
+        self.appSocketIO = appSocketIO
         self.logger.debug('start_background_task() - monitorEnergyDevicesLoop')
-        self.thread = self.app.start_background_task(self.monitorEnergyDevicesLoop)
+        self.thread = self.appSocketIO.start_background_task(self.monitorEnergyDevicesLoop)
 
     def stop(self):
         self.logger.debug('Requested to stop')
@@ -39,7 +40,8 @@ class MeasureElectricityUsageThread(object):
                 EnergyDevice(
                     energy_device_id=energy_device.energy_device_id,
                     interval=10,
-                    energyUtil=EnergyUtil()
+                    energyUtil=EnergyUtil(),
+                    appSocketIO=self.appSocketIO
                     )
                 )
         # Continue looping through them
@@ -53,8 +55,13 @@ class MeasureElectricityUsageThread(object):
                 # Sleep is interruptable by other threads, but sleeing 7 seconds before checking if 
                 # stop is requested is a bit long, so sleep for 0.1 seconds, then check passed time
                 energyDevice.handleIfTimeTo()
-            self.app.sleep(0.1)
+            self.appSocketIO.sleep(0.1)
         self.logger.debug(f'Terminating thread')
 
+
+    # Callbacks called when new values are read
+    def addCallback(self, fn):
+        for energyDevice in self.energyDeviceList:
+            energyDevice.addCallback(fn)
 
 
