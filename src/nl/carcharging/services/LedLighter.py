@@ -34,21 +34,27 @@ class LedLighter(object):
         self.previous_light = None
 
     def back_to_previous_light(self):
+        self.logger.debug("LedLighter.back_to_previous_light()")
         self.switch_to_light(self.previous_light)
 
     def is_charging_light_on(self):
+        self.logger.debug("LedLighter.is_charging_light_on()")
         return self.current_light == self.ledlightCharging
 
     def charging(self):
+        self.logger.debug("LedLighter.charging()")
         self.switch_to_light(self.ledlightCharging)
 
     def available(self):
+        self.logger.debug("LedLighter.available()")
         self.switch_to_light(self.ledlightAvailable)
 
     def ready(self):
+        self.logger.debug("LedLighter.ready()")
         self.switch_to_light(self.ledlightReady)
 
     def switch_to_light(self, light):
+        self.logger.debug("LedLighter.switch_to_light()")
         self.lock.acquire()
         self.save_state()
         self.current_light = light
@@ -60,32 +66,33 @@ class LedLighter(object):
         if self.previous_light != self.current_light:
             self.logger.debug("save state, previous light is different from current")
             self.previous_light = self.current_light
-
-
         if self.previous_light:
             self.logger.debug('turning previous light off')
             self.previous_light.off()
             self.logger.debug('previous light is off')
 
     def turn_current_light_off(self):
+        self.logger.debug("LedLighter.turn_current_light_off()")
         if self.current_light == self.ledlightCharging:
             self.current_light.pulse_stop()
         else:
             self.current_light.off()
 
     def error(self, duration=None):
+        self.logger.debug("LedLighter.error()")
         if duration:
             self.temp_switch_on_thread(self.ledlightError, duration)
         else:
             self.switch_to_light(self.ledlightError)
 
     def temp_switch_on_thread(self, light, duration):
+        self.logger.debug("LedLighter.temp_switch_on_thread()")
         thread_for_temp_switch_on = threading.Thread(target=self.temp_switch_on, name="Temp_switch_on thread",
                                                      args=(light, duration))
         thread_for_temp_switch_on.start()
 
     def temp_switch_on(self, light, duration):
-
+        self.logger.debug("LedLighter.temp_switch_on()")
         self.lock.acquire()
         self.save_state()
         self.current_light = light
@@ -97,6 +104,7 @@ class LedLighter(object):
         self.lock.release()
 
     def stop(self):
+        self.logger.debug("LedLighter.stop()")
         lights = {self.ledlightAvailable, self.ledlightReady, self.ledlightError}
         for light in lights:
             light.off()
