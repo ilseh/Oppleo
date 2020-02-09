@@ -22,7 +22,7 @@ class RfidReaderProd(object):
 
     def __init__(self):
         self.reader = SimpleMFRC522()
-        self.reader.
+
 
     def read(self):
         global WebAppConfig
