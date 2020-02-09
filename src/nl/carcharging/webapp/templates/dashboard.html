@@ -14,6 +14,45 @@
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
+  <style>
+  div#statusCharging {
+    background-color: #0a7aa3; /*#222; */
+    animation-name: chargingColor;
+    animation-duration: 3s;
+    animation-iteration-count: infinite;
+  }
+  @keyframes chargingColor {
+    0% {
+      background-color: #0a7aa3; /* #323b44;  #222; */
+    }
+    50% {
+      background-color: #3bafda; /* #4285f4; */
+    }
+    100 {
+      background-color: #0a7aa3; /* #222; */
+    }
+  }
+  div#statusError {
+    background-color: #a31c2a; 
+    animation-name: errorColor;
+    animation-duration: 0.5s;
+    animation-iteration-count: infinite;
+  }
+  @keyframes errorColor {
+    0% {
+      background-color: #a31c2a;
+    }
+    50% {
+      background-color: #dc3545;
+    }
+    100 {
+      background-color: #a31c2a;
+    }
+  }
+
+
+  </style>
+
   <script>
     function timestamp() {
       d = new Date();
@@ -99,9 +138,6 @@
     var dt = undefined
     function getUsageData( n ) {
       console.log(timestamp() + ' getUsageData()')
-    
-//      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
-            
       $.ajax({
         type		: 'GET',
         url			: (n == undefined ? '/usage_data' : '/usage_data/' + n),
@@ -111,35 +147,7 @@
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
-  //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
         updateGauges( data[0] )
-
-        data.forEach(element => {
-//          console.log(element.a_l1)
-
-//          $("span#energy_device_id").text("("+element.energy_device_id+")")
-
-
-/*
-          dt.row.add([
-            element.created_at,
-            element.kw_total +' kWh',
-            element.kwh_l1 +' kWh',
-            element.kwh_l2 +' kWh',
-            element.kwh_l3 +' kWh',
-            element.a_l1 +' A',
-            element.a_l2 +' A',
-            element.a_l3 +' A',
-            element.p_l1 +' W',
-            element.p_l2 +' W',
-            element.p_l3 +' W',
-            element.v_l1 +' V',
-            element.v_l1 +' V',
-            element.v_l3 +' V',
-            element.hz +' Hz'
-          ]).draw( false )
-*/
-        })
       })
       .fail(function() {
   //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
@@ -206,27 +214,7 @@
       // this is a callback that triggers when the "my response" event is emitted by the server.
       socket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
-
         updateGauges( msg.data )
-          /*
-        dt.row.add([
-            msg.data.created_at,
-            msg.data.kw_total +' kWh',
-            msg.data.kwh_l1 +' kWh',
-            msg.data.kwh_l2 +' kWh',
-            msg.data.kwh_l3 +' kWh',
-            msg.data.a_l1 +' A',
-            msg.data.a_l2 +' A',
-            msg.data.a_l3 +' A',
-            msg.data.p_l1 +' W',
-            msg.data.p_l2 +' W',
-            msg.data.p_l3 +' W',
-            msg.data.v_l1 +' V',
-            msg.data.v_l1 +' V',
-            msg.data.v_l3 +' V',
-            msg.data.hz +' Hz'
-          ]).draw( false )
-*/
       })
     }
     //example of triggering an event on click of a form submit button
@@ -234,11 +222,12 @@
         socket.emit('my event', {data: $('#emit_data').val()});
     }
 
-
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed")
+
       startWebSocket()
       getUsageData(1)
+      
     })
 
     </script>
@@ -254,18 +243,59 @@
       <div class="row">
           <div class="col-sm-12">
               <div class="page-title-box">
-                  <div class="btn-group pull-right">
-                      <ol class="breadcrumb hide-phone p-0 m-0">
-                          <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
-                          <li class="breadcrumb-item active">Dashboard</li>
-                      </ol>
-                  </div>
                   <h4 class="page-title">Dashboard</h4>
               </div>
           </div>
       </div>
       <!-- end page title end breadcrumb -->
 
+      <div class="row">
+        <div class="col-sm-12">
+            <div class="card m-b-20 bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Available</h5>
+                    <p class="card-text">With supporting text below as a natural lead-in to
+                        additional content.</p>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-12">
+            <div class="card m-b-20 bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Ready</h5>
+                    <p class="card-text">With supporting text below as a natural lead-in to
+                        additional content.</p>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-12">
+            <div id="statusCharging" class="card m-b-20 text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Charging</h5>
+                    <p class="card-text">With supporting text below as a natural lead-in to
+                        additional content.</p>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-12">
+            <div id="statusError" class="card m-b-20 text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Error</h5>
+                    <p class="card-text">With supporting text below as a natural lead-in to
+                        additional content.</p>
+                </div>
+            </div>
+        </div>
+      </div>
 
       <div class="row">
 
