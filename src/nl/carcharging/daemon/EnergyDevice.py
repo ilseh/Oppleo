@@ -4,19 +4,21 @@ import logging
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 
 class EnergyDevice():
+    counter = 0
     logger = None
     energy_device_id = None
     energuUtil = None
     interval = 10 # default value
     lastRun = 0
+    appSocketIO = None
 
-
-    def __init__(self, energy_device_id=None, interval=10, energyUtil=None):
+    def __init__(self, energy_device_id=None, interval=10, energyUtil=None, appSocketIO=None):
         self.logger = logging.getLogger('nl.carcharging.daemon.EnergyDevice')
         self.logger.setLevel(logging.INFO)
         self.energy_device_id = energy_device_id
         self.interval = interval
         self.energyUtil = energyUtil
+        self.appSocketIO = appSocketIO
 
 
     def handleIfTimeTo(self):
@@ -60,6 +62,11 @@ class EnergyDevice():
                 device_measurement.save()
                 self.logger.debug("value saved %s %s %s" %
                         (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
+            if self.appSocketIO not is None:
+                # Emit as web socket update
+                self.counter += 1
+                self.logger.debug(f'Send msg {self.counter} via websocket...')
+                self.appSocketIO.emit('status_update', { 'data': device_measurement.to_str() }, namespace='/usage')
         else:
             self.logger.debug('Not saving new measurement because values of interest have not changed and last saved measurement'
                         ' is not older than 1 hour')
