@@ -184,9 +184,24 @@ class ChargeSessionModel(Base):
                 "total_price": str(self.total_price),
                 "km": str(self.km),
                 "end_time": str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S"))
-            }
-            )
+            })
         )
+
+    # convert into JSON:
+    def to_str(self):
+        return ({
+                "id": str(self.id),
+                "energy_device_id": str(self.energy_device_id),
+                "start_time": str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")),
+                "rfid": self.rfid,
+                "start_value": str(self.start_value),
+                "end_value": str(self.end_value),
+                "tariff": str(self.tariff),
+                "total_energy": str(self.total_energy),
+                "total_price": str(self.total_price),
+                "km": str(self.km),
+                "end_time": str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S"))
+            })
 
     # convert into dict:
     def to_dict(self):
@@ -203,8 +218,7 @@ class ChargeSessionModel(Base):
             "total_price": str(self.total_price),
             "km": str(self.km),
             "end_time": (str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
-        }
-        )
+        })
 
 
 class ChargeSessionSchema(Schema):
