@@ -13,15 +13,17 @@ class MeasureElectricityUsageThread(object):
     energyDeviceList = []
 
 
-    def __init__(self):
+    def __init__(self, appSocketIO):
         self.logger = logging.getLogger('nl.carcharging.daemon.MeasureElectricityUsageThread')
+        self.appSocketIO = appSocketIO
         self.thread = None
         self.stop_event = threading.Event()
+        self.createEnergyDevicesList()
 
-    def start(self, appSocketIO):
+
+    def start(self):
         self.stop_event.clear()
         self.logger.debug('Launching background task...')
-        self.appSocketIO = appSocketIO
         self.logger.debug('start_background_task() - monitorEnergyDevicesLoop')
         self.thread = self.appSocketIO.start_background_task(self.monitorEnergyDevicesLoop)
 
@@ -49,7 +51,6 @@ class MeasureElectricityUsageThread(object):
     def monitorEnergyDevicesLoop(self):
         global WebAppConfig
         self.logger.debug('monitorEnergyDevicesLoop()...')
-        self.createEnergyDevicesList()
         while not self.stop_event.is_set():
             for energyDevice in self.energyDeviceList:
                 # Sleep is interruptable by other threads, but sleeing 7 seconds before checking if 
@@ -63,7 +64,7 @@ class MeasureElectricityUsageThread(object):
     def addCallback(self, fn):
         self.logger.debug('MeasureElectricityUsageThread.addCallback()...')
         for energyDevice in self.energyDeviceList:
-            self.logger.debug('MeasureElectricityUsageThread.addCallback() to energyDevice...')
+            self.logger.debug('MeasureElectricityUsageThread.addCallback() to energyDevice %s...' % energyDevice.energy_device_id)
             energyDevice.addCallback(fn)
 
 

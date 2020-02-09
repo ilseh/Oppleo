@@ -38,6 +38,7 @@ class LedLightProdHardware(object):
 
     def cleanup(self):
         self.lock.acquire()
+        # TODO - cleanup resets all ports. Need to keep the evse controlled
         GPIO.cleanup()
         self.logger.debug("GPIO cleanup done for %s" % self.color_desc())
         self.lock.release()

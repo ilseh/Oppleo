@@ -143,7 +143,7 @@ if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
 
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
-    meuThread = MeasureElectricityUsageThread()
+    meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
                     energy_util=EnergyUtil(), 
                     charger=Charger(), 
@@ -151,14 +151,15 @@ if __name__ == "__main__":
                     buzzer=Buzzer(), 
                     evse=Evse(),
                     evse_reader=EvseReader(), 
-                    tesla_util=UpdateOdometerTeslaUtil()
+                    tesla_util=UpdateOdometerTeslaUtil(),
+                    appSocketIO=appSocketIO
                 )
     meuThread.addCallback(chThread.energyUpdate)
 
     # Start the Energy Device Monitor
-    meuThread.start(appSocketIO)
+    meuThread.start()
     # Start the RFID Monitor
-    chThread.start(appSocketIO)
+    chThread.start()
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(

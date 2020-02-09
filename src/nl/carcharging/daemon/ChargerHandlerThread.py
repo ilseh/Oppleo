@@ -56,8 +56,16 @@ class ChargerHandlerThread(object):
     device = None
     counter = 0
 
-    def __init__(self, energy_util: EnergyUtil, charger: Charger, ledlighter: LedLighter, buzzer: Buzzer, evse: Evse,
-                 evse_reader: EvseReader, tesla_util: UpdateOdometerTeslaUtil):
+    def __init__(self, 
+                energy_util: EnergyUtil, 
+                charger: Charger, 
+                ledlighter: LedLighter, 
+                buzzer: Buzzer, 
+                evse: Evse,
+                evse_reader: EvseReader, 
+                tesla_util: UpdateOdometerTeslaUtil,
+                appSocketIO: appSocketIO
+                ):
         self.logger = logging.getLogger('nl.carcharging.daemon.ChargerHandlerThread')
         self.logger.setLevel(logging.INFO)
         self.evse_reader_thread = None
@@ -71,12 +79,12 @@ class ChargerHandlerThread(object):
         self.evse_reader = evse_reader
         self.tesla_util = tesla_util
         self.is_status_charging = False
+        self.appSocketIO = appSocketIO
 
 
-    def start(self, appSocketIO):
+    def start(self):
         self.stop_event.clear()
         self.logger.debug('Launching background task...')
-        self.appSocketIO = appSocketIO
         self.device = GenericUtil.getMeasurementDevice()
         self.logger.debug('start_background_task() - evseReaderLoop')
         self.evse_reader_thread = self.appSocketIO.start_background_task(self.evseReaderLoop)
