@@ -58,6 +58,7 @@ class ChargerHandlerThread(object):
     def __init__(self, energy_util: EnergyUtil, charger: Charger, ledlighter: LedLighter, buzzer: Buzzer, evse: Evse,
                  evse_reader: EvseReader, tesla_util: UpdateOdometerTeslaUtil):
         self.logger = logging.getLogger('nl.carcharging.daemon.ChargerHandlerThread')
+        self.logger.setLevel(logging.INFO)
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()
