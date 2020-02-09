@@ -4,6 +4,8 @@ import logging
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
+SECONDS_IN_HOUR = 60 * 60
+
 class EnergyDevice():
     counter = 0
     logger = None
