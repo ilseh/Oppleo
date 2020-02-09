@@ -28,7 +28,6 @@ class MeasureElectricityUsageThread(object):
         self.logger.debug('Requested to stop')
         self.stop_event.set()
 
-
     def createEnergyDevicesList(self):
         self.logger.info('Searching for measurement devices configured in the db')
         energy_devices = EnergyDeviceModel.get_all()
