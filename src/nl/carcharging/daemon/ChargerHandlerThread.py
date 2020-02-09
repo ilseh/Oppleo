@@ -92,10 +92,9 @@ class ChargerHandlerThread(object):
         try:
             # Assume first logger handler is the correct file to route stdout to.
 #            sys.stdout = open(self.logger.handlers[0].baseFilename, 'a')
-#            sys.stdout = open('/tmp/stdout.log', 'a')
-            sys.stdout = open('/home/pi/stdout.log', 'a')
+            sys.stdout = open('/tmp/stdout.log', 'a')
+#            sys.stdout = open('/home/pi/stdout.log', 'a')
 
-#            self.evse_reader.loop(self.got_sigterm, lambda evse_state: self.try_handle_charging(evse_state))
             self.evse_reader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
 
         except Exception as ex:
@@ -164,7 +163,7 @@ class ChargerHandlerThread(object):
             except Exception as ex:
                 self.logger.error("Could not execute run_read_rfid: %s" % ex)
                 self.buzz_error()
-                self.ledlighter.error(duration=3)
+                self.ledlighter.error(duration=1.5)
             time.sleep(.25)
         self.logger.info("Stopping RfidReader")
 
@@ -177,6 +176,7 @@ class ChargerHandlerThread(object):
         self.logger.info("Starting rfid reader for device %s" % device)
         rfid, text = reader.read()
         self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
+
 
         rfid_latest_session = ChargeSessionModel.get_latest_charge_session(device, rfid)
 
