@@ -148,7 +148,7 @@ class ChargerHandlerThread(object):
         # Check if there was a session active when this daemon was stopped.
         last_saved_session = ChargeSessionModel.get_latest_charge_session(device)
 
-        if last_saved_session and last_saved_session.end_value is None:
+        if last_saved_session and last_saved_session.end_time is None:
             self.logger.info("After startup continuing an active session for rfid %s" % last_saved_session.rfid)
             resume_session = True
         else:
@@ -179,7 +179,6 @@ class ChargerHandlerThread(object):
         rfid, text = reader.read()
         self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
-
         rfid_latest_session = ChargeSessionModel.get_latest_charge_session(device, rfid)
 
         start_session = False
@@ -189,9 +188,7 @@ class ChargerHandlerThread(object):
         if self.has_rfid_open_session(rfid_latest_session):
             self.buzz_ok()
             self.logger.debug("Stopping charging session for rfid %s" % rfid)
-            rfid_latest_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
-            rfid_latest_session.end_time = datetime.now()
-            rfid_latest_session.save()
+            self.end_charge_session(rfid_latest_session, device)
         else:
             self.authorize(rfid)
             self.buzz_ok()
@@ -200,17 +197,43 @@ class ChargerHandlerThread(object):
             last_saved_session = ChargeSessionModel.get_latest_charge_session(device)
             if self.is_other_session_active(last_saved_session, rfid):
                 raise OtherRfidHasOpenSessionException(
-                    "Rfid %s was offered but rfid %s has an open session" % (rfid, last_saved_session.rfid))
+                    "Rfid %s was offered but rfid %s has an open session" % (rfid, last_saved_session.rfid)
+                    )
 
             self.logger.debug("Starting new charging session for rfid %s" % rfid)
-            data_for_session['start_value'] = self.energy_util.getMeasurementValue(device).get('kw_total')
-            session = ChargeSessionModel()
-            session.set(data_for_session)
-            session.save()
+            self.start_charge_session(rfid, device)
             self.save_tesla_values_in_thread(charge_session_id=session.id)
             start_session = True
 
         self.update_charger_and_led(start_session)
+
+
+    def start_charge_session(self, rfid, device):
+        data_for_session = {
+            "rfid"              : rfid, 
+            "energy_device_id"  : device,
+            "start_value"       : self.energy_util.getMeasurementValue(device).get('kw_total'),
+            "tariff"            : ChargerConfigModel.get_config().charger_tariff,
+            "end_value"         : self.energy_util.getMeasurementValue(device).get('kw_total'),
+            "total_energy"      : 0,
+            "total_price"       : 0
+            }
+        session = ChargeSessionModel()
+        session.set(data_for_session)
+        session.save()
+        rfid = RfidModel.get_one(rfid)
+        if rfid.vehicle_make.upper() == "TESLA" and rfid.get_odometer: 
+            # Try to add odometer
+            self.save_tesla_values_in_thread(charge_session_id=session.id)
+
+
+    def end_charge_session(self, charge_session, device):
+        charge_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
+        charge_session.end_time = datetime.now()
+        charge_session.total_energy = charge_session.end_value - charge_session.start_value
+        charge_session.total_price = round(charge_session.total_energy * charge_session.tariff * 100) /100
+        charge_session.save()
+
 
     def save_tesla_values_in_thread(self, charge_session_id):
         self.tesla_util.set_charge_session_id(charge_session_id=charge_session_id)

@@ -86,6 +86,7 @@ wsClientCnt = 0
 def load_user(user_id):
     return User.query.get(user_id)
 
+"""
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
     global webApplogger, threadLock, wsClientCnt, wsThread, appSocketIO
@@ -109,7 +110,7 @@ def disconnect():
             # stop thread
             webApplogger.debug('Requesting thread stop')
             wsThread.stop()
-
+"""
 
 # This event currently is not used, just for reference
 @appSocketIO.on('my event', namespace='/usage')
