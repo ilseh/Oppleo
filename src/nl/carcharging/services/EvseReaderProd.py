@@ -1,8 +1,4 @@
 import time
-try:
-    import pigpio
-except ModuleNotFoundError:
-    pass # Dev environment
 import enum
 import logging
 
@@ -10,9 +6,18 @@ from nl.carcharging.utils.EvseReaderUtil import EvseReaderUtil
 from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
-GPIO = GenericUtil.importGpio()
-
 LOGGER_PATH = "nl.carcharging.service.EvseReaderProd"
+
+try:
+    import pigpio
+except ModuleNotFoundError:
+    if WebAppConfig.logger == None:
+        WebAppConfig.initLogger('CarChargerWebApp')
+        webApplogger = logging.getLogger(LOGGER_PATH)
+    webApplogger.debug('EvseReaderProd: import pigpio caused ModuleNotFoundError!!!')
+
+
+GPIO = GenericUtil.importGpio()
 
 
 class EvseDirection(enum.Enum):
@@ -137,6 +142,7 @@ class EvseReaderProd:
 
         self.logger.info(" Starting, state is {}".format(evse_state.name))
         while not cb_until():
+
             self.logger.debug("In loop to read evse status")
 
             WebAppConfig.app.sleep(SAMPLE_TIME)
