@@ -2,6 +2,7 @@ import time
 import logging
 
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+from nl.carcharging.utils.GenericUtil import GenericUtil
 
 class EnergyDevice():
     counter = 0
