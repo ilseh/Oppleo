@@ -70,7 +70,7 @@ class EnergyDevice():
             if self.appSocketIO is not None:
                 # Emit as web socket update
                 self.counter += 1
-                self.logger.debug(f'Send msg {self.counter} via websocket...')
+                self.logger.debug(f'Send msg {self.counter} via websocket ...{device_measurement.to_str()}')
                 self.appSocketIO.emit('status_update', { 'data': device_measurement.to_str() }, namespace='/usage')
             # Callbacks to notify update
             self.callback(device_measurement)
