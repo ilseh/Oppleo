@@ -64,7 +64,7 @@ class EnergyDevice():
                 device_measurement.save()
                 self.logger.debug("value saved %s %s %s" %
                         (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
-            if self.appSocketIO not is None:
+            if self.appSocketIO is not None:
                 # Emit as web socket update
                 self.counter += 1
                 self.logger.debug(f'Send msg {self.counter} via websocket...')
