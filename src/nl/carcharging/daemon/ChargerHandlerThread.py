@@ -80,6 +80,7 @@ class ChargerHandlerThread(object):
         self.evse_reader_thread = self.app.start_background_task(self.evseReaderLoop)
         self.logger.debug('start_background_task() - rfidReaderLoop')
         self.rfid_reader_thread = self.app.start_background_task(self.rfidReaderLoop)
+        self.logger.debug('Done starting rfid reader and evse reader backgroubd tasks')
 
 
     def stop(self):
