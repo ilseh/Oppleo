@@ -20,6 +20,8 @@ class EnergyUtil:
                                               device_data.slave_address)  # port name, slave address (in decimal)
         instrument.close_port_after_each_call = True
 
+        # TODO get this from the database
+
         instrument.serial.baudrate = 9600
         instrument.serial.bytesize = 8
         instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
