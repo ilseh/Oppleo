@@ -95,7 +95,7 @@ class ChargerHandlerThread(object):
             sys.stdout = open('/tmp/stdout.log', 'a')
 
 #            self.evse_reader.loop(self.got_sigterm, lambda evse_state: self.try_handle_charging(evse_state))
-            self.evse_reader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
+            self.evse_reader.loop(self.stop_event, lambda evse_state: self.try_handle_charging(evse_state))
 
         except Exception as ex:
             self.logger.exception('Could not start evse reader loop')
