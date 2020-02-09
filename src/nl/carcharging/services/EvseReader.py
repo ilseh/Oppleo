@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.services.EvseReaderProd import EvseReaderProd, EvseState
 from nl.carcharging.utils.GenericUtil import GenericUtil
 try:
@@ -21,8 +22,10 @@ class EvseReaderDev(object):
         self.logger = logging.getLogger(LOGGER_PATH + 'Dev')
 
     def loop(self, cb_until, cb_result):
+        global WebAppConfig
         while not cb_until():
             self.logger.debug('Fake run Evse Read loop')
+            WebAppConfig.app.sleep(0.5)
             cb_result(EvseState.EVSE_STATE_UNKNOWN)
 
 

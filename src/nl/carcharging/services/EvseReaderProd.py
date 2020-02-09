@@ -8,6 +8,7 @@ import logging
 
 from nl.carcharging.utils.EvseReaderUtil import EvseReaderUtil
 from nl.carcharging.utils.GenericUtil import GenericUtil
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 GPIO = GenericUtil.importGpio()
 
@@ -90,6 +91,7 @@ class EvseReaderProd:
         self.logger = logging.getLogger(LOGGER_PATH)
 
     def loop(self, cb_until, cb_result):
+        global WebAppConfig
 
         self.logger.debug('In loop, doing setup GPIO')
         GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
@@ -137,7 +139,7 @@ class EvseReaderProd:
         while not cb_until():
             self.logger.debug("In loop to read evse status")
 
-            time.sleep(SAMPLE_TIME)
+            WebAppConfig.app.sleep(SAMPLE_TIME)
 
             evse_dcf = evse_reader.evse_value()
 
