@@ -5,6 +5,8 @@ try:
     from mfrc522 import SimpleMFRC522
 except RuntimeError:
     logging.debug('Assuming dev env')
+except ModuleNotFoundError:
+    logging.debug('Assuming dev env')
 
 LOGGER_PATH = "nl.carcharging.service.RfidReader"
 
@@ -33,7 +35,7 @@ class RfidReader(object):
         self.logger = logging.getLogger(LOGGER_PATH)
         if GenericUtil.isProd():
             self.logger.debug("Using production rfid reader")
-            self.reader = RfidReaderProd();
+            self.reader = RfidReaderProd()
         else:
             self.logger.debug("Using fake rfid reader")
             self.reader = RfidReaderDev()

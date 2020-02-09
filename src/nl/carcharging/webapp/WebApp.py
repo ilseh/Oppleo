@@ -34,6 +34,14 @@ from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.webapp.WebSocketThread import WebSocketThread
 
 from nl.carcharging.daemon.MeasureElectricityUsageThread import MeasureElectricityUsageThread
+from nl.carcharging.daemon.ChargerHandlerThread import ChargerHandlerThread
+from nl.carcharging.utils.EnergyUtil import EnergyUtil
+from nl.carcharging.services.Charger import Charger
+from nl.carcharging.services.LedLighter import LedLighter
+from nl.carcharging.services.Buzzer import Buzzer
+from nl.carcharging.services.Evse import Evse
+from nl.carcharging.services.EvseReader import EvseReader
+from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
@@ -134,8 +142,20 @@ if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
 
     # Start the Energy Device Monitor
-    meuThread = MeasureElectricityUsageThread()
-    meuThread.start(appSocketIO)
+#    meuThread = MeasureElectricityUsageThread()
+#    meuThread.start(appSocketIO)
+
+    # Start the RFID Monitor
+    chThread = ChargerHandlerThread(
+                    energy_util=EnergyUtil(), 
+                    charger=Charger(), 
+                    ledlighter=LedLighter(), 
+                    buzzer=Buzzer(), 
+                    evse=Evse(),
+                    evse_reader=EvseReader(), 
+                    tesla_util=UpdateOdometerTeslaUtil()
+                )
+    chThread.start(appSocketIO)
 
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'

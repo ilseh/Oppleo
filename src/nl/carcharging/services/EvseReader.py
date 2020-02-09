@@ -10,6 +10,8 @@ try:
     from mfrc522 import SimpleMFRC522
 except RuntimeError:
     logging.debug('Assuming dev env')
+except ModuleNotFoundError:
+    logging.debug('Assuming dev env')
 
 LOGGER_PATH = "nl.carcharging.service.EvseReader"
 
