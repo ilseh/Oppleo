@@ -32,7 +32,7 @@ class RfidReaderProd(object):
         while id is None:
             id, text = self.reader.read_no_block()
             # Sleep for just a little
-            WebAppConfig.appSocketIO.sleep(0.1)
+            WebAppConfig.appSocketIO.sleep(0.05)
 
         return id, text
 
