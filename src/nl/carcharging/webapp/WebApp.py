@@ -33,6 +33,8 @@ from nl.carcharging.models.User import User
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.webapp.WebSocketThread import WebSocketThread
 
+from nl.carcharging.daemon.MeasureElectricityUsageThread import MeasureElectricityUsageThread
+
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
 #import routes
@@ -130,6 +132,11 @@ def RfidModel_after_update(mapper, connection, target):
 
 if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
+
+    # Start the Energy Device Monitor
+    meuThread = MeasureElectricityUsageThread()
+    meuThread.start(appSocketIO)
+
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
