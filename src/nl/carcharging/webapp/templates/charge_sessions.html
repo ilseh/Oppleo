@@ -142,7 +142,7 @@
 
         dt = $('table#charge_sessions').DataTable( {
           "pageLength": 25,
-          "order": [[ 2, "desc" ]], // start_time
+          "order": [[ 0, "desc" ]], // id (was start_time, has a bug in string time format)
           dom: 'Blfrtip',
           buttons: [
             'copy', 
