@@ -39,6 +39,8 @@ class LedLighter(object):
 
     def is_charging_light_on(self):
         self.logger.debug("LedLighter.is_charging_light_on()")
+        # TODO something fishy here in the log, at one point the blue is replaced by both green
+        #      and red at the same time. Maybe this comparison gives false negatives.
         return self.current_light == self.ledlightCharging
 
     def charging(self):

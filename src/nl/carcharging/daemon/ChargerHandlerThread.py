@@ -67,7 +67,7 @@ class ChargerHandlerThread(object):
                 appSocketIO: appSocketIO
                 ):
         self.logger = logging.getLogger('nl.carcharging.daemon.ChargerHandlerThread')
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()
