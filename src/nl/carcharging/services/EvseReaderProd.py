@@ -6,7 +6,7 @@ from nl.carcharging.utils.EvseReaderUtil import EvseReaderUtil
 from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
-LOGGER_PATH = "nl.carcharging.service.EvseReaderProd"
+LOGGER_PATH = "nl.carcharging.services.EvseReaderProd"
 
 try:
     import pigpio
@@ -67,7 +67,7 @@ def is_current_measurement_interval_normal_pulse(evse_measurement_milliseconds):
     :param evse_measurement_milliseconds:
     :return:
     '''
-    logger = logging.getLogger('nl.carcharging.services.EvseReaderProd')
+    logger = logging.getLogger(LOGGER_PATH)
     delta = current_time_milliseconds() - evse_measurement_milliseconds
     logger.debug('Normal pulse cycle? interval of change is calculated: %f' % delta)
     return evse_measurement_milliseconds is not None \
@@ -80,7 +80,7 @@ def is_current_measurement_interval_error_pulse(evse_measurement_milliseconds):
     :param evse_measurement_milliseconds:
     :return:
     '''
-    logger = logging.getLogger('nl.carcharging.services.EvseReaderProd')
+    logger = logging.getLogger(LOGGER_PATH)
     delta = current_time_milliseconds() - evse_measurement_milliseconds
     logger.debug('Error pulse cycle? interval of change is calculated: %f' % delta)
     return evse_measurement_milliseconds is not None and (delta < EVSE_MIN_TIME_TO_PULSE)
