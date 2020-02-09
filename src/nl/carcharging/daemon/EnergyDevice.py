@@ -16,7 +16,7 @@ class EnergyDevice():
 
     def __init__(self, energy_device_id=None, interval=10, energyUtil=None, appSocketIO=None):
         self.logger = logging.getLogger('nl.carcharging.daemon.EnergyDevice')
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         self.energy_device_id = energy_device_id
         self.interval = interval
         self.energyUtil = energyUtil
