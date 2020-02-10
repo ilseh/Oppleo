@@ -388,7 +388,7 @@ def usage_data_since(since_timestamp, cnt=-1):
 def active_charge_session():
     global WebAppConfig
 
-    self.logger.debug(f'active_charge_session()')
+    flaskRoutesLogger.debug(f'active_charge_session()')
     # Open charge session for this energy device?
     open_charge_session_for_device = \
         ChargeSessionModel.get_open_charge_session_for_device(
@@ -403,16 +403,17 @@ def active_charge_session():
             })
     try:
         return jsonify({ 
-            'status': EvseState.EVSE_STATE_CHARGING if WebAppConfig.chThread.is_status_charging else EvseState.EVSE_STATE_CONNECTED,
+            'status': json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
             'id': WebAppConfig.ENERGY_DEVICE_ID, 
             'data': open_charge_session_for_device.to_str() 
             })
-    except:
-        return jsonify({ 
-            'status': EvseState.EVSE_STATE_UNKNOWN,
-            'id': WebAppConfig.ENERGY_DEVICE_ID, 
-            'reason': 'Could not determine charge session'
-            })
+    except Exception as e:
+        pass
+    return jsonify({ 
+        'status': json.dump(EvseState.EVSE_STATE_UNKNOWN),
+        'id': WebAppConfig.ENERGY_DEVICE_ID, 
+        'reason': 'Could not determine charge session'
+        })
 
 
 # Cnt is a maximum to limit impact of this request

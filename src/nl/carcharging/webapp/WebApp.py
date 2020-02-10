@@ -159,9 +159,9 @@ if __name__ == "__main__":
     WebAppConfig.chThread = chThread
 
     # Start the Energy Device Monitor
-    meuThread.start()
+#    meuThread.start()
     # Start the RFID Monitor
-    chThread.start()
+#    chThread.start()
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
