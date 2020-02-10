@@ -174,8 +174,8 @@
           }
           var dateToStr = ''
           dt.row.add([
-            element.rfid,
             (element.name == 'None' ? '-' : element.name),
+            element.rfid,
             (element.enabled ? "Ja" : "Nee"),
             formatDbDateTimeStr2Date(element.valid_from),
             formatDbDateTimeStr2Date(element.valid_until),
@@ -237,8 +237,8 @@
           <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
               <tr>
-                <th style="text-align: center;">Pasnummer</th>
                 <th style="text-align: center;">Naam</th>
+                <th style="text-align: center;">Pasnummer</th>
                 <th style="text-align: center;">Actief</th>
                 <th style="text-align: center;">Geldig van</th>
                 <th style="text-align: center;">Geldig tot</th>
