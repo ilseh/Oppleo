@@ -414,16 +414,6 @@ def active_charge_session():
             'reason': 'Could not determine charge session'
             })
 
-        
-class EvseState(enum.Enum):
-    EVSE_STATE_UNKNOWN = 0  # Initial
-    EVSE_STATE_INACTIVE = 1  # SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
-    EVSE_STATE_CONNECTED = 2  # SmartEVSE State B: LED ON full brightness, Car connected
-    EVSE_STATE_CHARGING = 3  # SmartEVSE State C: charging (pulsing)
-    EVSE_STATE_ERROR = 4 
-
-    pass
-
 
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/charge_sessions")
