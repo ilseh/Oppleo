@@ -333,20 +333,20 @@
       chargeSessionSocket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/charge_session')
       // this is a callback that triggers when the "my response" event is emitted by the server.
       chargeSessionSocket.on('charge_session_started', function(msg) {
-        console.log('Received: ' + JSON.stringify(msg.data))
-        startChargeSession( msg.data )
+        console.log('Received: ' + JSON.stringify(msg))
+        startChargeSession( msg )
       })
       chargeSessionSocket.on('charge_session_status_update', function(msg) {
-        console.log('Received: ' + JSON.stringify(msg.data))
-        updateDataChargeSession( msg.data )
+        console.log('Received: ' + JSON.stringify(msg))
+        updateDataChargeSession( msg )
       })
       chargeSessionSocket.on('charge_session_data_update', function(msg) {
-        console.log('Received: ' + JSON.stringify(msg.data))
-        updateStatusChargeSession( msg.data )
+        console.log('Received: ' + JSON.stringify(msg))
+        updateStatusChargeSession( msg )
       })
       chargeSessionSocket.on('charge_session_ended', function(msg) {
-        console.log('Received: ' + JSON.stringify(msg.data))
-        endChargeSession( msg.data )
+        console.log('Received: ' + JSON.stringify(msg))
+        endChargeSession( msg )
       })
     }
     //example of triggering an event on click of a form submit button
