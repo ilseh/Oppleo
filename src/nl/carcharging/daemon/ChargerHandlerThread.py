@@ -7,6 +7,7 @@ from datetime import datetime
 from injector import inject
 from service import Service
 
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.services.Buzzer import Buzzer
