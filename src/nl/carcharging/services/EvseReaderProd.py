@@ -1,5 +1,5 @@
 import time
-import enum
+from enum import Enum, IntEnum
 import logging
 
 from nl.carcharging.utils.EvseReaderUtil import EvseReaderUtil
@@ -20,13 +20,13 @@ except ModuleNotFoundError:
 GPIO = GenericUtil.importGpio()
 
 
-class EvseDirection(enum.Enum):
+class EvseDirection(Enum):
     UP = 1
     DOWN = -1
     NONE = 0
 
-
-class EvseState(enum.Enum):
+# enum.Enum is not jsonify serializable, IntEnum can be dumped using json.dumps()
+class EvseState(IntEnum):
     EVSE_STATE_UNKNOWN = 0  # Initial
     EVSE_STATE_INACTIVE = 1  # SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
     EVSE_STATE_CONNECTED = 2  # SmartEVSE State B: LED ON full brightness, Car connected
