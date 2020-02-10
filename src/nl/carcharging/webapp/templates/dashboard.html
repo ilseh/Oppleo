@@ -206,15 +206,52 @@
       
     }
 
+    function startChargeSession( data ) {
+      console.log('startChargeSession()')
+
+    }
+    function updateDataChargeSession( data ) {
+      console.log('updateDataChargeSession()')
+
+    }
+    function updateStatusChargeSession( data ) {
+      console.log('updateStatusChargeSession()')
+
+    }
+    function endChargeSession( data ) {
+      console.log('endChargeSession()')
+
+    }
+
+
     var socket = undefined
     function startWebSocket() {
       console.log(timestamp() + ' startWebSocket()')
-      // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
-      socket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/usage')
+      // start up the SocketIO connection to the server on namespace /usage
+      usageSocket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/usage')
       // this is a callback that triggers when the "my response" event is emitted by the server.
-      socket.on('status_update', function(msg) {
+      usageSocket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
         updateGauges( msg.data )
+      })
+      // start up the SocketIO connection to the server on namespace /usage
+      chargeSessionSocket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/charge_session')
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+      chargeSessionSocket.on('charge_session_started', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg.data))
+        startChargeSession( msg.data )
+      })
+      chargeSessionSocket.on('charge_session_status_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg.data))
+        updateDataChargeSession( msg.data )
+      })
+      chargeSessionSocket.on('charge_session_data_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg.data))
+        updateStatusChargeSession( msg.data )
+      })
+      chargeSessionSocket.on('charge_session_ended', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg.data))
+        endChargeSession( msg.data )
       })
     }
     //example of triggering an event on click of a form submit button
@@ -224,10 +261,8 @@
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed")
-
       startWebSocket()
       getUsageData(1)
-      
     })
 
     </script>
