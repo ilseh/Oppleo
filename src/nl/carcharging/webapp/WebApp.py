@@ -13,8 +13,6 @@ webApplogger.debug('sys.version %s : ' % sys.version)
 
 WebAppConfig.loadConfig()
 
-
-
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session
 from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
@@ -22,10 +20,10 @@ from threading import Lock
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import event
 
-
 from flask_wtf.csrf import CSRFProtect
 
 from nl.carcharging.models.__init__ import db
+from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
@@ -158,10 +156,11 @@ if __name__ == "__main__":
     WebAppConfig.meuThread = meuThread
     WebAppConfig.chThread = chThread
 
-    # Start the Energy Device Monitor
-#    meuThread.start()
-    # Start the RFID Monitor
-#    chThread.start()
+    if GenericUtil.isProd():
+        # Start the Energy Device Monitor
+        meuThread.start()
+        # Start the RFID Monitor
+        chThread.start()
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
