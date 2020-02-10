@@ -213,29 +213,43 @@
 
     function startChargeSession( data ) {
       console.log('startChargeSession()')
+      $('div#statusReady').find('div').find('p').text(
+        "Nieuwe charge sessie wordt gestart..."
+      )
       $('div#statusAvailable').hide()
       $('div#statusReady').show()
       $('div#statusCharging').hide()
       $('div#statusError').hide()
-
     }
-    function updateDataChargeSession( data ) {
+    function chargeDetailStr(id, data) {
+      return 'Er is op ' + id + 
+             ' een actieve laadsessie sinds ' + data.start_time + '. De beginstand was ' + data.start_value + 'kWh' +
+             ' en de huidige meterstand is ' + data.end_value + 'kWh. ' + 
+             (Number.isInteger(data.km) ? ' De km-stand bij het begin van de laadsessie is ' + data.km + 'km.' : '' ) + 
+             ' Het verbruik is ' + data.total_energy + 'kWh' + ' met een tarief van € ' + data.tariff + 
+             ' en een subtotaal van € ' + data.total_price + '.'
+    }
+    function updateDataChargeSession( result ) {
       console.log('updateDataChargeSession()')
-      // Depending on the EVSE State, either show ready or charging
-      $('div#statusAvailable').hide()
-      $('div#statusReady').hide()
-      $('div#statusCharging').show()
-      $('div#statusError').hide()
-
+      $('div#statusReady').find('div').find('p').text(
+        chargeDetailStr(result.id, result.data)
+      )
+      $('div#statusCharging').find('div').find('p').text(
+        chargeDetailStr(result.id, result.data)
+      )
     }
-    function updateStatusChargeSession( data ) {
+    function updateStatusChargeSession( result ) {
       console.log('updateStatusChargeSession()')
       // Depending on the EVSE State, either show ready or charging
       $('div#statusAvailable').hide()
-      $('div#statusReady').hide()
-      $('div#statusCharging').show()
+      if (parseInt(result.status) == EVSE_STATE_CHARGING) {
+        $('div#statusReady').hide()
+        $('div#statusCharging').show()
+      } else {
+        $('div#statusReady').show()
+        $('div#statusCharging').hide()
+      }
       $('div#statusError').hide()
-
     }
     function endChargeSession( data ) {
       console.log('endChargeSession()')
@@ -243,7 +257,6 @@
       $('div#statusReady').hide()
       $('div#statusCharging').hide()
       $('div#statusError').hide()
-
     }
 
     function getChargeSessionStatus( ) {
