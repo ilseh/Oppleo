@@ -176,7 +176,8 @@ class ChargeSessionModel(Base):
             json.dumps({
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
-                "start_time": str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")),
+                "start_time": (
+                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None),
                 "rfid": self.rfid,
                 "start_value": str(self.start_value),
                 "end_value": str(self.end_value),
@@ -184,7 +185,8 @@ class ChargeSessionModel(Base):
                 "total_energy": str(self.total_energy),
                 "total_price": str(self.total_price),
                 "km": str(self.km),
-                "end_time": str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S"))
+                "end_time": (
+                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
             })
         )
 
@@ -193,7 +195,8 @@ class ChargeSessionModel(Base):
         return ({
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
-                "start_time": str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")),
+                "start_time": (
+                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None),
                 "rfid": self.rfid,
                 "start_value": str(self.start_value),
                 "end_value": str(self.end_value),
@@ -201,7 +204,8 @@ class ChargeSessionModel(Base):
                 "total_energy": str(self.total_energy),
                 "total_price": str(self.total_price),
                 "km": str(self.km),
-                "end_time": str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S"))
+                "end_time": (
+                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
             })
 
     # convert into dict:
@@ -218,7 +222,8 @@ class ChargeSessionModel(Base):
             "total_energy": str(self.total_energy),
             "total_price": str(self.total_price),
             "km": str(self.km),
-            "end_time": (str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
+            "end_time": (
+                str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
         })
 
 
