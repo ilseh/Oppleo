@@ -1,9 +1,13 @@
+# Return type hints https://docs.python.org/3/library/typing.html
+from __future__ import annotations
+import typing
+
 from marshmallow import fields, Schema
-import datetime
+from datetime import datetime
 import logging
+
 from . import db
-from sqlalchemy import orm
-from sqlalchemy import func
+from sqlalchemy import orm, func
 from nl.carcharging.models.base import Base, DbSession
 import json
 
@@ -50,48 +54,48 @@ class ChargeSessionModel(Base):
             else:
                 setattr(self, key, data.get(key))
         if self.start_time is None:
-            self.start_time = datetime.datetime.now()
+            self.start_time = datetime.now()
 
-    def set_tariff(self, value):
+    def set_tariff(self, value) -> None:
         self.tariff = float(value)
         if (isinstance(self.total_energy, float)):
             self.total_price = self.total_energy * self.tariff
 
-    def set_total_energy(self, value):
+    def set_total_energy(self, value) -> None:
         self.total_energy = float(value)
         if (isinstance(self.tariff, float)):
             self.total_price = self.total_energy * self.tariff
 
-    def set_total_price(self, value):
+    def set_total_price(self, value) -> None:
         self.total_price = float(value)
         if (isinstance(self.total_energy, float)):
             self.tariff = round(self.total_price / self.total_energy, 1)
 
-    def save(self):
+    def save(self) -> None:
         db_session = DbSession()
         db_session.add(self)
         db_session.commit()
 
-    def update(self, data):
+    def update(self, data) -> None:
         for key, item in data.items():
             setattr(self, key, item)
-        self.modified_at = datetime.datetime.now()
+        self.modified_at = datetime.now()
 
         db_session = DbSession()
         db_session.commit()
 
-    def delete(self):
+    def delete(self) -> None:
         db_session = DbSession()
         db_session.delete(self)
         db_session.commit()
 
     @staticmethod
-    def get_all_sessions():
+    def get_all_sessions() -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
         return db_session.query(ChargeSessionModel).all()
 
     @staticmethod
-    def get_one_charge_session(id):
+    def get_one_charge_session(id) -> ChargeSessionModel:
         db_session = DbSession()
         try:
             return db_session.query(ChargeSessionModel) \
@@ -100,7 +104,7 @@ class ChargeSessionModel(Base):
             return None
 
     @staticmethod
-    def get_latest_charge_session(device, rfid=None):
+    def get_latest_charge_session(device, rfid=None) -> ChargeSessionModel:
         db_session = DbSession()
         # Build query to get id of latest chargesession for this device.
         qry_latest_id = db_session.query(func.max(ChargeSessionModel.id)).filter(ChargeSessionModel.energy_device_id ==
@@ -114,7 +118,7 @@ class ChargeSessionModel(Base):
         return latest_charge_session
 
     @staticmethod
-    def get_open_charge_session_for_device(device):
+    def get_open_charge_session_for_device(device) -> ChargeSessionModel:
         db_session = DbSession()
         # Build query to get id of latest chargesession for this device.
         open_charge_session_for_device = db_session.query(ChargeSessionModel) \
@@ -123,10 +127,10 @@ class ChargeSessionModel(Base):
                             .first()    # Call first to return an object instead of an array
         return open_charge_session_for_device
 
-    def __repr(self):
+    def __repr(self) -> str:
         return '<id {}>'.format(self.id)
 
-    def get_last_n_sessions_since(self, energy_device_id=None, since_ts=None, n=-1):
+    def get_last_n_sessions_since(self, energy_device_id=None, since_ts=None, n=-1) -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
         if (n == -1):
             if (since_ts == None):
@@ -167,11 +171,11 @@ class ChargeSessionModel(Base):
                         .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
                         .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
 
-    def date_str_to_datetime(self, date_time_str):
-        return datetime.datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
+    def date_str_to_datetime(self, date_time_str: str) -> datetime:
+        return datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
 
     # convert into JSON:
-    def to_json(self):
+    def to_json(self) -> str:
         return (
             json.dumps({
                 "id": str(self.id),
@@ -191,7 +195,7 @@ class ChargeSessionModel(Base):
         )
 
     # convert into JSON:
-    def to_str(self):
+    def to_str(self) -> str:
         return ({
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
@@ -209,7 +213,7 @@ class ChargeSessionModel(Base):
             })
 
     # convert into dict:
-    def to_dict(self):
+    def to_dict(self) -> typing.TypedDict:
         return ({
             "id": str(self.id),
             "energy_device_id": str(self.energy_device_id),

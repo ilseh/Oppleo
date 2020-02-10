@@ -208,19 +208,59 @@
 
     function startChargeSession( data ) {
       console.log('startChargeSession()')
+      $('div#statusAvailable').hide()
+      $('div#statusReady').show()
+      $('div#statusCharging').hide()
+      $('div#statusError').hide()
 
     }
     function updateDataChargeSession( data ) {
       console.log('updateDataChargeSession()')
+      // Depending on the EVSE State, either show ready or charging
+      $('div#statusAvailable').hide()
+      $('div#statusReady').hide()
+      $('div#statusCharging').show()
+      $('div#statusError').hide()
 
     }
     function updateStatusChargeSession( data ) {
       console.log('updateStatusChargeSession()')
+      // Depending on the EVSE State, either show ready or charging
+      $('div#statusAvailable').hide()
+      $('div#statusReady').hide()
+      $('div#statusCharging').show()
+      $('div#statusError').hide()
 
     }
     function endChargeSession( data ) {
       console.log('endChargeSession()')
+      $('div#statusAvailable').show()
+      $('div#statusReady').hide()
+      $('div#statusCharging').hide()
+      $('div#statusError').hide()
 
+    }
+
+    function getChargeSessionStatus( ) {
+      console.log(timestamp() + ' getChargeSessionStatus()')
+return // For now
+      $.ajax({
+        type		: 'GET',
+        url			: '/charge_session',
+        dataType	: 'json',
+            encode		: true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+// TODO 
+      })
+      .fail(function() {
+  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
+      })
+      .always(function() {
+        // Remove spinner?
+      })
     }
 
 
@@ -261,8 +301,10 @@
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed")
-      startWebSocket()
+      endChargeSession()
+      getChargeSessionStatus()
       getUsageData(1)
+      startWebSocket()
     })
 
     </script>
@@ -286,7 +328,7 @@
 
       <div class="row">
         <div class="col-sm-12">
-            <div class="card m-b-20 bg-success text-white">
+            <div id="statusAvailable" class="card m-b-20 bg-success text-white">
                 <div class="card-body">
                     <h5 class="card-title">Available</h5>
                     <p class="card-text">With supporting text below as a natural lead-in to
@@ -298,7 +340,7 @@
 
       <div class="row">
         <div class="col-sm-12">
-            <div class="card m-b-20 bg-warning text-white">
+            <div id="statusReady" class="card m-b-20 bg-warning text-white">
                 <div class="card-body">
                     <h5 class="card-title">Ready</h5>
                     <p class="card-text">With supporting text below as a natural lead-in to

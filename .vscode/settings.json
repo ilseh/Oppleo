@@ -3,5 +3,6 @@
     "files.associations": {
         "*.jinja2": "jinja2"
     },
-    "python.linting.pylintArgs": ["--load-plugins", "pylint-flask"]
+    "python.linting.pylintArgs": ["--load-plugins", "pylint-flask"],
+    "PYTHONPATH": "./src"
 }
