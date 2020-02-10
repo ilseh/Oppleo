@@ -233,7 +233,12 @@ class ChargerHandlerThread(object):
         rfid = RfidModel.get_one(rfid)
         if rfid.vehicle_make.upper() == "TESLA" and rfid.get_odometer: 
             # Try to add odometer
-            self.save_tesla_values_in_thread(charge_session_id=session.id)
+            self.save_tesla_values_in_thread(charge_session_id=session.id)\
+        # Emit websocket update
+        if self.appSocketIO is not None:
+            self.logger.debug(f'Send msg charge_session_started via websocket ...{session.to_str()}')
+            self.appSocketIO.emit('charge_session_started', { 'data': session.to_str() }, namespace='/charge_session')
+
 
 
     def end_charge_session(self, charge_session, device):
@@ -242,6 +247,10 @@ class ChargerHandlerThread(object):
         charge_session.total_energy = charge_session.end_value - charge_session.start_value
         charge_session.total_price = round(charge_session.total_energy * charge_session.tariff * 100) /100
         charge_session.save()
+        # Emit websocket update
+        if self.appSocketIO is not None:
+            self.logger.debug(f'Send msg charge_session_ended via websocket ...{charge_session.to_str()}')
+            self.appSocketIO.emit('charge_session_ended', { 'data': charge_session.to_str() }, namespace='/charge_session')
 
 
     def save_tesla_values_in_thread(self, charge_session_id):
@@ -272,6 +281,9 @@ class ChargerHandlerThread(object):
         except Exception as ex:
             self.logger.error("Error handle charging: %s", ex)
             self.ledlighter.error()
+        if self.appSocketIO is not None:
+            self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
+            self.appSocketIO.emit('charge_session_status_update', { 'data': evse_state }, namespace='/charge_session')
 
     def handle_charging(self, evse_state):
         if evse_state == EvseState.EVSE_STATE_CHARGING:
@@ -318,8 +330,9 @@ class ChargerHandlerThread(object):
             self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
             open_charge_session_for_device.save() 
             # Emit changes via web socket
-            self.counter += 1
-            self.logger.debug(f'Send msg {self.counter} for charge_session update via websocket...')
-            self.appSocketIO.emit('status_update', { 'data': open_charge_session_for_device.to_str() }, namespace='/charge_session')
+            if self.appSocketIO is not None:
+                self.counter += 1
+                self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
+                self.appSocketIO.emit('charge_session_data_update', { 'data': open_charge_session_for_device.to_str() }, namespace='/charge_session')
 
         

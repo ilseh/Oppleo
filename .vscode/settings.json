@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/Users/frans/Projects/RestfulCharging/venv/bin/python",
+    "python.pythonPath": "venv/bin/python",
     "files.associations": {
         "*.jinja2": "jinja2"
     },
