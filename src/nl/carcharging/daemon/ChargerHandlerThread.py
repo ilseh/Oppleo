@@ -328,7 +328,7 @@ class ChargerHandlerThread(object):
             open_charge_session_for_device.total_price = \
                 round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
             self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
-            open_charge_sesszion_for_device.zsave() 
+            open_charge_session_for_device.save() 
             # Emit changes via web socket
             if self.appSocketIO is not None:
                 self.counter += 1

@@ -68,6 +68,10 @@ class WebAppConfig(object):
     # The time between database queries for energy state updates
     device_measurement_check_interval = 7
 
+    meuThread = None
+    chThread = None
+
+
     @staticmethod
     def loadConfig(filename='carcharger.ini'):
         if WebAppConfig.logger is None:

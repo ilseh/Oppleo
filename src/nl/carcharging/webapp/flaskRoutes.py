@@ -28,6 +28,7 @@ from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
 from nl.carcharging.api.TeslaApi import TeslaAPI
 from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
+from nl.carcharging.services.EvseReaderProd import EvseState
 """ 
  - make sure all url_for routes point to this blueprint
 """
@@ -379,6 +380,50 @@ def usage_data_since(since_timestamp, cnt=-1):
         qr_l.append(o.to_dict())  
 
     return jsonify(qr_l)
+
+
+@flaskRoutes.route("/active_charge_session", methods=["GET"])
+@flaskRoutes.route("/active_charge_session/", methods=["GET"])
+@authenticated_resource
+def active_charge_session():
+    global WebAppConfig
+
+    self.logger.debug(f'active_charge_session()')
+    # Open charge session for this energy device?
+    open_charge_session_for_device = \
+        ChargeSessionModel.get_open_charge_session_for_device(
+                WebAppConfig.ENERGY_DEVICE_ID
+        )
+    if open_charge_session_for_device is None:
+        # None, no active session
+        return jsonify({
+            'status': 404, 
+            'id': WebAppConfig.ENERGY_DEVICE_ID, 
+            'reason': 'No active charge session'
+            })
+    try:
+        return jsonify({ 
+            'status': EvseState.EVSE_STATE_CHARGING if WebAppConfig.chThread.is_status_charging else EvseState.EVSE_STATE_CONNECTED,
+            'id': WebAppConfig.ENERGY_DEVICE_ID, 
+            'data': open_charge_session_for_device.to_str() 
+            })
+    except:
+        return jsonify({ 
+            'status': EvseState.EVSE_STATE_UNKNOWN,
+            'id': WebAppConfig.ENERGY_DEVICE_ID, 
+            'reason': 'Could not determine charge session'
+            })
+
+        
+class EvseState(enum.Enum):
+    EVSE_STATE_UNKNOWN = 0  # Initial
+    EVSE_STATE_INACTIVE = 1  # SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
+    EVSE_STATE_CONNECTED = 2  # SmartEVSE State B: LED ON full brightness, Car connected
+    EVSE_STATE_CHARGING = 3  # SmartEVSE State C: charging (pulsing)
+    EVSE_STATE_ERROR = 4 
+
+    pass
+
 
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/charge_sessions")
