@@ -142,42 +142,6 @@ def RfidModel_after_update(mapper, connection, target):
 if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
 
-    """
-    logger = webApplogger
-
-    edm = EnergyDeviceMeasureModel()
-    device_measurement = edm.get_last_saved("laadpaal_noord")
-
-    # Open charge session for this energy device?
-    open_charge_session_for_device = \
-        ChargeSessionModel.get_open_charge_session_for_device(
-                device_measurement.energy_device_id
-        )
-
-
-
-    if open_charge_session_for_device != None:
-        logger.debug(f'energyUpdate() open charge session, updating usage...')
-        logger.debug('energyUpdate() device_measurement %s...' % str(device_measurement.to_str()))
-        logger.debug('energyUpdate() open_charge_session_for_device %s...' % str(open_charge_session_for_device.to_str()))
-        # Update session usage
-        open_charge_session_for_device.end_value = device_measurement.kw_total
-        logger.debug('energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
-        open_charge_session_for_device.total_energy = \
-            round((open_charge_session_for_device.end_value - open_charge_session_for_device.start_value) *10) /10
-        logger.debug('energyUpdate() total_energy to %s...' % open_charge_session_for_device.total_energy)
-        open_charge_session_for_device.total_price = \
-            round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
-        logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
-#        open_charge_session_for_device.save() 
-        # Emit changes via web socket
-        counter += 1
-        logger.debug(f'Send msg {self.counter} for charge_session update via websocket...')
-        appSocketIO.emit('status_update', { 'data': open_charge_session_for_device.to_str() }, namespace='/charge_session')
-
-
-    """
-
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
