@@ -155,6 +155,8 @@ if __name__ == "__main__":
                     appSocketIO=appSocketIO
                 )
     meuThread.addCallback(chThread.energyUpdate)
+    WebAppConfig.meuThread = meuThread
+    WebAppConfig.chThread = chThread
 
     # Start the Energy Device Monitor
     meuThread.start()
