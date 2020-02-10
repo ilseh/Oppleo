@@ -338,11 +338,11 @@
       })
       chargeSessionSocket.on('charge_session_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        updateDataChargeSession( msg )
+        updateStatusChargeSession( msg )
       })
       chargeSessionSocket.on('charge_session_data_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        updateStatusChargeSession( msg )
+        updateDataChargeSession( msg )
       })
       chargeSessionSocket.on('charge_session_ended', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
