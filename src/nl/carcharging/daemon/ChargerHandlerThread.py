@@ -311,7 +311,7 @@ class ChargerHandlerThread(object):
             open_charge_session_for_device.end_value = device_measurement.kw_total
             self.logger.debug('energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
             open_charge_session_for_device.total_energy = \
-                open_charge_session_for_device.end_value - open_charge_session_for_device.start_value
+                round((open_charge_session_for_device.end_value - open_charge_session_for_device.start_value) *10) /10
             self.logger.debug('energyUpdate() total_energy to %s...' % open_charge_session_for_device.total_energy)
             open_charge_session_for_device.total_price = \
                 round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
