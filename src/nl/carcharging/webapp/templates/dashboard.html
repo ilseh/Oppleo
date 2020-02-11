@@ -241,15 +241,33 @@
     function updateStatusChargeSession( result ) {
       console.log('updateStatusChargeSession()')
       // Depending on the EVSE State, either show ready or charging
-      $('div#statusAvailable').hide()
-      if (parseInt(result.status) == EVSE_STATE_CHARGING) {
-        $('div#statusReady').hide()
-        $('div#statusCharging').show()
-      } else {
-        $('div#statusReady').show()
-        $('div#statusCharging').hide()
+      switch (parseInt(result.status)) {
+        case EVSE_STATE_INACTIVE:   // No charge session (green)
+          $('div#statusAvailable').show()
+          $('div#statusReady').hide()
+          $('div#statusCharging').hide()
+          $('div#statusError').hide()
+          break
+        case EVSE_STATE_CONNECTED:  // Ready for charging, but no activity (yellow)
+          $('div#statusAvailable').hide()
+          $('div#statusReady').show()
+          $('div#statusCharging').hide()
+          $('div#statusError').hide()
+          break
+        case EVSE_STATE_CHARGING:   // Charging activity (blue)
+          $('div#statusAvailable').hide()
+          $('div#statusReady').hide()
+          $('div#statusCharging').show()
+          $('div#statusError').hide()
+          break
+        case EVSE_STATE_UNKNOWN:    // Error (red)
+        default:
+          $('div#statusAvailable').hide()
+          $('div#statusReady').hide()
+          $('div#statusCharging').hide()
+          $('div#statusError').show()
+          break
       }
-      $('div#statusError').hide()
     }
     function endChargeSession( data ) {
       console.log('endChargeSession()')
@@ -278,24 +296,18 @@
             $('div#statusError').hide()
             break
           case EVSE_STATE_CONNECTED:  // Ready for charging, but no activity (yellow)
-            $('div#statusReady').find('div').find('p').text('Er is op ' + result.id + 
-              ' een actieve laadsessie sinds ' + result.data.start_time + '. De beginstand was ' + result.data.start_value + 'kWh' +
-              ' en de huidige meterstand is ' + result.data.end_value + 'kWh. ' + 
-              (Number.isInteger(result.data.km) ? ' De km-stand bij het begin van de laadsessie is ' + result.data.km + 'km.' : '' ) + 
-              ' Het verbruik is ' + result.data.total_energy + 'kWh' + ' met een tarief van € ' + result.data.tariff + 
-              ' en een subtotaal van € ' + result.data.total_price + '.')
+            $('div#statusReady').find('div').find('p').text(
+              chargeDetailStr(result.id, result.data)
+            )
             $('div#statusAvailable').hide()
             $('div#statusReady').show()
             $('div#statusCharging').hide()
             $('div#statusError').hide()
             break
           case EVSE_STATE_CHARGING:   // Charging activity (blue)
-            $('div#statusCharging').find('div').find('p').text('Er is op ' + result.id + 
-              ' een actieve laadsessie sinds ' + result.data.start_time + '. De beginstand was ' + result.data.start_value + 'kWh' +
-              ' en de huidige meterstand is ' + result.data.end_value + 'kWh. ' + 
-              (Number.isInteger(result.data.km) ? ' De km-stand bij het begin van de laadsessie is ' + result.data.km + 'km.' : '' ) + 
-              ' Het verbruik is ' + result.data.total_energy + 'kWh' + ' met een tarief van € ' + result.data.tariff + 
-              ' en een subtotaal van € ' + result.data.total_price + '.')
+            $('div#statusCharging').find('div').find('p').text(
+              chargeDetailStr(result.id, result.data)
+            )
             $('div#statusAvailable').hide()
             $('div#statusReady').hide()
             $('div#statusCharging').show()
