@@ -223,11 +223,11 @@
     }
     function chargeDetailStr(id, data) {
       return 'Er is op ' + id + 
-             ' een actieve laadsessie sinds ' + data.start_time + '. De beginstand was ' + data.start_value + 'kWh' +
-             ' en de huidige meterstand is ' + data.end_value + 'kWh. ' + 
+             ' op ' + data.start_time + ' een laadsessie gestart met beginstand ' + data.start_value + 'kWh.' +
              (Number.isInteger(data.km) ? ' De km-stand bij het begin van de laadsessie is ' + data.km + 'km.' : '' ) + 
-             ' Het verbruik is ' + data.total_energy + 'kWh' + ' met een tarief van € ' + data.tariff + 
-             ' en een subtotaal van € ' + data.total_price + '.'
+             ' De huidige meterstand is ' + data.end_value + 'kWh. Het verbruik deze sessie is ' + data.total_energy + 'kWh,' + 
+             ' wat met een tarief van € ' + (Math.round(data.tariff * 100) /100).toFixed(2) + 
+             ' een subtotaal is van € ' + (Math.round(data.total_price * 100) /100).toFixed(2) + '.'
     }
     function updateDataChargeSession( result ) {
       console.log('updateDataChargeSession()')
