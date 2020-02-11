@@ -234,7 +234,7 @@ class ChargerHandlerThread(object):
         rfid = RfidModel.get_one(rfid)
         if rfid.vehicle_make.upper() == "TESLA" and rfid.get_odometer: 
             # Try to add odometer
-            self.save_tesla_values_in_thread(charge_session_id=session.id)\
+            self.save_tesla_values_in_thread(charge_session_id=session.id)
         # Emit websocket update
         if self.appSocketIO is not None:
             self.logger.debug(f'Send msg charge_session_started via websocket ...{session.to_str()}')
