@@ -45,31 +45,9 @@ class ChargeSessionModel(Base):
 
     def set(self, data):
         for key in data:
-            if (key == 'tariff'):
-                self.set_tariff(data.get(key))
-            elif (key == 'total_energy'):
-                self.set_total_energy(data.get(key))
-            elif (key == 'total_price'):
-                self.set_total_price(data.get(key))
-            else:
-                setattr(self, key, data.get(key))
+            setattr(self, key, data.get(key))
         if self.start_time is None:
             self.start_time = datetime.now()
-
-    def set_tariff(self, value) -> None:
-        self.tariff = float(value)
-        if (isinstance(self.total_energy, float)):
-            self.total_price = self.total_energy * self.tariff
-
-    def set_total_energy(self, value) -> None:
-        self.total_energy = float(value)
-        if (isinstance(self.tariff, float)):
-            self.total_price = self.total_energy * self.tariff
-
-    def set_total_price(self, value) -> None:
-        self.total_price = float(value)
-        if (isinstance(self.total_energy, float)):
-            self.tariff = round(self.total_price / self.total_energy, 1)
 
     def save(self) -> None:
         db_session = DbSession()

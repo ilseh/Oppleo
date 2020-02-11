@@ -219,6 +219,7 @@ class ChargerHandlerThread(object):
 
 
     def start_charge_session(self, rfid, device):
+        self.logger.debug("start_charge_session() %s" % rfid)
         data_for_session = {
             "rfid"              : rfid, 
             "energy_device_id"  : device,
