@@ -9,6 +9,7 @@ from service import Service
 
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
+from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.services.Buzzer import Buzzer
 from nl.carcharging.services.Charger import Charger
@@ -212,7 +213,6 @@ class ChargerHandlerThread(object):
 
             self.logger.debug("Starting new charging session for rfid %s" % rfid)
             self.start_charge_session(rfid, device)
-            self.save_tesla_values_in_thread(charge_session_id=session.id)
             start_session = True
 
         self.update_charger_and_led(start_session)
