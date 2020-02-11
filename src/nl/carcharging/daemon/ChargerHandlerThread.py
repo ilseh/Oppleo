@@ -276,7 +276,7 @@ class ChargerHandlerThread(object):
 
 
     def has_rfid_open_session(self, rfid_latest_session):
-        return not (rfid_latest_session is None or rfid_latest_session.end_value)
+        return (rfid_latest_session is not None and rfid_latest_session.end_date is None)
 
 
     def update_charger_and_led(self, start_session):
