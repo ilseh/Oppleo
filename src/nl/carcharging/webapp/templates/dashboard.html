@@ -211,10 +211,13 @@
       
     }
 
-    function startChargeSession( data ) {
+    function startChargeSession( result ) {
       console.log('startChargeSession()')
       $('div#statusReady').find('div').find('p').text(
-        "Nieuwe charge sessie wordt gestart..."
+        chargeDetailStr(result.id, result.data)
+      )
+      $('div#statusCharging').find('div').find('p').text(
+        chargeDetailStr(result.id, result.data)
       )
       $('div#statusAvailable').hide()
       $('div#statusReady').show()
