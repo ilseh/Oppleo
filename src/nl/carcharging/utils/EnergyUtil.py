@@ -39,6 +39,13 @@ class EnergyUtil:
         self.instrument.mode = device_data.mode
         self.instrument.close_port_after_each_call = device_data.close_port_after_each_call
 
+    def getTotalKWHHValue(self):
+        if GenericUtil.isProd():
+            self.logger.debug('Production environment, getting real data')
+            return self.getProdTotalKWHHValue()
+        else:
+            self.logger.debug('Not production environment, getting fake data')
+            return self.getDevTotalKWHHValue()
 
     def getMeasurementValue(self):
 
@@ -48,6 +55,9 @@ class EnergyUtil:
         else:
             self.logger.debug('Not production environment, getting fake data')
             return self.getDevMeasurementValue()
+
+    def getDevTotalKWHHValue(self):
+        return 50034.34
 
     def getDevMeasurementValue(self):
         self.logger.debug('returning fake data')
@@ -68,6 +78,9 @@ class EnergyUtil:
             "kw_total": 50034.34,
             "hz": 60034.34,
         }
+
+    def getProdTotalKWHHValue(self):
+        return round(self.try_read_float('kwh', 342, 4, 2, 0), 1)  # 300343 Total kWh. [kWh]
 
     def getProdMeasurementValue(self):
 

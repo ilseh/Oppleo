@@ -219,13 +219,17 @@ class ChargerHandlerThread(object):
 
 
     def start_charge_session(self, rfid, device):
-        self.logger.debug("start_charge_session() %s" % rfid)
+        self.logger.debug("start_charge_session() new charging session for rfid %s" % rfid)
+
+        # Optimize: maybe get this from the latest db value rather than from the energy meter directly
+        start_value = self.energy_util.getTotalKWHHValue()
+
         data_for_session = {
             "rfid"              : rfid, 
             "energy_device_id"  : device,
-            "start_value"       : self.energy_util.getMeasurementValue(device).get('kw_total'),
+            "start_value"       : start_value,
             "tariff"            : ChargerConfigModel.get_config().charger_tariff,
-            "end_value"         : self.energy_util.getMeasurementValue(device).get('kw_total'),
+            "end_value"         : start_value,
             "total_energy"      : 0,
             "total_price"       : 0
             }
