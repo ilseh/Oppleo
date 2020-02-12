@@ -19,9 +19,11 @@ class EnergyDeviceModel(Base):
     bytesize = db.Column(db.Integer)
     parity = db.Column(db.String(1))
     stopbits = db.Column(db.Integer)
-    timeout = db.Column(db.Integer)
+    serial_timeout = db.Column(db.Integer)
     debug = db.Column(db.Boolean)
     mode = db.Column(db.String(10))
+    close_port_after_each_call = db.Column(db.Boolean)
+    modbus_timeout = db.Column(db.Integer)
 
     def __init__(self, data):
         self.energy_device_id = data.get('energy_device_id')
@@ -66,7 +68,9 @@ class EnergyDeviceSchema(Schema):
     bytesize = fields.Int(dump_only=True)
     parity = fields.Str(dump_only=True)
     stopbits = fields.Int(dump_only=True)
-    timeout = fields.Int(dump_only=True)
+    serial_timeout = fields.Int(dump_only=True)
     debug = fields.Bool(dump_only=True)
     mode = fields.Str(dump_only=True)
+    close_port_after_each_call = fields.Bool(dump_only=True)
+    modbus_timeout = fields.Int(dump_only=True)
 
