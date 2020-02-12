@@ -14,7 +14,7 @@ class EnergyUtil:
         self.logger = logging.getLogger('nl.carcharging.services.EnergyUtil')
         self.energy_device_id = energy_device_id
         self.appSocketIO = appSocketIO
-        self.self.initInstrument()
+        self.initInstrument()
 
 
     def initInstrument(self):
