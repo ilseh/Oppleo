@@ -42,7 +42,10 @@ class MeasureElectricityUsageThread(object):
                 EnergyDevice(
                     energy_device_id=energy_device.energy_device_id,
                     interval=10,
-                    energyUtil=EnergyUtil(),
+                    energyUtil=EnergyUtil(
+                        energy_device_id=energy_device.energy_device_id,
+                        appSocketIO=self.appSocketIO
+                        ),
                     appSocketIO=self.appSocketIO
                     )
                 )
