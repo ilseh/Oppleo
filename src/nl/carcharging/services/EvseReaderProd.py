@@ -142,6 +142,10 @@ class EvseReaderProd:
         evse_dcf = None
         evse_dcf_prev = None
 
+        # When starting pwm the readings might be shirt leading to false positive errors. Filter
+        error_filter_value = 3
+        error_filter = error_filter_value
+
         self.logger.info(" Starting, state is {}".format(evse_state.name))
         while not cb_until():
 
@@ -176,6 +180,8 @@ class EvseReaderProd:
                         self.logger.debug("Evse is inactive (not charging)")
                         # State A (Inactive)
                         evse_state = EvseState.EVSE_STATE_INACTIVE
+                # Connected or Inactive - reset error filter
+                error_filter = error_filter_value
             else:
                 # Evse measure changed
                 evse_stable_since = None
@@ -184,10 +190,17 @@ class EvseReaderProd:
                         'Direction of evse dutycycle changed. Current direction overall: %s' % evse_direction_overall.name)
                     if is_current_measurement_interval_normal_pulse(evse_direction_change_moment):
                         evse_state = EvseState.EVSE_STATE_CHARGING
+                        # Charging - reset error filter
+                        error_filter = error_filter_value
                     elif is_current_measurement_interval_error_pulse(evse_direction_change_moment):
-                        evse_state = EvseState.EVSE_STATE_ERROR
+                        if error_filter = 0:
+                            evse_state = EvseState.EVSE_STATE_ERROR
+                        else:
+                            error_filter -= 1
                     else:
                         self.logger.debug('Changed direction too slow, is not pulsing, assume only level changed.')
+                        # Charging - reset error filter
+                        error_filter = error_filter_value
                     evse_direction_overall_previous = evse_direction_overall
                     evse_direction_change_moment = current_time_milliseconds()
 
