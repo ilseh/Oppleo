@@ -193,7 +193,7 @@ class EvseReaderProd:
                         # Charging - reset error filter
                         error_filter = error_filter_value
                     elif is_current_measurement_interval_error_pulse(evse_direction_change_moment):
-                        if error_filter = 0:
+                        if error_filter == 0:
                             evse_state = EvseState.EVSE_STATE_ERROR
                         else:
                             error_filter -= 1
