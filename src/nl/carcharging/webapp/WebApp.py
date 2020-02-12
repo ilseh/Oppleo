@@ -144,7 +144,7 @@ if __name__ == "__main__":
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
                     energy_util=EnergyUtil(
-                        energy_device_id=WebAppConfig.energy_device_id,
+                        energy_device_id=WebAppConfig.ENERGY_DEVICE_ID,
                         appSocketIO=appSocketIO
                         ), 
                     charger=Charger(), 
