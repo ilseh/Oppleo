@@ -94,12 +94,13 @@ class EvseReaderProd:
 
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
-        self.logger.setLevel(logging.ERROR)
+#        self.logger.setLevel(logging.DEBUG)
 
     def loop(self, cb_until, cb_result):
         global WebAppConfig
 
         self.logger.debug('In loop, doing setup GPIO')
+        # TODO - set GPIO mode globally
         GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
         GPIO.setup(6, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
