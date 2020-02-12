@@ -113,9 +113,9 @@ class EnergyUtil:
         value = -1
         try:
             value = self.instrument.read_float(registeraddress, functioncode, number_of_registers, byteorder)
-            if self.appSocketIO is not None:
         except Exception as ex:
             self.logger.warning("Could not read value %s, gave exception %s Using value %d" % (value_desc, ex, value))
-        # Yield if required
-        self.appSocketIO.sleep(0.01)
+        if self.appSocketIO is not None:
+            # Yield if we can, allow other time constraint threads to run
+            self.appSocketIO.sleep(0.01)
         return value
