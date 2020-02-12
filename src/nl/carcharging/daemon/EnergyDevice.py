@@ -43,7 +43,7 @@ class EnergyDevice():
     def handle(self):
         self.logger.debug("Start measure %s" % self.energy_device_id)
 
-        data = self.energyUtil.getMeasurementValue(self.energy_device_id)
+        data = self.energyUtil.getMeasurementValue()
         self.logger.debug('Measurement returned %s' % str(data))
         device_measurement = EnergyDeviceMeasureModel()
         device_measurement.set(data)

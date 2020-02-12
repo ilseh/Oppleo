@@ -143,7 +143,7 @@ if __name__ == "__main__":
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
-                    energy_util=EnergyUtil(), 
+                    energy_util=EnergyUtil('laadpaal_noord'), 
                     charger=Charger(), 
                     ledlighter=LedLighter(), 
                     buzzer=Buzzer(), 
