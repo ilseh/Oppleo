@@ -154,8 +154,10 @@
         console.log(data)
         updateGauges( data[0] )
       })
-      .fail(function() {
-  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
+      .fail(function(result) {
+        console.log('getUsageData() FAILED')
+        // log data to the console so we can see
+        console.log(result)
       })
       .always(function() {
         // Remove spinner
@@ -325,8 +327,11 @@
             break
         }
       })
-      .fail(function() {
-  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
+      .fail(function(result) {
+        console.log('getChargeSessionStatus() FAILED')
+        // log data to the console so we can see
+        console.log(result)
+        // If not logged in, no session data. Hide all
       })
       .always(function() {
         // Remove spinner?
