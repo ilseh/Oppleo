@@ -255,7 +255,7 @@ class ChargerHandlerThread(object):
 
 
     def end_charge_session(self, charge_session, device):
-        charge_session.end_value = self.energy_util.getMeasurementValue(device)['kw_total']
+        charge_session.end_value = self.energy_util.getTotalKWHHValue()
         charge_session.end_time = datetime.now()
         charge_session.total_energy = charge_session.end_value - charge_session.start_value
         charge_session.total_price = round(charge_session.total_energy * charge_session.tariff * 100) /100
