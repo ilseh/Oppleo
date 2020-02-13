@@ -27,7 +27,7 @@ class EnergyDevice():
 
 
     def handleIfTimeTo(self):
-        self.logger.debug(f'handleIfTimeTo() {self.energy_device_id}')
+        # self.logger.debug(f'handleIfTimeTo() {self.energy_device_id}')
         if (time.time() *1000.0) > (self.lastRun + (self.interval *1000.0)):
             # time to run again
             self.logger.debug(f'handleIfTimeTo() - time to handle {self.energy_device_id}')
@@ -37,7 +37,7 @@ class EnergyDevice():
                 self.logger.debug(f'Could not monitor energy device {self.energy_device_id}! {e}')
             self.lastRun = time.time() *1000.0
         else:
-            self.logger.debug(f'handleIfTimeTo() - not yet time to handle {self.energy_device_id}')
+            # self.logger.debug(f'handleIfTimeTo() - not yet time to handle {self.energy_device_id}')
 
 
     def handle(self):
