@@ -48,7 +48,7 @@ class LedLightPulseProd(object):
                     else:
                         pulse_led_value -= 1
                     self.pwm.ChangeDutyCycle(pulse_led_value)
-                    self.logger.debug("pulseLedValue = ", pulse_led_value)
+                    self.logger.debug("pulseLedValue = {}".format(str(pulse_led_value)))
                     pulse_led_millis = self.millis()
                 # Short sleep to fix issue rfid reader was not working anymore. Sleep to free some resource?
                 time.sleep(.001)
