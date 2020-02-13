@@ -61,4 +61,7 @@ class ChargerConfigSchema(Schema):
     """
     ChargerConfigModel Schema
     """
+    charger_name = fields.Float(required=True)
     charger_tariff = fields.Float(dump_only=True)
+    modified_at = fields.DateTime(dump_only=True)
+
