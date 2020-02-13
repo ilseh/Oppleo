@@ -38,7 +38,7 @@ class EnergyDevice():
             self.lastRun = time.time() *1000.0
         else:
             # self.logger.debug(f'handleIfTimeTo() - not yet time to handle {self.energy_device_id}')
-
+            pass
 
     def handle(self):
         self.logger.debug("Start measure %s" % self.energy_device_id)
