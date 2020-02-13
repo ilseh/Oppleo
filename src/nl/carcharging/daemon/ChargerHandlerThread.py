@@ -306,6 +306,16 @@ class ChargerHandlerThread(object):
             # self.logger.debug("Device is currently charging")
             if not self.is_status_charging:
                 # Switching to charging
+                """
+                 TODO - AUTO CHARGE SESSION
+                  Automatisch laadsessies herkennen. Herken wanneer de auto langere tijd weg is geweest. 
+                  Houdt de autorisatie in stand, maar sluit na terugkomst de vorige sessie af en start een 
+                  nieuwe laadsessie met dezelfde autorisatie (RFID token).
+                    Impl: Als de evse van standby naar laden gaat een extra check uitvoeren: Als er 
+                    gedurende 2 uur minder dan 1kWh is verbruikt sluit dan de vorige sessie af en start een 
+                    nieuwe.
+                    De 2 uur, 1kWh en of automatische laadsessies aan of uit staat configurable in de ini file.
+                """
                 self.is_status_charging = True
                 if self.appSocketIO is not None:
                     self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')

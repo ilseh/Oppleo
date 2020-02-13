@@ -14,7 +14,11 @@ class EnergyUtil:
         self.logger = logging.getLogger('nl.carcharging.services.EnergyUtil')
         self.energy_device_id = energy_device_id
         self.appSocketIO = appSocketIO
-        self.initInstrument()
+        if GenericUtil.isProd():
+            self.logger.debug('Production environment, calling initInstrument()')
+            self.initInstrument()
+        else:
+            self.logger.debug('Not production environment, skip initInstrument()')
 
 
     def initInstrument(self):
