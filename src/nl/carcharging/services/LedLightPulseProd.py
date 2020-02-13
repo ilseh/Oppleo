@@ -20,6 +20,7 @@ class LedLightPulseProd(object):
         self.thread_for_pulse = threading.Thread(target=self._pulse)
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLightPulseProd')
+        self.logger.setLevel(logging.WARNING)
         self.pwm = pwm
         # For pulse intensity is not used yet.
         self.intensity = intensity
