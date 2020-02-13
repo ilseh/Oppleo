@@ -272,7 +272,6 @@ class ChargerHandlerThread(object):
                     namespace='/charge_session'
                     )
 
-
     def save_tesla_values_in_thread(self, charge_session_id):
         self.tesla_util.set_charge_session_id(charge_session_id=charge_session_id)
         # update_odometer takes some time, so put in own thread
@@ -301,21 +300,23 @@ class ChargerHandlerThread(object):
         except Exception as ex:
             self.logger.error("Error handle charging: %s", ex)
             self.ledlighter.error()
-        if self.appSocketIO is not None:
-            self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
-            self.appSocketIO.emit(
-                    'charge_session_status_update', 
-                    { 
-                        'status': evse_state, 
-                        'id': WebAppConfig.ENERGY_DEVICE_ID
-                    }, 
-                    namespace='/charge_session'
-                    )
 
     def handle_charging(self, evse_state):
         if evse_state == EvseState.EVSE_STATE_CHARGING:
             self.logger.debug("Device is currently charging")
-            self.is_status_charging = True
+            if not self.is_status_charging:
+                # Switching to charging
+                self.is_status_charging = True
+                if self.appSocketIO is not None:
+                    self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
+                    self.appSocketIO.emit(
+                            'charge_session_status_update', 
+                            { 
+                                'status': evse_state, 
+                                'id': WebAppConfig.ENERGY_DEVICE_ID
+                            }, 
+                            namespace='/charge_session'
+                            )
             if not self.ledlighter.is_charging_light_on():
                 self.logger.debug('Start charging light pulse')
                 self.ledlighter.charging()
@@ -325,6 +326,16 @@ class ChargerHandlerThread(object):
             if self.is_status_charging:
                 self.is_status_charging = False
                 self.logger.debug("Charging is stopped")
+                if self.appSocketIO is not None:
+                    self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
+                    self.appSocketIO.emit(
+                            'charge_session_status_update', 
+                            {   # INACTIVE IS ALSO CONNECTED
+                                'status': EvseState.EVSE_STATE_CONNECTED, 
+                                'id': WebAppConfig.ENERGY_DEVICE_ID
+                            }, 
+                            namespace='/charge_session'
+                            )
                 if self.ledlighter.is_charging_light_on():
                     self.ledlighter.back_to_previous_light()
 
@@ -369,4 +380,3 @@ class ChargerHandlerThread(object):
                         namespace='/charge_session'
                         )
 
-        
