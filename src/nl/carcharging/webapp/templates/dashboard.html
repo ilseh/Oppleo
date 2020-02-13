@@ -281,6 +281,13 @@
       $('div#statusCharging').hide()
       $('div#statusError').hide()
     }
+    function hideChargeSession( ) {
+      console.log('hideChargeSession()')
+      $('div#statusAvailable').hide()
+      $('div#statusReady').hide()
+      $('div#statusCharging').hide()
+      $('div#statusError').hide()
+    }
 
     function getChargeSessionStatus( ) {
       console.log(timestamp() + ' getChargeSessionStatus()')
@@ -332,6 +339,7 @@
         // log data to the console so we can see
         console.log(result)
         // If not logged in, no session data. Hide all
+        hideChargeSession()
       })
       .always(function() {
         // Remove spinner?
@@ -376,7 +384,7 @@
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed")
-      endChargeSession()
+      hideChargeSession()
       getChargeSessionStatus()
       getUsageData(1)
       startWebSocket()
