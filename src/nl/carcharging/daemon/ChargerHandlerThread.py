@@ -303,7 +303,7 @@ class ChargerHandlerThread(object):
 
     def handle_charging(self, evse_state):
         if evse_state == EvseState.EVSE_STATE_CHARGING:
-            self.logger.debug("Device is currently charging")
+            # self.logger.debug("Device is currently charging")
             if not self.is_status_charging:
                 # Switching to charging
                 self.is_status_charging = True
@@ -321,7 +321,7 @@ class ChargerHandlerThread(object):
                 self.logger.debug('Start charging light pulse')
                 self.ledlighter.charging()
         else:
-            self.logger.debug("Not charging")
+            # self.logger.debug("Not charging")
             # Not charging. If it was charging, set light back to previous (before charging) light
             if self.is_status_charging:
                 self.is_status_charging = False
