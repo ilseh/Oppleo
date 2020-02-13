@@ -316,7 +316,7 @@
     function startWebSocket() {
       console.log(timestamp() + ' startWebSocket()')
       // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
-      socket = io.connect('http://'+window.location.hostname+':'+window.location.port+'/usage')
+      socket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/usage')
       // this is a callback that triggers when the "my response" event is emitted by the server.
       socket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
