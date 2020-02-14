@@ -1,11 +1,11 @@
-import datetime
+from datetime import datetime
 import logging
 
 from marshmallow import fields, Schema
 from marshmallow.fields import Boolean
 
 from . import db
-from sqlalchemy import orm, and_, or_, cast, Time
+from sqlalchemy import orm, and_, or_, cast, Time, func
 from nl.carcharging.models.base import Base, DbSession
 
 
@@ -48,21 +48,24 @@ class OffPeakHoursModel(Base):
         db_session.delete(self)
         db_session.commit()
 
-
     def weekdayToStr(self, weekday) -> str:
-        return self.weekday_en(weekday % len(self.weekday_en))
+        return self.weekday_en[weekday % len(self.weekday_en)]
 
     # Timestamp of type datetime
     def is_off_peak(self, timestamp) -> bool:
         self.logger.debug('is_off_peak()')
+        if not isinstance(timestamp, datetime):
+            self.logger.debug('is_off_peak() - timestamp is not of type datetime')
+            return False
+            
         db_session = DbSession()
         # Weekday?
         r = db_session.query(OffPeakHoursModel) \
                 .filter(OffPeakHoursModel.weekday == self.weekdayToStr(timestamp.weekday())) \
                 .filter(OffPeakHoursModel.off_peak_start <= cast(timestamp, Time)) \
                 .filter(OffPeakHoursModel.off_peak_end >= cast(timestamp, Time))
-        if r is not None and len(r) > 0:
-            self.logger.debug('DayOfWeek within off-peak')
+        if r is not None and self.get_count(r) > 0:
+            self.logger.debug('is_off_peak(): DayOfWeek {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
             return True
 
         # Is this a public holiday?
@@ -84,12 +87,17 @@ class OffPeakHoursModel(Base):
                 .filter(OffPeakHoursModel.off_peak_start <= cast(timestamp, Time)) \
                 .filter(OffPeakHoursModel.off_peak_end >= cast(timestamp, Time))
 
-        if r is not None and len(r) > 0:
-            self.logger.debug('Holiday within off-peak')
+        if r is not None and self.get_count(r) > 0:
+            self.logger.debug('is_off_peak(): Holiday {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
             return True
 
-        self.logger.debug('Not within off-peak')
+        self.logger.debug('is_off_peak(): {} not within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
         return False
+
+    def get_count(self, q):
+        count_q = q.statement.with_only_columns([func.count()]).order_by(None)
+        count = q.session.execute(count_q).scalar()
+        return count
 
     def __repr(self):
         return self.to_str()
@@ -107,6 +115,30 @@ class OffPeakHoursModel(Base):
                 "off_peak_end": (str(self.off_peak_end) if self.off_peak_end is not None else None)
             }
         )
+
+    def test(self):
+        ohm = OffPeakHoursModel()
+        # test None
+        is_op = ohm.is_off_peak(None)
+        # test other object (String)
+        is_op = ohm.is_off_peak("testing")
+        # test now
+        ts = datetime.now()
+        is_op = ohm.is_off_peak(ts)
+        # test today at 22:15
+        ts = ts.replace(hour=22, minute=15)
+        is_op = ohm.is_off_peak(ts)
+        # test today at 23:15
+        ts = ts.replace(hour=23, minute=15)
+        is_op = ohm.is_off_peak(ts)
+        # test jan 1st 2019 as recurring date (is a Tuesday)
+        ts = ts.replace(hour=14, minute=15)
+        ts = ts.replace(day=1, month=1, year=2019)
+        is_op = ohm.is_off_peak(ts)
+        # test 1st x-mas day 2020 as recurring date (is a Friday)
+        ts = ts.replace(day=25, month=12, year=2019)
+        is_op = ohm.is_off_peak(ts)        
+
 
 class ChargerConfigSchema(Schema):
     """
