@@ -48,7 +48,7 @@ class EnergyDeviceModel(Base):
     @staticmethod
     def get_all():
         db_session = DbSession()
-        edm = session.query(EnergyDeviceModel).all()
+        edm = db_session.query(EnergyDeviceModel).all()
         db_session.remove()
         return edm
 
