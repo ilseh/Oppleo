@@ -53,7 +53,7 @@ class ChargeSessionModel(Base):
         db_session = DbSession()
         db_session.add(self)
         db_session.commit()
-        db_session.remove()
+        db_session.close()
 
     def update(self, data) -> None:
         for key, item in data.items():
@@ -63,19 +63,19 @@ class ChargeSessionModel(Base):
         db_session = DbSession()
         db_session.add(self)
         db_session.commit()
-        db_session.remove()
+        db_session.close()
 
     def delete(self) -> None:
         db_session = DbSession()
         db_session.delete(self)
         db_session.commit()
-        db_session.remove()
+        db_session.close()
 
     @staticmethod
     def get_all_sessions() -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
         csm = db_session.query(ChargeSessionModel).all()
-        db_session.remove()
+        db_session.close()
         return csm
 
     @staticmethod
@@ -87,7 +87,7 @@ class ChargeSessionModel(Base):
                 .filter(ChargeSessionModel.id == id).limit(1).all()[0]
         except:
             return None
-        db_session.remove()
+        db_session.close()
         return csm
 
 
@@ -103,7 +103,7 @@ class ChargeSessionModel(Base):
         #  Now query the ChargeSession that we're interested in (latest for device or latest for device AND rfid).
         latest_charge_session = db_session.query(ChargeSessionModel).filter(
             ChargeSessionModel.id == qry_latest_id).first()
-        db_session.remove()
+        db_session.close()
         return latest_charge_session
 
     @staticmethod
@@ -114,7 +114,7 @@ class ChargeSessionModel(Base):
                             .filter(ChargeSessionModel.energy_device_id == device) \
                             .filter(ChargeSessionModel.end_time == None) \
                             .first()    # Call first to return an object instead of an array
-        db_session.remove()
+        db_session.close()
         return open_charge_session_for_device
 
     def __repr(self) -> str:
@@ -161,7 +161,7 @@ class ChargeSessionModel(Base):
                         .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
                         .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
                         .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
-        db_session.remove()
+        db_session.close()
         return csm
 
     def date_str_to_datetime(self, date_time_str: str) -> datetime:
