@@ -94,6 +94,7 @@
         url			    : '/rfid_tokens',
         contentType : "application/json",
         dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
         encode		  : true
       }) // using the done promise callback
       .done(function(data) {
@@ -128,6 +129,7 @@
         url			    : '/charge_sessions',
         contentType : "application/json",
         dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
         encode		  : true,
         data        : {
           // from  - [optional] earliest startTime

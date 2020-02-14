@@ -93,10 +93,11 @@
 //      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
             
       $.ajax({
-        type		: 'GET',
-        url			: (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data'),
+        type		  : 'GET',
+        url			  : (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data'),
         dataType	: 'json',
-            encode		: true
+        headers   : { 'ignore-login-next': 'true' },
+        encode		: true
       }) // using the done promise callback
       .done(function(data) {
         // log data to the console so we can see

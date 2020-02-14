@@ -96,10 +96,11 @@
     function getUsageData( from_timestamp, n = undefined ) {
       console.log(timestamp() + ' getUsageData()')
       $.ajax({
-        type		: 'GET',
-        url			: ('/usage_data_since/' + encodeURI(from_timestamp) + (Number.isInteger(n) ? '/' + n : '')),
+        type		  : 'GET',
+        url			  : ('/usage_data_since/' + encodeURI(from_timestamp) + (Number.isInteger(n) ? '/' + n : '')),
         dataType	: 'json',
-            encode		: true
+        headers   : { 'ignore-login-next': 'true' },
+        encode		: true
       }) // using the done promise callback
       .done(function(data) {
         // log data to the console so we can see
