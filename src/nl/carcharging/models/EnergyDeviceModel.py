@@ -56,7 +56,7 @@ class EnergyDeviceModel(Base):
     @staticmethod
     def get_one(energy_device_id):
         db_session = DbSession()
-        edm =  session.query(EnergyDeviceModel)\
+        edm =  db_session.query(EnergyDeviceModel)\
             .filter(EnergyDeviceModel.energy_device_id == energy_device_id).first()
         db_session.close()
         return edm
