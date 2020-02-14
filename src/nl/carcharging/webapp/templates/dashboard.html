@@ -144,10 +144,11 @@
     function getUsageData( n ) {
       console.log(timestamp() + ' getUsageData()')
       $.ajax({
-        type		: 'GET',
-        url			: (n == undefined ? '/usage_data' : '/usage_data/' + n),
+        type		  : 'GET',
+        url			  : (n == undefined ? '/usage_data' : '/usage_data/' + n),
         dataType	: 'json',
-            encode		: true
+        encode		: true,
+        headers   : { 'ignore-login-next': 'true' } // prevent this call to be used in login-next
       }) // using the done promise callback
       .done(function(data) {
         // log data to the console so we can see
@@ -292,10 +293,11 @@
     function getChargeSessionStatus( ) {
       console.log(timestamp() + ' getChargeSessionStatus()')
       $.ajax({
-        type		: 'GET',
-        url			: '/active_charge_session',
+        type		  : 'GET',
+        url			  : '/active_charge_session',
         dataType	: 'json',
-            encode		: true
+        encode		: true,
+        headers   : { 'ignore-login-next': 'true' }
       }) // using the done promise callback
       .done(function(result) {
         // log data to the console so we can see

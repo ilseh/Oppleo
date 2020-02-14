@@ -144,8 +144,10 @@ def authenticated_resource(function):
         # if somehow ended up at logout, don't forward to login
         if (request.endpoint == "flaskRoutes.logout"):
             return redirect(url_for('flaskRoutes.home'))
-        # Redirect to login but rememmber the original request 
-        session['login_next'] = request.full_path
+        ignore_login_next = bool(request.headers.get('ignore-login-next'))
+        if not ignore_login_next:
+            # Redirect to login but rememmber the original request 
+            session['login_next'] = request.full_path
         return redirect(url_for('flaskRoutes.login'))
     return decorated
 
