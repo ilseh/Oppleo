@@ -34,25 +34,32 @@ class EnergyDeviceModel(Base):
         pass
 
     def save(self):
-        session = DbSession()
-        session.add(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.add(self)
+        db_session.commit()
+        db_session.remove()
 
     def delete(self):
-        session = DbSession()
-        session.delete(self)
-        session.commit()
+        db_session = DbSession()
+        db_session.delete(self)
+        db_session.commit()
+        db_session.remove()
 
     @staticmethod
     def get_all():
-        session = DbSession()
-        return session.query(EnergyDeviceModel).all()
+        db_session = DbSession()
+        edm = session.query(EnergyDeviceModel).all()
+        db_session.remove()
+        return edm
+
 
     @staticmethod
     def get_one(energy_device_id):
-        session = DbSession()
-        return session.query(EnergyDeviceModel)\
+        db_session = DbSession()
+        edm =  session.query(EnergyDeviceModel)\
             .filter(EnergyDeviceModel.energy_device_id == energy_device_id).first()
+        db_session.remove()
+        return edm
 
     def __repr(self):
         return '<id {}>'.format(self.id)
