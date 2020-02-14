@@ -33,18 +33,22 @@ class ChargerConfigModel(Base):
         db_session = DbSession()
         db_session.add(self)
         db_session.commit()
+        db_session.remove()
 
     def delete(self):
         db_session = DbSession()
         db_session.delete(self)
         db_session.commit()
+        db_session.remove()
 
     @staticmethod
     def get_config():
         db_session = DbSession()
         # Should be only one, return last modified
-        return db_session.query(ChargerConfigModel) \
+        ccm = db_session.query(ChargerConfigModel) \
             .order_by(ChargerConfigModel.modified_at.desc()).first()
+        db_session.remove()
+        return ccm
 
     def __repr(self):
         return self.to_str()

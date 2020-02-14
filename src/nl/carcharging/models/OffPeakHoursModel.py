@@ -42,11 +42,13 @@ class OffPeakHoursModel(Base):
         db_session = DbSession()
         db_session.add(self)
         db_session.commit()
+        db_session.remove()
 
     def delete(self):
         db_session = DbSession()
         db_session.delete(self)
         db_session.commit()
+        db_session.remove()
 
     def weekdayToStr(self, weekday) -> str:
         return self.weekday_en[weekday % len(self.weekday_en)]
@@ -66,6 +68,7 @@ class OffPeakHoursModel(Base):
                 .filter(OffPeakHoursModel.off_peak_end >= cast(timestamp, Time))
         if r is not None and self.get_count(r) > 0:
             self.logger.debug('is_off_peak(): DayOfWeek {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
+            db_session.remove()
             return True
 
         # Is this a public holiday?
@@ -89,9 +92,11 @@ class OffPeakHoursModel(Base):
 
         if r is not None and self.get_count(r) > 0:
             self.logger.debug('is_off_peak(): Holiday {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
+            db_session.remove()
             return True
 
         self.logger.debug('is_off_peak(): {} not within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
+        db_session.remove()
         return False
 
     def get_count(self, q):

@@ -54,29 +54,34 @@ class EnergyDeviceMeasureModel(Base):
         db_session = DbSession()
         db_session.add(self)
         db_session.commit()
+        db_session.remove()
 
     def get_last_saved(self, energy_device_id):
         return self.get_last_n_saved(energy_device_id, 1)[0]
 
     def get_last_n_saved(self, energy_device_id, n):
         db_session = DbSession()
-        return db_session.query(EnergyDeviceMeasureModel) \
+        edmm = db_session.query(EnergyDeviceMeasureModel) \
             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
             .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
-        db_session.close()
+        db_session.remove()
+        return edmm
 
     def get_last_n_saved_since(self, energy_device_id, since_ts, n=-1):
         db_session = DbSession()
+        edmm = None
         if n == -1:
-            return db_session.query(EnergyDeviceMeasureModel) \
+            edmm = db_session.query(EnergyDeviceMeasureModel) \
                 .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
                 .order_by(EnergyDeviceMeasureModel.created_at.desc()).all()
         else:
-            return db_session.query(EnergyDeviceMeasureModel) \
+            edmm = db_session.query(EnergyDeviceMeasureModel) \
                 .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
                 .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
+        db_session.remove()
+        return edmm
 
     def get_created_at_str(self):
         return str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S"))
