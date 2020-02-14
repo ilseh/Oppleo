@@ -10,14 +10,14 @@
 -- Recurring = same date each year. Pinksteren and Eastern change each year, Christmas and Kingsday are recurring on the same date
 
 CREATE TABLE off_peak_hours (
-   id int PRIMARY KEY,
+   id serial primary key,
    weekday VARCHAR (20),
    holiday_day int,
    holiday_month int,
    holiday_year int,
    recurring boolean,
    description VARCHAR(100),
-   off_peak_start TIME NOT NULL
+   off_peak_start TIME NOT NULL,
    off_peak_end TIME NOT NULL
 );
 
@@ -53,20 +53,20 @@ INSERT INTO off_peak_hours (weekday, off_peak_start, off_peak_end, description)
 INSERT INTO off_peak_hours (holiday_day, holiday_month, holiday_year, off_peak_start, off_peak_end, description, recurring) 
    VALUES (1, 1, 2020, '00:00', '23:59', 'Nieuwjaarsdag', 't');
 -- Tweede Paasdag
-INSERT INTO off_peak_hours (holiday, off_peak_start, off_peak_end, description, recurring) 
+INSERT INTO off_peak_hours (holiday_day, holiday_month, holiday_year, off_peak_start, off_peak_end, description, recurring) 
    VALUES (13, 4, 2020, '00:00', '23:59', 'Tweede Paasdag', 'f');
 -- Koningsdag
-INSERT INTO off_peak_hours (holiday, off_peak_start, off_peak_end, description, recurring) 
+INSERT INTO off_peak_hours (holiday_day, holiday_month, holiday_year, off_peak_start, off_peak_end, description, recurring) 
    VALUES (27, 4, 2020, '00:00', '23:59', 'Koningsdag', 't');
 -- Hemelvaartsdag
-INSERT INTO off_peak_hours (holiday, off_peak_start, off_peak_end, description, recurring) 
+INSERT INTO off_peak_hours (holiday_day, holiday_month, holiday_year, off_peak_start, off_peak_end, description, recurring) 
    VALUES (21, 5, 2020, '00:00', '23:59', 'Hemelvaartsdag', 'f');
 -- Tweede Pinksterdag
-INSERT INTO off_peak_hours (holiday, off_peak_start, off_peak_end, description, recurring) 
+INSERT INTO off_peak_hours (holiday_day, holiday_month, holiday_year, off_peak_start, off_peak_end, description, recurring) 
    VALUES (1, 6, 2020, '00:00', '23:59', 'Tweede Pinksterdag', 'f');
 -- Eerste Kerstdag
-INSERT INTO off_peak_hours (holiday, off_peak_start, off_peak_end, description, recurring) 
+INSERT INTO off_peak_hours (holiday_day, holiday_month, holiday_year, off_peak_start, off_peak_end, description, recurring) 
    VALUES (25, 12, 2020, '00:00', '23:59', 'Eerste Kerstdag', 't');
 -- Tweede Kerstdag.
-INSERT INTO off_peak_hours (holiday, off_peak_start, off_peak_end, description, recurring) 
+INSERT INTO off_peak_hours (holiday_day, holiday_month, holiday_year, off_peak_start, off_peak_end, description, recurring) 
    VALUES (26, 12, 2020, '00:00', '23:59', 'Tweede Kerstdag', 't');
