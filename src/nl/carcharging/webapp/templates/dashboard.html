@@ -303,6 +303,7 @@
         // log data to the console so we can see
         console.log(result)
         switch(parseInt(result.status)) {
+          case 404:                   // No charge session found (green)
           case EVSE_STATE_INACTIVE:   // No charge session (green)
             $('div#statusAvailable').show()
             $('div#statusReady').hide()
