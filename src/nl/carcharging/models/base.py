@@ -11,7 +11,7 @@ engine = create_engine(
             WebAppConfig.DATABASE_URL,
             pool_size=5,                # Default is 5 - min conns kept in the pool
             max_overflow=10,            # Default is 10 - max conns handed out
-            timeout=5,                  # Default 30 - time to give up connection
+#            timeout=5,                  # Default 30 - time to give up connection
             pool_pre_ping=True,         # validate connection before use
             pool_recycle=3600           # recycle connections after one hour
             )
