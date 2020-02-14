@@ -89,6 +89,7 @@
         url			    : url,
         dataType	  : 'json',
         encode		  : true,
+        headers     : { 'ignore-login-next': 'true' },
         data        : data
 /*        data      : {
           csrf_token    : '{{ csrf_token() }}',

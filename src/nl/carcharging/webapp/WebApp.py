@@ -140,6 +140,12 @@ def RfidModel_after_update(mapper, connection, target):
 if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
 
+    """
+    from nl.carcharging.models.OffPeakHoursModel import OffPeakHoursModel
+    ohm = OffPeakHoursModel()
+    ohm.test()
+    """
+
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
