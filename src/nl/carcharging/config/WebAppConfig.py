@@ -189,3 +189,15 @@ class WebAppConfig(object):
                 WebAppConfig.logger.error('Ini file exception on %s!' % option)
                 dict1[option] = None
         return dict1
+
+    @staticmethod
+    def sqlAlchemyPoolStatus() -> dict:
+        WebAppConfig.logger.debug('sqlAlchemyPoolStatus()')
+        if WebAppConfig.sqlalchemy_engine is None or \
+           WebAppConfig.sqlalchemy_engine.pool is None:
+            WebAppConfig.logger.warning('sqlAlchemyPoolStatus() - no engine or pool (None)')
+            return "Geen informatie"
+        else:
+            pool_status = WebAppConfig.sqlalchemy_engine.pool.status()
+            WebAppConfig.logger.info('sqlAlchemyPoolStatus() - %s' % pool_status)
+            return pool_status
