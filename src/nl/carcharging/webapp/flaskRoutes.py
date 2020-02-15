@@ -24,6 +24,7 @@ from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
+from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
 from nl.carcharging.api.TeslaApi import TeslaAPI
@@ -349,6 +350,7 @@ def settings(active=1):
                 diag=diag, 
                 diag_json=diag_json,
                 charger_config=charger_config_str,
+                energydevicemodel=EnergyDeviceModel.get_one(WebAppConfig.ENERGY_DEVICE_ID),
                 webappconfig=WebAppConfig
             )
 

@@ -5,32 +5,6 @@
 {% endblock %} 
 {% block head %}
   {{ super() }}
-
-  <!-- DataTables CSS -->
-  <link href="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
-  <link href="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-  <link href="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
-
-  <!-- Responsive datatable examples -->
-  <link href="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
-   
-  <!-- Required datatable js -->
-  <script src="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.js') }}"></script>
-  <!-- Buttons -->
-  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/dataTables.buttons.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.flash.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/jszip/3.1.3/jszip.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/pdfmake.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/vfs_fonts.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.html5.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.print.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/buttons.colVis.min.js') }}"></script>
-
-  <!-- Responsive -->
-  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
   
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
@@ -39,38 +13,10 @@
     .paginate_button {
         padding: 0px !important;
     }
-    tbody td {
+    .XXtbody td {
       padding: 2px 2px !important;
       text-align: center;
       background-color: #36404a;
-    }
-    div .dataTables_info {
-      color: #98a6ad !important;
-      margin-left: 5px;
-    }
-    div .dt-buttons {
-      margin-bottom: 10px;
-      margin-left: 3px;
-    }
-    div .dataTables_length {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 100%;
-    }
-    div .dataTables_length label {
-      font-size: smaller;
-      margin-left: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 100%;
-      color: #98a6ad !important;
-    }
-    div .dataTables_length label select {
-      width: 80px;
-      margin-left: 10px;
-      margin-right: 10px;
     }
     td.diag_pre {
       box-sizing: inherit;
@@ -150,155 +96,15 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    var dt = undefined
-    function getUsageData( n = undefined ) {
-      console.log(timestamp() + ' getUsageData()')
-    
-//      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
-            
-      $.ajax({
-        type		  : 'GET',
-        url			  : (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data'),
-        dataType	: 'json',
-        headers   : { 'ignore-login-next': 'true' },
-        encode		: true
-      }) // using the done promise callback
-      .done(function(data) {
-        // log data to the console so we can see
-        console.log(data)
-  //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
-
-        dt = $('table#usage').DataTable( {
-          "pageLength": 10,
-          "order": [[ 0, "desc" ]],
-          dom: 'Blfrtip',
-          buttons: [
-            'copy', 
-            'csv', 
-            'excel', 
-            {
-                extend: 'pdfHtml5',
-                orientation: 'landscape',
-                pageSize: 'A4'
-            },
-            'print'
-          ],
-          "createdRow": function(row, data, dataIndex) {
-//            $(row).addClass('text-info')
-            $(row).toggleClass("text-info").fadeOut(800, function() {              
-              $(this).toggleClass("text-info").fadeIn(50)
-            })
-          },
-          "searching": false
-
-        });
-        dt.draw('full-reset')
-        data.forEach(element => {
-//          console.log(element.a_l1)
-
-          $("span#energy_device_id").text("("+element.energy_device_id+")")
-          dt.row.add([
-            element.created_at,
-            element.kw_total +'kWh',
-            element.kwh_l1 +'kWh',
-            element.kwh_l2 +'kWh',
-            element.kwh_l3 +'kWh',
-            element.a_l1 +'A',
-            element.a_l2 +'A',
-            element.a_l3 +'A',
-            element.p_l1 +'W',
-            element.p_l2 +'W',
-            element.p_l3 +'W',
-            element.v_l1 +'V',
-            element.v_l1 +'V',
-            element.v_l3 +'V',
-            element.hz +' Hz'
-          ]).draw( false )
-        })
-      })
-      .fail(function() {
-  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
-      })
-      .always(function() {
-        // Check every 60 seconds
-      })
-    }
-    var socket = undefined
-    function startWebSocket() {
-      console.log(timestamp() + ' startWebSocket()')
-      // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
-      socket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/usage')
-      // this is a callback that triggers when the "my response" event is emitted by the server.
-      socket.on('status_update', function(msg) {
-        console.log('Received: ' + JSON.stringify(msg.data))
-
-        // Check if entry does not already exist. After a server restart the last entry is always re-sent. 
-        var entryExists = false
-        dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
-          var data = this.data()
-          if (data[0] === msg.data.created_at) {
-            console.log('Websocket data entry ['+msg.data.created_at+'] already in table through initial pull request.')
-            entryExists = true
-            // currently no way to stop the every() loop... (return false does not work)
-            return false
-          }
-        })
-        if (entryExists) {
-          return
-        }
-
-        dt.row.add([
-            msg.data.created_at,
-            msg.data.kw_total +'kWh',
-            msg.data.kwh_l1 +'kWh',
-            msg.data.kwh_l2 +'kWh',
-            msg.data.kwh_l3 +'kWh',
-            msg.data.a_l1 +'A',
-            msg.data.a_l2 +'A',
-            msg.data.a_l3 +'A',
-            msg.data.p_l1 +'W',
-            msg.data.p_l2 +'W',
-            msg.data.p_l3 +'W',
-            msg.data.v_l1 +'V',
-            msg.data.v_l1 +'V',
-            msg.data.v_l3 +'V',
-            msg.data.hz +'Hz'
-          ]).draw( false )
-      })
-      $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
-        $(this).toggleClass("testbg").fadeIn(0)
-})
-    }
-    //example of triggering an event on click of a form submit button
-    function sendSocketMsg() {
-        socket.emit('my event', {data: $('#emit_data').val()});
-    }
 
     var diag_data = {{ diag_json | safe }}
 
     jQuery(document).ready(function() {
       console.log(timestamp() + " file load completed!")
-      startWebSocket()
-      getUsageData({{ cnt }})
-      $('pre#diag_json').toggle()
       $('pre#diag_json').html( 
         JSON.stringify(diag_data, undefined, 2) 
       )
-      $('button#diag_detail_button').click(function(){
-        if ($(this).text() == "Show details") {
-          $(this).text("Hide details")
-          $('pre#diag_json').toggle( "slow", function() {
-            // Animation complete.
-          })
-
-        } else {
-          $(this).text("Show details")
-          $('pre#diag_json').toggle( "slow", function() {
-            // Animation complete.
-          })
-
-        }
-      })
+      $('pre#diag_json').show()
       // Remove spinner
       $('.spinner').hide()
     })
@@ -315,13 +121,6 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box">
-                <div class="btn-group pull-right">
-                    <ol class="breadcrumb hide-phone p-0 m-0">
-                        <li class="breadcrumb-item"><a href="#">Verbruik</a></li>
-                        <li class="breadcrumb-item active">Verbruik</li>
-                    </ol>
-                </div>
-                <h4 class="page-title">Verbruik {{ var1 }}</h4>
             </div>
         </div>
     </div>
@@ -333,264 +132,329 @@
           <div class="card-box">
               <h4 class="header-title m-t-0 m-b-30">Instellingen</h4>
 
-              <div class="tabs-vertical-env">
-                  <ul class="nav tabs-vertical">
-                      <li class="nav-item">
-                        <a href="#v-charger" class="nav-link{% if active==1 %} active{% endif %}" data-toggle="tab" aria-expanded="false"><i class="fas fa-charging-station"></i> Laadpunt</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-kwhmeter" class="nav-link{% if active==2 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-tachometer-alt"></i> kWh meter</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-network" class="nav-link{% if active==3 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-network-wired"></i> Netwerk</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-database" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-database"></i> Database</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-hardware" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-microchip"></i> Hardware</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#v-diagnostics" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
-                      </li>
-                  </ul>
+              <ul class="nav nav-tabs tabs-bordered nav-justified">
+                <li class="nav-item">
+                  <a href="#v-charger" class="nav-link{% if active==1 %} active{% endif %}" data-toggle="tab" aria-expanded="false"><i class="fas fa-charging-station"></i> Laadpunt</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#v-kwhmeter" class="nav-link{% if active==2 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-tachometer-alt"></i> kWh meter</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#v-network" class="nav-link{% if active==3 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-network-wired"></i> Netwerk</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#v-database" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-database"></i> Database</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#v-hardware" class="nav-link{% if active==5 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-microchip"></i> Hardware</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#v-diagnostics" class="nav-link{% if active==6 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
+                </li>
+              </ul>
 
-                  <div class="tab-content">
-                      <div class="tab-pane{% if active==1 %} active{% endif %}" id="v-charger">
-                        <div>
-                          <div>
-                            <h3 class="set_title text-dark"><i class="fas fa-charging-station"></i> Laadpunt</h3 class="set_name text-dark">
-                          </div>
-                          {% if ('charger_name' in charger_config) %}
-                          <div>
-                            <div class="set_name text-dark">Naam laadpunt:</div>
-                            <div class="text-primary set_val set_val_last">{{ charger_config['charger_name'] }}</div>
-                          </div>
-                          {% endif %}
-                          <div>
-                            <div class="set_name text-dark">kWh Factor:</div >
-                            <div class="text-primary set_val set_val_last">{{ webappconfig.factor_Whkm }}</div>
-                          </div>
-                          {% if ('charger_tariff' in charger_config) %}
-                          <div>
-                            <div class="set_name text-dark">Laadpunt tarief:</div >
-                            <div class="text-primary set_val set_val_last">&euro;  {{ charger_config['charger_tariff'] }}</div>
-                          </div>
-                          {% endif %}
-                          {% if ('modified_at' in charger_config) %}
-                          <div>
-                            <div class="set_name text-dark">Laatste wijziging:</div>
-                            <div class="text-primary set_val set_val_last">{{ charger_config['modified_at'] }}</div>
-                          </div>
-                          {% endif %}
-                        </div>
-                      </div>
-                      <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
-                        <div>
-                          <div>
-                            <h3 class="set_title text-dark"><i class="fas fa-tachometer-alt"></i> kWh meter</h3 class="set_name text-dark">
-                          </div>
-                          <div>
-                            <div class="set_name text-dark">Modbus:</div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">ID:</div>
-                              <div class="set_val_val">1</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Mode:</div>
-                              <div class="set_val_val">RTU</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Snelheid:</div>
-                              <div class="set_val_val">9600</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Byte size:</div>
-                              <div class="set_val_val">8</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Stop bits:</div>
-                              <div class="set_val_val">1</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Parity:</div>
-                              <div class="set_val_val">None</div>
-                            </div>
-                            <div class="text-primary set_val set_val_last">
-                              <div class="set_val_name">Timeout:</div>
-                              <div class="set_val_val">1</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+              <div class="tab-content">
 
-                      <div class="tab-pane{% if active==3 %} active{% endif %}" id="v-network">
-                        <div>
-                          <div>
-                            <h3 class="set_title text-dark"><i class="fas fa-network-wired"></i> Netwerk</h3 class="set_name text-dark">
-                          </div>
-                          <div>
-                            <div class="set_name text-dark">Netwerk:</div>
-                            {% if ('ip' in diag and 'eth0' in diag['ip'] and 'INET' in diag['ip']['eth0'] and diag['ip']['eth0']['INET'] | length > 0 and 'addr' in diag['ip']['eth0']['INET'][0]) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">IPv4:</div>
-                              <div class="set_val_val">{{ diag['ip']['eth0']['INET'][0]['addr'] }}</div>
-                            </div>
+                  <div class="tab-pane{% if active==1 %} active{% endif %}" id="v-charger">
+                    <div class="col-lg-6">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="fas fa-charging-station"></i> Laadpunt</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+                            {% if ('charger_name' in charger_config) %}
+                            <tr>
+                              <td class="text-dark">Naam laadpunt:</td>
+                              <td class="text-primary">{{ charger_config['charger_name'] }}</td>
+                            </tr>
                             {% endif %}
-                            {% if ('ip' in diag and 'en0' in diag['ip'] and 'INET' in diag['ip']['en0'] and diag['ip']['en0']['INET'] | length > 0 and 'addr' in diag['ip']['en0']['INET'][0]) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">IPv4:</div>
-                              <div class="set_val_val">{{ diag['ip']['en0']['INET'][0]['addr'] }}</div>
-                            </div>
+                            <tr>
+                              <td class="text-dark">kWh Factor:</td >
+                              <td class="text-primary">{{ webappconfig.factor_Whkm }}</td>
+                            </tr>
+                            {% if ('charger_tariff' in charger_config) %}
+                            <tr>
+                              <td class="text-dark">Laadpunt tarief:</td >
+                              <td class="text-primary">&euro;  {{ charger_config['charger_tariff'] }}</td>
+                            </tr>
                             {% endif %}
-                            {% if ('ip' in diag and 'eth0' in diag['ip'] and 'INET6' in diag['ip']['eth0'] and diag['ip']['eth0']['INET6'] | length > 0 and 'addr' in diag['ip']['eth0']['INET6'][0]) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">IPv6:</div>
-                              <div class="set_val_val">{{ diag['ip']['eth0']['INET6'][0]['addr'] }}</div>
-                            </div>
+                            {% if ('modified_at' in charger_config) %}
+                            <tr>
+                              <td class="text-dark">Laatste wijziging:</td>
+                              <td class="text-primary">{{ charger_config['modified_at'] }}</td>
+                            </tr>
                             {% endif %}
-                            {% if ('ip' in diag and 'en0' in diag['ip'] and 'INET6' in diag['ip']['en0'] and diag['ip']['en0']['INET6'] | length > 0 and 'addr' in diag['ip']['en0']['INET6'][0]) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">IPv6:</div>
-                              <div class="set_val_val">{{ diag['ip']['en0']['INET6'][0]['addr'] }}</div>
-                            </div>
-                            {% endif %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">HTTP Host:</div>
-                              <div class="set_val_val">{{ webappconfig.httpHost }}</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">HTTP Port:</div>
-                              <div class="set_val_val">{{ webappconfig.httpPort }}</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Releoader:</div>
-                              <div class="set_val_val">{{ webappconfig.useReloader }}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="tab-pane{% if active==4 %} active{% endif %}" id="v-database">
-                        <div>
-                          <div>
-                            <h3 class="set_title text-dark"><i class="fas fa-database"></i> Database</h3 class="set_name text-dark">
-                          </div>
-                          <div>
-                            <div class="set_name text-dark">Postgres:</div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">URL:</div>
-                              <div class="set_val_val">{{ webappconfig.DATABASE_URL }}</div>
-                            </div>
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">SQLAlchemy:</div>
-                              <div class="set_val_val">{{ webappconfig.SQLALCHEMY_DATABASE_URI }}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-hardware">
-                        <div>
-                          <div>
-                            <h3 class="set_title text-dark"><i class="fas fa-microchip"></i> Hardware</h3 class="set_name text-dark">
-                          </div>
-                          <div>
-                            <div class="set_name text-dark">Hardware:</div>
-                            {% if ('model' in diag) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Model:</div>
-                              <div class="set_val_val">{{ diag['model'] }}</div>
-                            </div>
-                            {% endif %}
-                            {% if ('revision' in diag) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Revision:</div>
-                              <div class="set_val_val">{{ diag['revision'] }}</div>
-                            </div>
-                            {% endif %}
-                          </div>
-                          {% if ('os' in diag) %}
-                          <div>&nbsp;</div>
-                          <div>
-                            <div class="set_name text-dark">OS:</div>
-                            {% for os_line in diag['os'] %}
-                            <div class="text-primary set_val">{{ os_line }}</div>
-                            {% endfor %}
-                          </div>
-                          {% endif %}
-                          <div>&nbsp;</div>
-                          <div>
-                            <div class="set_name text-dark">Disk:</div>
-                            {% if ('disk' in diag and 'total' in diag['disk'] and 'size' in diag['disk']['total'] and 'unit' in diag['disk']['total']) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Total:</div>
-                              <div class="set_val_val_right">{{ diag['disk']['total']['size'] }} {{ diag['disk']['total']['unit'] }}</div>
-                            </div>
-                            {% endif %}
-                            {% if ('disk' in diag and 'free' in diag['disk'] and 'size' in diag['disk']['free'] and 'unit' in diag['disk']['free']) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Free:</div>
-                              <div class="set_val_val_right">{{ diag['disk']['free']['size'] }} {{ diag['disk']['free']['unit'] }}</div>
-                            </div>
-                            {% endif %}
-                            {% if ('disk' in diag and 'used' in diag['disk'] and 'size' in diag['disk']['used'] and 'unit' in diag['disk']['used']) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Used:</div>
-                              <div class="set_val_val_right">{{ diag['disk']['used']['size'] }} {{ diag['disk']['used']['unit'] }}</div>
-                            </div>
-                            {% endif %}
-                            {% if ('disk' in diag and 'percent' in diag['disk']) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">&nbsp;</div>
-                              <div class="set_val_val_right">{{ diag['disk']['percent'] }}% in use</div>
-                            </div>
-                            {% endif %}
-                          </div>
-                          <div>&nbsp;</div>
-                          <div>
-                            <div class="set_name text-dark">Memory:</div>
-                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemTotalFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemTotalFormatted'] and 'unit' in diag['pmem']['MemTotalFormatted']) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Total:</div>
-                              <div class="set_val_val_right">{{ diag['pmem']['MemTotalFormatted']['size'] }} {{ diag['pmem']['MemTotalFormatted']['unit'] }}</div>
-                            </div>
-                            {% endif %}
-                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemFreeFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemFreeFormatted'] and 'unit' in diag['pmem']['MemFreeFormatted']) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Free:</div>
-                              <div class="set_val_val_right">{{ diag['pmem']['MemFreeFormatted']['size'] }} {{ diag['pmem']['MemFreeFormatted']['unit'] }}</div>
-                            </div>
-                            {% endif %}
-                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemAvailableFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemAvailableFormatted'] and 'unit' in diag['pmem']['MemAvailableFormatted']) %}
-                            <div class="text-primary set_val">
-                              <div class="set_val_name">Available:</div>
-                              <div class="set_val_val_right">{{ diag['pmem']['MemAvailableFormatted']['size'] }} {{ diag['pmem']['MemAvailableFormatted']['unit'] }}</div>
-                            </div>
-                            {% endif %}
-                          </div>                          
-                          <div>&nbsp;</div>
-                          <div>
-                            <div class="set_name text-dark">Logfile:</div>
-                            <div class="text-primary set_val">{{ webappconfig.LOG_FILE }}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-diagnostics">
-                        <div>
-                          <div>
-                            <h3 class="set_title text-dark"><i class="fas fa-network-wired"></i> Diagnostics</h3 class="set_name text-dark">
-                          </div>
-
-                          <div style="padding-left: 120px; padding-top: 30px; padding-bottom: 30px;">
-                            <button type="button" id="diag_detail_button" class="btn btn-primary waves-effect waves-light">Show details</button>
-                          </div>
-                          <div>
-                            <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
-                          </div>
-                        </div>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                </div>
-              </div>
+                  </div>
+
+                  <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
+                    <div class="col-lg-6">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="fas fa-tachometer-alt"></i> kWh meter</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+                            {% if (energydevicemodel is not none) %}
+                            <tr>
+                              <td class="text-dark">Device interface:</td>
+                              <td class="text-primary">Modbus</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Port name:</td>
+                              <td class="text-primary">{{ energydevicemodel.port_name }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Slave address:</td>
+                              <td class="text-primary">{{ energydevicemodel.slave_address }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Mode:</td>
+                              <td class="text-primary">{{ energydevicemodel.mode }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Snelheid:</td>
+                              <td class="text-primary">{{ energydevicemodel.baudrate }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Byte size:</td >
+                              <td class="text-primary">{{ energydevicemodel.bytesize }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Stop bits:</td >
+                              <td class="text-primary">{{ energydevicemodel.stopbits }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Parity:</td >
+                              <td class="text-primary">{{ energydevicemodel.parity }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Modbus timeout:</td>
+                              <td class="text-primary">{{ energydevicemodel.modbus_timeout }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Serial timeout:</td>
+                              <td class="text-primary">{{ energydevicemodel.serial_timeout }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Debug:</td>
+                              <td class="text-primary">{{ energydevicemodel.debug }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Close port after each call:</td>
+                              <td class="text-primary">{{ energydevicemodel.close_port_after_each_call }}</td>
+                            </tr>
+                            {% endif %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane{% if active==3 %} active{% endif %}" id="v-network">
+                    <div class="col-lg-6">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="fas fa-network-wired"></i> Netwerk</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+                            {% if ('ip' in diag and 'eth0' in diag['ip'] and 'INET' in diag['ip']['eth0'] and diag['ip']['eth0']['INET'] | length > 0 and 'addr' in diag['ip']['eth0']['INET'][0]) %}
+                            <tr>
+                              <td class="text-dark">IPv4:</td>
+                              <td class="text-primary">{{ diag['ip']['eth0']['INET'][0]['addr'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('ip' in diag and 'en0' in diag['ip'] and 'INET' in diag['ip']['en0'] and diag['ip']['en0']['INET'] | length > 0 and 'addr' in diag['ip']['en0']['INET'][0]) %}
+                            <tr>
+                              <td class="text-dark">IPv4:</td>
+                              <td class="text-primary">{{ diag['ip']['en0']['INET'][0]['addr'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('ip' in diag and 'eth0' in diag['ip'] and 'INET6' in diag['ip']['eth0'] and diag['ip']['eth0']['INET6'] | length > 0 and 'addr' in diag['ip']['eth0']['INET6'][0]) %}
+                            <tr>
+                              <td class="text-dark">IPv6:</td>
+                              <td class="text-primary">{{ diag['ip']['eth0']['INET6'][0]['addr'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('ip' in diag and 'en0' in diag['ip'] and 'INET6' in diag['ip']['en0'] and diag['ip']['en0']['INET6'] | length > 0 and 'addr' in diag['ip']['en0']['INET6'][0]) %}
+                            <tr>
+                              <td class="text-dark">IPv6:</td>
+                              <td class="text-primary">{{ diag['ip']['en0']['INET6'][0]['addr'] }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                              <td class="text-dark">HTTP Host:</td>
+                              <td class="text-primary">{{ webappconfig.httpHost }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">HTTP Port:</td>
+                              <td class="text-primary">{{ webappconfig.httpPort }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Releoader:</td>
+                              <td class="text-primary">{{ webappconfig.useReloader }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane{% if active==4 %} active{% endif %}" id="v-database">
+                    <div class="col-lg-12">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="fas fa-database"></i> Database</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+                            <tr>
+                              <td class="text-dark">Database:</td>
+                              <td class="text-primary">Postgres</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">URL:</td>
+                              <td class="text-primary">{{ webappconfig.DATABASE_URL }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">SQLAlchemy URL:</td>
+                              <td class="text-primary">{{ webappconfig.SQLALCHEMY_DATABASE_URI }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">SQLAlchemy Pool Status:</td>
+                              <td class="text-primary">{{ webappconfig.sqlAlchemyPoolStatus() }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+
+                  <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-hardware">
+                    <div class="col-lg-6">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="fas fa-microchip"></i> Platform</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+                            {% if ('model' in diag) %}
+                            <tr>
+                              <td class="text-dark">Model:</td>
+                              <td class="text-primary">{{ diag['model'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('revision' in diag) %}
+                            <tr>
+                              <td class="text-dark">Revision:</td>
+                              <td class="text-primary">{{ diag['revision'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('os' in diag) %}
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> OS</th>
+                            </tr>
+                            {% for os_line in diag['os'] %}
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-primary">{{ os_line }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-hdd"></i> Disk</th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Root:</td>
+                              <td class="text-primary">/</td>
+                            </tr>
+                            {% if ('disk' in diag and 'total' in diag['disk'] and 'size' in diag['disk']['total'] and 'unit' in diag['disk']['total']) %}
+                            <tr>
+                              <td class="text-dark">Total:</td>
+                              <td class="text-primary">{{ diag['disk']['total']['size'] }} {{ diag['disk']['total']['unit'] }}</td>
+                            </tr>
+                            {% endif %}    
+                            {% if ('disk' in diag and 'free' in diag['disk'] and 'size' in diag['disk']['free'] and 'unit' in diag['disk']['free']) %}
+                            <tr>
+                              <td class="text-dark">Free:</td>
+                              <td class="text-primary">{{ diag['disk']['free']['size'] }} {{ diag['disk']['free']['unit'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('disk' in diag and 'used' in diag['disk'] and 'size' in diag['disk']['used'] and 'unit' in diag['disk']['used']) %}
+                            <tr>
+                              <td class="text-dark">Used:</td>
+                              <td class="text-primary">{{ diag['disk']['used']['size'] }} {{ diag['disk']['used']['unit'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('disk' in diag and 'percent' in diag['disk']) %}
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-primary">{{ diag['disk']['percent'] }}% in use</td>
+                            </tr>
+                            {% endif %}
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-memory"></i> Memory</th>
+                            </tr>
+                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemTotalFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemTotalFormatted'] and 'unit' in diag['pmem']['MemTotalFormatted']) %}
+                            <tr>
+                              <td class="text-dark">Total:</td>
+                              <td class="text-primary">{{ diag['pmem']['MemTotalFormatted']['size'] }} {{ diag['pmem']['MemTotalFormatted']['unit'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemFreeFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemFreeFormatted'] and 'unit' in diag['pmem']['MemFreeFormatted']) %}
+                            <tr>
+                              <td class="text-dark">Free:</td>
+                              <td class="text-primary">{{ diag['pmem']['MemFreeFormatted']['size'] }} {{ diag['pmem']['MemFreeFormatted']['unit'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('pmem' in diag and diag['pmem'] is not none and 'MemAvailableFormatted' in diag['pmem'] and 'size' in diag['pmem']['MemAvailableFormatted'] and 'unit' in diag['pmem']['MemAvailableFormatted']) %}
+                            <tr>
+                              <td class="text-dark">Available:</td>
+                              <td class="text-primary">{{ diag['pmem']['MemAvailableFormatted']['size'] }} {{ diag['pmem']['MemAvailableFormatted']['unit'] }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-clipboard-list"></i> Logging</th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Logfile:</td>
+                              <td class="text-primary">{{ webappconfig.LOG_FILE }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-diagnostics">
+                    <div class="col-lg-12">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="fas fa-network-wired"></i> Diagnostics</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+                            <tr>
+                              <td class="text-dark">
+                                <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+
+                      </div>
+                    </div>
+                  </div>
+
           </div>
       </div> <!-- end col -->
     </div> <!-- end row -->
