@@ -2,7 +2,7 @@ from marshmallow import fields, Schema
 
 from nl.carcharging.models.base import Base, DbSession
 from . import db
-from sqlalchemy import orm
+from sqlalchemy import orm, func
 
 class EnergyDeviceModel(Base):
     """
@@ -26,7 +26,7 @@ class EnergyDeviceModel(Base):
     modbus_timeout = db.Column(db.Integer)
 
     def __init__(self, data):
-        self.energy_device_id = data.get('energy_device_id')
+        pass
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
@@ -38,27 +38,29 @@ class EnergyDeviceModel(Base):
         db_session.add(self)
         db_session.commit()
 
+    # no delete, only update
+    """
     def delete(self):
         db_session = DbSession()
         db_session.delete(self)
         db_session.commit()
+    """
 
     @staticmethod
-    def get_all():
+    def get():
         db_session = DbSession()
-        edm = db_session.query(EnergyDeviceModel).all()
-        return edm
-
-
-    @staticmethod
-    def get_one(energy_device_id):
-        db_session = DbSession()
-        edm =  db_session.query(EnergyDeviceModel)\
-            .filter(EnergyDeviceModel.energy_device_id == energy_device_id).first()
+        edm =  db_session.query(EnergyDeviceModel) \
+                         .order_by(EnergyDeviceModel.energy_device_id.desc()) \
+                         .first()
         return edm
 
     def __repr(self):
         return '<id {}>'.format(self.id)
+
+    def get_count(self, q):
+        count_q = q.statement.with_only_columns([func.count()]).order_by(None)
+        count = q.session.execute(count_q).scalar()
+        return count
 
 class EnergyDeviceSchema(Schema):
     """

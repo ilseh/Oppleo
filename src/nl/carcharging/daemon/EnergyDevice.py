@@ -11,24 +11,24 @@ class EnergyDevice():
     logger = None
     energy_device_id = None
     energuUtil = None
-    interval = 10 # default value
+    modbusInterval = 10 # default value
     lastRun = 0
     appSocketIO = None
     callbackList = []
 
 
-    def __init__(self, energy_device_id=None, interval=10, energyUtil=None, appSocketIO=None):
+    def __init__(self, energy_device_id=None, modbusInterval=10, energyUtil=None, appSocketIO=None):
         self.logger = logging.getLogger('nl.carcharging.daemon.EnergyDevice')
         self.logger.setLevel(logging.DEBUG)
         self.energy_device_id = energy_device_id
-        self.interval = interval
+        self.modbusInterval = modbusInterval
         self.energyUtil = energyUtil
         self.appSocketIO = appSocketIO
-
+        
 
     def handleIfTimeTo(self):
         # self.logger.debug(f'handleIfTimeTo() {self.energy_device_id}')
-        if (time.time() *1000.0) > (self.lastRun + (self.interval *1000.0)):
+        if (time.time() *1000.0) > (self.lastRun + (self.modbusInterval *1000.0)):
             # time to run again
             self.logger.debug(f'handleIfTimeTo() - time to handle {self.energy_device_id}')
             try:

@@ -30,6 +30,8 @@ class WebAppConfig(object):
     INI_DEBUG = 'DEBUG'
     INI_TESTING = 'TESTING'
 
+    INI_MODBUS_INTERVAL = 'MODBUS_INTERVAL'
+
     # ini content
     ini_settings = None
 
@@ -55,6 +57,10 @@ class WebAppConfig(object):
     # Tesla is using 162, which matches the in-car screen
     # Actual average over first 16.836 km on Tesla Model 3 is 181.8
     factor_Whkm = 162
+
+    # Number of seconds between consecutive kwh meter readouts (via modbus). Only changes will be stored in the 
+    # usage table. Greater values will lead to lagging change detection. Smaller values take more processing.
+    modbusInterval = 10
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -119,6 +125,7 @@ class WebAppConfig(object):
                 WebAppConfig.httpPort = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_HTTP_PORT, 80)
                 WebAppConfig.useReloader = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_USE_RELOADER, False)
                 WebAppConfig.factor_Whkm = WebAppConfig.getFloatOption(targetSectionName, WebAppConfig.INI_FACTOR_WHKM, 162)
+                WebAppConfig.modbusInterval = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_MODBUS_INTERVAL, 10)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)
