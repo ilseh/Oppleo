@@ -23,7 +23,7 @@ class EnergyUtil:
 
     def initInstrument(self):
 
-        device_data = EnergyDeviceModel.get(self.energy_device_id)
+        device_data = EnergyDeviceModel.get()
         self.logger.debug(
             'found device: %s %s %d' % (device_data.energy_device_id, device_data.port_name, device_data.slave_address))
 
