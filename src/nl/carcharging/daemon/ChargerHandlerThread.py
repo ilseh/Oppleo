@@ -369,7 +369,7 @@ class ChargerHandlerThread(object):
                     device_measurement.energy_device_id
             )
         if open_charge_session_for_device != None:
-            self.logger.debug('energyUpdate() open charge session, updating usage. device_measurement {}, open_charge_session_for_device {}'.format(str(device_measurement.to_str(), str(open_charge_session_for_device.to_str()))
+            self.logger.debug('energyUpdate() open charge session, updating usage. device_measurement {}, open_charge_session_for_device {}'.format(str(device_measurement.to_str()), str(open_charge_session_for_device.to_str())))
             # Update session usage
             open_charge_session_for_device.end_value = device_measurement.kw_total
             self.logger.debug('energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
