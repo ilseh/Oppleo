@@ -33,6 +33,15 @@ class RfidReaderProd(object):
             id, text = self.reader.read_no_block()
             # Sleep for just a little
             WebAppConfig.appSocketIO.sleep(0.05)
+            """
+            TODO Off peak hours
+            if check for offpeak
+                if off peak and reader is enabled but evse is not, go ahead and open evse 
+                    (and possibly wake car for charging)
+                    oh, and reset any 'over-ride off peak for once' authorizations
+                if not off peak and reader is enabled, go ahead and close evse
+                    maybe warn through prowl?
+            """
 
         return id, text
 

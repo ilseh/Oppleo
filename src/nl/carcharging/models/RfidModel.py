@@ -86,13 +86,11 @@ class RfidModel(Base):
         db_session = DbSession()
         db_session.add(self)
         db_session.commit()
-        db_session.close()
 
     def delete(self):
         db_session = DbSession()
         db_session.delete(self)
         db_session.commit()
-        db_session.close()
 
     def hasValidToken(self):
         self.logger.debug("hasValidToken()")
@@ -112,7 +110,6 @@ class RfidModel(Base):
     def get_all():
         db_session = DbSession()
         rfidm = db_session.query(RfidModel).all()
-        db_session.close()
         return rfidm
 
     @staticmethod
@@ -120,7 +117,6 @@ class RfidModel(Base):
         db_session = DbSession()
         rfidm = db_session.query(RfidModel)\
             .filter(RfidModel.rfid == str(rfid)).first()
-        db_session.close()
         return rfidm
 
     def __repr(self):

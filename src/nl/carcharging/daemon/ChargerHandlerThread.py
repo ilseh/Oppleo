@@ -185,8 +185,12 @@ class ChargerHandlerThread(object):
         return last_saved_session and not last_saved_session.end_value \
                and last_saved_session.rfid != str(rfid)
 
+
     def read_rfid(self, reader, device):
         self.logger.info("Starting rfid reader for device %s" % device)
+        """
+        TODO - hand callback function to check off-peak from the thread
+        """
         rfid, text = reader.read()
         self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
@@ -271,6 +275,7 @@ class ChargerHandlerThread(object):
                     }, 
                     namespace='/charge_session'
                     )
+
 
     def save_tesla_values_in_thread(self, charge_session_id):
         self.tesla_util.set_charge_session_id(charge_session_id=charge_session_id)
@@ -357,16 +362,14 @@ class ChargerHandlerThread(object):
 
     # Callback from MeasureElectricityUsageThread with updated EnergyDeviceMeasureModel
     def energyUpdate(self, device_measurement):
-        self.logger.debug(f'energyUpdate() callback...')
+        self.logger.debug('energyUpdate() callback...')
         # Open charge session for this energy device?
         open_charge_session_for_device = \
             ChargeSessionModel.get_open_charge_session_for_device(
                     device_measurement.energy_device_id
             )
         if open_charge_session_for_device != None:
-            self.logger.debug(f'energyUpdate() open charge session, updating usage...')
-            self.logger.debug('energyUpdate() device_measurement %s...' % str(device_measurement.to_str()))
-            self.logger.debug('energyUpdate() open_charge_session_for_device %s...' % str(open_charge_session_for_device.to_str()))
+            self.logger.debug('energyUpdate() open charge session, updating usage. device_measurement {}, open_charge_session_for_device {}'.format(str(device_measurement.to_str(), str(open_charge_session_for_device.to_str()))
             # Update session usage
             open_charge_session_for_device.end_value = device_measurement.kw_total
             self.logger.debug('energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
