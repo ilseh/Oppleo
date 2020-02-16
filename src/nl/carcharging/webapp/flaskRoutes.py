@@ -362,8 +362,8 @@ def usage_data(cnt=100):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data {} {}'.format(cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = "laadpaal_noord"
-    qr = device_measurement.get_last_n_saved(energy_device_id="laadpaal_noord",n=cnt)
+    device_measurement.energy_device_id = WebAppConfig.ENERGY_DEVICE_ID
+    qr = device_measurement.get_last_n_saved(energy_device_id=WebAppConfig.ENERGY_DEVICE_ID,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
@@ -377,8 +377,8 @@ def usage_data_since(since_timestamp, cnt=-1):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = "laadpaal_noord"
-    qr = device_measurement.get_last_n_saved_since(energy_device_id="laadpaal_noord",since_ts=since_timestamp,n=cnt)
+    device_measurement.energy_device_id = WebAppConfig.ENERGY_DEVICE_ID
+    qr = device_measurement.get_last_n_saved_since(energy_device_id=WebAppConfig.ENERGY_DEVICE_ID,since_ts=since_timestamp,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
@@ -440,9 +440,9 @@ def charge_sessions(since_timestamp=None):
     req_limit = request.args['limit'] if 'limit' in request.args else None
 
     charge_sessions = ChargeSessionModel()
-    charge_sessions.energy_device_id = "laadpaal_noord"
+    charge_sessions.energy_device_id = WebAppConfig.ENERGY_DEVICE_ID
     qr = charge_sessions.get_last_n_sessions_since(
-        energy_device_id="laadpaal_noord",
+        energy_device_id=WebAppConfig.ENERGY_DEVICE_ID,
         since_ts=None,
         n=-1
         )

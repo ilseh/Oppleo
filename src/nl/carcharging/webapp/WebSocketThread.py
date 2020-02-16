@@ -59,7 +59,7 @@ class WebSocketThread(object):
         self.logger.debug('Checking usage data...')
 
         device_measurement = EnergyDeviceMeasureModel()  
-        device_measurement.energy_device_id = WebAppConfig.ENERGY_DEVICE_ID # "laadpaal_noord"
+        device_measurement.energy_device_id = WebAppConfig.ENERGY_DEVICE_ID
         qr = device_measurement.get_last_saved(energy_device_id=WebAppConfig.ENERGY_DEVICE_ID)
         if (self.most_recent != qr.get_created_at_str()):
             self.logger.debug(f'Send msg {self.counter} via websocket...')
