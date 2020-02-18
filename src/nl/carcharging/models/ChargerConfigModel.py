@@ -30,24 +30,42 @@ class ChargerConfigModel(Base):
 
     def save(self):
         db_session = DbSession()
-        db_session.add(self)
-        db_session.commit()
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     def delete(self):
         db_session = DbSession()
-        db_session.delete(self)
-        db_session.commit()
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     @staticmethod
     def get_config():
         db_session = DbSession()
-        # Should be only one, return last modified
-        ccm = db_session.query(ChargerConfigModel) \
-            .order_by(ChargerConfigModel.modified_at.desc()).first()
+        ccm = None
+        try:
+            # Should be only one, return last modified
+            ccm = db_session.query(ChargerConfigModel) \
+                            .order_by(ChargerConfigModel.modified_at.desc()) \
+                            .first()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return ccm
+
 
     def __repr(self):
         return self.to_str()
+
 
     def to_str(self):
         return ({

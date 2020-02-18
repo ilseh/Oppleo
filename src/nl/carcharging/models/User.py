@@ -31,16 +31,26 @@ class User(Base):
     @staticmethod
     def get(username):
         db_session = DbSession()
-        # Should be only one, return last modified
-        user = db_session.query(User) \
-                         .filter(User.username == username) \
-                         .first()
+        user = None
+        try:
+            # Should be only one, return last modified
+            user = db_session.query(User) \
+                            .filter(User.username == username) \
+                            .first()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query {} table in database".format(self.__tablename__ ), exc_info=True)
         return user
+
 
     def save(self) -> None:
         db_session = DbSession()
-        db_session.add(self)
-        db_session.commit()
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
 
     def is_active(self):
         """True, as all users are active."""
@@ -58,16 +68,31 @@ class User(Base):
         """False, as anonymous users aren't supported."""
         return False
 
+    # Delete this user
+    def delete(self):
+        db_session = DbSession()
+        try:
+            # Should be only one
+            num_rows_deleted = db_session.query(User) \
+                                         .filter(User.username == self.username) \
+                                         .delete()
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+
+
     # Delete all users
     @staticmethod
     def delete_all():
         db_session = DbSession()
         try:
-            # Should be only one, return last modified
+            # Should be only one
             num_rows_deleted = db_session.query(User) \
                                          .delete()
             db_session.commit()
-        except:
+        except Exception as e:
             db_session.rollback()
+            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
 
 

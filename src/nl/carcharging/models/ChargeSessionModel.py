@@ -50,27 +50,49 @@ class ChargeSessionModel(Base):
 
     def save(self) -> None:
         db_session = DbSession()
-        db_session.add(self)
-        db_session.commit()
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     def update(self, data) -> None:
         for key, item in data.items():
             setattr(self, key, item)
         self.modified_at = datetime.now()
         db_session = DbSession()
-        db_session.add(self)
-        db_session.commit()
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     def delete(self) -> None:
         db_session = DbSession()
-        db_session.delete(self)
-        db_session.commit()
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     @staticmethod
     def get_all_sessions() -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
-        csm = db_session.query(ChargeSessionModel).all()
+        csm = None
+        try:
+            csm = db_session.query(ChargeSessionModel) \
+                            .all()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return csm
+
 
     @staticmethod
     def get_one_charge_session(id) -> ChargeSessionModel:
@@ -96,69 +118,101 @@ class ChargeSessionModel(Base):
         if rfid is not None:
             qry_latest_id = qry_latest_id.filter(ChargeSessionModel.rfid == str(rfid))
         #  Now query the ChargeSession that we're interested in (latest for device or latest for device AND rfid).
-        latest_charge_session = db_session.query(ChargeSessionModel).filter(
-            ChargeSessionModel.id == qry_latest_id).first()
+        latest_charge_session = None
+        try:
+            latest_charge_session = db_session.query(ChargeSessionModel) \
+                                              .filter(ChargeSessionModel.id == qry_latest_id) \
+                                              .first()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return latest_charge_session
+
 
     @staticmethod
     def get_open_charge_session_for_device(device) -> ChargeSessionModel:
         db_session = DbSession()
-        # Build query to get id of latest chargesession for this device.
-        open_charge_session_for_device = db_session.query(ChargeSessionModel) \
+
+        open_charge_session_for_device = None
+        try:
+            # Build query to get id of latest chargesession for this device.
+            open_charge_session_for_device = db_session.query(ChargeSessionModel) \
                             .filter(ChargeSessionModel.energy_device_id == device) \
                             .filter(ChargeSessionModel.end_time == None) \
                             .order_by(ChargeSessionModel.start_time.desc()) \
                             .first()    # Call first to return an object instead of an array
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return open_charge_session_for_device
+
 
     def __repr(self) -> str:
         return '<id {}>'.format(self.id)
 
+
     def get_last_n_sessions_since(self, energy_device_id=None, since_ts=None, n=-1) -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
         csm = None
-        if (n == -1):
-            if (since_ts == None):
-                if (energy_device_id == None):
-                    csm = db_session.query(ChargeSessionModel) \
-                        .order_by(ChargeSessionModel.start_time.desc()).all()
-                else:  # filter energy_device_id
-                    csm = db_session.query(ChargeSessionModel) \
-                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
-                        .order_by(ChargeSessionModel.start_time.desc()).all()
-            else:  # filter since_ts
-                if (energy_device_id == None):
-                    csm = db_session.query(ChargeSessionModel) \
-                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(ChargeSessionModel.start_time.desc()).all()
-                else:  # filter energy_device_id
-                    csm = db_session.query(ChargeSessionModel) \
-                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
-                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(ChargeSessionModel.start_time.desc()).all()
-        else:  # limit n
-            if (since_ts == None):
-                if (energy_device_id == None):
-                    csm = db_session.query(ChargeSessionModel) \
-                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
-                else:  # filter energy_device_id
-                    csm = db_session.query(ChargeSessionModel) \
-                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
-                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
-            else:  # filter since_ts
-                if (energy_device_id == None):
-                    csm = db_session.query(ChargeSessionModel) \
-                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
-                else:  # filter energy_device_id
-                    csm = db_session.query(ChargeSessionModel) \
-                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
-                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
-                        .order_by(ChargeSessionModel.start_time.desc()).limit(n).all()
+        try:
+            if (n == -1):
+                if (since_ts == None):
+                    if (energy_device_id == None):
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .all()
+                    else:  # filter energy_device_id
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .all()
+                else:  # filter since_ts
+                    if (energy_device_id == None):
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .all()
+                    else:  # filter energy_device_id
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .all()
+            else:  # limit n
+                if (since_ts == None):
+                    if (energy_device_id == None):
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .limit(n) \
+                                        .all()
+                    else:  # filter energy_device_id
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .limit(n) \
+                                        .all()
+                else:  # filter since_ts
+                    if (energy_device_id == None):
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .limit(n) \
+                                        .all()
+                    else:  # filter energy_device_id
+                        csm = db_session.query(ChargeSessionModel) \
+                                        .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                        .filter(ChargeSessionModel.start_time >= self.date_str_to_datetime(since_ts)) \
+                                        .order_by(ChargeSessionModel.start_time.desc()) \
+                                        .limit(n) \
+                                        .all()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return csm
 
     def date_str_to_datetime(self, date_time_str: str) -> datetime:
         return datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
+
 
     # convert into JSON:
     def to_json(self) -> str:
@@ -180,6 +234,7 @@ class ChargeSessionModel(Base):
             })
         )
 
+
     # convert into JSON:
     def to_str(self) -> str:
         return ({
@@ -197,6 +252,7 @@ class ChargeSessionModel(Base):
                 "end_time": (
                     str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
             })
+
 
     # convert into dict:
     def to_dict(self) -> typing.TypedDict:
