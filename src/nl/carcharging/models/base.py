@@ -37,6 +37,6 @@ def init_db():
     import nl.carcharging.models.RfidModel
     import nl.carcharging.models.User
     Base.metadata.create_all(bind=engine)
-
+ 
 init_db()
 
