@@ -24,3 +24,19 @@ Base = declarative_base()
 WebAppConfig.sqlalchemy_engine = engine
 WebAppConfig.sqlalchemy_session_factory = session_factory
 WebAppConfig.sqlalchemy_session = DbSession
+
+def init_db():
+    # import all modules here that might define models so that
+    # they will be registered properly on the metadata.  Otherwise
+    # you will have to import them first before calling init_db()
+    import nl.carcharging.models.ChargerConfigModel
+    import nl.carcharging.models.ChargeSessionModel
+    import nl.carcharging.models.EnergyDeviceMeasureModel
+    import nl.carcharging.models.EnergyDeviceModel
+    import nl.carcharging.models.OffPeakHoursModel
+    import nl.carcharging.models.RfidModel
+    import nl.carcharging.models.User
+    Base.metadata.create_all(bind=engine)
+
+init_db()
+

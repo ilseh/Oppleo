@@ -35,4 +35,4 @@ def init_log(process_name, log_file, daemons=[]):
     # Redirect stdout to logfile
     log_file = open(log_file, "a")
 
-    sys.stdout = log_file
+    # sys.stdout = log_file

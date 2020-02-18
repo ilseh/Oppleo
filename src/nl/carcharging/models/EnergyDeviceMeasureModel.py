@@ -3,9 +3,8 @@ import logging
 
 from marshmallow import fields, Schema
 
-from . import db
-from sqlalchemy import orm
-from nl.carcharging.models.base import Base, DbSession
+from sqlalchemy import orm, Column, Integer, String, DateTime, Float
+from nl.carcharging.models.Base import Base, DbSession
 import json
 
 
@@ -17,23 +16,23 @@ class EnergyDeviceMeasureModel(Base):
     # table name
     __tablename__ = 'energy_device_measures'
 
-    id = db.Column(db.Integer, primary_key=True)
-    energy_device_id = db.Column(db.String, nullable=False)
-    created_at = db.Column(db.DateTime)
-    kwh_l1 = db.Column(db.Float)
-    kwh_l2 = db.Column(db.Float)
-    kwh_l3 = db.Column(db.Float)
-    a_l1 = db.Column(db.Float)
-    a_l2 = db.Column(db.Float)
-    a_l3 = db.Column(db.Float)
-    p_l1 = db.Column(db.Float)
-    p_l2 = db.Column(db.Float)
-    p_l3 = db.Column(db.Float)
-    v_l1 = db.Column(db.Float)
-    v_l2 = db.Column(db.Float)
-    v_l3 = db.Column(db.Float)
-    kw_total = db.Column(db.Float)
-    hz = db.Column(db.Float)
+    id = Column(Integer, primary_key=True)
+    energy_device_id = Column(String, nullable=False)
+    created_at = Column(DateTime)
+    kwh_l1 = Column(Float)
+    kwh_l2 = Column(Float)
+    kwh_l3 = Column(Float)
+    a_l1 = Column(Float)
+    a_l2 = Column(Float)
+    a_l3 = Column(Float)
+    p_l1 = Column(Float)
+    p_l2 = Column(Float)
+    p_l3 = Column(Float)
+    v_l1 = Column(Float)
+    v_l2 = Column(Float)
+    v_l3 = Column(Float)
+    kw_total = Column(Float)
+    hz = Column(Float)
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
@@ -79,6 +78,22 @@ class EnergyDeviceMeasureModel(Base):
                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
                 .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
         return edmm
+
+    def get_usage_since(self, energy_device_id, since_ts):
+        db_session = DbSession()
+        energy_at_ts = db_session.query(EnergyDeviceMeasureModel) \
+                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                .filter(EnergyDeviceMeasureModel.created_at <= since_ts) \
+                .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                .first()
+        energy_now = self.get_last_saved(energy_device_id)
+        if energy_now is None or energy_at_ts is None:
+            self.logger.warn('get_usage_since() - could not get data from database')
+            return 0
+        energy_used = round((energy_now.kw_total - energy_at_ts.kw_total) *10) /10
+        self.logger.debug('get_usage_since() - since {} usage {}kWh'.format(
+                since_ts.strftime("%d/%m/%Y, %H:%M:%S"), energy_used))
+        return energy_used
 
     def get_created_at_str(self):
         return str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S"))

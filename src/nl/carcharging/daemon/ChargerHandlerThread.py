@@ -2,7 +2,7 @@ import sys
 import threading
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from injector import inject
 from service import Service
@@ -42,6 +42,7 @@ class ExpiredException(Exception):
 
 
 class ChargerHandlerThread(object):
+    threadLock = None
     appSocketIO = None
     logger = None
     evse_reader_thread = None
@@ -59,6 +60,7 @@ class ChargerHandlerThread(object):
     counter = 0
 
     def __init__(self, 
+                device: device,
                 energy_util: EnergyUtil, 
                 charger: Charger, 
                 ledlighter: LedLighter, 
@@ -68,6 +70,7 @@ class ChargerHandlerThread(object):
                 tesla_util: UpdateOdometerTeslaUtil,
                 appSocketIO: appSocketIO
                 ):
+        self.threadLock = threading.Lock()
         self.logger = logging.getLogger('nl.carcharging.daemon.ChargerHandlerThread')
         self.logger.setLevel(logging.DEBUG)
         self.evse_reader_thread = None
@@ -82,12 +85,12 @@ class ChargerHandlerThread(object):
         self.tesla_util = tesla_util
         self.is_status_charging = False
         self.appSocketIO = appSocketIO
+        self.device = device
 
 
     def start(self):
         self.stop_event.clear()
         self.logger.debug('Launching background task...')
-        self.device = GenericUtil.getMeasurementDevice()
         self.logger.debug('start_background_task() - evseReaderLoop')
         self.evse_reader_thread = self.appSocketIO.start_background_task(self.evseReaderLoop)
         self.logger.debug('start_background_task() - rfidReaderLoop')
@@ -95,11 +98,7 @@ class ChargerHandlerThread(object):
         self.logger.debug('Done starting rfid reader and evse reader backgroubd tasks')
 
 
-    def stop(self):
-        self.logger.debug('Requested to stop')
-        self.stop_event.set()
-
-
+    # evse_reader_thread
     def evseReaderLoop(self):
         # Redirect stdout to logfile
         try:
@@ -117,6 +116,7 @@ class ChargerHandlerThread(object):
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> flushing stdout', flush=True)
 
 
+    # rfid_reader_thread
     def authorize(self, rfid):
 
         is_authorized = False
@@ -143,21 +143,21 @@ class ChargerHandlerThread(object):
             raise ExpiredException("Rfid isn't valid yet/anymore. Valid from %s to %s" %
                                    (rfid_data.valid_from, rfid_data.valid_until))
 
-    def is_expired(self, from_date, until_date):
 
+    # rfid_reader_thread
+    def is_expired(self, from_date, until_date):
         expired = False
         if from_date:
             expired = datetime.now() < from_date
-
         if not expired and until_date:
             expired = datetime.now() > until_date
-
         return expired
 
 
-    def resume_session_if_applicable(self, device):
+    # rfid_reader_thread
+    def resume_session_if_applicable(self):
         # Check if there was a session active when this daemon was stopped.
-        last_saved_session = ChargeSessionModel.get_latest_charge_session(device)
+        last_saved_session = ChargeSessionModel.get_latest_charge_session(self.device)
 
         if last_saved_session and last_saved_session.end_time is None:
             self.logger.info("After startup continuing an active session for rfid %s" % last_saved_session.rfid)
@@ -167,62 +167,68 @@ class ChargerHandlerThread(object):
         self.update_charger_and_led(resume_session)
 
 
+    # rfid_reader_thread
     def rfidReaderLoop(self):
-        self.resume_session_if_applicable(self.device)
+        self.resume_session_if_applicable()
         reader = RfidReader()
         while not self.stop_event.is_set():
             try:
-                self.read_rfid(reader, self.device)
+                self.read_rfid(reader)
             except Exception as ex:
                 self.logger.error("Could not execute run_read_rfid: %s" % ex)
                 self.buzz_error()
                 self.ledlighter.error(duration=.6)
-            time.sleep(.25)
+            time.sleep(0.25)
         self.logger.info("Stopping RfidReader")
 
 
+    # rfid_reader_thread
     def is_other_session_active(self, last_saved_session, rfid):
         return last_saved_session and not last_saved_session.end_value \
                and last_saved_session.rfid != str(rfid)
 
 
-    def read_rfid(self, reader, device):
-        self.logger.info("Starting rfid reader for device %s" % device)
+    # rfid_reader_thread
+    def read_rfid(self, reader):
+        self.logger.info("Starting rfid reader for device %s" % self.device)
         """
         TODO - hand callback function to check off-peak from the thread
         """
         rfid, text = reader.read()
         self.logger.debug("Rfid id and text: %d - %s" % (rfid, text))
 
-        rfid_latest_session = ChargeSessionModel.get_latest_charge_session(device, rfid)
+        # An RFID tag was read, lock to prevent thread mixing
+        with self.threadLock:
+            rfid_latest_session = ChargeSessionModel.get_latest_charge_session(self.device, rfid)
 
-        start_session = False
-        data_for_session = {"rfid": rfid, "energy_device_id": device}
-        # If rfid has open session, no need to authorize, let it end the session.
-        # If no open session, authorize rfid.
-        if self.has_rfid_open_session(rfid_latest_session):
-            self.buzz_ok()
-            self.logger.debug("Stopping charging session for rfid %s" % rfid)
-            self.end_charge_session(rfid_latest_session, device)
-        else:
-            self.authorize(rfid)
-            self.buzz_ok()
+            start_session = False
+            # If rfid has open session, no need to authorize, let it end the session.
+            # If no open session, authorize rfid.
+            if self.has_rfid_open_session(rfid_latest_session):
+                self.buzz_ok()
+                self.logger.debug("Stopping charging session for rfid %s" % rfid)
+                self.end_charge_session(rfid_latest_session)
+            else:
+                self.authorize(rfid)
+                self.buzz_ok()
 
-            # If there is an open session for another rfid, raise error.
-            last_saved_session = ChargeSessionModel.get_latest_charge_session(device)
-            if self.is_other_session_active(last_saved_session, rfid):
-                raise OtherRfidHasOpenSessionException(
-                    "Rfid %s was offered but rfid %s has an open session" % (rfid, last_saved_session.rfid)
-                    )
+                # If there is an open session for another rfid, raise error.
+                last_saved_session = ChargeSessionModel.get_latest_charge_session(self.device)
+                if self.is_other_session_active(last_saved_session, rfid):
+                    raise OtherRfidHasOpenSessionException(
+                        "Rfid %s was offered but rfid %s has an open session" % (rfid, last_saved_session.rfid)
+                        )
 
-            self.logger.debug("Starting new charging session for rfid %s" % rfid)
-            self.start_charge_session(rfid, device)
-            start_session = True
+                self.logger.debug("Starting new charging session for rfid %s" % rfid)
+                self.start_charge_session(rfid)
+                start_session = True
 
-        self.update_charger_and_led(start_session)
+            self.update_charger_and_led(start_session)
 
 
-    def start_charge_session(self, rfid, device):
+    # evse_reader_thread
+    # rfid_reader_thread
+    def start_charge_session(self, rfid):
         self.logger.debug("start_charge_session() new charging session for rfid %s" % rfid)
 
         # Optimize: maybe get this from the latest db value rather than from the energy meter directly
@@ -230,7 +236,7 @@ class ChargerHandlerThread(object):
 
         data_for_session = {
             "rfid"              : rfid, 
-            "energy_device_id"  : device,
+            "energy_device_id"  : self.device,
             "start_value"       : start_value,
             "tariff"            : ChargerConfigModel.get_config().charger_tariff,
             "end_value"         : start_value,
@@ -257,8 +263,9 @@ class ChargerHandlerThread(object):
                     )
 
 
-
-    def end_charge_session(self, charge_session, device):
+    # evse_reader_thread
+    # rfid_reader_thread
+    def end_charge_session(self, charge_session):
         charge_session.end_value = self.energy_util.getTotalKWHHValue()
         charge_session.end_time = datetime.now()
         charge_session.total_energy = charge_session.end_value - charge_session.start_value
@@ -277,6 +284,8 @@ class ChargerHandlerThread(object):
                     )
 
 
+    # evse_reader_thread
+    # rfid_reader_thread
     def save_tesla_values_in_thread(self, charge_session_id):
         self.tesla_util.set_charge_session_id(charge_session_id=charge_session_id)
         # update_odometer takes some time, so put in own thread
@@ -284,10 +293,12 @@ class ChargerHandlerThread(object):
         thread_for_tesla_util.start()
 
 
+    # rfid_reader_thread
     def has_rfid_open_session(self, rfid_latest_session):
         return (rfid_latest_session is not None and rfid_latest_session.end_time is None)
 
 
+    # rfid_reader_thread
     def update_charger_and_led(self, start_session):
         if start_session:
             self.evse.switch_on()
@@ -296,9 +307,14 @@ class ChargerHandlerThread(object):
             self.evse.switch_off()
             self.ledlighter.available()
 
-    def stop(self, block=False):
-        self.ledlighter.stop()
 
+    def stop(self, block=False):
+        self.logger.debug('Requested to stop')
+        self.ledlighter.stop()
+        self.stop_event.set()
+
+
+    # evse_reader_thread
     def try_handle_charging(self, evse_state):
         try:
             self.handle_charging(evse_state)
@@ -306,21 +322,21 @@ class ChargerHandlerThread(object):
             self.logger.error("Error handle charging: %s", ex)
             self.ledlighter.error()
 
+
+    # evse_reader_thread
     def handle_charging(self, evse_state):
         if evse_state == EvseState.EVSE_STATE_CHARGING:
             # self.logger.debug("Device is currently charging")
             if not self.is_status_charging:
                 # Switching to charging
                 """
-                 TODO - AUTO CHARGE SESSION
-                  Automatisch laadsessies herkennen. Herken wanneer de auto langere tijd weg is geweest. 
-                  Houdt de autorisatie in stand, maar sluit na terugkomst de vorige sessie af en start een 
-                  nieuwe laadsessie met dezelfde autorisatie (RFID token).
-                    Impl: Als de evse van standby naar laden gaat een extra check uitvoeren: Als er 
-                    gedurende 2 uur minder dan 1kWh is verbruikt sluit dan de vorige sessie af en start een 
-                    nieuwe.
-                    De 2 uur, 1kWh en of automatische laadsessies aan of uit staat configurable in de ini file.
+                 AUTO CHARGE SESSION
+                  Automatic detect new charge sessions. When the car is present, it keeps using limited amounts of
+                  energy. (Tesla Model 3 0.2kWh each 1:23h). If this usage has not occurred, and now the EVSE
+                  goes to charging again, the car probably has gone away and returned.
                 """
+                self.handle_auto_session()
+
                 self.is_status_charging = True
                 if self.appSocketIO is not None:
                     self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
@@ -354,9 +370,37 @@ class ChargerHandlerThread(object):
                 if self.ledlighter.is_charging_light_on():
                     self.ledlighter.back_to_previous_light()
 
+
+    # Auto Session starts a new session when the EVSE starts charging and during the set amount of minutes less
+    # than the amount of energy has been consumed (auto was away)
+    # A Tesla Model 3 75kWh Dual Motor charges 0.2kWh every 1:23h (16 feb 2020)
+    # Only called upon switch from not-charging to chargin by the EVSE, so a session is ongoin
+    # evse_reader_thread
+    def handle_auto_session(self):
+        webApplogger.debug('handle_auto_session() enabled: {}'.format(WebAppConfig.autoSessionEnabled))
+        # Open session, otherwise this method is not called
+        if WebAppConfig.autoSessionEnabled: 
+            edmm = EnergyDeviceMeasureModel()
+            kwh_used = edmm.get_usage_since(
+                    WebAppConfig.ENERGY_DEVICE_ID,
+                    (datetime.today() - timedelta(minutes=WebAppConfig.autoSessionMinutes))
+                    )
+            if kwh_used > WebAppConfig.autoSessionEnergy:
+                webApplogger.debug('Keep the current session. More energy used than {}kWh in {} minutes'.format(e, t))
+            else:
+                webApplogger.info('Start a new session (auto-session). Less energy used than {}kWh in {} minutes'.format(e, t))
+                with self.threadLock:
+                    # Lock to prevent the session to be hijacked when someone simultaneously presents the rfid card
+                    charge_session = ChargeSessionModel.get_open_charge_session_for_device(self.device)
+                    self.end_charge_session(charge_session)
+                    self.start_charge_session(charge_session.rfid)
+
+
+    # rfid_reader_thread
     def buzz_ok(self):
         self.buzzer.buzz_other_thread(.1, 1)
 
+    # rfid_reader_thread
     def buzz_error(self):
         self.buzzer.buzz_other_thread(.1, 2)
 

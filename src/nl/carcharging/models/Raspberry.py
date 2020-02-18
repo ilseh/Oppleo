@@ -4,7 +4,7 @@ import netifaces
 from cpuinfo import get_cpu_info
 import psutil
 
-class Raspberry():
+class Raspberry(object):
     """
     Raspberry Model
     """

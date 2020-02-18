@@ -6,9 +6,8 @@ from marshmallow import fields, Schema
 from datetime import datetime
 import logging
 
-from . import db
-from sqlalchemy import orm, func
-from nl.carcharging.models.base import Base, DbSession
+from sqlalchemy import orm, func, Column, Integer, String, Float, DateTime
+from nl.carcharging.models.Base import Base, DbSession
 import json
 
 
@@ -20,18 +19,18 @@ class ChargeSessionModel(Base):
     # table name
     __tablename__ = 'charge_session'  # -> sessions
 
-    id = db.Column(db.Integer, primary_key=True)
-    rfid = db.Column(db.String(128), nullable=False)
-    energy_device_id = db.Column(db.String(128), nullable=False)
-    start_value = db.Column(db.Float)
-    end_value = db.Column(db.Float)
-    start_time = db.Column(db.DateTime)  # was created_at
-    end_time = db.Column(db.DateTime)  # was modified_at - null if session in progress
-    tariff = db.Column(db.Float)  # €/kWh
-    total_energy = db.Column(db.Float)  # kWh (end_value - start_value) - increasing during session
-    total_price = db.Column(db.Float)  # € (total_energy * tariff) - increasing during session
-    energy_device_id = db.Column(db.String(100))
-    km = db.Column(db.Integer)
+    id = Column(Integer, primary_key=True)
+    rfid = Column(String(128), nullable=False)
+    energy_device_id = Column(String(128), nullable=False)
+    start_value = Column(Float)
+    end_value = Column(Float)
+    start_time = Column(DateTime)  # was created_at
+    end_time = Column(DateTime)  # was modified_at - null if session in progress
+    tariff = Column(Float)  # €/kWh
+    total_energy = Column(Float)  # kWh (end_value - start_value) - increasing during session
+    total_price = Column(Float)  # € (total_energy * tariff) - increasing during session
+    energy_device_id = Column(String(100))
+    km = Column(Integer)
 
     # class constructor
     def __init__(self):
@@ -79,7 +78,9 @@ class ChargeSessionModel(Base):
         csm = None
         try:
             csm = db_session.query(ChargeSessionModel) \
-                .filter(ChargeSessionModel.id == id).limit(1).all()[0]
+                            .filter(ChargeSessionModel.id == id) \
+                            .limit(1) \
+                            .all()[0]
         except:
             return None
         return csm

@@ -4,9 +4,8 @@ import json
 
 from marshmallow import fields, Schema
 
-from nl.carcharging.models.base import Base, DbSession
-from . import db
-from sqlalchemy import orm
+from nl.carcharging.models.Base import Base, DbSession
+from sqlalchemy import orm, Column, String, Boolean, DateTime
 
 """
 # Alternatively, catch reload events
@@ -24,27 +23,27 @@ def RfidModel_refresh(target, context, attrs):
 class RfidModel(Base):
     __tablename__ = 'rfid'
 
-    rfid = db.Column(db.String(100), primary_key=True)
-    enabled = db.Column(db.Boolean)
-    created_at = db.Column(db.DateTime)
-    last_used_at = db.Column(db.DateTime)
-    name = db.Column(db.String(100))
-    vehicle_make = db.Column(db.String(100))
-    vehicle_model = db.Column(db.String(100))
-    get_odometer = db.Column(db.Boolean)
-    license_plate = db.Column(db.String(20))
-    valid_from = db.Column(db.DateTime)
-    valid_until = db.Column(db.DateTime)
+    rfid = Column(String(100), primary_key=True)
+    enabled = Column(Boolean)
+    created_at = Column(DateTime)
+    last_used_at = Column(DateTime)
+    name = Column(String(100))
+    vehicle_make = Column(String(100))
+    vehicle_model = Column(String(100))
+    get_odometer = Column(Boolean)
+    license_plate = Column(String(20))
+    valid_from = Column(DateTime)
+    valid_until = Column(DateTime)
 
-    api_access_token = db.Column(db.String(100))
-    api_token_type = db.Column(db.String(100))
-    api_created_at = db.Column(db.String(100))
-    api_expires_in = db.Column(db.String(100))
-    api_refresh_token = db.Column(db.String(100))
+    api_access_token = Column(String(100))
+    api_token_type = Column(String(100))
+    api_created_at = Column(String(100))
+    api_expires_in = Column(String(100))
+    api_refresh_token = Column(String(100))
 
-    vehicle_name = db.Column(db.String(100))
-    vehicle_id = db.Column(db.String(100))
-    vehicle_vin = db.Column(db.String(100))
+    vehicle_name = Column(String(100))
+    vehicle_id = Column(String(100))
+    vehicle_vin = Column(String(100))
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.RfidModel')

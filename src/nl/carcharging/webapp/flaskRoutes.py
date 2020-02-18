@@ -15,7 +15,7 @@ from flask_socketio import SocketIO, emit
 
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
-from nl.carcharging.models import db
+from nl.carcharging.models.Base import DbSession
 from nl.carcharging.models.User import User
 from nl.carcharging.webapp.LoginForm import LoginForm
 from nl.carcharging.webapp.AuthorizeForm import AuthorizeForm
@@ -86,24 +86,28 @@ def login():
     flaskRoutesLogger.debug('login form created')
     if form.validate_on_submit():
         flaskRoutesLogger.debug('loginForm valid on submit')
-        user = User.query.get(form.username.data)
+        user = User.get(form.username.data)
         flaskRoutesLogger.debug('loginForm valid on submit')
         try:
             flaskRoutesLogger.debug('form.username.data = ' + form.username.data)
             if user is not None:
                 flaskRoutesLogger.debug('if user:')
                 if check_password_hash(user.password, form.password.data):
-                    flaskRoutesLogger.debug('check_password_hash ok')
-                    user.authenticated = True
-                    flaskRoutesLogger.debug('place in db.session')
-                    db.session.add(user)
-                    db.session.commit()
-                    flaskRoutesLogger.debug('login_user')
+                    flaskRoutesLogger.debug('check_password_hash ok, login_user()')
                     login_user(user, remember=form.remember_me.data)
+                    user.authenticated = True
+                    user.save()
                     if 'login_next' in session:
                         flaskRoutesLogger.debug('login_next: %s' % session['login_next'])
                         login_next = session['login_next']
                         del session['login_next']
+
+
+                        if is_safe_url(next):
+                            # Safe next
+                            return redirect(login_next)
+                        return redirect(url_for('flaskRoutes.home'))
+
 
                         from urllib.parse import urlparse
                         # only allow relative paths, so there cannot be a netloc (host)
@@ -113,6 +117,8 @@ def login():
                             return redirect(url_for('flaskRoutes.home'))
                         # Safe next
                         return redirect(login_next)
+
+
                     else:
                         # Return to the home page
                         flaskRoutesLogger.debug('flaskRoutes.home')
@@ -133,8 +139,6 @@ def login():
 def authenticated_resource(function):
     @wraps(function)
     def decorated(*args, **kwargs):
-        if (session.get('authenticated')):
-            return function(*args, **kwargs)
         if (current_user.is_authenticated):
             return function(*args, **kwargs)
         # return abort(403) # unauthenticated
@@ -158,13 +162,11 @@ def authenticated_resource(function):
 def logout():
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/logout {}'.format(request.method))
-    """Logout the current user."""
+    # Logout the current user
     user = current_user
     user.authenticated = False
-    db.session.add(user)
-    db.session.commit()
+    user.save()
     logout_user()
-    # return redirect(url_for('flaskRoutes.login'))
     return redirect(url_for('flaskRoutes.home'))
 
 
@@ -195,8 +197,9 @@ def change_password():
         # Valid, change the password for the user now
         user = current_user
         user.password=generate_password_hash(form.new_password.data)
-        db.session.add(user)
-        db.session.commit()
+        db_session = DbSession()
+        db_session.add(user)
+        db_session.commit()
         return render_template(
             'change_password_success.html', 
             webappconfig=WebAppConfig
@@ -350,7 +353,7 @@ def settings(active=1):
                 diag=diag, 
                 diag_json=diag_json,
                 charger_config=charger_config_str,
-                energydevicemodel=EnergyDeviceModel.get_one(WebAppConfig.ENERGY_DEVICE_ID),
+                energydevicemodel=EnergyDeviceModel.get(),
                 webappconfig=WebAppConfig
             )
 

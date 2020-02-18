@@ -4,9 +4,8 @@ import logging
 from marshmallow import fields, Schema
 from marshmallow.fields import Boolean
 
-from . import db
-from sqlalchemy import orm, and_, or_, cast, Time, func
-from nl.carcharging.models.base import Base, DbSession
+from sqlalchemy import Column, Integer, Boolean, String, Time, orm, and_, or_, cast, Time, func
+from nl.carcharging.models.Base import Base, DbSession
 
 
 class OffPeakHoursModel(Base):
@@ -15,15 +14,15 @@ class OffPeakHoursModel(Base):
     weekday_en = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ]
     weekday_nl = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag' ]
 
-    id = db.Column(db.Integer, primary_key=True)
-    weekday = db.Column(db.String(20))
-    holiday_day = db.Column(db.Integer)
-    holiday_month = db.Column(db.Integer)
-    holiday_year = db.Column(db.Integer)
-    recurring = db.Column(db.Boolean)
-    description = db.Column(db.String(100))
-    off_peak_start = db.Column(db.Time)
-    off_peak_end = db.Column(db.Time)
+    id = Column(Integer, primary_key=True)
+    weekday = Column(String(20))
+    holiday_day = Column(Integer)
+    holiday_month = Column(Integer)
+    holiday_year = Column(Integer)
+    recurring = Column(Boolean)
+    description = Column(String(100))
+    off_peak_start = Column(Time)
+    off_peak_end = Column(Time)
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.OffPeakHoursModel')

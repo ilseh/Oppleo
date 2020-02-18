@@ -16,6 +16,7 @@ class GenericUtil(object):
         # env_name = os.getenv('CARCHARGING_ENV')
         # return env_name.lower() == PROD
 
+    # deprecated - use WebAppConfig.ENERGY_DEVICE_ID directly
     @staticmethod
     def getMeasurementDevice():
         # Configured in nl.cargarging.config.carcharger.ini file

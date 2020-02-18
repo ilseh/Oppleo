@@ -3,17 +3,16 @@ import logging
 
 from marshmallow import fields, Schema
 
-from . import db
-from sqlalchemy import orm
-from nl.carcharging.models.base import Base, DbSession
+from sqlalchemy import orm, Column, String, Float, DateTime
+from nl.carcharging.models.Base import Base, DbSession
 
 
 class ChargerConfigModel(Base):
     __tablename__ = 'charger_config'
 
-    charger_name = db.Column(db.String(100), primary_key=True)
-    charger_tariff = db.Column(db.Float)        # €/kWh
-    modified_at = db.Column(db.DateTime)        # Last config update
+    charger_name = Column(String(100), primary_key=True)
+    charger_tariff = Column(Float)        # €/kWh
+    modified_at = Column(DateTime)        # Last config update
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.ChargerConfigModel')

@@ -13,16 +13,40 @@ webApplogger.debug('sys.version %s : ' % sys.version)
 
 WebAppConfig.loadConfig()
 
-from flask import Flask, render_template, jsonify, redirect, request, url_for, session
-from flask_login import LoginManager
+from flask import Flask, render_template, jsonify, redirect, request, url_for, session, current_app
+
+# app initiliazation
+app = Flask(__name__)
+# Make it available through WebAppConfig
+WebAppConfig.app = app
+
+#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+app.config['SQLALCHEMY_DATABASE_URI'] = WebAppConfig.DATABASE_URL
+app.config['EXPLAIN_TEMPLATE_LOADING'] = False
+# import os; os.urandom(24)
+app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
+app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
+
+from flask_wtf.csrf import CSRFProtect
+# https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
+CSRFProtect(app)
+
+
 from flask_socketio import SocketIO, emit
-from threading import Lock
+appSocketIO = SocketIO(app)
+# Make it available through WebAppConfig
+WebAppConfig.appSocketIO = appSocketIO
+
+# Init the database
+import nl.carcharging.models.Base
+
+
+from flask_login import LoginManager
+import threading
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import event
 
-from flask_wtf.csrf import CSRFProtect
-
-from nl.carcharging.models.__init__ import db
 from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
@@ -43,46 +67,25 @@ from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
-#import routes
 
-# app initiliazation
-app = Flask(__name__)
-# Make it available through WebAppConfig
-WebAppConfig.app = app
 
-#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = WebAppConfig.DATABASE_URL
-app.config['EXPLAIN_TEMPLATE_LOADING'] = False
-# import os; os.urandom(24)
-app.config['SECRET_KEY'] = '(*^&uytwejkfh8tsefukhg23eioHJYseryg(*^5eyt123eiuyowish))!'
-app.config['WTF_CSRF_SECRET_KEY'] = 'iw(*&43^%$diuYGef9872(*&*&^*&triourv2r3iouh[p2ojdkjegqrfvuytf3eYTF]oiuhwOIU'
-
-# https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
-CSRFProtect(app)
 
 # The CarCharger root flaskRoutes
 app.register_blueprint(flaskRoutes) # no url_prefix
-
-appSocketIO = SocketIO(app)
-# Make it available through WebAppConfig
-WebAppConfig.appSocketIO = appSocketIO
-
-db.init_app(app)
 
 # flask-login
 WebAppConfig.login_manager = LoginManager()
 WebAppConfig.login_manager.init_app(app)
 
-threadLock = Lock()
+threadLock = threading.Lock()
 wsThread = WebSocketThread()
 
 wsClientCnt = 0
 
 
 @WebAppConfig.login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(user_id)
+def load_user(username):
+    return User.get(username)
 
 """
 @appSocketIO.on("connect", namespace="/usage")
@@ -135,7 +138,7 @@ def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
 def RfidModel_after_update(mapper, connection, target):
     global webApplogger
     webApplogger.debug("'after_insert' or 'after_update' event for RfidModel")
-    
+
 
 if __name__ == "__main__":
     ##    wsThread.start(appSocketIO)
@@ -145,10 +148,27 @@ if __name__ == "__main__":
     ohm = OffPeakHoursModel()
     ohm.test()
     """
+    """
+    from datetime import datetime, timedelta
+
+    if WebAppConfig.autoSessionEnabled: 
+        edmm = EnergyDeviceMeasureModel()
+        kwh_used = edmm.get_usage_since(
+                WebAppConfig.ENERGY_DEVICE_ID,
+                (datetime.today() - timedelta(minutes=WebAppConfig.autoSessionMinutes))
+                )
+        if kwh_used > WebAppConfig.autoSessionEnergy:
+            webApplogger.debug('More energy used than {}kWh in {} minutes'.format(e, t))
+            webApplogger.debug("Keep the current session")
+        else:
+            webApplogger.debug('Less energy used than {}kWh in {} minutes'.format(e, t))
+            webApplogger.debug("Start a new session")
+    """
 
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
+                    device=WebAppConfig.ENERGY_DEVICE_ID,
                     energy_util=EnergyUtil(
                         energy_device_id=WebAppConfig.ENERGY_DEVICE_ID,
                         appSocketIO=appSocketIO
