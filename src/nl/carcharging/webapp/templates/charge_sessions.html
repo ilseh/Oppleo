@@ -147,25 +147,35 @@
           "order": [[ 0, "desc" ]], // id (was start_time, has a bug in string time format)
           dom: 'Blfrtip',
           buttons: [
-            'copy', 
-            'csv',
+            {
+              extend: 'copy',
+              text: "<i class='far fa-copy'></i> Copy"
+            },
+            {
+              extend: 'csv',
+              text: "<i class='fas fa-file-csv'></i> CSV"
+            },
             {
               extend: 'excel',
-              text: "<i class='fa fa-clipboard'></i> Export to Excel",
-              "bFooter": false,
+              text: "<i class='far fa-file-excel'></i> Excel",
+              bFooter: false,
               exportOptions: {
                       columns: ':visible',
                       orthogonal: {
-                          display: ':null'
+                          display: 'Excel'
                       }      
               }
             },
             {
                 extend: 'pdfHtml5',
+                text: "<i class='far fa-file-pdf'></i> PDF",
                 orientation: 'landscape',
                 pageSize: 'A4'
             },
-            'print'
+            {
+              extend: 'print',
+              text: "<i class='fas fa-print'></i> Print"
+            }
           ],
           "createdRow": function(row, data, dataIndex) {
             $(row).toggleClass("text-info").fadeOut(800, function() {              
@@ -176,34 +186,42 @@
             // This is for the Action column icons
             "targets": 1,
             "render": function (data, type, row) {
-              txt = (data in rfidTokens && isData(rfidTokens[data].name) ? 
-                        rfidTokens[data].name : 
-                        ''
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Excel'}
+              if (type.hasOwnProperty('display') && (type.display == 'Excel')) {
+                // Excel export, skip the 'km'
+                return data == undefined || data === "None" ? "" : data
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                txt = (data in rfidTokens && isData(rfidTokens[data].name) ? 
+                          rfidTokens[data].name : 
+                          ''
+                      )
+                txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_make) ? 
+                          addOnNewline(txt, rfidTokens[data].vehicle_make, '<br/>') : 
+                          txt
+                      )
+                txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_model) ? 
+                          txt + ' ' + rfidTokens[data].vehicle_model : 
+                          txt
+                      )
+                txt = (data in rfidTokens && isData(rfidTokens[data].license_plate) ? 
+                          addOnNewline(txt, rfidTokens[data].license_plate, '<br/>') : 
+                          txt
+                      )
+                t = (data in rfidTokens ? '<span data-toggle="tooltip" \
+                                data-placement="bottom" \
+                                data-html="true" \
+                                stype="cursor: pointer;" \
+                                title="<em>' +  txt + '</em>" \
+                                >': 
+                              '<span>'
                     )
-              txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_make) ? 
-                        addOnNewline(txt, rfidTokens[data].vehicle_make, '<br/>') : 
-                        txt
-                    )
-              txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_model) ? 
-                        txt + ' ' + rfidTokens[data].vehicle_model : 
-                        txt
-                    )
-              txt = (data in rfidTokens && isData(rfidTokens[data].license_plate) ? 
-                        addOnNewline(txt, rfidTokens[data].license_plate, '<br/>') : 
-                        txt
-                    )
-              t = (data in rfidTokens ? '<span data-toggle="tooltip" \
-                              data-placement="bottom" \
-                              data-html="true" \
-                              stype="cursor: pointer;" \
-                              title="<em>' +  txt + '</em>" \
-                              >': 
-                            '<span>'
-                  )
-              return (data == undefined || data === "None" ? 
-                        t + '<i class="fas fa-ban"></i></span>' : 
-                        t + '<a href="/rfid_tokens/' + data + '" target="_self">' + data + '</a></span>'
-                     )
+                return (data == undefined || data === "None" ? 
+                          t + '<i class="fas fa-ban"></i></span>' : 
+                          t + '<a href="/rfid_tokens/' + data + '" target="_self">' + data + '</a></span>'
+                      )
+              }
             }
           }, {
             // This is for the Action column icons
@@ -211,9 +229,17 @@
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
-              return data == undefined || data === "None" ? 
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Excel'}
+              if (type.hasOwnProperty('display') && (type.display == 'Excel')) {
+                // Excel export, skip the 'km'
+                return data == undefined || data === "None" ? "" : data
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
                         "-" : 
                         '<span style="text-align: right;">' + data + 'km</span>'
+              }
             }
           }, {
             "targets": [3, 6, 9],
