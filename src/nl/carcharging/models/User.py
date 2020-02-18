@@ -17,11 +17,13 @@ class User(Base):
     password = Column(String)
     authenticated = Column(Boolean, default=False)
 
-    def __init__(self, username=None, password=None, authenticated=False):
+    def __init__(self, username=None, password=None, authenticated=None):
         self.logger = logging.getLogger('nl.carcharging.models.User')
-        self.username = username
-        self.password = password
-        self.authenticated = authenticated
+        # If the variables are already initialized by the reconstructor, let them be
+        if self.username is None and self.password is None:
+            self.username = username
+            self.password = password
+            self.authenticated = authenticated
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   

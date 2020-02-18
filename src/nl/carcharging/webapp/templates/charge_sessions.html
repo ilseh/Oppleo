@@ -148,8 +148,18 @@
           dom: 'Blfrtip',
           buttons: [
             'copy', 
-            'csv', 
-            'excel', 
+            'csv',
+            {
+              extend: 'excel',
+              text: "<i class='fa fa-clipboard'></i> Export to Excel",
+              "bFooter": false,
+              exportOptions: {
+                      columns: ':visible',
+                      orthogonal: {
+                          display: ':null'
+                      }      
+              }
+            },
             {
                 extend: 'pdfHtml5',
                 orientation: 'landscape',
