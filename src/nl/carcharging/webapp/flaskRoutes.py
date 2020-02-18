@@ -15,7 +15,6 @@ from flask_socketio import SocketIO, emit
 
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
-from nl.carcharging.models.Base import DbSession
 from nl.carcharging.models.User import User
 from nl.carcharging.webapp.LoginForm import LoginForm
 from nl.carcharging.webapp.AuthorizeForm import AuthorizeForm
@@ -196,10 +195,8 @@ def change_password():
     if form.validate_on_submit():
         # Valid, change the password for the user now
         user = current_user
-        user.password=generate_password_hash(form.new_password.data)
-        db_session = DbSession()
-        db_session.add(user)
-        db_session.commit()
+        user.password = generate_password_hash(form.new_password.data)
+        user.save()
         return render_template(
             'change_password_success.html', 
             webappconfig=WebAppConfig
