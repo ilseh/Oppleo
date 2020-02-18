@@ -48,7 +48,8 @@ class BuzzerProd(object):
             time.sleep(.05)
 
     def cleanup(self):
-        GPIO.cleanup()
+        # GPIO.cleanup()
+        GPIO.output(buzzer, GPIO.LOW)  # Turn off
         self.logger.debug("GPIO cleanup done for %s" % self.color_desc())
 
     def buzz_other_thread(self, buzz_duration_s, iterations=1):

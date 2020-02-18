@@ -32,6 +32,10 @@ class WebAppConfig(object):
 
     INI_MODBUS_INTERVAL = 'MODBUS_INTERVAL'
 
+    INI_AUTO_SESSION_ENABLED = 'AUTO_SESSION_ENABLED'
+    INI_AUTO_SESSION_MINUTES = 'AUTO_SESSION_MINUTES'
+    INI_AUTO_SESSION_ENERGY = 'AUTO_SESSION_ENERGY'
+
     # ini content
     ini_settings = None
 
@@ -61,6 +65,14 @@ class WebAppConfig(object):
     # Number of seconds between consecutive kwh meter readouts (via modbus). Only changes will be stored in the 
     # usage table. Greater values will lead to lagging change detection. Smaller values take more processing.
     modbusInterval = 10
+
+    # Auto Session starts a new session when the EVSE starts charging and during the set amount of minutes less
+    # than the amount of energy has been consumed (auto was away)
+    # A Tesla Model 3 75kWh Dual Motor charges 0.2kWh every 1:23h (16 feb 2020)
+    autoSessionEnabled = False
+    autoSessionMinutes = 90
+    autoSessionEnergy = 0.1
+
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -99,6 +111,7 @@ class WebAppConfig(object):
             print('Ini file not found!!!')
             os._exit(-1)
             return
+        print('Configuration loaded')
 
         # Read the ini file
         if not WebAppConfig.ini_settings.has_section(WebAppConfig.INI_MAIN):
@@ -121,11 +134,18 @@ class WebAppConfig(object):
                 WebAppConfig.ENERGY_DEVICE_ID = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_ENERGY_DEVICE_ID)
                 WebAppConfig.PYTHONPATH = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_PYTHONPATH)
                 WebAppConfig.SQLALCHEMY_DATABASE_URI = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_SQLALCHEMY_DATABASE_URI)
+
                 WebAppConfig.httpHost = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_HTTP_HOST)
-                WebAppConfig.httpPort = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_HTTP_PORT, 80)
-                WebAppConfig.useReloader = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_USE_RELOADER, False)
-                WebAppConfig.factor_Whkm = WebAppConfig.getFloatOption(targetSectionName, WebAppConfig.INI_FACTOR_WHKM, 162)
-                WebAppConfig.modbusInterval = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_MODBUS_INTERVAL, 10)
+                WebAppConfig.httpPort = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_HTTP_PORT, WebAppConfig.httpPort)
+                WebAppConfig.useReloader = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_USE_RELOADER, WebAppConfig.useReloader)
+
+                WebAppConfig.factor_Whkm = WebAppConfig.getFloatOption(targetSectionName, WebAppConfig.INI_FACTOR_WHKM, WebAppConfig.factor_Whkm)
+
+                WebAppConfig.modbusInterval = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_MODBUS_INTERVAL, WebAppConfig.modbusInterval)
+
+                WebAppConfig.autoSessionEnabled = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_ENABLED, WebAppConfig.autoSessionEnabled)
+                WebAppConfig.autoSessionMinutes = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_MINUTES, WebAppConfig.autoSessionMinutes)
+                WebAppConfig.autoSessionEnergy = WebAppConfig.getFloatOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_ENERGY, WebAppConfig.autoSessionEnergy)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)

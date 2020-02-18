@@ -1,8 +1,7 @@
 from marshmallow import fields, Schema
 
-from nl.carcharging.models.base import Base, DbSession
-from . import db
-from sqlalchemy import orm, func
+from nl.carcharging.models.Base import Base, DbSession
+from sqlalchemy import orm, func, Column, String, Integer, Boolean
 
 class EnergyDeviceModel(Base):
     """
@@ -12,18 +11,18 @@ class EnergyDeviceModel(Base):
     # table name
     __tablename__ = 'energy_device'
 
-    energy_device_id = db.Column(db.String(100), primary_key=True)
-    port_name = db.Column(db.String(100))
-    slave_address = db.Column(db.Integer)
-    baudrate = db.Column(db.Integer)
-    bytesize = db.Column(db.Integer)
-    parity = db.Column(db.String(1))
-    stopbits = db.Column(db.Integer)
-    serial_timeout = db.Column(db.Integer)
-    debug = db.Column(db.Boolean)
-    mode = db.Column(db.String(10))
-    close_port_after_each_call = db.Column(db.Boolean)
-    modbus_timeout = db.Column(db.Integer)
+    energy_device_id = Column(String(100), primary_key=True)
+    port_name = Column(String(100))
+    slave_address = Column(Integer)
+    baudrate = Column(Integer)
+    bytesize = Column(Integer)
+    parity = Column(String(1))
+    stopbits = Column(Integer)
+    serial_timeout = Column(Integer)
+    debug = Column(Boolean)
+    mode = Column(String(10))
+    close_port_after_each_call = Column(Boolean)
+    modbus_timeout = Column(Integer)
 
     def __init__(self, data):
         pass
