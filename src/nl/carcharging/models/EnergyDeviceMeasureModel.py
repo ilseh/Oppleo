@@ -36,12 +36,13 @@ class EnergyDeviceMeasureModel(Base):
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
-        self.logger.debug('Initializing EnergyDeviceMeasureModel without data')
+
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
     def init_on_load(self):
         self.__init__
+
 
     def set(self, data):
         for key in data:
@@ -49,43 +50,70 @@ class EnergyDeviceMeasureModel(Base):
         # If no field created_at or it has no value, use current datetime.
         self.created_at = data.get('created_at', datetime.datetime.now())
 
+
     def save(self):
         db_session = DbSession()
-        db_session.add(self)
-        db_session.commit()
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     def get_last_saved(self, energy_device_id):
         return self.get_last_n_saved(energy_device_id, 1)[0]
 
+
     def get_last_n_saved(self, energy_device_id, n):
         db_session = DbSession()
-        edmm = db_session.query(EnergyDeviceMeasureModel) \
-            .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
-            .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
+        edmm = None
+        try:
+            edmm = db_session.query(EnergyDeviceMeasureModel) \
+                             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                             .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                             .limit(n) \
+                             .all()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
         return edmm
 
     def get_last_n_saved_since(self, energy_device_id, since_ts, n=-1):
         db_session = DbSession()
         edmm = None
-        if n == -1:
-            edmm = db_session.query(EnergyDeviceMeasureModel) \
-                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
-                .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
-                .order_by(EnergyDeviceMeasureModel.created_at.desc()).all()
-        else:
-            edmm = db_session.query(EnergyDeviceMeasureModel) \
-                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
-                .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
-                .order_by(EnergyDeviceMeasureModel.created_at.desc()).limit(n).all()
+        try:
+            if n == -1:
+                edmm = db_session.query(EnergyDeviceMeasureModel) \
+                                 .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
+                                 .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                                 .all()
+            else:
+                edmm = db_session.query(EnergyDeviceMeasureModel) \
+                                 .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                                 .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
+                                 .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                                 .limit(n) \
+                                 .all()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return edmm
+
 
     def get_usage_since(self, energy_device_id, since_ts):
         db_session = DbSession()
-        energy_at_ts = db_session.query(EnergyDeviceMeasureModel) \
-                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
-                .filter(EnergyDeviceMeasureModel.created_at <= since_ts) \
-                .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
-                .first()
+        energy_at_ts = 0
+        try:
+            energy_at_ts = db_session.query(EnergyDeviceMeasureModel) \
+                                    .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                                    .filter(EnergyDeviceMeasureModel.created_at <= since_ts) \
+                                    .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                                    .first()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         energy_now = self.get_last_saved(energy_device_id)
         if energy_now is None or energy_at_ts is None:
             self.logger.warn('get_usage_since() - could not get data from database')
@@ -95,22 +123,18 @@ class EnergyDeviceMeasureModel(Base):
                 since_ts.strftime("%d/%m/%Y, %H:%M:%S"), energy_used))
         return energy_used
 
+
     def get_created_at_str(self):
         return str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S"))
+
 
     def date_str_to_datetime(self, date_time_str):
         return datetime.datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
 
-    # @staticmethod
-    # def get_all_measures():
-    #     return EnergyDeviceMeasureModel.query.all()
-    #
-    # @staticmethod
-    # def get_energy_device_measures(energy_device_id):
-    #     return EnergyDeviceMeasureModel.query.filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id)
 
     def __repr(self):
         return '<id {}>'.format(self.id)
+
 
     # convert into JSON:
     def to_json(self):
@@ -132,9 +156,9 @@ class EnergyDeviceMeasureModel(Base):
                 "v_l3": str(self.v_l3),
                 "kw_total": str(self.kw_total),
                 "hz": str(self.hz)
-            }
-            )
+            })
         )
+
 
     def to_str(self):
         return ({
@@ -154,8 +178,8 @@ class EnergyDeviceMeasureModel(Base):
                 "v_l3": str(self.v_l3),
                 "kw_total": str(self.kw_total),
                 "hz": str(self.hz)
-            }
-        )
+            })
+
 
     # convert into dict:
     def to_dict(self):
@@ -176,8 +200,7 @@ class EnergyDeviceMeasureModel(Base):
             "v_l3": str(self.v_l3),
             "kw_total": str(self.kw_total),
             "hz": str(self.hz)
-        }
-        )
+        })
 
 
 class EnergyDeviceMeasureSchema(Schema):

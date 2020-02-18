@@ -83,13 +83,23 @@ class RfidModel(Base):
 
     def save(self):
         db_session = DbSession()
-        db_session.add(self)
-        db_session.commit()
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     def delete(self):
         db_session = DbSession()
-        db_session.delete(self)
-        db_session.commit()
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+
 
     def hasValidToken(self):
         self.logger.debug("hasValidToken()")
@@ -105,17 +115,30 @@ class RfidModel(Base):
         self.cleanupOldToken()
         return False
 
+
     @staticmethod
     def get_all():
         db_session = DbSession()
-        rfidm = db_session.query(RfidModel).all()
+        rfidm = None
+        try:
+            rfidm = db_session.query(RfidModel) \
+                              .all()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return rfidm
 
     @staticmethod
     def get_one(rfid):
         db_session = DbSession()
-        rfidm = db_session.query(RfidModel)\
-            .filter(RfidModel.rfid == str(rfid)).first()
+        rfidm = None
+        try:
+            rfidm = db_session.query(RfidModel) \
+                              .filter(RfidModel.rfid == str(rfid)) \
+                              .first()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return rfidm
 
     def __repr(self):
@@ -142,8 +165,8 @@ class RfidModel(Base):
                 "vehicle_name": str(self.vehicle_name),
                 "vehicle_id": str(self.vehicle_id),
                 "vehicle_vin": str(self.vehicle_vin)
-            }
-        )
+            })
+
 
 class RfidSchema(Schema):
     """
