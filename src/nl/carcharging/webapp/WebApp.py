@@ -63,7 +63,6 @@ from nl.carcharging.services.LedLighter import LedLighter
 from nl.carcharging.services.Buzzer import Buzzer
 from nl.carcharging.services.Evse import Evse
 from nl.carcharging.services.EvseReader import EvseReader
-from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
@@ -178,7 +177,6 @@ if __name__ == "__main__":
                     buzzer=Buzzer(), 
                     evse=Evse(),
                     evse_reader=EvseReader(), 
-                    tesla_util=UpdateOdometerTeslaUtil(),
                     appSocketIO=appSocketIO
                 )
     meuThread.addCallback(chThread.energyUpdate)
