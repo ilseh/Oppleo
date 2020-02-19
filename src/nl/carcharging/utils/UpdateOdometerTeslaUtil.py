@@ -1,4 +1,5 @@
 import logging
+import threading
 import datetime
 from flask_socketio import SocketIO
 
@@ -17,18 +18,30 @@ from nl.carcharging.models.RfidModel import RfidModel
 
 class UpdateOdometerTeslaUtil:
     charge_session_id = None
+    thread = None
+    threadLock = None
+    condense = False
+
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.utils.UpdateOdometerTeslaUtil')
         self.logger.debug('UpdateOdometerTeslaUtil.__init__')
         self.thread = None
+        self.threadLock = threading.Lock()
+
 
     def set_charge_session_id(self, charge_session_id=None):
         self.charge_session_id = charge_session_id
 
+
+    def set_condense(self, condense=False):
+        self.condense = condense
+
+
     def start(self):
         self.logger.debug(f'{datetime.datetime.now()} - Launching background task...')
         self.thread = WebAppConfig.appSocketIO.start_background_task(self.update_odometer)
+
 
     def update_odometer(self):
         # This method starts a thread which grabs the odometer value and updates the session table
@@ -52,18 +65,38 @@ class UpdateOdometerTeslaUtil:
             return
 
         # get the odometer
-        charge_session.km = t_api.getOdometerWithId(rfid_model.vehicle_id)
-        charge_session.save()
+
+        odometer = t_api.getOdometerWithId(rfid_model.vehicle_id)
+        with self.threadLock:
+            charge_session = ChargeSessionModel.get_one_charge_session(self.charge_session_id)
+            if charge_session is None:
+                self.logger.debug("Charge session with id {} could no longer be found. (Condensed?)".format(self.charge_session_id))
+                # TODO Notify someone
+                return
+            charge_session.km = odometer
+            charge_session.save()
         self.logger.debug("Obtained odometer {} for {} ".format(
             charge_session.km,
             rfid_model.vehicle_name
         ))
+
+
+        if self.condense:
+            self.logger.debug("Check condense...")
+            """
+            TODO !!!!
+            CONDENSE - same laadpaal, same km stand, eindstand gelijk aan beginstand deze charge sessie
+            
+            """ 
+
+
         if t_api.tokenRefreshCheck():
             # Token refreshed, store in rfid
             self.logger.debug("Token refreshed")
             UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(t_api, rfid_model)
             rfid_model.commit()
             self.logger.debug("Refreshed token stored in rfid")
+
 
     @staticmethod
     def copy_token_from_rfid_model_to_api(rfid_model, tesla_api):

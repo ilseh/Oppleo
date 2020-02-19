@@ -10,6 +10,7 @@ from service import Service
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
+from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.services.Buzzer import Buzzer
 from nl.carcharging.services.Charger import Charger
@@ -54,7 +55,6 @@ class ChargerHandlerThread(object):
     buzzer = None
     evse = None
     evse_reader = None
-    tesla_util = None
     is_status_charging = False
     device = None
     counter = 0
@@ -67,7 +67,6 @@ class ChargerHandlerThread(object):
                 buzzer: Buzzer, 
                 evse: Evse,
                 evse_reader: EvseReader, 
-                tesla_util: UpdateOdometerTeslaUtil,
                 appSocketIO: appSocketIO
                 ):
         self.threadLock = threading.Lock()
@@ -82,7 +81,6 @@ class ChargerHandlerThread(object):
         self.buzzer = buzzer
         self.evse = evse
         self.evse_reader = evse_reader
-        self.tesla_util = tesla_util
         self.is_status_charging = False
         self.appSocketIO = appSocketIO
         self.device = device
@@ -220,7 +218,11 @@ class ChargerHandlerThread(object):
                         )
 
                 self.logger.debug("Starting new charging session for rfid %s" % rfid)
-                self.start_charge_session(rfid)
+                # Do not condense, an actual RFID was presented
+                self.start_charge_session(
+                        rfid=rfid,
+                        condense=False
+                        )
                 start_session = True
 
             self.update_charger_and_led(start_session)
@@ -228,7 +230,7 @@ class ChargerHandlerThread(object):
 
     # evse_reader_thread
     # rfid_reader_thread
-    def start_charge_session(self, rfid):
+    def start_charge_session(self, rfid, condense=False):
         self.logger.debug("start_charge_session() new charging session for rfid %s" % rfid)
 
         # Optimize: maybe get this from the latest db value rather than from the energy meter directly
@@ -243,21 +245,24 @@ class ChargerHandlerThread(object):
             "total_energy"      : 0,
             "total_price"       : 0
             }
-        session = ChargeSessionModel()
-        session.set(data_for_session)
-        session.save()
+        charge_session = ChargeSessionModel()
+        charge_session.set(data_for_session)
+        charge_session.save()
         rfid = RfidModel.get_one(rfid)
         if rfid.vehicle_make.upper() == "TESLA" and rfid.get_odometer: 
             # Try to add odometer
-            self.save_tesla_values_in_thread(charge_session_id=session.id)
+            self.save_tesla_values_in_thread(
+                    charge_session_id=charge_session.id,
+                    condense=condense
+                    )
         # Emit websocket update
         if self.appSocketIO is not None:
-            self.logger.debug(f'Send msg charge_session_started via websocket ...{session.to_str()}')
+            self.logger.debug(f'Send msg charge_session_started via websocket ...{charge_session.to_str()}')
             self.appSocketIO.emit(
                     'charge_session_started', 
                     { 
                         'id': WebAppConfig.ENERGY_DEVICE_ID,
-                        'data': session.to_str() 
+                        'data': charge_session.to_str() 
                     }, 
                     namespace='/charge_session'
                     )
@@ -286,10 +291,13 @@ class ChargerHandlerThread(object):
 
     # evse_reader_thread
     # rfid_reader_thread
-    def save_tesla_values_in_thread(self, charge_session_id):
-        self.tesla_util.set_charge_session_id(charge_session_id=charge_session_id)
+    # charge_session_id is the row id in the database table
+    def save_tesla_values_in_thread(self, charge_session_id, condense=False):
+        uotu = UpdateOdometerTeslaUtil()
+        uotu.set_charge_session_id(charge_session_id=charge_session_id)
+        uotu.set_condense(condense=condense)
         # update_odometer takes some time, so put in own thread
-        thread_for_tesla_util = threading.Thread(target=self.tesla_util.update_odometer, name='thread-tesla-util')
+        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='thread-tesla-util')
         thread_for_tesla_util.start()
 
 
@@ -377,7 +385,7 @@ class ChargerHandlerThread(object):
     # Only called upon switch from not-charging to chargin by the EVSE, so a session is ongoin
     # evse_reader_thread
     def handle_auto_session(self):
-        webApplogger.debug('handle_auto_session() enabled: {}'.format(WebAppConfig.autoSessionEnabled))
+        self.logger.debug('handle_auto_session() enabled: {}'.format(WebAppConfig.autoSessionEnabled))
         # Open session, otherwise this method is not called
         if WebAppConfig.autoSessionEnabled: 
             edmm = EnergyDeviceMeasureModel()
@@ -386,14 +394,19 @@ class ChargerHandlerThread(object):
                     (datetime.today() - timedelta(minutes=WebAppConfig.autoSessionMinutes))
                     )
             if kwh_used > WebAppConfig.autoSessionEnergy:
-                webApplogger.debug('Keep the current session. More energy used than {}kWh in {} minutes'.format(e, t))
+                self.logger.debug('Keep the current session. More energy used than {}kWh in {} minutes'.format(e, t))
             else:
-                webApplogger.info('Start a new session (auto-session). Less energy used than {}kWh in {} minutes'.format(e, t))
+                self.logger.info('Start a new session (auto-session). Less energy used than {}kWh in {} minutes'.format(e, t))
                 with self.threadLock:
                     # Lock to prevent the session to be hijacked when someone simultaneously presents the rfid card
                     charge_session = ChargeSessionModel.get_open_charge_session_for_device(self.device)
                     self.end_charge_session(charge_session)
-                    self.start_charge_session(charge_session.rfid)
+                    # Verify if the auto session was generated correctly. If the odometer value is equal, the session should be condensed
+                    # Condense after the odometer update has completed! Done in the same thread
+                    self.start_charge_session(
+                            rfid=charge_session.rfid,
+                            condense=WebAppConfig.autoSessionCondenseSameOdometer
+                            )
 
 
     # rfid_reader_thread
@@ -408,32 +421,33 @@ class ChargerHandlerThread(object):
     def energyUpdate(self, device_measurement):
         self.logger.debug('energyUpdate() callback...')
         # Open charge session for this energy device?
-        open_charge_session_for_device = \
-            ChargeSessionModel.get_open_charge_session_for_device(
-                    device_measurement.energy_device_id
-            )
-        if open_charge_session_for_device != None:
-            self.logger.debug('energyUpdate() open charge session, updating usage. device_measurement {}, open_charge_session_for_device {}'.format(str(device_measurement.to_str()), str(open_charge_session_for_device.to_str())))
-            # Update session usage
-            open_charge_session_for_device.end_value = device_measurement.kw_total
-            self.logger.debug('energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
-            open_charge_session_for_device.total_energy = \
-                round((open_charge_session_for_device.end_value - open_charge_session_for_device.start_value) *10) /10
-            self.logger.debug('energyUpdate() total_energy to %s...' % open_charge_session_for_device.total_energy)
-            open_charge_session_for_device.total_price = \
-                round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
-            self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
-            open_charge_session_for_device.save() 
-            # Emit changes via web socket
-            if self.appSocketIO is not None:
-                self.counter += 1
-                self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
-                self.appSocketIO.emit(
-                        'charge_session_data_update', 
-                        { 
-                            'id': WebAppConfig.ENERGY_DEVICE_ID,
-                            'data': open_charge_session_for_device.to_str() 
-                        }, 
-                        namespace='/charge_session'
-                        )
+        with self.threadLock:
+            open_charge_session_for_device = \
+                ChargeSessionModel.get_open_charge_session_for_device(
+                        device_measurement.energy_device_id
+                )
+            if open_charge_session_for_device != None:
+                self.logger.debug('energyUpdate() open charge session, updating usage. device_measurement {}, open_charge_session_for_device {}'.format(str(device_measurement.to_str()), str(open_charge_session_for_device.to_str())))
+                # Update session usage
+                open_charge_session_for_device.end_value = device_measurement.kw_total
+                self.logger.debug('energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
+                open_charge_session_for_device.total_energy = \
+                    round((open_charge_session_for_device.end_value - open_charge_session_for_device.start_value) *10) /10
+                self.logger.debug('energyUpdate() total_energy to %s...' % open_charge_session_for_device.total_energy)
+                open_charge_session_for_device.total_price = \
+                    round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
+                self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
+                open_charge_session_for_device.save() 
+                # Emit changes via web socket
+                if self.appSocketIO is not None:
+                    self.counter += 1
+                    self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
+                    self.appSocketIO.emit(
+                            'charge_session_data_update', 
+                            { 
+                                'id': WebAppConfig.ENERGY_DEVICE_ID,
+                                'data': open_charge_session_for_device.to_str() 
+                            }, 
+                            namespace='/charge_session'
+                            )
 

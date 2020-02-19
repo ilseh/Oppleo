@@ -35,6 +35,7 @@ class WebAppConfig(object):
     INI_AUTO_SESSION_ENABLED = 'AUTO_SESSION_ENABLED'
     INI_AUTO_SESSION_MINUTES = 'AUTO_SESSION_MINUTES'
     INI_AUTO_SESSION_ENERGY = 'AUTO_SESSION_ENERGY'
+    INI_AUTO_SESSION_CONDENSE_SAME_ODOMETER = 'AUTO_SESSION_CONDENSE_SAME_ODOMETER'
 
     # ini content
     ini_settings = None
@@ -72,7 +73,11 @@ class WebAppConfig(object):
     autoSessionEnabled = False
     autoSessionMinutes = 90
     autoSessionEnergy = 0.1
-
+    # Condenses autyo-generated sessions (after a period of inactivity) if the odometer has not changed.
+    # Auto-sessions can be generated after the charger was switched off in peak period. Start of off-peak then leads to 
+    # an incorrectly auto-generated charge-session, while the vehicke actually has not moved.
+    # This does not condense sessions stopped and started through RFID or WebApp.
+    autoSessionCondenseSameOdometer = False
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -146,6 +151,7 @@ class WebAppConfig(object):
                 WebAppConfig.autoSessionEnabled = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_ENABLED, WebAppConfig.autoSessionEnabled)
                 WebAppConfig.autoSessionMinutes = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_MINUTES, WebAppConfig.autoSessionMinutes)
                 WebAppConfig.autoSessionEnergy = WebAppConfig.getFloatOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_ENERGY, WebAppConfig.autoSessionEnergy)
+                WebAppConfig.autoSessionCondenseSameOdometer = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_CONDENSE_SAME_ODOMETER, WebAppConfig.autoSessionCondenseSameOdometer)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)
