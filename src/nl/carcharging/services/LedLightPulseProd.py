@@ -2,17 +2,14 @@ import logging
 import threading
 import time
 
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.services.LedLightProdHardware import LedLightProdHardware
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
 GenericUtil.importGpio()
 
-PULSE_LED_MIN = 3
-PULSE_LED_MAX = 98
-
 # Interval in ms to update led light
 FREQ_MS_TO_UPDATE_LED = 10
-
 
 class LedLightPulseProd(object):
 
@@ -31,6 +28,8 @@ class LedLightPulseProd(object):
         return int(round(time.time() * 1000))
 
     def _pulse(self):
+        global WebAppConfig
+
         pulse_led_value = 0
         pulse_led_millis = 0
         pulse_led_up = True
@@ -41,8 +40,8 @@ class LedLightPulseProd(object):
             t = threading.currentThread()
             while getattr(t, "do_run", True):
                 if self.millis() > (pulse_led_millis + FREQ_MS_TO_UPDATE_LED):
-                    if ((pulse_led_up and (pulse_led_value >= PULSE_LED_MAX)) or
-                            ((not pulse_led_up) and (pulse_led_value <= PULSE_LED_MIN))):
+                    if ((pulse_led_up and (pulse_led_value >= WebAppConfig.pulseLedMax)) or
+                            ((not pulse_led_up) and (pulse_led_value <= WebAppConfig.pulseLedMin))):
                         pulse_led_up = not pulse_led_up
                     if pulse_led_up:
                         pulse_led_value += 1

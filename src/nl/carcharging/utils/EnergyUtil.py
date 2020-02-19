@@ -1,4 +1,6 @@
 import minimalmodbus
+import threading
+
 from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
 import logging
@@ -19,7 +21,7 @@ class EnergyUtil:
             self.initInstrument()
         else:
             self.logger.debug('Not production environment, skip initInstrument()')
-
+        self.threadLock = threading.Lock()
 
     def initInstrument(self):
 
@@ -128,11 +130,13 @@ class EnergyUtil:
 
     def try_read_float(self, value_desc, registeraddress, functioncode, number_of_registers, byteorder):
         value = -1
-        try:
-            value = self.instrument.read_float(registeraddress, functioncode, number_of_registers, byteorder)
-        except Exception as ex:
-            self.logger.warning("Could not read value %s, gave exception %s Using value %d" % (value_desc, ex, value))
+        # Used by MeasureElectricityUsageThread and ChargerHandlerThread
+        with self.threadLock:
+            try:
+                value = self.instrument.read_float(registeraddress, functioncode, number_of_registers, byteorder)
+            except Exception as ex:
+                self.logger.warning("Could not read value %s, gave exception %s Using value %d" % (value_desc, ex, value))
+        # Yield if we can, allow other time constraint threads to run
         if self.appSocketIO is not None:
-            # Yield if we can, allow other time constraint threads to run
             self.appSocketIO.sleep(0.01)
         return value
