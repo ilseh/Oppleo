@@ -118,6 +118,20 @@
     function addOnNewline(str, addition, newline) {
       return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
     }
+    // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
+    function parseDate(dateStr) {
+      var p1 = dateStr.split(',')
+      var date = p1[0].split('/')
+      var time = p1[1].trim().split(':')
+      var dObj = new Date()
+      dObj.setDate(date[0]) 
+      dObj.setMonth(parseInt(date[1]) -1) 
+      dObj.setFullYear(date[2]) 
+      dObj.setHours(time[0]) 
+      dObj.setMinutes(time[1]) 
+      dObj.setSeconds(time[2]) 
+      return dObj
+    }
     var dt = undefined
     function getChargeSessions() {
       console.log(timestamp() + ' getChargeSessions()')
@@ -153,16 +167,20 @@
             },
             {
               extend: 'csv',
-              text: "<i class='fas fa-file-csv'></i> CSV"
+              text: "<i class='fas fa-file-csv'></i> CSV",
+              exportOptions: {
+                      orthogonal: {
+                          display: 'Plain'
+                      }      
+              }
             },
             {
               extend: 'excel',
               text: "<i class='far fa-file-excel'></i> Excel",
               bFooter: false,
               exportOptions: {
-                      columns: ':visible',
                       orthogonal: {
-                          display: 'Excel'
+                          display: 'Plain'
                       }      
               }
             },
@@ -187,8 +205,8 @@
             "targets": 1,
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
-              // Render for Excel export: type = { display: 'Excel'}
-              if (type.hasOwnProperty('display') && (type.display == 'Excel')) {
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
                 // Excel export, skip the 'km'
                 return data == undefined || data === "None" ? "" : data
               } else {
@@ -224,14 +242,43 @@
               }
             }
           }, {
+            // This is for the Start and End time columns
+            "targets": [2, 5],
+            "sorting": true,
+            "orderable": true,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, only date
+                if (data == undefined || data === "None" || typeof data != "string" || data.trim().length != 10) {
+                  return ""
+                }
+                d = parseDate(date)
+                // 19-02-2020  18:20:02
+                return (d.getDate() < 10 ? '0' : '') + d.getDate() + '-' +
+                       (d.getMonth() < 9 ? '0' : '') + (d.getMonth() +1) + '-' +
+                        d.getFullYear() + '  ' +
+                       (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' +
+                       (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
+                       (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                if (data == undefined || data === "None" || typeof data != "string" || data.trim().length != 10) {
+                  return ""
+                }
+                return data
+              }
+            }
+          }, {
             // This is for the Action column icons
             "targets": 4,
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
-              // Render for Excel export: type = { display: 'Excel'}
-              if (type.hasOwnProperty('display') && (type.display == 'Excel')) {
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
                 // Excel export, skip the 'km'
                 return data == undefined || data === "None" ? "" : data
               } else {
@@ -246,16 +293,37 @@
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
-              return data == undefined || data === "None" ? 
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, skip the 'kWh' and change . with ,
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                return data.replace('.', ',')
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
                         "-" : 
                         '<span style="text-align: right;">' + (Math.round(data * 10) /10) + 'kWh</span>'
             }
           }, {
             "targets": [8, 10],
             "render": function (data, type, row) {
-              return data == undefined || data === "None" ? 
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, change . with ,
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                return data.replace('.', ',')
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
                         "-" : 
                         '<span style="text-align: right;">&euro; ' + (Math.round(data * 100) /100).toFixed(2) + '</span>'
+              }
             }
           }],
           "searching": false
