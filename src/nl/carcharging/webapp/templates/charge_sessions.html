@@ -251,10 +251,10 @@
               // Render for Excel export: type = { display: 'Plain'}
               if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
                 // Excel export, only date
-                if (data == undefined || data === "None" || typeof data != "string" || data.trim().length != 10) {
+                if (data == undefined || data === "None" || typeof data != "string" || (data.trim()).length != 20) {
                   return ""
                 }
-                d = parseDate(date)
+                d = parseDate(data)
                 // 19-02-2020  18:20:02
                 return (d.getDate() < 10 ? '0' : '') + d.getDate() + '-' +
                        (d.getMonth() < 9 ? '0' : '') + (d.getMonth() +1) + '-' +
@@ -264,7 +264,7 @@
                        (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
               } else {
                 // Default - type = 'display' - on screen or other exports
-                if (data == undefined || data === "None" || typeof data != "string" || data.trim().length != 10) {
+                if (data == undefined || data === "None") {
                   return ""
                 }
                 return data
@@ -300,7 +300,7 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return data.replace('.', ',')
+                return (Math.round(data * 10) /10).toString().replace('.', ',')
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
@@ -318,7 +318,7 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return data.replace('.', ',')
+                return '&euro; ' + (Math.round(data * 100) /100).toString().replace('.', ',')
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
