@@ -37,6 +37,18 @@ class WebAppConfig(object):
     INI_AUTO_SESSION_ENERGY = 'AUTO_SESSION_ENERGY'
     INI_AUTO_SESSION_CONDENSE_SAME_ODOMETER = 'AUTO_SESSION_CONDENSE_SAME_ODOMETER'
 
+    # GPIO MODE - BCM or BOARD (BCM is more future proof/ less direct hardware related)
+    INI_GPIO_MODE = 'GPIO_MODE'
+    # Pulsing LED values
+    INI_PULSE_LED_MIN = 'PULSE_LED_MIN'
+    INI_PULSE_LED_MAX = 'PULSE_LED_MAX'
+    # Raspberry PINs - RGB LEDs
+    INI_PIN_LED_RED = 'PIN_LED_RED'
+    INI_PIN_LED_GREEN = 'PIN_LED_GREEN'
+    INI_PIN_LED_BLUE = 'PIN_LED_BLUE'
+    # Raspberry PINs - Buzzer - PIN 16/ GPIO23
+    INI_PIN_BUZZER = 'PIN_BUZZER' 
+
     # ini content
     ini_settings = None
 
@@ -78,6 +90,18 @@ class WebAppConfig(object):
     # an incorrectly auto-generated charge-session, while the vehicke actually has not moved.
     # This does not condense sessions stopped and started through RFID or WebApp.
     autoSessionCondenseSameOdometer = False
+
+    # GPIO MODE - BCM or BOARD (BCM is more future proof/ less direct hardware related)
+    gpioMode = 'BCM'
+    # Pulsing LED values
+    pulseLedMin = 3
+    pulseLedMax = 98
+    # Raspberry PINs - RGB LEDs - PINS GPIO13 (Red), GPIO12 (Green) and GPIO 16 (Blue)
+    pinLedRed = 13
+    pinLedGreen = 12
+    pinLedBlue = 16
+    # Raspberry PINs - Buzzer - PIN 16/ GPIO23
+    pinBuzzer = 23 
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -152,6 +176,16 @@ class WebAppConfig(object):
                 WebAppConfig.autoSessionMinutes = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_MINUTES, WebAppConfig.autoSessionMinutes)
                 WebAppConfig.autoSessionEnergy = WebAppConfig.getFloatOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_ENERGY, WebAppConfig.autoSessionEnergy)
                 WebAppConfig.autoSessionCondenseSameOdometer = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_AUTO_SESSION_CONDENSE_SAME_ODOMETER, WebAppConfig.autoSessionCondenseSameOdometer)
+
+                WebAppConfig.gpioMode = WebAppConfig.getOption(targetSectionName, WebAppConfig.INI_GPIO_MODE, WebAppConfig.gpioMode)
+
+                WebAppConfig.pulseLedMin = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PULSE_LED_MIN, WebAppConfig.pulseLedMin)
+                WebAppConfig.pulseLedMax = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PULSE_LED_MAX, WebAppConfig.pulseLedMax)
+                WebAppConfig.pinLedRed = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PIN_LED_RED, WebAppConfig.pinLedRed)
+                WebAppConfig.pinLedGreen = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PIN_LED_GREEN, WebAppConfig.pinLedGreen)
+                WebAppConfig.pinLedBlue = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PIN_LED_BLUE, WebAppConfig.pinLedBlue)
+
+                WebAppConfig.pinBuzzer = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PIN_BUZZER, WebAppConfig.pinBuzzer)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)

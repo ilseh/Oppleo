@@ -12,14 +12,8 @@ try:
 except NameError:
     print('Assuming dev env')
 
-PULSE_LED_MIN = 3
-PULSE_LED_MAX = 98
-
 
 class LedLight(object):
-    LED_RED = 13
-    LED_GREEN = 12
-    LED_BLUE = 16
 
     def __init__(self, *colors, intensity, pulse=False, services=None):
         self.logger = logging.getLogger('nl.carcharging.services.LedLight')

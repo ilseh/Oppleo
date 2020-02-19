@@ -2,6 +2,7 @@ import threading
 import time
 import logging
 
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
 GPIO = GenericUtil.importGpio()
@@ -16,17 +17,16 @@ class LedLighter(object):
     logger = logging.getLogger('nl.carcharging.services.LedLighter')
     lock = threading.Lock()
 
-    try:
-        GPIO.setmode(GPIO.BCM)
-    except Exception as ex:
-        logger.debug("Could not setmode of GPIO, assuming dev env")
-
     def __init__(self):
 
-        self.ledlightAvailable = LedLight(LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
-        self.ledlightReady = LedLight(LedLight.LED_RED, LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
-        self.ledlightCharging = LedLight(LedLight.LED_BLUE, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
-        self.ledlightError = LedLight(LedLight.LED_RED, intensity=LIGHT_INTENSITY_HIGH)
+        # self.ledlightAvailable = LedLight(LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
+        self.ledlightAvailable = LedLight(WebAppConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
+        # self.ledlightReady = LedLight(LedLight.LED_RED, LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
+        self.ledlightReady = LedLight(WebAppConfig.pinLedRed, WebAppConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
+        # self.ledlightCharging = LedLight(LedLight.LED_BLUE, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
+        self.ledlightCharging = LedLight(WebAppConfig.pinLedGreen, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
+        # self.ledlightError = LedLight(LedLight.LED_RED, intensity=LIGHT_INTENSITY_HIGH)
+        self.ledlightError = LedLight(WebAppConfig.pinLedRed, intensity=LIGHT_INTENSITY_HIGH)
 
         # self.ledlight_configs = [self.ledlightAvailable, self.ledlightReady, self.ledlightCharging, self.ledlightError]
 
@@ -39,8 +39,6 @@ class LedLighter(object):
 
     def is_charging_light_on(self):
         # self.logger.debug("LedLighter.is_charging_light_on()")
-        # TODO something fishy here in the log, at one point the blue is replaced by both green
-        #      and red at the same time. Maybe this comparison gives false negatives.
         return self.current_light == self.ledlightCharging
 
     def charging(self):

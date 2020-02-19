@@ -8,10 +8,22 @@ webApplogger = logging.getLogger('nl.carcharging.webapp.WebApp')
 webApplogger.debug('Initializing WebApp')
 
 import sys
-print('sys.version %s : ' % sys.version)
+print('Reporting sys.version %s : ' % sys.version)
 webApplogger.debug('sys.version %s : ' % sys.version)
 
 WebAppConfig.loadConfig()
+
+try:
+    from nl.carcharging.utils.GenericUtil import GenericUtil
+    GPIO = GenericUtil.importGpio()
+    if WebAppConfig.gpioMode == "BOARD":
+        webApplogger.info("Setting GPIO MODE to BOARD")
+        GPIO.setmode(GPIO.BOARD) if WebAppConfig.gpioMode == "BOARD" else GPIO.setmode(GPIO.BCM)
+    else:
+        webApplogger.info("Setting GPIO MODE to BCM")
+        GPIO.setmode(GPIO.BCM)
+except Exception as ex:
+    webApplogger.debug("Could not setmode of GPIO, assuming dev env")
 
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session, current_app
 
@@ -47,7 +59,6 @@ import threading
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import event
 
-from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.models.Raspberry import Raspberry
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
@@ -168,10 +179,7 @@ if __name__ == "__main__":
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
                     device=WebAppConfig.ENERGY_DEVICE_ID,
-                    energy_util=EnergyUtil(
-                        energy_device_id=WebAppConfig.ENERGY_DEVICE_ID,
-                        appSocketIO=appSocketIO
-                        ), 
+                    energy_util=meuThread.energyDevice, 
                     charger=Charger(), 
                     ledlighter=LedLighter(), 
                     buzzer=Buzzer(), 
