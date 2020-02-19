@@ -49,6 +49,43 @@
 
         <script>
             var factor_Whkm = {% if webappconfig is not none %}{{ webappconfig.factor_Whkm }}{% else %}162{% endif %}
+            const months = {
+                0: 'Januari',
+                1: 'Februari',
+                2: 'Maart',
+                3: 'April',
+                4: 'Mei',
+                5: 'Juni',
+                6: 'Juli',
+                7: 'Augustus',
+                8: 'September',
+                9: 'Oktober',
+                10: 'November',
+                11: 'December'
+            }
+            const weekday = {
+                0: 'Zondag',
+                1: 'Maandag',
+                2: 'Dinsdag',
+                3: 'Woensdag',
+                4: 'Donderdag',
+                5: 'Vrijdag',
+                6: 'Zaterdag'
+            }
+                // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
+            function parseDate(dateStr) {
+                var p1 = dateStr.split(',')
+                var date = p1[0].split('/')
+                var time = p1[1].trim().split(':')
+                var dObj = new Date()
+                dObj.setDate(date[0]) 
+                dObj.setMonth(parseInt(date[1]) -1) 
+                dObj.setFullYear(date[2]) 
+                dObj.setHours(time[0]) 
+                dObj.setMinutes(time[1]) 
+                dObj.setSeconds(time[2]) 
+                return dObj
+            }
         </script>
 
         <style>

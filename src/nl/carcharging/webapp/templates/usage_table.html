@@ -109,25 +109,186 @@
           "order": [[ 0, "desc" ]],
           dom: 'Blfrtip',
           buttons: [
-            'copy', 
-            'csv', 
-            'excel', 
+            {
+              extend: 'copy',
+              text: "<i class='far fa-copy'></i> Copy"
+            },
+            {
+              extend: 'csv',
+              text: "<i class='fas fa-file-csv'></i> CSV",
+              exportOptions: {
+                      orthogonal: {
+                          display: 'Plain'
+                      }      
+              }
+            },
+            {
+              extend: 'excel',
+              text: "<i class='far fa-file-excel'></i> Excel",
+              bFooter: false,
+              exportOptions: {
+                      orthogonal: {
+                          display: 'Plain'
+                      }      
+              }
+            },
             {
                 extend: 'pdfHtml5',
+                text: "<i class='far fa-file-pdf'></i> PDF",
                 orientation: 'landscape',
                 pageSize: 'A4'
             },
-            'print'
+            {
+              extend: 'print',
+              text: "<i class='fas fa-print'></i> Print"
+            }
           ],
           "createdRow": function(row, data, dataIndex) {
-//            $(row).addClass('text-info')
             $(row).toggleClass("text-info").fadeOut(800, function() {              
               $(this).toggleClass("text-info").fadeIn(50)
             })
           },
-          "searching": false
-
-        });
+          "searching": false,
+          "columnDefs": [{
+            // This is for the timestamp column
+            "targets": [0],
+            "sorting": true,
+            "orderable": true,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, only date
+                if (data == undefined || data === "None" || typeof data != "string" || (data.trim()).length != 20) {
+                  return ""
+                }
+                d = parseDate(data)
+                // 19-02-2020  18:20:02
+                return (d.getDate() < 10 ? '0' : '') + d.getDate() + '-' +
+                       (d.getMonth() < 9 ? '0' : '') + (d.getMonth() +1) + '-' +
+                        d.getFullYear() + '  ' +
+                       (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' +
+                       (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
+                       (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                if (typeof data != "string" || (data.trim()).length != 20) {
+                  return data
+                }
+                d = parseDate(data)
+                // 19-02-2020  18:20:02
+                return (weekday[d.getDay() %6]).substring(0, 3) + ' ' + 
+                        d.getDate() + ' ' + (months[d.getMonth() %11]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
+                        d.getHours() + ':' +
+                       (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
+                       (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
+              }
+            }
+          }, {
+            "targets": [1, 2, 3, 4],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, skip the 'kWh' and change . with ,
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                return (Math.round(data * 10) /10).toString().replace('.', ',')
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'kWh</span>'
+              }
+            }
+          }, {
+            "targets": [5, 6, 7],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, skip the 'A' and change . with ,
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                return (Math.round(data * 10) /10).toString().replace('.', ',')
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'A</span>'
+              }
+            }
+          }, {
+            "targets": [8, 9, 10],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, skip the 'W' and change . with ,
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                return (Math.round(data * 10) /10).toString().replace('.', ',')
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'W</span>'
+              }
+            }
+          }, {
+            "targets": [11, 12, 13],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, skip the 'V' and change . with ,
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                return (Math.round(data * 10) /10).toString().replace('.', ',')
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'V</span>'
+              }
+            }
+          }, {
+            "targets": [14],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, skip the 'Hz' and change . with ,
+                if (data == undefined || data === "None") {
+                  return ""
+                }
+                return ((Math.round(data * 10) /10).toFixed(1).replace('.', ','))
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                return data == undefined || data === "None" ? 
+                        "-" : 
+                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'Hz</span>'
+              }
+            }
+          }]
+        })
         dt.draw('full-reset')
         data.forEach(element => {
 //          console.log(element.a_l1)
@@ -135,20 +296,20 @@
           $("span#energy_device_id").text("("+element.energy_device_id+")")
           dt.row.add([
             element.created_at,
-            element.kw_total +'kWh',
-            element.kwh_l1 +'kWh',
-            element.kwh_l2 +'kWh',
-            element.kwh_l3 +'kWh',
-            element.a_l1 +'A',
-            element.a_l2 +'A',
-            element.a_l3 +'A',
-            element.p_l1 +'W',
-            element.p_l2 +'W',
-            element.p_l3 +'W',
-            element.v_l1 +'V',
-            element.v_l1 +'V',
-            element.v_l3 +'V',
-            element.hz +' Hz'
+            element.kw_total,
+            element.kwh_l1,
+            element.kwh_l2,
+            element.kwh_l3,
+            element.a_l1,
+            element.a_l2,
+            element.a_l3,
+            element.p_l1,
+            element.p_l2,
+            element.p_l3,
+            element.v_l1,
+            element.v_l1,
+            element.v_l3,
+            element.hz
           ]).draw( false )
         })
       })
