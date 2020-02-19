@@ -118,20 +118,6 @@
     function addOnNewline(str, addition, newline) {
       return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
     }
-    // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
-    function parseDate(dateStr) {
-      var p1 = dateStr.split(',')
-      var date = p1[0].split('/')
-      var time = p1[1].trim().split(':')
-      var dObj = new Date()
-      dObj.setDate(date[0]) 
-      dObj.setMonth(parseInt(date[1]) -1) 
-      dObj.setFullYear(date[2]) 
-      dObj.setHours(time[0]) 
-      dObj.setMinutes(time[1]) 
-      dObj.setSeconds(time[2]) 
-      return dObj
-    }
     var dt = undefined
     function getChargeSessions() {
       console.log(timestamp() + ' getChargeSessions()')
@@ -267,7 +253,15 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return data
+                if (typeof data != "string" || (data.trim()).length != 20) {
+                  return data
+                }
+                d = parseDate(data)
+                // 19-02-2020  18:20:02
+                return (weekday[d.getDay() %6]).substring(0, 3) + ' ' + 
+                        d.getDate() + ' ' + (months[d.getMonth() %11]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
+                        d.getHours() + ':' +
+                       (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
               }
             }
           }, {
