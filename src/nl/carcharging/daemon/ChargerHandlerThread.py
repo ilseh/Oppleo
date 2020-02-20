@@ -107,7 +107,7 @@ class ChargerHandlerThread(object):
 
             self.evse_reader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
 
-        except Exception as ex:
+        except Exception as e:
             self.logger.exception('Could not start evse reader loop')
             self.ledlighter.error()
         finally:
@@ -132,8 +132,8 @@ class ChargerHandlerThread(object):
                 is_expired = self.is_expired(rfid_data.valid_from, rfid_data.valid_until)
                 rfid_data.last_used_at = datetime.now()
                 rfid_data.save()
-        except Exception as ex:
-            self.logger.error("Could not authorize %s %s" % (rfid, ex))
+        except Exception as e:
+            self.logger.error("Could not authorize %s %s" % (rfid, e))
 
         if not is_authorized:
             raise NotAuthorizedException("Unauthorized rfid %s" % rfid)
@@ -172,8 +172,8 @@ class ChargerHandlerThread(object):
         while not self.stop_event.is_set():
             try:
                 self.read_rfid(reader)
-            except Exception as ex:
-                self.logger.error("Could not execute run_read_rfid: %s" % ex)
+            except Exception as e:
+                self.logger.error("Could not execute run_read_rfid: %s" % e)
                 self.buzz_error()
                 self.ledlighter.error(duration=.6)
             time.sleep(0.25)
@@ -326,8 +326,8 @@ class ChargerHandlerThread(object):
     def try_handle_charging(self, evse_state):
         try:
             self.handle_charging(evse_state)
-        except Exception as ex:
-            self.logger.error("Error handle charging: %s", ex)
+        except Exception as e:
+            self.logger.error("Error handle charging: %s", e, exc_info=True)
             self.ledlighter.error()
 
 
