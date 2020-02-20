@@ -62,6 +62,7 @@ class EnergyDeviceMeasureModel(Base):
 
 
     def get_last_saved(self, energy_device_id):
+        self.logger.debug("get_last_saved() energy_device_id {} ".format(energy_device_id))
         return self.get_last_n_saved(energy_device_id, 1)[0]
 
 
@@ -103,6 +104,7 @@ class EnergyDeviceMeasureModel(Base):
 
 
     def get_usage_since(self, energy_device_id, since_ts):
+        self.logger.debug("get_usage_since() energy_device_id {} since_ts {}".format(energy_device_id, str(since_ts)))
         db_session = DbSession()
         energy_at_ts = 0
         try:
