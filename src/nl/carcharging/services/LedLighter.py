@@ -24,7 +24,7 @@ class LedLighter(object):
         # self.ledlightReady = LedLight(LedLight.LED_RED, LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
         self.ledlightReady = LedLight(WebAppConfig.pinLedRed, WebAppConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
         # self.ledlightCharging = LedLight(LedLight.LED_BLUE, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
-        self.ledlightCharging = LedLight(WebAppConfig.pinLedGreen, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
+        self.ledlightCharging = LedLight(WebAppConfig.pinLedBlue, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
         # self.ledlightError = LedLight(LedLight.LED_RED, intensity=LIGHT_INTENSITY_HIGH)
         self.ledlightError = LedLight(WebAppConfig.pinLedRed, intensity=LIGHT_INTENSITY_HIGH)
 
