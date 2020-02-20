@@ -394,9 +394,21 @@ class ChargerHandlerThread(object):
                     (datetime.today() - timedelta(minutes=WebAppConfig.autoSessionMinutes))
                     )
             if kwh_used > WebAppConfig.autoSessionEnergy:
-                self.logger.debug('Keep the current session. More energy used than {}kWh in {} minutes'.format(e, t))
+                self.logger.debug('Keep the current session. More energy ({}kWh) used than {}kWh in {} minutes'
+                           .format(
+                                kwh_used,
+                                WebAppConfig.autoSessionEnergy, 
+                                WebAppConfig.autoSessionMinutes
+                            )
+                        )
             else:
-                self.logger.info('Start a new session (auto-session). Less energy used than {}kWh in {} minutes'.format(e, t))
+                self.logger.info('Start a new session (auto-session). Less energy ({}kWh) used than {}kWh in {} minutes'
+                           .format(
+                                kwh_used,
+                                WebAppConfig.autoSessionEnergy,
+                                WebAppConfig.autoSessionMinutes
+                            )
+                        )
                 with self.threadLock:
                     # Lock to prevent the session to be hijacked when someone simultaneously presents the rfid card
                     charge_session = ChargeSessionModel.get_open_charge_session_for_device(self.device)
