@@ -152,7 +152,7 @@ def authenticated_resource(function):
         if not ignore_login_next:
             # Redirect to login but rememmber the original request 
             session['login_next'] = request.full_path
-        return redirect(url_for('flaskRoutes.login'))
+            return redirect(url_for('flaskRoutes.login'))
     return decorated
 
 @flaskRoutes.route("/logout", methods=["GET"])
