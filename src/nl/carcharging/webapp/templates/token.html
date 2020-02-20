@@ -26,20 +26,6 @@
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
   <script>
-    const months = {
-      0: 'Januari',
-      1: 'Februari',
-      2: 'Maart',
-      3: 'April',
-      4: 'Mei',
-      5: 'Juni',
-      6: 'Juli',
-      7: 'Augustus',
-      8: 'September',
-      9: 'Oktober',
-      10: 'November',
-      11: 'December'
-    }
     var tokenPresent = {% if rfid_model["api_access_token"] is not none %}true{% else %}false{% endif %}
     function timestamp() {
       d = new Date();
