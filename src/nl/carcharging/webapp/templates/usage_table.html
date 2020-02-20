@@ -112,8 +112,7 @@
             {
               extend: 'copy',
               text: "<i class='far fa-copy'></i> Copy"
-            },
-            {
+            }, {
               extend: 'csv',
               text: "<i class='fas fa-file-csv'></i> CSV",
               exportOptions: {
@@ -121,24 +120,28 @@
                           display: 'Plain'
                       }      
               }
-            },
-            {
+            }, {
               extend: 'excel',
               text: "<i class='far fa-file-excel'></i> Excel",
               bFooter: false,
               exportOptions: {
                       orthogonal: {
                           display: 'Plain'
-                      }      
+                      },
+                      columns: ':visible',
+                      format: {
+                          body: function(data, row, column, node) {
+                              data = $('<p>' + data + '</p>').text();
+                              return $.isNumeric(data.replace(',', '.')) ? data.replace(',', '.') : data;
+                          }
+                      }
               }
-            },
-            {
+            }, {
                 extend: 'pdfHtml5',
                 text: "<i class='far fa-file-pdf'></i> PDF",
                 orientation: 'landscape',
                 pageSize: 'A4'
-            },
-            {
+            }, {
               extend: 'print',
               text: "<i class='fas fa-print'></i> Print"
             }
@@ -199,7 +202,7 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return (Math.round(data * 10) /10).toString().replace('.', ',')
+                return (Math.round(data * 10) /10)
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
@@ -219,7 +222,7 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return (Math.round(data * 10) /10).toString().replace('.', ',')
+                return (Math.round(data * 10) /10)
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
@@ -239,7 +242,7 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return (Math.round(data * 10) /10).toString().replace('.', ',')
+                return (Math.round(data * 10) /10)
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
@@ -259,7 +262,7 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return (Math.round(data * 10) /10).toString().replace('.', ',')
+                return (Math.round(data * 10) /10)
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
