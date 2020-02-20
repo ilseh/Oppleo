@@ -36,8 +36,7 @@ class Raspberry(object):
         elif platform.system() == "Darwin":
             return str(subprocess.check_output(['/usr/sbin/sysctl', "-n", "machdep.cpu.brand_string"]).strip(), 'utf-8')
         elif platform.system() == "Linux":
-            command = "cat /proc/cpuinfo"
-            return str(subprocess.check_output(command, shell=True).strip(), 'utf-8')
+            return self.get_cpuinfo_entry('model name')
         return None
 
     def get_os(self):
@@ -193,6 +192,7 @@ class Raspberry(object):
         data['revision'] = self.get_revision()
         data['os'] = self.get_os()
         data['proc'] = self.get_processor_info()
+        data['cpu'] = self.get_cpuinfo()
         data['model'] = self.get_model()
         data['disk'] = self.get_disk()
         data['vmem'] = self.get_virtual_memory()
