@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import json
 import logging
+from urllib.parse import urlparse
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
@@ -100,15 +101,6 @@ def login():
                         flaskRoutesLogger.debug('login_next: %s' % session['login_next'])
                         login_next = session['login_next']
                         del session['login_next']
-
-
-                        if is_safe_url(next):
-                            # Safe next
-                            return redirect(login_next)
-                        return redirect(url_for('flaskRoutes.home'))
-
-
-                        from urllib.parse import urlparse
                         # only allow relative paths, so there cannot be a netloc (host)
                         if bool(urlparse(login_next).netloc):
                             # do not allow this 
@@ -116,8 +108,6 @@ def login():
                             return redirect(url_for('flaskRoutes.home'))
                         # Safe next
                         return redirect(login_next)
-
-
                     else:
                         # Return to the home page
                         flaskRoutesLogger.debug('flaskRoutes.home')
