@@ -122,7 +122,8 @@ class EnergyDeviceMeasureModel(Base):
             return 0
         energy_used = round((energy_now.kw_total - energy_at_ts.kw_total) *10) /10
         self.logger.debug('get_usage_since() - since {} usage {}kWh'.format(
-                since_ts.strftime("%d/%m/%Y, %H:%M:%S"), energy_used))
+                    since_ts.strftime("%d/%m/%Y, %H:%M:%S"), energy_used)
+                    )
         return energy_used
 
 
