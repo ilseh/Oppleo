@@ -336,7 +336,7 @@
                           <tbody>
                             {% if ('model' in diag) %}
                             <tr>
-                              <td class="text-dark">Model:</td>
+                              <td class="text-dark" style="min-width: 200px;">Model:</td>
                               <td class="text-primary">{{ diag['model'] }}</td>
                             </tr>
                             {% endif %}
@@ -346,6 +346,69 @@
                               <td class="text-primary">{{ diag['revision'] }}</td>
                             </tr>
                             {% endif %}
+                            {% if ('proc' in diag) %}
+                            <tr>
+                              <td class="text-dark">Processor:</td>
+                              <td class="text-primary">{{ diag['proc'] }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> GPIO</th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">GPIO Mode:</td>
+                              <td class="text-primary">{{ webappconfig.gpioMode }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Red Led:</td>
+                              <td class="text-primary">{{ webappconfig.pinLedRed }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Green Led:</td>
+                              <td class="text-primary">{{ webappconfig.pinLedGreen }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Blue Led:</td>
+                              <td class="text-primary">{{ webappconfig.pinLedBlue }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Led pulse min:</td>
+                              <td class="text-primary">{{ webappconfig.pulseLedMin }}%</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Led pulse max:</td>
+                              <td class="text-primary">{{ webappconfig.pulseLedMax }}%</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Buzzer:</td>
+                              <td class="text-primary">{{ webappconfig.pinBuzzer }}</td>
+                            </tr>
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> Auto-session</th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Enabled:</td>
+                              <td class="text-primary">{{ webappconfig.autoSessionEnabled }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Minutes:</td>
+                              <td class="text-primary">{{ webappconfig.autoSessionMinutes }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Energy:</td>
+                              <td class="text-primary">{{ webappconfig.autoSessionEnergy }}kWh</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Condense:</td>
+                              <td class="text-primary">{{ webappconfig.autoSessionCondenseSameOdometer }}</td>
+                            </tr>
+                                                        
                             {% if ('os' in diag) %}
                             <tr>
                               <th colspan="2">&nbsp;</th>
