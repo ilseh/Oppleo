@@ -342,7 +342,8 @@ def usage_graph(cnt="undefined"):
 def settings(active=1):
     global flaskRoutesLogger, WebAppConfig
     flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
-    diag = Raspberry().get_all()
+    r = Raspberry()
+    diag = r.get_all()
     diag_json = json.dumps(diag)
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 

@@ -1,8 +1,10 @@
 import os as os
 import logging
 import netifaces
+import platform
 from cpuinfo import get_cpu_info
 import psutil
+import subprocess
 
 class Raspberry(object):
     """
@@ -11,7 +13,7 @@ class Raspberry(object):
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.Raspberry')
-        self.logger.debug('Initializing Raspberry without data')
+
 
     def get_ip_info(self):
         self.logger.debug("get_ip_info()")
@@ -28,24 +30,19 @@ class Raspberry(object):
                 r[i_id]['INET6'] = i_addr[netifaces.AF_INET6]
         return r
 
+    def get_processor_info(self):
+        if platform.system() == "Windows":
+            return str(platform.processor(), 'utf-8')
+        elif platform.system() == "Darwin":
+            return str(subprocess.check_output(['/usr/sbin/sysctl', "-n", "machdep.cpu.brand_string"]).strip(), 'utf-8')
+        elif platform.system() == "Linux":
+            command = "cat /proc/cpuinfo"
+            return str(subprocess.check_output(command, shell=True).strip(), 'utf-8')
+        return None
+
     def get_os(self):
         self.logger.debug("get_os()")
         return os.uname()
-
-    def get_hardware(self):
-        self.logger.debug("get_hardware()")
-        hw = {}
-        for key, value in get_cpu_info().items():
-            hw[key] = value
-        return hw
-
-    def get_model_old(self):
-        self.logger.debug("get_model_old()")
-        data = self.get_hardware()
-        for entry in data:
-            if "Model" in entry:
-                return entry["Model"]
-        return "Unknown"
 
     def get_cpuinfo_entry(self, entry_name="Unknown"):
         self.logger.debug("get_cpuinfo_entry() entry_name={}".format(entry_name))
@@ -187,12 +184,15 @@ class Raspberry(object):
         return dsk
 
     def get_all(self):
-        self.logger.debug("get_all()")
+        try:
+            self.logger.debug("get_all()")
+        except Exception as e:
+            pass
         data = {}
         data['ip'] = self.get_ip_info()
         data['revision'] = self.get_revision()
         data['os'] = self.get_os()
-        data['hardware'] = self.get_hardware()
+        data['proc'] = self.get_processor_info()
         data['model'] = self.get_model()
         data['disk'] = self.get_disk()
         data['vmem'] = self.get_virtual_memory()
