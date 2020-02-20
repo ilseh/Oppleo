@@ -167,7 +167,14 @@
               exportOptions: {
                       orthogonal: {
                           display: 'Plain'
-                      }      
+                      },
+                      columns: ':visible',
+                      format: {
+                          body: function(data, row, column, node) {
+                              data = $('<p>' + data + '</p>').text();
+                              return $.isNumeric(data.replace(',', '.')) ? data.replace(',', '.') : data;
+                          }
+                      }
               }
             },
             {
@@ -294,7 +301,7 @@
                 if (data == undefined || data === "None") {
                   return ""
                 }
-                return (Math.round(data * 10) /10).toString().replace('.', ',')
+                return (Math.round(data * 100) /100)
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
