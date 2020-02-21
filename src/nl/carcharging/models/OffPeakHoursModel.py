@@ -62,6 +62,10 @@ class OffPeakHoursModel(Base):
 
 
     # Timestamp of type datetime
+    def is_off_peak_now(self) -> bool:
+        return self.is_off_peak(timestamp=datetime.now())
+
+    # Timestamp of type datetime
     def is_off_peak(self, timestamp) -> bool:
         self.logger.debug('is_off_peak()')
         if not isinstance(timestamp, datetime):

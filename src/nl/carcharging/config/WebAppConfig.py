@@ -112,8 +112,10 @@ class WebAppConfig(object):
     PROCESS_NAME = 'PythonProc'
     LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
 
-    # The time between database queries for energy state updates
+    # The time between database queries for energy state updates, in seconds
     device_measurement_check_interval = 7
+    # The time between peak/ off peak checks to enable or disable the EVSE, in seconds
+    off_peak_check_interval = 60
 
     meuThread = None
     chThread = None
