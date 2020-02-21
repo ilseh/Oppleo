@@ -176,7 +176,8 @@ class ChargerHandlerThread(object):
                 self.logger.error("Could not execute run_read_rfid: %s" % e)
                 self.buzz_error()
                 self.ledlighter.error(duration=.6)
-            time.sleep(0.25)
+            # time.sleep(0.25)
+            # WebAppConfig.appSocketIO.sleep(0.25)
         self.logger.info("Stopping RfidReader")
 
 
