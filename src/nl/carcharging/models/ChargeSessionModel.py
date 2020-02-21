@@ -42,6 +42,7 @@ class ChargeSessionModel(Base):
     def init_on_load(self):
         self.__init__
 
+
     def set(self, data):
         for key in data:
             setattr(self, key, data.get(key))
@@ -106,6 +107,42 @@ class ChargeSessionModel(Base):
         except:
             return None
         return csm
+
+    """
+    Returns session with specific values, used for condensing charge sessions
+    """
+    @staticmethod
+    def get_specific_charge_session(energy_device_id, rfid, km, end_value, tariff) -> ChargeSessionModel:
+        db_session = DbSession()
+        csm = None
+        try:
+            csm = db_session.query(ChargeSessionModel) \
+                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                            .filter(ChargeSessionModel.rfid == rfid) \
+                            .filter(ChargeSessionModel.km == km) \
+                            .filter(ChargeSessionModel.end_value == end_value) \
+                            .filter(ChargeSessionModel.end_time != None) \
+                            .filter(ChargeSessionModel.tariff == tariff) \
+                            .first()
+        except:
+            return None
+        return csm
+
+    """
+    Condenses two charge sessions
+    """
+    @staticmethod
+    def condense_charge_sessions(closed_charge_session, new_charge_session) -> None:
+        # energy_device_id, rfid, tariff, km are equal. Keep the end_value
+        new_charge_session.start_value = closed_charge_session.start_value
+        new_charge_session.start_time = closed_charge_session.start_time
+        # Update totals
+        new_charge_session.total_energy = new_charge_session.end_value - new_charge_session.start_value
+        new_charge_session.total_price = new_charge_session.total_energy * new_charge_session.tariff
+        # Save it
+        new_charge_session.save()
+        # Delete the old one
+        closed_charge_session.delete()
 
 
     @staticmethod

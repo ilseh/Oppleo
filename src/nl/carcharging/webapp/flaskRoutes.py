@@ -1,4 +1,5 @@
 import os
+import threading
 from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session
 
 from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
@@ -334,6 +335,8 @@ def settings(active=1):
     flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
     r = Raspberry()
     diag = r.get_all()
+    diag['threading'] = {}
+    diag['threading']['active_count'] = threading.active_count()
     diag_json = json.dumps(diag)
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
