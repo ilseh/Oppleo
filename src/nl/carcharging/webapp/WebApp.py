@@ -13,8 +13,8 @@ webApplogger.debug('sys.version %s : ' % sys.version)
 
 WebAppConfig.loadConfig()
 
+from nl.carcharging.utils.GenericUtil import GenericUtil
 try:
-    from nl.carcharging.utils.GenericUtil import GenericUtil
     GPIO = GenericUtil.importGpio()
     if WebAppConfig.gpioMode == "BOARD":
         webApplogger.info("Setting GPIO MODE to BOARD")

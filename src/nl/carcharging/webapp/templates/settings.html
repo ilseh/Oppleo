@@ -183,6 +183,12 @@
                               <td class="text-primary">{{ charger_config['modified_at'] }}</td>
                             </tr>
                             {% endif %}
+                            {% if ('threading' in diag and 'active_count' in diag['threading']) %}
+                            <tr>
+                              <td class="text-dark">Thread count:</td>
+                              <td class="text-primary">{{ diag['threading']['active_count'] }}</td>
+                            </tr>
+                            {% endif %}
                           </tbody>
                         </table>
                       </div>
@@ -375,16 +381,22 @@
                               <td class="text-primary">{{ webappconfig.pinLedBlue }}</td>
                             </tr>
                             <tr>
+                              <td class="text-dark">Buzzer:</td>
+                              <td class="text-primary">{{ webappconfig.pinBuzzer }}</td>
+                            </tr>
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> LED Pulse levels</th>
+                            </tr>
+                            <tr>
                               <td class="text-dark">Led pulse min:</td>
                               <td class="text-primary">{{ webappconfig.pulseLedMin }}%</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Led pulse max:</td>
                               <td class="text-primary">{{ webappconfig.pulseLedMax }}%</td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Buzzer:</td>
-                              <td class="text-primary">{{ webappconfig.pinBuzzer }}</td>
                             </tr>
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -405,7 +417,7 @@
                               <td class="text-primary">{{ webappconfig.autoSessionEnergy }}kWh</td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Condense:</td>
+                              <td class="text-dark">Condense sessions:</td>
                               <td class="text-primary">{{ webappconfig.autoSessionCondenseSameOdometer }}</td>
                             </tr>
                                                         

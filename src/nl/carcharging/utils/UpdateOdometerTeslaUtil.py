@@ -63,14 +63,12 @@ class UpdateOdometerTeslaUtil:
             self.logger.debug("Token has expired.")
             # TODO Notify someone
             return
-
         # get the odometer
-
         odometer = t_api.getOdometerWithId(rfid_model.vehicle_id)
         with self.threadLock:
             charge_session = ChargeSessionModel.get_one_charge_session(self.charge_session_id)
             if charge_session is None:
-                self.logger.debug("Charge session with id {} could no longer be found. (Condensed?)".format(self.charge_session_id))
+                self.logger.error("Charge session with id {} could no longer be found. (Condensed?)".format(self.charge_session_id))
                 # TODO Notify someone
                 return
             charge_session.km = odometer
@@ -79,16 +77,26 @@ class UpdateOdometerTeslaUtil:
             charge_session.km,
             rfid_model.vehicle_name
         ))
-
-
+        """
+        CONDENSE - same charge point, same odometer value, end_value equal to start_value of new session            
+        """ 
         if self.condense:
             self.logger.debug("Check condense...")
-            """
-            TODO !!!!
-            CONDENSE - same laadpaal, same km stand, eindstand gelijk aan beginstand deze charge sessie
-            
-            """ 
-
+            with self.threadLock:
+                # charge_session is the new charge session, was there a previous charge session just like this one?
+                same_charge_session = ChargeSessionModel.get_specific_charge_session(
+                                                energy_device_id=charge_session.energy_device_id, 
+                                                rfid=charge_session.rfid, 
+                                                km=charge_session.km, 
+                                                end_value=charge_session.end_value, 
+                                                tariff=charge_session.tariff
+                                                )
+                if same_charge_session != None:
+                    self.logger.debug("same_charge_session found! Condense...")
+                    condenseSucceeded = ChargeSessionModel.condense_charge_sessions(
+                                            closed_charge_session=same_charge_session,
+                                            new_charge_session=charge_session
+                                            )
 
         if t_api.tokenRefreshCheck():
             # Token refreshed, store in rfid
