@@ -270,6 +270,7 @@ class ChargerHandlerThread(object):
 
     # evse_reader_thread
     # rfid_reader_thread
+    # lock threads before calling this
     def end_charge_session(self, charge_session):
         charge_session.end_value = self.energy_util.getTotalKWHHValue()
         charge_session.end_time = datetime.now()

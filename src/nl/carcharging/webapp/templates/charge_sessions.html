@@ -338,7 +338,7 @@
                 return data
               } else {
                 // Default - type = 'display' - on screen or other exports
-                // Empty closed charge session?
+                // Empty and closed charge session?
                 if (row[10] == 0 && row[5] != "-") {
                   // Show delete button
                   return '<button' +
@@ -352,10 +352,23 @@
                          '   >' +
                          '   <i class="fas fa-trash-alt"></i>' +
                          '</button>'
-
-                         
-
                 }
+                // Open charge session?
+                if (row[5] == "-") {
+                  // Show close button
+                  return '<button' +
+                         '   type="button"' +
+                         '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+                         '   data-toggle="tooltip" ' +
+                         '   data-placement="bottom" ' +
+                         '   data-html="true" ' +
+                         '   title="<em>Be&euml;indig open laadsessie.</em>"' +
+                         '   onclick="window.location.href=\'/stop_charge_session/' + row[0] + '\'"' +
+                         '   >' +
+                         '   <i class="far fa-hand-paper"></i>' +
+                         '</button>'
+                }
+
                 // Else just return nothing
                 return data
               }

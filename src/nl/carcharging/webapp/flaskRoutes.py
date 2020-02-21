@@ -39,6 +39,7 @@ flaskRoutes = Blueprint('flaskRoutes', __name__, template_folder='templates')
 flaskRoutesLogger = logging.getLogger('nl.carcharging.webapp.flaskRoutes')
 flaskRoutesLogger.debug('Initializing routes')
 
+threadLock = threading.Lock()
 
 
 @flaskRoutes.route('/', methods=['GET'])
@@ -324,6 +325,47 @@ def delete_charge_session(id=None):
                 form=form, 
                 requesttitle=str("Laadsessie " + str(id)),
                 buttontitle=str("Verwijder laadsessie " + str(id)),
+                errormsg="Het wachtwoord is onjuist",
+                webappconfig=WebAppConfig
+                )
+
+
+@flaskRoutes.route("/stop_charge_session/<int:id>", methods=["GET", "POST"])
+@authenticated_resource
+def stop_charge_session(id=None):
+    global flaskRoutesLogger, WebAppConfig, threadLock
+    if id is None:
+        return jsonify({
+            'status': 404, 
+            'id': WebAppConfig.ENERGY_DEVICE_ID, 
+            'reason': 'Laadsessie niet gevonden'
+            })
+    # For GET requests, display the authorize form. 
+    flaskRoutesLogger.debug('/stop_charge_session {}'.format(request.method))
+    if (request.method == 'GET'):
+        return render_template("authorize.html", 
+            form=AuthorizeForm(),
+            requesttitle=str("Stop laadsessie " + str(id)),
+            buttontitle="Stop laadsessie",
+            webappconfig=WebAppConfig
+            )
+    # For POST requests, login the current user by processing the form.
+    form = AuthorizeForm()
+    if form.validate_on_submit() and \
+       check_password_hash(current_user.password, form.password.data):
+        flaskRoutesLogger.debug('stop_charge_session requested and authorized.')
+        with threadLock:
+            charge_session = ChargeSessionModel.get_one_charge_session(id)
+            if charge_session is not None:
+                WebAppConfig.chThread.end_charge_session(charge_session)
+            else:
+                flaskRoutesLogger.warn('Could not stop charge session {}, session not found!'.format(id))
+        return redirect(url_for('flaskRoutes.charge_sessions'))
+    else:
+        return render_template("authorize.html", 
+                form=form, 
+                requesttitle=str("Stop laadsessie " + str(id)),
+                buttontitle="Stop laadsessie",
                 errormsg="Het wachtwoord is onjuist",
                 webappconfig=WebAppConfig
                 )
