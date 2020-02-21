@@ -327,6 +327,39 @@
                         '<span style="text-align: right;">&euro; ' + (Math.round(data * 100) /100).toFixed(2) + '</span>'
               }
             }
+          }, {
+            // This is for the charge session id column
+            "targets": 11,
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                // Excel export, skip this column
+                return data
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                // Empty closed charge session?
+                if (row[10] == 0 && row[5] != "-") {
+                  // Show delete button
+                  return '<button' +
+                         '   type="button"' +
+                         '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+                         '   data-toggle="tooltip" ' +
+                         '   data-placement="bottom" ' +
+                         '   data-html="true" ' +
+                         '   title="<em>Verwijder lege laadsessie.</em>"' +
+                         '   onclick="window.location.href=\'/delete_charge_session/' + row[0] + '\'"' +
+                         '   >' +
+                         '   <i class="fas fa-trash-alt"></i>' +
+                         '</button>'
+
+                         
+
+                }
+                // Else just return nothing
+                return data
+              }
+            }
           }],
           "searching": false
         });
@@ -369,6 +402,7 @@
               element.total_price :
               '-'
             )
+            ,""
           ]).draw( false )
           $('button#edit_' + element.rfid).click(function() {
             //Do stuff when clicked
@@ -429,6 +463,7 @@
                 <th style="text-align: center;">Tarief</th>
                 <th style="text-align: center;">Verbruik</th>
                 <th style="text-align: center;">Prijs</th>
+                <th style="text-align: center;">&nbsp;</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>
