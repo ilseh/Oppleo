@@ -234,6 +234,7 @@ def shutdown():
         return render_template("authorize.html", 
             form=AuthorizeForm(),
             requesttitle="Uitschakelen",
+            buttontitle="Schakel uit!",
             webappconfig=WebAppConfig
             )
     # For POST requests, login the current user by processing the form.
@@ -250,6 +251,7 @@ def shutdown():
         return render_template("authorize.html", 
                 form=form, 
                 requesttitle="Uitschakelen",
+                buttontitle="Schakel uit!",
                 errormsg="Het wachtwoord is onjuist",
                 webappconfig=WebAppConfig
                 )
@@ -266,6 +268,7 @@ def reboot():
         return render_template("authorize.html", 
             form=AuthorizeForm(),
             requesttitle="Herstarten",
+            buttontitle="Herstart!",
             webappconfig=WebAppConfig
             )
     # For POST requests, login the current user by processing the form.
@@ -282,6 +285,45 @@ def reboot():
         return render_template("authorize.html", 
                 form=form, 
                 requesttitle="Herstarten",
+                buttontitle="Herstart!",
+                errormsg="Het wachtwoord is onjuist",
+                webappconfig=WebAppConfig
+                )
+
+
+
+@flaskRoutes.route("/delete_charge_session/<int:id>", methods=["GET", "POST"])
+@authenticated_resource
+def delete_charge_session(id=None):
+    global flaskRoutesLogger, WebAppConfig
+    if id is None:
+        return jsonify({
+            'status': 404, 
+            'id': WebAppConfig.ENERGY_DEVICE_ID, 
+            'reason': 'Laadsessie niet gevonden'
+            })
+    # For GET requests, display the authorize form. 
+    flaskRoutesLogger.debug('/delete_charge_session {}'.format(request.method))
+    if (request.method == 'GET'):
+        return render_template("authorize.html", 
+            form=AuthorizeForm(),
+            requesttitle=str("Laadsessie " + str(id)),
+            buttontitle=str("Verwijder laadsessie " + str(id)),
+            webappconfig=WebAppConfig
+            )
+    # For POST requests, login the current user by processing the form.
+    form = AuthorizeForm()
+    if form.validate_on_submit() and \
+       check_password_hash(current_user.password, form.password.data):
+        flaskRoutesLogger.debug('delete_charge_session requested and authorized.')
+        charge_session = ChargeSessionModel.get_one_charge_session(id)
+        charge_session.delete()
+        return redirect(url_for('flaskRoutes.charge_sessions'))
+    else:
+        return render_template("authorize.html", 
+                form=form, 
+                requesttitle=str("Laadsessie " + str(id)),
+                buttontitle=str("Verwijder laadsessie " + str(id)),
                 errormsg="Het wachtwoord is onjuist",
                 webappconfig=WebAppConfig
                 )
