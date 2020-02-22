@@ -149,20 +149,21 @@
           buttons: [
             {
               extend: 'copy',
-              text: "<i class='far fa-copy'></i> Copy"
-            },
-            {
+              text: "<i class='far fa-copy'></i> Copy",
+              className: 'btn btn-low-key btn-sm'
+            }, {
               extend: 'csv',
               text: "<i class='fas fa-file-csv'></i> CSV",
+              className: 'btn btn-low-key btn-sm',
               exportOptions: {
                       orthogonal: {
                           display: 'Plain'
                       }      
               }
-            },
-            {
+            }, {
               extend: 'excel',
               text: "<i class='far fa-file-excel'></i> Excel",
+              className: 'btn btn-low-key btn-sm',
               bFooter: false,
               exportOptions: {
                       orthogonal: {
@@ -176,16 +177,16 @@
                           }
                       }
               }
-            },
-            {
+            }, {
                 extend: 'pdfHtml5',
                 text: "<i class='far fa-file-pdf'></i> PDF",
+                className: 'btn btn-low-key btn-sm',
                 orientation: 'landscape',
                 pageSize: 'A4'
-            },
-            {
+            }, {
               extend: 'print',
-              text: "<i class='fas fa-print'></i> Print"
+              text: "<i class='fas fa-print'></i> Print",
+              className: 'btn btn-low-key btn-sm'
             }
           ],
           "createdRow": function(row, data, dataIndex) {
@@ -236,7 +237,7 @@
             }
           }, {
             // This is for the Start and End time columns
-            "targets": [2, 5],
+            "targets": [2, 6],
             "sorting": true,
             "orderable": true,
             "render": function (data, type, row) {
@@ -265,15 +266,15 @@
                 }
                 d = parseDate(data)
                 // 19-02-2020  18:20:02
-                return (weekday[d.getDay() %6]).substring(0, 3) + ' ' + 
-                        d.getDate() + ' ' + (months[d.getMonth() %11]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
+                return (weekday[d.getDay() %7]).substring(0, 3) + ' ' + 
+                        d.getDate() + ' ' + (months[d.getMonth() %12]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
                         d.getHours() + ':' +
                        (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
               }
             }
           }, {
             // This is for the Action column icons
-            "targets": 4,
+            "targets": 5,
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
@@ -290,7 +291,7 @@
               }
             }
           }, {
-            "targets": [3, 6, 9],
+            "targets": [4, 7, 10],
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
@@ -310,7 +311,7 @@
               }
             }
           }, {
-            "targets": [8, 10],
+            "targets": [9, 11],
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -329,7 +330,7 @@
             }
           }, {
             // This is for the charge session id column
-            "targets": 11,
+            "targets": 12,
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -339,7 +340,7 @@
               } else {
                 // Default - type = 'display' - on screen or other exports
                 // Empty and closed charge session?
-                if (row[10] == 0 && row[5] != "-") {
+                if (row[11] == 0 && row[6] != "-") {
                   // Show delete button
                   return '<button' +
                          '   type="button"' +
@@ -354,7 +355,7 @@
                          '</button>'
                 }
                 // Open charge session?
-                if (row[5] == "-") {
+                if (row[6] == "-") {
                   // Show close button
                   return '<button' +
                          '   type="button"' +
@@ -384,6 +385,10 @@
             element.rfid,
             ( (typeof element.start_time === 'string' || element.start_time instanceof String) ?
               element.start_time :
+              '-'
+            ),
+            ( ((typeof element.trigger === 'string' || element.trigger instanceof String) && element.trigger != "None") ?
+              element.trigger :
               '-'
             ),
             ( (typeof element.start_value === 'string' || element.start_value instanceof String) ?
@@ -468,6 +473,7 @@
                 <th style="text-align: center;">id</th>
                 <th style="text-align: center;">Laadpas</th>
                 <th style="text-align: center;">Starttijd</th>
+                <th style="text-align: center;">Trigger</th>
                 <th style="text-align: center;">Startmeting</th>
                 <th style="text-align: center;">km stand</th>
                 <th style="text-align: center;">Eindtijd</th>

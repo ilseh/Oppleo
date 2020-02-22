@@ -111,10 +111,12 @@
           buttons: [
             {
               extend: 'copy',
-              text: "<i class='far fa-copy'></i> Copy"
+              text: "<i class='far fa-copy'></i> Copy",
+              className: 'btn btn-low-key btn-sm'
             }, {
               extend: 'csv',
               text: "<i class='fas fa-file-csv'></i> CSV",
+              className: 'btn btn-low-key btn-sm',
               exportOptions: {
                       orthogonal: {
                           display: 'Plain'
@@ -123,6 +125,7 @@
             }, {
               extend: 'excel',
               text: "<i class='far fa-file-excel'></i> Excel",
+              className: 'btn btn-low-key btn-sm',
               bFooter: false,
               exportOptions: {
                       orthogonal: { 
@@ -139,11 +142,13 @@
             }, {
                 extend: 'pdfHtml5',
                 text: "<i class='far fa-file-pdf'></i> PDF",
+                className: 'btn btn-low-key btn-sm',
                 orientation: 'landscape',
                 pageSize: 'A4'
             }, {
               extend: 'print',
-              text: "<i class='fas fa-print'></i> Print"
+              text: "<i class='fas fa-print'></i> Print",
+              className: 'btn btn-low-key btn-sm'
             }
           ],
           "createdRow": function(row, data, dataIndex) {
