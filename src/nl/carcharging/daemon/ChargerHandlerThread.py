@@ -95,7 +95,7 @@ class ChargerHandlerThread(object):
         #   appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
-        self.evse_reader_thread = threading.Thread(target=self.evse_reader_thread, name='thread-evse-reader')
+        self.evse_reader_thread = threading.Thread(target=self.evseReaderLoop, name='thread-evse-reader')
         self.evse_reader_thread.start()
 
         self.logger.debug('start_background_task() - rfidReaderLoop')
