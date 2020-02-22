@@ -76,7 +76,7 @@ class LedLightHandler(Service):
             self.ledlighter.error()
 
     def start_evse_reader_loop_in_thread(self):
-        thread_for_evse_reader = threading.Thread(target=self.start_evse_reader_loop, name='thread-evse-led-reader')
+        thread_for_evse_reader = threading.Thread(target=self.start_evse_reader_loop, name='EvseLedReaderThread')
         thread_for_evse_reader.start()
 
     def start_evse_reader_loop(self):
