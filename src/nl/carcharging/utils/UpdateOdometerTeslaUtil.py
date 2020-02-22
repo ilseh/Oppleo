@@ -99,8 +99,8 @@ class UpdateOdometerTeslaUtil:
             Don't condense if the odometer value could not be obtained, or
             if the charge session was not AUTO started (but by human RFID tag, only condense AUTO sessions)
         """ 
-        if self.condense and 
-           odometer is not None and 
+        if self.condense and \
+           odometer is not None and \
            charge_session.trigger != ChargeSessionModel.TRIGGER_AUTO:
             self.logger.debug("Check condense... (condense = {}, odometer = {}, ChargeSession.trigger = {} "
                        .format(
