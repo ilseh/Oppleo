@@ -10,7 +10,7 @@ class EnergyDevice():
     counter = 0
     logger = None
     energy_device_id = None
-    energuUtil = None
+    energyUtil = None
     modbusInterval = 10 # default value
     lastRun = 0
     appSocketIO = None
