@@ -99,21 +99,25 @@ class UpdateOdometerTeslaUtil:
         """ 
         if self.condense:
             self.logger.debug("Check condense...")
-            with self.threadLock:
-                # charge_session is the new charge session, was there a previous charge session just like this one?
-                same_charge_session = ChargeSessionModel.get_specific_charge_session(
-                                                energy_device_id=charge_session.energy_device_id, 
-                                                rfid=charge_session.rfid, 
-                                                km=charge_session.km, 
-                                                end_value=charge_session.end_value, 
-                                                tariff=charge_session.tariff
+            # if the odometer value could not be obtained, the charge session cannot be condensed
+            if odometer is None:
+                self.logger.debug("Don't condense, odometer value was not obtained...")
+            else:
+                with self.threadLock:
+                    # charge_session is the new charge session, was there a previous charge session just like this one?
+                    same_charge_session = ChargeSessionModel.get_specific_charge_session(
+                                                    energy_device_id=charge_session.energy_device_id, 
+                                                    rfid=charge_session.rfid, 
+                                                    km=charge_session.km, 
+                                                    end_value=charge_session.end_value, 
+                                                    tariff=charge_session.tariff
+                                                    )
+                    if same_charge_session != None:
+                        self.logger.debug("same_charge_session found! Condense...")
+                        condenseSucceeded = ChargeSessionModel.condense_charge_sessions(
+                                                closed_charge_session=same_charge_session,
+                                                new_charge_session=charge_session
                                                 )
-                if same_charge_session != None:
-                    self.logger.debug("same_charge_session found! Condense...")
-                    condenseSucceeded = ChargeSessionModel.condense_charge_sessions(
-                                            closed_charge_session=same_charge_session,
-                                            new_charge_session=charge_session
-                                            )
         # Did the token still work?
         if t_api.got401Unauthorized:
             # Nah, report

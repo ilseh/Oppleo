@@ -260,7 +260,7 @@ class TeslaAPI:
 
         response_dict = json.loads(r.text)
         vehicle[self.VEHICLE_DETAILS_TOKEN] = response_dict['response']
-        self.logger.debug("Odometer : %s " % response_dict['response'][self.VEHICLE_DETAILS_ODOMETER_PARAM])
+        self.logger.debug("Odometer : %s [miles]" % response_dict['response'][self.VEHICLE_DETAILS_ODOMETER_PARAM])
         return response_dict['response']
 
     def getOdometerWithId(self, id=None):
@@ -277,14 +277,12 @@ class TeslaAPI:
         if self.refresh_token is None:
             self.logger.debug('Refresh token missing.')
             return False
-
         data = {
             "grant_type": self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN,
             "client_id": self.TESLA_CLIENT_ID,
             "client_secret": self.TESLA_CLIENT_SECRET,
             "refresh_token": self.refresh_token
         }
-
         # 01 - Authenticate [POST]
         # sending post request and saving response as response object
         return self.auth_post(data, self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN)
