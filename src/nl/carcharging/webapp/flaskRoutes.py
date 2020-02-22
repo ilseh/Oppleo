@@ -422,6 +422,8 @@ def settings(active=1):
     diag['threading'] = {}
     diag['threading']['active_count'] = threading.active_count()
     diag_json = json.dumps(diag)
+    # threading.enumerate() not json serializable
+    diag['threading']['enum'] = threading.enumerate()
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
                 active=active, 

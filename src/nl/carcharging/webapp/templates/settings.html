@@ -358,6 +358,18 @@
                               <td class="text-primary">{{ diag['threading']['active_count'] }}</td>
                             </tr>
                             {% endif %}
+                            {% if ('threading' in diag and 'enum' in diag['threading']) %}
+                            {% for thread in diag['threading']['enum'] %}
+                            <tr>
+                              {% if diag['threading']['enum'].index(thread) == 0 %}
+                              <td class="text-dark">Threads:</td>
+                              {% else %}
+                              <td class="text-dark">&nbsp;</td>
+                              {% endif %}
+                              <td class="text-primary">{{ thread.name }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
                             <tr>
                               <th colspan="2">&nbsp;</th>
                             </tr>
