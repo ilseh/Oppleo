@@ -128,7 +128,6 @@ class ChargeSessionModel(Base):
                             .filter(ChargeSessionModel.end_value == end_value) \
                             .filter(ChargeSessionModel.end_time != None) \
                             .filter(ChargeSessionModel.tariff == tariff) \
-                            .filter(ChargeSessionModel.trigger == ChargeSessionModel.TRIGGER_AUTO) \
                             .first()
         except:
             return None
