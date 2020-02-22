@@ -138,6 +138,7 @@ class TeslaAPI:
             return None
         vehicle_list = self.getVehicleList()
         if vehicle_list is None:
+            self.logger.debug("vehicle_list is None")
             return None
         for vehicle in vehicle_list:
             if id == vehicle[self.VEHICLE_LIST_ID_PARAM]:
