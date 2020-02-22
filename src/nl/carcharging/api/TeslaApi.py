@@ -20,11 +20,18 @@ class TeslaAPI:
     API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN = 'refresh_token'
 
     # https://tesla-api.timdorr.com/api-basics/authentication
+    # https://www.teslaapi.io/
     # https://pastebin.com/pS7Z6yyP
+    # Stopped working approx 22nd feb 2020
     TESLA_CLIENT_ID = '81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384'
     TESLA_CLIENT_SECRET = 'c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3'
 
+    # https://github.com/timdorr/tesla-api/issues/79#issuecomment-419992028
+    #TESLA_CLIENT_ID = 'e4a9949fcfa04068f59abb5a658f2bac0a3428e4652315490b659d5ab3f35a9e'
+    #TESLA_CLIENT_SECRET = 'c75f14bbadc8bee3a7594412c31416f8300256d7668ea7e6e7f06727bfb9d220'
+
     HTTP_200_OK = 200
+    HTTP_401_UNAUTHORIZED = 401
     HTTP_408_REQUEST_TIMEOUT = 408
 
     MAX_WAKE_UP_TRIES = 3
@@ -45,6 +52,8 @@ class TeslaAPI:
     created_at = None
     expires_in = None
     refresh_token = None
+
+    got401Unauthorized = False
 
     vehicle_list = None
 
@@ -70,7 +79,11 @@ class TeslaAPI:
         )
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.auth_post(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
             return False
+        self.got401Unauthorized = False
 
         # extracting response text
         response_dict = json.loads(r.text)
@@ -119,7 +132,12 @@ class TeslaAPI:
         )
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.getVehicleList(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
             return None
+        self.got401Unauthorized = False
+
         response_dict = json.loads(r.text)
         self.logger.debug("Vehicle count : %s " % response_dict['count'])
         self.vehicle_list = response_dict['response']
@@ -160,12 +178,6 @@ class TeslaAPI:
             })
         return nid
 
-    def vehicleDetailssWithId(self, id=None):
-        if id is None:
-            return self.VEHICLE_LIST_STATE_VALUE_UNKNOWN
-
-        # TODO
-        return None
 
     def wakeUpVehicleWithId(self, id=None):
         self.logger.debug("wakeUpVehicleWithId: " + self.API_WAKE_UP)
@@ -183,7 +195,12 @@ class TeslaAPI:
             )
             self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
             if r.status_code != self.HTTP_200_OK:
+                self.logger.warn("TeslaAPI.wakeUpVehicleWithId(): status code {}".format(r.status_code))
+                if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                    self.got401Unauthorized = True
                 return False
+            self.got401Unauthorized = False
+
             response_dict = json.loads(r.text)
             vehicle[self.VEHICLE_LIST_STATE_PARAM] = response_dict['response'][self.VEHICLE_LIST_STATE_PARAM]
             self.logger.debug(
@@ -199,6 +216,7 @@ class TeslaAPI:
             return False
         return True
 
+
     def vehicleWithIdIsAsleep(self, id=None):
         self.logger.debug("vehicleWithIdIsAsleep()")
         vehicle = self.getVehicleWithId(id)
@@ -207,6 +225,7 @@ class TeslaAPI:
             return False
         self.logger.debug("Vehicle state {}.".format(vehicle[self.VEHICLE_LIST_STATE_PARAM]))
         return vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP
+
 
     def getVehicleDetailsWithId(self, id=None, update=False):
         self.logger.debug("getVehicleDetailsWithId()")
@@ -230,12 +249,15 @@ class TeslaAPI:
         )
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.getVehicleDetailsWithId(): status code {}".format(r.status_code))
             if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
                 response_dict = json.loads(r.text)
                 self.logger.warning("Error: %s" % response_dict['error'])
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
             return None
+        self.got401Unauthorized = False
 
-        # TODO WAAR LAAT JE DIT?
         response_dict = json.loads(r.text)
         vehicle[self.VEHICLE_DETAILS_TOKEN] = response_dict['response']
         self.logger.debug("Odometer : %s " % response_dict['response'][self.VEHICLE_DETAILS_ODOMETER_PARAM])
@@ -283,16 +305,25 @@ class TeslaAPI:
         )
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
-            self.logger.debug("Not successfull revoking token")
+            self.logger.warn("TeslaAPI.revokeToken(): status code {}, NOT successfull REVOKING TOKEN".format(r.status_code))
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
             return False
+        self.got401Unauthorized = False
 
         self.reset()
         return True
 
+    # Token can expire, but apparently the token can also just become invalid.
+    # Not sure if the refresh token in that case will still work.
     def hasValidToken(self):
         self.logger.debug("hasValidToken()")
         if self.access_token is None:
             self.logger.debug("token is None")
+            return False
+        # Ran into 401's last time?
+        if self.got401Unauthorized:
+            self.logger.debug("Ran into 401 Unauthorized")
             return False
         date = datetime.datetime.fromtimestamp(int(self.created_at) + int(self.expires_in))  # / 1e3
         today = date.today()
@@ -301,6 +332,7 @@ class TeslaAPI:
             return True
         self.logger.debug("token has expired")
         return False
+
 
     # Token valid for 45 days, refresh if token is valid for less than 31 days
     def tokenRefreshCheck(self):

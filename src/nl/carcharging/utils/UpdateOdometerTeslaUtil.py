@@ -9,6 +9,8 @@ from nl.carcharging.api.TeslaApi import TeslaAPI
 from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 
+from nl.carcharging.services.PushMessage import PushMessage
+
 """
  Instantiate object
  Set the session id
@@ -61,7 +63,15 @@ class UpdateOdometerTeslaUtil:
         UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model=rfid_model, tesla_api=t_api)
         if not t_api.hasValidToken():
             self.logger.debug("Token has expired.")
-            # TODO Notify someone
+            # Notify through push messages if configured
+            PushMessage.sendMessage(
+                "Tesla token expired", 
+                "The Tesla OAuth token for rfid {} ({}) has expired."
+                .format(
+                    rfid_model.name,
+                    rfid_model.rfid
+                    )
+                )
             return
         # get the odometer
         odometer = t_api.getOdometerWithId(rfid_model.vehicle_id)
@@ -69,7 +79,14 @@ class UpdateOdometerTeslaUtil:
             charge_session = ChargeSessionModel.get_one_charge_session(self.charge_session_id)
             if charge_session is None:
                 self.logger.error("Charge session with id {} could no longer be found. (Condensed?)".format(self.charge_session_id))
-                # TODO Notify someone
+                # Inform through push messages if configured
+                PushMessage.sendMessage(
+                    "Charge session not found", 
+                    "Charge session with id {} could no longer be found, when adding odometer value. (Condensed?)."
+                    .format(
+                        self.charge_session_id
+                        )
+                    )
                 return
             charge_session.km = odometer
             charge_session.save()
@@ -97,12 +114,29 @@ class UpdateOdometerTeslaUtil:
                                             closed_charge_session=same_charge_session,
                                             new_charge_session=charge_session
                                             )
+        # Did the token still work?
+        if t_api.got401Unauthorized:
+            # Nah, report
+            self.logger.warn('Token led to 401 Unauthorized. Removing token')
+            rfid_model.clean_token_rfid_model()
+            rfid_model.get_odometer = False
+            # Inform through push messages if configured
+            PushMessage.sendMessage(
+                "Tesla token invalid", 
+                "Encountered 401 Unauthorized when updating odometer for charge session {}." + \
+                    " Removing token from rfid tag {} ({})."
+                .format(
+                    self.charge_session_id,
+                    rfid.name,
+                    rfid_model.rfid
+                    )
+                )
 
         if t_api.tokenRefreshCheck():
             # Token refreshed, store in rfid
             self.logger.debug("Token refreshed")
             UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(t_api, rfid_model)
-            rfid_model.commit()
+            rfid_model.update()
             self.logger.debug("Refreshed token stored in rfid")
 
 

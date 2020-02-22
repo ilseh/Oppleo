@@ -32,7 +32,8 @@ WebAppConfig.appSocketIO = appSocketIO
 uotu = UpdateOdometerTeslaUtil()
 # Hand it the session id, the id from ChargeSessionModel
 # This example uses 12 as this is the oldest in the local database
-uotu.set_charge_session_id(12)
+uotu.set_charge_session_id(194)
 # Start the helper.
 uotu.start()
+
     
