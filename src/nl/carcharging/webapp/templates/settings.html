@@ -183,12 +183,6 @@
                               <td class="text-primary">{{ charger_config['modified_at'] }}</td>
                             </tr>
                             {% endif %}
-                            {% if ('threading' in diag and 'active_count' in diag['threading']) %}
-                            <tr>
-                              <td class="text-dark">Thread count:</td>
-                              <td class="text-primary">{{ diag['threading']['active_count'] }}</td>
-                            </tr>
-                            {% endif %}
                           </tbody>
                         </table>
                       </div>
@@ -356,6 +350,12 @@
                             <tr>
                               <td class="text-dark">Processor:</td>
                               <td class="text-primary">{{ diag['proc'] }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if ('threading' in diag and 'active_count' in diag['threading']) %}
+                            <tr>
+                              <td class="text-dark">Thread count:</td>
+                              <td class="text-primary">{{ diag['threading']['active_count'] }}</td>
                             </tr>
                             {% endif %}
                             <tr>
