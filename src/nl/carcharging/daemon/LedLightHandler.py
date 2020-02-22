@@ -202,7 +202,7 @@ class LedLightHandler(Service):
     def save_tesla_values_in_thread(self, charge_session_id):
         self.tesla_util.set_charge_session_id(charge_session_id=charge_session_id)
         # update_odometer takes some time, so put in own thread
-        thread_for_tesla_util = threading.Thread(target=self.tesla_util.update_odometer, name='thread-tesla-util')
+        thread_for_tesla_util = threading.Thread(target=self.tesla_util.update_odometer, name='TeslaUtilThread')
         thread_for_tesla_util.start()
 
 

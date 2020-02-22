@@ -87,7 +87,7 @@ class LedLighter(object):
 
     def temp_switch_on_thread(self, light, duration):
         self.logger.debug("LedLighter.temp_switch_on_thread()")
-        thread_for_temp_switch_on = threading.Thread(target=self.temp_switch_on, name="Temp_switch_on thread",
+        thread_for_temp_switch_on = threading.Thread(target=self.temp_switch_on, name="TempSwitchOnThread",
                                                      args=(light, duration))
         thread_for_temp_switch_on.start()
 

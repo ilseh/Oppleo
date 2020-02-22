@@ -326,7 +326,7 @@ class ChargerHandlerThread(object):
         # start() launches a background_task by calling socketio.start_background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
-        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='thread-tesla-util')
+        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
         thread_for_tesla_util.start()
 
 

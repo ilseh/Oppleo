@@ -14,7 +14,7 @@ FREQ_MS_TO_UPDATE_LED = 10
 class LedLightPulseProd(object):
 
     def __init__(self, color, intensity, pwm=None):
-        self.thread_for_pulse = threading.Thread(target=self._pulse)
+        self.thread_for_pulse = threading.Thread(target=self._pulse, name="LedPulseThread")
         self.color = color
         self.logger = logging.getLogger('nl.carcharging.services.LedLightPulseProd')
         self.logger.setLevel(logging.WARNING)
@@ -70,7 +70,7 @@ class LedLightPulseProd(object):
         self.hardware.cleanup()
 
     def on(self):
-        self.thread_for_pulse = threading.Thread(target=self._pulse)
+        self.thread_for_pulse = threading.Thread(target=self._pulse, name="LedPulseThread")
         self.logger.debug('Attempt to start pulse in thread')
         try:
             self.thread_for_pulse.start()
