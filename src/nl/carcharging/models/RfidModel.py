@@ -47,7 +47,7 @@ class RfidModel(Base):
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.models.RfidModel')
-        self.logger.debug('Initializing RfidModel without data')
+
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   

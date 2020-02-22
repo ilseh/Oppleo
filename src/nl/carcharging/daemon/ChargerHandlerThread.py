@@ -154,6 +154,7 @@ class ChargerHandlerThread(object):
 
     # rfid_reader_thread
     def resume_session_if_applicable(self):
+        self.logger.debug("resume_session_if_applicable()")
         # Check if there was a session active when this daemon was stopped.
         last_saved_session = ChargeSessionModel.get_latest_charge_session(self.device)
 
@@ -161,6 +162,7 @@ class ChargerHandlerThread(object):
             self.logger.info("After startup continuing an active session for rfid %s" % last_saved_session.rfid)
             resume_session = True
         else:
+            self.logger.info("After startup no active session detected.")
             resume_session = False
         self.update_charger_and_led(resume_session)
 
@@ -249,9 +251,12 @@ class ChargerHandlerThread(object):
         charge_session = ChargeSessionModel()
         charge_session.set(data_for_session)
         charge_session.save()
+        self.logger.info(f'New charge session started with id {charge_session.id}')
+
         rfid = RfidModel.get_one(rfid)
         if rfid.vehicle_make.upper() == "TESLA" and rfid.get_odometer: 
             # Try to add odometer
+            self.logger.debug('Update odometer for this Tesla')
             self.save_tesla_values_in_thread(
                     charge_session_id=charge_session.id,
                     condense=condense
@@ -295,12 +300,16 @@ class ChargerHandlerThread(object):
     # rfid_reader_thread
     # charge_session_id is the row id in the database table
     def save_tesla_values_in_thread(self, charge_session_id, condense=False):
+        self.logger.debug(f'save_tesla_values_in_thread() id = {charge_session_id} and condense = {condense}')
         uotu = UpdateOdometerTeslaUtil()
         uotu.set_charge_session_id(charge_session_id=charge_session_id)
         uotu.set_condense(condense=condense)
+        # update_odometer takes some time, it will run as background task
+        uotu.start()
+        
         # update_odometer takes some time, so put in own thread
-        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='thread-tesla-util')
-        thread_for_tesla_util.start()
+#        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='thread-tesla-util')
+#        thread_for_tesla_util.start()
 
 
     # rfid_reader_thread

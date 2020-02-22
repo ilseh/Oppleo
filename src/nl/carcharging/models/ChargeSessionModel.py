@@ -34,8 +34,8 @@ class ChargeSessionModel(Base):
 
     # class constructor
     def __init__(self):
-        self.logger = logging.getLogger('nl.carcharging.models.SessionModel')
-        self.logger.debug('Initializing SessionModel without data')
+        self.logger = logging.getLogger('nl.carcharging.models.ChargeSessionModel')
+
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor
