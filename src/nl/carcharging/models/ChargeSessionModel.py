@@ -31,6 +31,10 @@ class ChargeSessionModel(Base):
     total_price = Column(Float)  # € (total_energy * tariff) - increasing during session
     energy_device_id = Column(String(100))
     km = Column(Integer)
+    trigger = Column(String(12))
+
+    TRIGGER_RFID = 'RFID'
+    TRIGGER_AUTO = 'AUTO'
 
     # class constructor
     def __init__(self):
@@ -48,6 +52,7 @@ class ChargeSessionModel(Base):
             setattr(self, key, data.get(key))
         if self.start_time is None:
             self.start_time = datetime.now()
+
 
     def save(self) -> None:
         db_session = DbSession()
@@ -123,6 +128,7 @@ class ChargeSessionModel(Base):
                             .filter(ChargeSessionModel.end_value == end_value) \
                             .filter(ChargeSessionModel.end_time != None) \
                             .filter(ChargeSessionModel.tariff == tariff) \
+                            .filter(ChargeSessionModel.trigger == ChargeSessionModel.TRIGGER_AUTO) \
                             .first()
         except:
             return None
@@ -136,6 +142,7 @@ class ChargeSessionModel(Base):
         # energy_device_id, rfid, tariff, km are equal. Keep the end_value
         new_charge_session.start_value = closed_charge_session.start_value
         new_charge_session.start_time = closed_charge_session.start_time
+        new_charge_session.trigger = closed_charge_session.trigger
         # Update totals
         new_charge_session.total_energy = new_charge_session.end_value - new_charge_session.start_value
         new_charge_session.total_price = new_charge_session.total_energy * new_charge_session.tariff
@@ -247,6 +254,7 @@ class ChargeSessionModel(Base):
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return csm
 
+
     def date_str_to_datetime(self, date_time_str: str) -> datetime:
         return datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
 
@@ -258,7 +266,8 @@ class ChargeSessionModel(Base):
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
                 "start_time": (
-                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None),
+                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None
+                    ),
                 "rfid": self.rfid,
                 "start_value": str(self.start_value),
                 "end_value": str(self.end_value),
@@ -267,7 +276,9 @@ class ChargeSessionModel(Base):
                 "total_price": str(self.total_price),
                 "km": str(self.km),
                 "end_time": (
-                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
+                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None
+                    ),
+                "trigger": str(self.trigger)
             })
         )
 
@@ -278,7 +289,8 @@ class ChargeSessionModel(Base):
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
                 "start_time": (
-                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None),
+                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None
+                    ),
                 "rfid": self.rfid,
                 "start_value": str(self.start_value),
                 "end_value": str(self.end_value),
@@ -287,7 +299,9 @@ class ChargeSessionModel(Base):
                 "total_price": str(self.total_price),
                 "km": str(self.km),
                 "end_time": (
-                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
+                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None
+                    ),
+                "trigger": str(self.trigger)
             })
 
 
@@ -297,7 +311,8 @@ class ChargeSessionModel(Base):
             "id": str(self.id),
             "energy_device_id": str(self.energy_device_id),
             "start_time": (
-                str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None),
+                str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None
+                ),
             "rfid": self.rfid,
             "start_value": str(self.start_value),
             "end_value": str(self.end_value),
@@ -306,7 +321,9 @@ class ChargeSessionModel(Base):
             "total_price": str(self.total_price),
             "km": str(self.km),
             "end_time": (
-                str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None)
+                str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None
+                ),
+            "trigger": str(self.trigger)
         })
 
 
@@ -325,3 +342,4 @@ class ChargeSessionSchema(Schema):
     total_energy = fields.Float(dump_only=True)
     total_price = fields.Float(dump_only=True)
     km = fields.Integer(dump_only=True)
+    trigger = fields.Str(required=True)

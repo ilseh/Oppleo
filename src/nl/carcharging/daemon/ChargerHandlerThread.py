@@ -224,6 +224,7 @@ class ChargerHandlerThread(object):
                 # Do not condense, an actual RFID was presented
                 self.start_charge_session(
                         rfid=rfid,
+                        trigger=ChargeSessionModel.TRIGGER_RFID,
                         condense=False
                         )
                 start_session = True
@@ -233,7 +234,7 @@ class ChargerHandlerThread(object):
 
     # evse_reader_thread
     # rfid_reader_thread
-    def start_charge_session(self, rfid, condense=False):
+    def start_charge_session(self, rfid, trigger=ChargeSessionModel.TRIGGER_RFID, condense=False):
         self.logger.debug("start_charge_session() new charging session for rfid %s" % rfid)
 
         # Optimize: maybe get this from the latest db value rather than from the energy meter directly
@@ -246,7 +247,8 @@ class ChargerHandlerThread(object):
             "tariff"            : ChargerConfigModel.get_config().charger_tariff,
             "end_value"         : start_value,
             "total_energy"      : 0,
-            "total_price"       : 0
+            "total_price"       : 0,
+            "trigger"           : trigger
             }
         charge_session = ChargeSessionModel()
         charge_session.set(data_for_session)
@@ -307,7 +309,7 @@ class ChargerHandlerThread(object):
         # update_odometer takes some time, it will run as background task
         uotu.start()
         
-        
+
     # rfid_reader_thread
     def has_rfid_open_session(self, rfid_latest_session):
         return (rfid_latest_session is not None and rfid_latest_session.end_time is None)
@@ -424,6 +426,7 @@ class ChargerHandlerThread(object):
                     # Condense after the odometer update has completed! Done in the same thread
                     self.start_charge_session(
                             rfid=charge_session.rfid,
+                            trigger=ChargeSessionModel.TRIGGER_AUTO,
                             condense=WebAppConfig.autoSessionCondenseSameOdometer
                             )
 
