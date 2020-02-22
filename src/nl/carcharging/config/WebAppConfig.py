@@ -117,6 +117,9 @@ class WebAppConfig(object):
     # The time between peak/ off peak checks to enable or disable the EVSE, in seconds
     off_peak_check_interval = 60
 
+    prowlEnabled = True
+    prowlApiKey = '5df94c19d71b4b456efcb49996406fa62e717a44'
+
     meuThread = None
     chThread = None
 

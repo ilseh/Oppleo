@@ -307,11 +307,7 @@ class ChargerHandlerThread(object):
         # update_odometer takes some time, it will run as background task
         uotu.start()
         
-        # update_odometer takes some time, so put in own thread
-#        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='thread-tesla-util')
-#        thread_for_tesla_util.start()
-
-
+        
     # rfid_reader_thread
     def has_rfid_open_session(self, rfid_latest_session):
         return (rfid_latest_session is not None and rfid_latest_session.end_time is None)

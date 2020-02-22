@@ -91,6 +91,15 @@ class RfidModel(Base):
             self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
 
 
+    def update(self):
+        db_session = DbSession()
+        try:
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not commit (update) to {} table in database".format(self.__tablename__ ), exc_info=True)
+
+
     def delete(self):
         db_session = DbSession()
         try:
