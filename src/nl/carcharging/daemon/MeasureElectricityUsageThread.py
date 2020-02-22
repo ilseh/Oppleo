@@ -24,7 +24,13 @@ class MeasureElectricityUsageThread(object):
         self.stop_event.clear()
         self.logger.debug('Launching background task...')
         self.logger.debug('start_background_task() - monitorEnergyDevicesLoop')
-        self.thread = self.appSocketIO.start_background_task(self.monitorEnergyDevicesLoop)
+        # self.thread = self.appSocketIO.start_background_task(self.monitorEnergyDevicesLoop)
+        #   appSocketIO.start_background_task launches a background_task
+        #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
+        #   Therefore use standard threads
+        self.thread = threading.Thread(target=self.monitorEnergyDevicesLoop, name='thread-kwh-reader')
+        self.thread.start()
+
 
     def stop(self):
         self.logger.debug('Requested to stop')

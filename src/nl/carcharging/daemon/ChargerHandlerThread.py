@@ -89,10 +89,23 @@ class ChargerHandlerThread(object):
     def start(self):
         self.stop_event.clear()
         self.logger.debug('Launching background task...')
+
         self.logger.debug('start_background_task() - evseReaderLoop')
-        self.evse_reader_thread = self.appSocketIO.start_background_task(self.evseReaderLoop)
+        # self.evse_reader_thread = self.appSocketIO.start_background_task(self.evse_reader_thread)
+        #   appSocketIO.start_background_task launches a background_task
+        #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
+        #   Therefore use standard threads
+        self.evse_reader_thread = threading.Thread(target=self.evse_reader_thread, name='thread-evse-reader')
+        self.evse_reader_thread.start()
+
         self.logger.debug('start_background_task() - rfidReaderLoop')
-        self.rfid_reader_thread = self.appSocketIO.start_background_task(self.rfidReaderLoop)
+        # self.rfid_reader_thread = self.appSocketIO.start_background_task(self.rfidReaderLoop)
+        #   appSocketIO.start_background_task launches a background_task
+        #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
+        #   Therefore use standard threads
+        self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='thread-rfid-reader')
+        self.rfid_reader_thread.start()
+
         self.logger.debug('Done starting rfid reader and evse reader backgroubd tasks')
 
 
@@ -178,8 +191,9 @@ class ChargerHandlerThread(object):
                 self.logger.error("Could not execute run_read_rfid: %s" % e)
                 self.buzz_error()
                 self.ledlighter.error(duration=.6)
+            # Sleep to prevent re-reading the same tag twice
             # time.sleep(0.25)
-            # WebAppConfig.appSocketIO.sleep(0.25)
+            WebAppConfig.appSocketIO.sleep(0.75)
         self.logger.info("Stopping RfidReader")
 
 
@@ -306,9 +320,15 @@ class ChargerHandlerThread(object):
         uotu = UpdateOdometerTeslaUtil()
         uotu.set_charge_session_id(charge_session_id=charge_session_id)
         uotu.set_condense(condense=condense)
-        # update_odometer takes some time, it will run as background task
-        uotu.start()
-        
+        # update_odometer takes some time, so put in own thread
+
+        # uotu.start()
+        # start() launches a background_task by calling socketio.start_background_task
+        #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
+        #   Therefore use standard threads
+        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='thread-tesla-util')
+        thread_for_tesla_util.start()
+
 
     # rfid_reader_thread
     def has_rfid_open_session(self, rfid_latest_session):
