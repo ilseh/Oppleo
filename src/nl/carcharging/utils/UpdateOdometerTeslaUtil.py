@@ -46,6 +46,7 @@ class UpdateOdometerTeslaUtil:
 
 
     def update_odometer(self):
+        self.logger.debug("update_odometer()")
         # This method starts a thread which grabs the odometer value and updates the session table
         if self.charge_session_id is None:
             self.logger.debug("No session id")
@@ -95,19 +96,23 @@ class UpdateOdometerTeslaUtil:
             rfid_model.vehicle_name
         ))
         """
-        CONDENSE - same charge point, same odometer value, end_value equal to start_value of new session            
-            Don't condense if the odometer value could not be obtained, or
-            if the charge session was not AUTO started (but by human RFID tag, only condense AUTO sessions)
+        CONDENSE
+            - if condense was requested (only for auto-generated sessions with odometer value)
+            - Find a previous charge session, on the same charge point, with the same odometer value, 
+              with an end_value equal to the start_value of the new session (correct sequence)
+            - Don't condense if the odometer value could not be obtained, or if the charge session was 
+              not AUTO started (but by human RFID tag or from WEB interface, only condense AUTO sessions)
+              The previous session to condense with could be started by any way.
         """ 
+        self.logger.debug("Check condense... (condense = {}, odometer = {}, ChargeSession.trigger = {} "
+                    .format(
+                        self.condense,
+                        odometer,
+                        charge_session.trigger
+                    ))
         if self.condense and \
            odometer is not None and \
-           charge_session.trigger != ChargeSessionModel.TRIGGER_AUTO:
-            self.logger.debug("Check condense... (condense = {}, odometer = {}, ChargeSession.trigger = {} "
-                       .format(
-                           self.condense,
-                           odometer,
-                           charge_session.trigger
-                       ))
+           charge_session.trigger == ChargeSessionModel.TRIGGER_AUTO:
             with self.threadLock:
                 # charge_session is the new charge session, was there a previous charge session just like this one?
                 same_charge_session = ChargeSessionModel.get_specific_charge_session(

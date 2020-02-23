@@ -33,8 +33,9 @@ class ChargeSessionModel(Base):
     km = Column(Integer)
     trigger = Column(String(12))
 
-    TRIGGER_RFID = 'RFID'
-    TRIGGER_AUTO = 'AUTO'
+    TRIGGER_RFID = 'RFID'   # Manually by offering an RFID tag
+    TRIGGER_AUTO = 'AUTO'   # By auto-session detection
+    TRIGGER_WEB = 'WEB'     # Through the WebApp
 
     # class constructor
     def __init__(self):

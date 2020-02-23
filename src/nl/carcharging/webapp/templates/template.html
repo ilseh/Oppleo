@@ -49,6 +49,11 @@
 
         <script>
             var factor_Whkm = {% if webappconfig is not none %}{{ webappconfig.factor_Whkm }}{% else %}162{% endif %}
+            var EVSE_STATE_UNKNOWN    = 0  // Initial
+            var EVSE_STATE_INACTIVE   = 1  // SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
+            var EVSE_STATE_CONNECTED  = 2  // SmartEVSE State B: LED ON full brightness, Car connected
+            var EVSE_STATE_CHARGING   = 3  // SmartEVSE State C: charging (pulsing)
+            var EVSE_STATE_ERROR      = 4  // 
             const months = {
                 0: 'Januari',
                 1: 'Februari',

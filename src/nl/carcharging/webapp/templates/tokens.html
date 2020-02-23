@@ -50,6 +50,118 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
+    var dt = undefined
+    function indexIn(ar, el) {
+      i = -1
+      $.each(ar, function( index, value ) {
+        if (el == value) {
+          i = index
+          return false
+        }
+      })
+      return i
+    }
+    function isRfidValid(enabled, validFrom, validUntil) {
+      // enabled = 'Ja'
+      active = ((typeof enabled === 'string' || enabled instanceof String) && "JA" == enabled.toUpperCase())
+      // validFrom = '-'
+      // validUntil = '31 December 2020'
+      if (validFrom != '-') {
+        s = validFrom.split(' ')
+        fromDate = new Date()
+        fromDate.setYear(s[2])
+        fromDate.setMonth(indexIn(months, s[1]))
+        fromDate.setDate(s[0])
+      }
+      if (validUntil != '-') {
+        s = validUntil.split(' ')
+        untilDate = new Date()
+        untilDate.setYear(s[2])
+        untilDate.setMonth(indexIn(months, s[1]))
+        untilDate.setDate(s[0])
+      }
+      now = new Date()
+      return (active && 
+              (validFrom == '-' || fromDate < now ) &&
+              (validUntil == '-' || untilDate >= now ) 
+             )
+    }
+    function getChargeSessionStatus( ) {
+      console.log(timestamp() + ' getChargeSessionStatus()')
+      $.ajax({
+        type		  : 'GET',
+        url			  : '/active_charge_session',
+        dataType	: 'json',
+        encode		: true,
+        headers   : { 'ignore-login-next': 'true' }
+      }) // using the done promise callback
+      .done(function(result) {
+        // log data to the console so we can see
+        console.log(result)
+        switch(parseInt(result.status)) {
+          case 404:                   // No charge session found (green)
+          case EVSE_STATE_INACTIVE:   // No charge session (green)
+            // Can start a change session
+            dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+                var data = this.data()
+                // No charge session active, can this RFID start one?
+                if (isRfidValid(data[2], data[3], data[4])) {
+                  data[12] = '<button' +
+                            '   type="button"' +
+                            '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+                            '   data-toggle="tooltip" ' +
+                            '   data-placement="bottom" ' +
+                            '   data-html="true" ' +
+                            '   title="<em>Start laadsessie met ' + data[0] + '.</em>"' +
+                            '   onclick="window.location.href=\'/start_charge_session/' + data[1] + '\'"' +
+                            '   >' +
+                            '   <i class="fas fa-charging-station"></i>' +
+                            '</button>'
+                } else {
+                  data[12] = '<button' +
+                            '   type="button"' +
+                            '   class="btn btn-sm waves-effect waves-light btn-outline-secondary disabled" ' +
+                            '   data-toggle="tooltip" ' +
+                            '   data-placement="bottom" ' +
+                            '   data-html="true" ' +
+                            '   title="<em>Niet actief.</em>"' +
+                            '   >' +
+                            '   <i class="fas fa-charging-station"></i>' +
+                            '</button>'
+                }
+                this.invalidate()
+            })
+            break
+          case EVSE_STATE_CONNECTED:  // Ready for charging, but no activity (yellow)
+          case EVSE_STATE_CHARGING:   // Charging activity (blue)
+          case EVSE_STATE_UNKNOWN:    // Error (red)
+          default:
+            // Cannot start a charge session
+            dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+                var data = this.data()
+                data[12] = ''
+                this.invalidate()
+            })
+            break
+        }
+        dt.draw()
+        $('button[id^="edit_"]').click(function() {
+          //Do stuff when clicked
+          window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
+        })
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+      })
+      .fail(function(result) {
+        console.log('getChargeSessionStatus() FAILED')
+        // log data to the console so we can see
+        console.log(result)
+        // If not logged in, no session data. Hide all
+        hideChargeSession()
+      })
+      .always(function() {
+        // Remove spinner?
+      })
+    }
     function updateOAuthTokenStatus(d) {
       // d is expiration date
       return ('Tesla autorisatie verloopt ' + 
@@ -82,12 +194,9 @@
       return formatDbDateTimeStr2Date(dS) + ' ' +
              tEls[0].trim() + ':' + tEls[1] + 'u'
     }
-    var dt = undefined
+
     function getRfidTokens() {
-      console.log(timestamp() + ' getRfidTokens()')
-    
-//      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
-            
+      console.log(timestamp() + ' getRfidTokens()')            
       $.ajax({
         type		    : 'GET',
         url			    : '/rfid_tokens/',
@@ -99,8 +208,6 @@
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
-  //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
-
         dt = $('table#usage').DataTable( {
           "pageLength": 25,
           "order": [[ 5, "desc" ]], // Last used
@@ -113,7 +220,7 @@
             })
           },
           "columnDefs": [{
-            "targets": [1, 9, 11],
+            "targets": [1, 9, 11, 12],
             "sorting": false,
             "orderable": false
           }, {
@@ -134,14 +241,14 @@
               const token_info = data.split('|')
               var t = updateOAuthTokenStatus(new Date((token_info[1] *1000) + (token_info[2] *1000))) 
               return ( (data == undefined || data == "None|None|None") ? 
-                       '<span data-toggle="tooltip" \
+                        '<span data-toggle="tooltip" \
                               data-placement="bottom" \
                               data-html="true" \
                               title="<em>Geen autorisatie</em>" \
                               > \
                               <i class="far fa-registered"></i> \
                         </span>' : 
-                       '<span data-toggle="tooltip" \
+                        '<span data-toggle="tooltip" \
                               data-placement="bottom" \
                               data-html="true" \
                               title="<em>' + t + '</em>" \
@@ -152,7 +259,8 @@
             }
           }],
           "searching": false
-        });
+        }).draw()
+        //dt.clear().draw()
         dt.draw('full-reset')
         data.forEach(element => {
 
@@ -172,18 +280,39 @@
             ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
             (element.get_odometer === "True" ? 'Ja' : 'Nee'),
             (element.api_access_token + '|' + element.api_created_at + '|' + element.api_expires_in),
-            '<button class="btn btn-outline-primary btn-sm" id="edit_' + element.rfid + '">Edit</button>'
-          ]).draw( false )
-          $('button#edit_' + element.rfid).click(function() {
-            //Do stuff when clicked
-            window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
-          })
+            '<button' +
+            '   type="button"' +
+            '   id="edit_' + element.rfid + '"' +
+            '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+            '   data-toggle="tooltip" ' +
+            '   data-placement="bottom" ' +
+            '   data-html="true" ' +
+            '   title="<em>Edit ' + element.name + '.</em>"' +
+            '   >' +
+            '   <i class="fas fa-edit"></i>' +
+            '</button>',
+            '<button' +
+            '   type="button"' +
+            '   class="btn btn-sm waves-effect waves-light btn-outline-secondary disabled" ' +
+            '   data-toggle="tooltip" ' +
+            '   data-placement="bottom" ' +
+            '   data-html="true" ' +
+            '   title="<em>Niet actief.</em>"' +
+            '   >' +
+            '   <i class="fas fa-charging-station"></i>' +
+            '</button>'
+          ]).draw()
+        })
+//        dt.columns.adjust().draw() // Redraw the DataTable
+        $('button[id^="edit_"]').click(function() {
+          //Do stuff when clicked
+          window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
         })
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+        getChargeSessionStatus()
       })
       .fail(function(data) {
         console.log(data)
-  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
       })
       .always(function() {
         // Remove spinner
@@ -235,7 +364,8 @@
                 <th style="text-align: center;">Kenteken</th>
                 <th style="text-align: center;">Update km stand</th>
                 <th style="text-align: center;">Token</th>
-                <th style="text-align: center;"></th>
+                <th style="text-align: center;">&nbsp;</th>
+                <th style="text-align: center;">&nbsp;</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>

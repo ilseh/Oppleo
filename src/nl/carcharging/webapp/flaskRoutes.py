@@ -330,11 +330,87 @@ def delete_charge_session(id=None):
                 )
 
 
-@flaskRoutes.route("/stop_charge_session/<int:id>", methods=["GET", "POST"])
+@flaskRoutes.route("/start_charge_session/<int:rfid>", methods=["GET", "POST"])
 @authenticated_resource
-def stop_charge_session(id=None):
+def start_charge_session(rfid=None):
     global flaskRoutesLogger, WebAppConfig, threadLock
-    if id is None:
+    if rfid is None:
+        return jsonify({
+            'status': 404, 
+            'id': WebAppConfig.ENERGY_DEVICE_ID, 
+            'reason': 'RFID niet gevonden'
+            })
+    # For GET requests, display the authorize form. 
+    flaskRoutesLogger.debug('/start_charge_session {}'.format(request.method))
+    if (request.method == 'GET'):
+        return render_template("authorize.html", 
+            form=AuthorizeForm(),
+            requesttitle=str("Start laadsessie"),
+            buttontitle="Start laadsessie",
+            webappconfig=WebAppConfig
+            )
+    # For POST requests, login the current user by processing the form.
+    form = AuthorizeForm()
+    if form.validate_on_submit() and \
+       check_password_hash(current_user.password, form.password.data):
+        flaskRoutesLogger.debug('start_charge_session requested and authorized.')
+        with threadLock:
+
+            charge_session = ChargeSessionModel.get_open_charge_session_for_device(WebAppConfig.ENERGY_DEVICE_ID)
+            if charge_session is None:
+                try:
+                    WebAppConfig.chThread.authorize(rfid)
+                    WebAppConfig.chThread.start_charge_session(
+                                    rfid=rfid,
+                                    trigger=ChargeSessionModel.TRIGGER_WEB,
+                                    condense=False
+                                )
+                    WebAppConfig.chThread.buzz_ok()
+                    WebAppConfig.chThread.update_charger_and_led(None)
+                except NotAuthorizedException as e:
+                    flaskRoutesLogger.warn('Could not start charge session for rfid {}, NotAuthorized!'.format(id))
+                    return render_template("authorize.html", 
+                            form=form, 
+                            requesttitle=str("Start laadsessie " + str(id)),
+                            buttontitle="Start laadsessie",
+                            errormsg="Deze RFID is niet geautoriseerd.",
+                            webappconfig=WebAppConfig
+                            )
+                except ExpiredException as e:
+                    flaskRoutesLogger.warn('Could not start charge session for rfid {}, Expired!'.format(id))
+                    return render_template("authorize.html", 
+                            form=form, 
+                            requesttitle=str("Start laadsessie " + str(id)),
+                            buttontitle="Start laadsessie",
+                            errormsg="De geldigheid van deze RFID is verlopen.",
+                            webappconfig=WebAppConfig
+                            )
+            else:
+                # A charge session was started elsewhere, fail
+                flaskRoutesLogger.warn('Could not start charge session for rfid {}, already session active!'.format(id))
+                return render_template("authorize.html", 
+                        form=form, 
+                        requesttitle=str("Start laadsessie " + str(id)),
+                        buttontitle="Start laadsessie",
+                        errormsg="Er is al een laadsessie actief. Stop deze eerst.",
+                        webappconfig=WebAppConfig
+                        )
+        return redirect(url_for('flaskRoutes.charge_sessions'))
+    else:
+        return render_template("authorize.html", 
+                form=form, 
+                requesttitle=str("Start laadsessie " + str(id)),
+                buttontitle="Start laadsessie",
+                errormsg="Het wachtwoord is onjuist",
+                webappconfig=WebAppConfig
+                )
+
+
+@flaskRoutes.route("/stop_charge_session/<int:charge_session_id>", methods=["GET", "POST"])
+@authenticated_resource
+def stop_charge_session(charge_session_id=None):
+    global flaskRoutesLogger, WebAppConfig, threadLock
+    if charge_session_id is None:
         return jsonify({
             'status': 404, 
             'id': WebAppConfig.ENERGY_DEVICE_ID, 
@@ -345,7 +421,7 @@ def stop_charge_session(id=None):
     if (request.method == 'GET'):
         return render_template("authorize.html", 
             form=AuthorizeForm(),
-            requesttitle=str("Stop laadsessie " + str(id)),
+            requesttitle=str("Stop laadsessie " + str(charge_session_id)),
             buttontitle="Stop laadsessie",
             webappconfig=WebAppConfig
             )
@@ -355,16 +431,18 @@ def stop_charge_session(id=None):
        check_password_hash(current_user.password, form.password.data):
         flaskRoutesLogger.debug('stop_charge_session requested and authorized.')
         with threadLock:
-            charge_session = ChargeSessionModel.get_one_charge_session(id)
+            charge_session = ChargeSessionModel.get_one_charge_session(charge_session_id)
             if charge_session is not None:
                 WebAppConfig.chThread.end_charge_session(charge_session)
+                WebAppConfig.chThread.buzz_ok()
+                WebAppConfig.chThread.update_charger_and_led(False)
             else:
-                flaskRoutesLogger.warn('Could not stop charge session {}, session not found!'.format(id))
+                flaskRoutesLogger.warn('Could not stop charge session {}, session not found!'.format(charge_session_id))
         return redirect(url_for('flaskRoutes.charge_sessions'))
     else:
         return render_template("authorize.html", 
                 form=form, 
-                requesttitle=str("Stop laadsessie " + str(id)),
+                requesttitle=str("Stop laadsessie " + str(charge_session_id)),
                 buttontitle="Stop laadsessie",
                 errormsg="Het wachtwoord is onjuist",
                 webappconfig=WebAppConfig
@@ -556,7 +634,7 @@ def rfid_tokens(token=None):
                 'tokens.html', 
                 webappconfig=WebAppConfig
             )
-        rfid_model.cleanupOldToken()    # Remove any expired token info
+        rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
         rfid_change_form = RfidChangeForm()
         flaskRoutesLogger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
         if (request.method == 'POST'):
@@ -610,15 +688,16 @@ def rfid_tokens(token=None):
         rfid_list = []
         rfid_models = RfidModel().get_all()
         for rfid_model in rfid_models:
-            rfid_model.cleanupOldToken()    # Remove any expired token info
+            rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
             rfid_list.append(rfid_model.to_str())
         return jsonify(rfid_list)
     # Specific token
     rfid_model = RfidModel().get_one(token)
     if (rfid_model == None):
         return jsonify({})
-    rfid_model.cleanupOldToken()    # Remove any expired token info
+    rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
     return jsonify(rfid_model.to_str())
+
 
 # Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])

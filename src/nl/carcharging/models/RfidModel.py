@@ -64,8 +64,8 @@ class RfidModel(Base):
         self.modified_at = data.get('last_used_at', datetime.now())
 
 
-    def cleanupOldToken(self):
-        #self.logger.debug("cleanupOldToken()")
+    def cleanupOldOAuthToken(self):
+        #self.logger.debug("cleanupOldOAuthToken()")
         if (self.api_access_token is None):
             self.logger.debug("Token is None")
             return
@@ -121,7 +121,7 @@ class RfidModel(Base):
             self.logger.debug("Token is still valid")
             return True
         self.logger.debug("Token has expired")
-        self.cleanupOldToken()
+        self.cleanupOldOAuthToken()
         return False
 
 
