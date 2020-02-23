@@ -634,7 +634,11 @@ def rfid_tokens(token=None):
                 'tokens.html', 
                 webappconfig=WebAppConfig
             )
+<<<<<<< HEAD
         rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
+=======
+        rfid_model.cleanupOldToken()    # Remove any expired token info
+>>>>>>> 9c4e02471d4b366809efca777f2bddc1cb80d399
         rfid_change_form = RfidChangeForm()
         flaskRoutesLogger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
         if (request.method == 'POST'):
@@ -688,17 +692,27 @@ def rfid_tokens(token=None):
         rfid_list = []
         rfid_models = RfidModel().get_all()
         for rfid_model in rfid_models:
+<<<<<<< HEAD
             rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
+=======
+            rfid_model.cleanupOldToken()    # Remove any expired token info
+>>>>>>> 9c4e02471d4b366809efca777f2bddc1cb80d399
             rfid_list.append(rfid_model.to_str())
         return jsonify(rfid_list)
     # Specific token
     rfid_model = RfidModel().get_one(token)
     if (rfid_model == None):
         return jsonify({})
+<<<<<<< HEAD
     rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
     return jsonify(rfid_model.to_str())
 
 
+=======
+    rfid_model.cleanupOldToken()    # Remove any expired token info
+    return jsonify(rfid_model.to_str())
+
+>>>>>>> 9c4e02471d4b366809efca777f2bddc1cb80d399
 # Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid

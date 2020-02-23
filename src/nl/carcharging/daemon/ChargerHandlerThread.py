@@ -248,7 +248,10 @@ class ChargerHandlerThread(object):
 
     # evse_reader_thread
     # rfid_reader_thread
+<<<<<<< HEAD
     # main thread (though web)
+=======
+>>>>>>> 9c4e02471d4b366809efca777f2bddc1cb80d399
     def start_charge_session(self, rfid, trigger=ChargeSessionModel.TRIGGER_RFID, condense=False):
         self.logger.debug("start_charge_session() new charging session for rfid %s" % rfid)
 
