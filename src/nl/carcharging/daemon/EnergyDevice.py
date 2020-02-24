@@ -79,6 +79,14 @@ class EnergyDevice():
                         ' is not older than 1 hour')
 
             # TODO TEMP FOR TESTING SEND EMIT ALWAYS
+        from nl.carcharging.config.WebAppConfig import WebAppConfig
+        with WebAppConfig.app.app_context():
+            if self.appSocketIO is not None:
+                # Emit as web socket update
+                self.counter += 1
+                self.logger.debug(f'Send msg {self.counter} via websocket ...{device_measurement.to_str()}')
+                self.appSocketIO.emit('status_update', { 'data': device_measurement.to_str() }, namespace='/usage')
+
             self.callback(device_measurement)
 
 
