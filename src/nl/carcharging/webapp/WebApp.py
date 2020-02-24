@@ -213,12 +213,11 @@ if __name__ == "__main__":
             WebAppConfig.useReloader
             )
         )
+    """
     appSocketIO.run(app, 
                     port=WebAppConfig.httpPort, 
                     debug=WebAppConfig.DEBUG, 
                     use_reloader=WebAppConfig.useReloader, 
                     host=WebAppConfig.httpHost
                     )
-
-    wsThread.wait()
-
+    """
