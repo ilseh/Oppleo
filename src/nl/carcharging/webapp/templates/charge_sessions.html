@@ -264,7 +264,7 @@
                 }
                 d = parseDate(data)
                 // 19-02-2020  18:20:02
-                return (weekday[d.getDay() %7]).substring(0, 3) + ' ' + 
+                return (weekday[d.getDay() %7]).substring(0, 2) + ' ' + 
                         d.getDate() + ' ' + (months[d.getMonth() %12]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
                         d.getHours() + ':' +
                        (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
