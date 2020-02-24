@@ -84,9 +84,10 @@ class EnergyDevice():
         from flask import current_app
         #with WebAppConfig.app.app_context():
         #with WebAppConfig.app.test_request_context('/'):
+        #with current_app._get_current_object().app_context():
         self.logger.debug('TESTING 001 ')
         self.logger.debug('TESTING 002 ')
-        with current_app._get_current_object().app_context():
+        with current_app._get_current_object().test_request_context('/'):
             self.logger.debug('TESTING 003 ')
             if self.appSocketIO is not None:
                 self.logger.debug('TESTING 004 ')
