@@ -81,8 +81,14 @@ class EnergyDevice():
         # TODO TEMP FOR TESTING SEND EMIT ALWAYS
         from nl.carcharging.config.WebAppConfig import WebAppConfig
         #with WebAppConfig.app.app_context():
-        with WebAppConfig.app.test_request_context('/'):
+        #with WebAppConfig.app.test_request_context('/'):
+        self.logger.debug('TESTING 001 ')
+        app = current_app._get_current_object()
+        self.logger.debug('TESTING 002 ')
+        with app.app_context():
+            self.logger.debug('TESTING 003 ')
             if self.appSocketIO is not None:
+                self.logger.debug('TESTING 004 ')
                 # Emit as web socket update
                 self.counter += 1
                 self.logger.debug(f'Send msg {self.counter} via websocket ...{device_measurement.to_str()}')
