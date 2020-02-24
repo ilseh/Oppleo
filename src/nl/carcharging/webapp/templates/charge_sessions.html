@@ -103,8 +103,6 @@
         $.each(data, function(i,val) {
           rfidTokens[val.rfid] = val
         })
-        // Invalidate to force re-render
-        dt.rows().invalidate()
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
