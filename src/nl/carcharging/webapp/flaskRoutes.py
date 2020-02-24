@@ -366,7 +366,7 @@ def start_charge_session(rfid=None):
                                     condense=False
                                 )
                     WebAppConfig.chThread.buzz_ok()
-                    WebAppConfig.chThread.update_charger_and_led(None)
+                    WebAppConfig.chThread.update_charger_and_led(True)
                 except NotAuthorizedException as e:
                     flaskRoutesLogger.warn('Could not start charge session for rfid {}, NotAuthorized!'.format(id))
                     return render_template("authorize.html", 
