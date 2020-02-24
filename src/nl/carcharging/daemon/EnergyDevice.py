@@ -79,26 +79,6 @@ class EnergyDevice():
             self.logger.debug('Not saving new measurement because values of interest have not changed and last saved measurement'
                         ' is not older than 1 hour')
 
-        # TODO TEMP FOR TESTING SEND EMIT ALWAYS
-        from nl.carcharging.config.WebAppConfig import WebAppConfig
-        from flask import current_app
-        #with WebAppConfig.app.app_context():
-        #with WebAppConfig.app.test_request_context('/'):
-        #with current_app._get_current_object().app_context():
-        #with current_app._get_current_object().test_request_context('/'):
-        self.logger.debug('TESTING 001 ')
-        self.logger.debug('TESTING 002 ')
-        with WebAppConfig.app.app_context():
-            self.logger.debug('TESTING 003 ')
-            if self.appSocketIO is not None:
-                self.logger.debug('TESTING 004 ')
-                # Emit as web socket update
-                self.counter += 1
-                self.logger.debug(f'Send msg {self.counter} via websocket ...{device_measurement.to_str()}')
-                self.appSocketIO.emit('status_update', { 'data': device_measurement.to_str() }, namespace='/usage')
-
-        self.callback(device_measurement)
-
 
     def is_a_value_changed(self, old_measurement, new_measurement):
         measurements_of_interest = {'kwh_l1', 'kwh_l2', 'kwh_l3', 'p_l1', 'p_l2', 'p_l3', 'a_l1', 'a_l2', 'a_l3',
