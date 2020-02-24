@@ -4,6 +4,7 @@ import logging
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.utils.GenericUtil import GenericUtil
 
+
 SECONDS_IN_HOUR = 60 * 60
 
 class EnergyDevice():
@@ -80,6 +81,7 @@ class EnergyDevice():
 
         # TODO TEMP FOR TESTING SEND EMIT ALWAYS
         from nl.carcharging.config.WebAppConfig import WebAppConfig
+        from flask import current_app
         #with WebAppConfig.app.app_context():
         #with WebAppConfig.app.test_request_context('/'):
         self.logger.debug('TESTING 001 ')
