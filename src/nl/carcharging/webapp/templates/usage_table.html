@@ -352,9 +352,6 @@
       // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
       socket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port==''?'':':'+window.location.port)+'/usage')
       // this is a callback that triggers when the "my response" event is emitted by the server.
-      socket.on('status_update1', function(msg) {
-        console.log('Received: ' + JSON.stringify(msg.data))
-      })
       socket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
 
@@ -362,8 +359,8 @@
         var entryExists = false
         dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
           var data = this.data()
-          if (data[0] === msg.data.created_at) {
-            console.log('Websocket data entry ['+msg.data.created_at+'] already in table through initial pull request.')
+          if (data[0] === msg.data.data.created_at) {
+            console.log('Websocket data entry ['+msg.data.data.created_at+'] already in table through initial pull request.')
             entryExists = true
             // currently no way to stop the every() loop... (return false does not work)
             return false
@@ -373,21 +370,21 @@
           return
         }
         dt.row.add([
-            msg.data.created_at,
-            msg.data.kw_total,
-            msg.data.kwh_l1,
-            msg.data.kwh_l2,
-            msg.data.kwh_l3,
-            msg.data.a_l1,
-            msg.data.a_l2,
-            msg.data.a_l3,
-            msg.data.p_l1,
-            msg.data.p_l2,
-            msg.data.p_l3,
-            msg.data.v_l1,
-            msg.data.v_l1,
-            msg.data.v_l3,
-            msg.data.hz
+            msg.data.data.created_at,
+            msg.data.data.kw_total,
+            msg.data.data.kwh_l1,
+            msg.data.data.kwh_l2,
+            msg.data.data.kwh_l3,
+            msg.data.data.a_l1,
+            msg.data.data.a_l2,
+            msg.data.data.a_l3,
+            msg.data.data.p_l1,
+            msg.data.data.p_l2,
+            msg.data.data.p_l3,
+            msg.data.data.v_l1,
+            msg.data.data.v_l1,
+            msg.data.data.v_l3,
+            msg.data.data.hz
           ]).draw( false )
       })
       $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
