@@ -178,22 +178,24 @@
                        (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' +
                        (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
                        (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
-              } else {
-                // Default - type = 'display' - on screen or other exports
-                if (data == undefined || data === "None") {
-                  return ""
-                }
-                if (typeof data != "string" || (data.trim()).length != 20) {
-                  return data
-                }
-                d = parseDate(data)
-                // 19-02-2020  18:20:02
-                return (weekday[d.getDay() %6]).substring(0, 2) + ' ' + 
-                        d.getDate() + ' ' + (months[d.getMonth() %11]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
-                        d.getHours() + ':' +
-                       (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
-                       (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
               }
+              if ( type === "sort" || type === 'type' ) {
+                return data;
+              }
+              // Default - type = 'display' - on screen or other exports
+              if (data == undefined || data === "None") {
+                return ""
+              }
+              if (typeof data != "string" || (data.trim()).length != 20) {
+                return data
+              }
+              d = parseDate(data)
+              // 19-02-2020  18:20:02
+              return (weekday[d.getDay() %6]).substring(0, 2) + ' ' + 
+                      d.getDate() + ' ' + (months[d.getMonth() %11]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
+                      d.getHours() + ':' +
+                      (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
+                      (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
             }
           }, {
             "targets": [1, 2, 3, 4],
