@@ -188,7 +188,7 @@
                 }
                 d = parseDate(data)
                 // 19-02-2020  18:20:02
-                return (weekday[d.getDay() %6]).substring(0, 3) + ' ' + 
+                return (weekday[d.getDay() %6]).substring(0, 2) + ' ' + 
                         d.getDate() + ' ' + (months[d.getMonth() %11]).substring(0, 3) + ' ' + d.getFullYear() + ' ' +
                         d.getHours() + ':' +
                        (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
@@ -335,6 +335,9 @@
       // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
       socket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port==''?'':':'+window.location.port)+'/usage')
       // this is a callback that triggers when the "my response" event is emitted by the server.
+      socket.on('status_update1', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg.data))
+      })
       socket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
 
