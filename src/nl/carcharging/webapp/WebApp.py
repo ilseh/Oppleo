@@ -101,7 +101,7 @@ wsClientCnt = 0
 def load_user(username):
     return User.get(username)
 
-"""
+
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
     global webApplogger, threadLock, wsClientCnt, wsThread, appSocketIO
@@ -144,7 +144,7 @@ def disconnect():
         wsClientCnt -= 1
     webApplogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
 
-
+"""
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
@@ -211,17 +211,6 @@ if __name__ == "__main__":
             appSocketIO=appSocketIO,
             wsEmitQueue=wsEmitQueue
             )
-
-    """
-    msg = {}
-    msg['event'] = 'status_update'
-    msg['data'] = 'test data' # device_measurement.to_str()
-    msg['namespace'] = '/usage'
-    wsEmitQueue.put(msg)
-    """
-
-    #while True:
-    #    appSocketIO.sleep(1)
 
     if GenericUtil.isProd():
         # Start the Energy Device Monitor
