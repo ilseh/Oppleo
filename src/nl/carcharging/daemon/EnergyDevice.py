@@ -78,16 +78,17 @@ class EnergyDevice():
             self.logger.debug('Not saving new measurement because values of interest have not changed and last saved measurement'
                         ' is not older than 1 hour')
 
-            # TODO TEMP FOR TESTING SEND EMIT ALWAYS
+        # TODO TEMP FOR TESTING SEND EMIT ALWAYS
         from nl.carcharging.config.WebAppConfig import WebAppConfig
-        with WebAppConfig.app.app_context():
+        #with WebAppConfig.app.app_context():
+        with WebAppConfig.app.test_request_context('/'):
             if self.appSocketIO is not None:
                 # Emit as web socket update
                 self.counter += 1
                 self.logger.debug(f'Send msg {self.counter} via websocket ...{device_measurement.to_str()}')
                 self.appSocketIO.emit('status_update', { 'data': device_measurement.to_str() }, namespace='/usage')
 
-            self.callback(device_measurement)
+        self.callback(device_measurement)
 
 
     def is_a_value_changed(self, old_measurement, new_measurement):
