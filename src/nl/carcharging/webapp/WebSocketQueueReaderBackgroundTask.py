@@ -43,7 +43,7 @@ class WebSocketQueueReaderBackgroundTask(object):
                 self.appSocketIO.emit('status_update', { 'data': 'whatever' }, namespace='/usage')
                 self.appSocketIO.emit(
                         msg['event'],
-                        msg['data'],
+                        { 'data' : msg['data'] },
                         msg['namespace']
                     )
                 self.wsEmitQueue.task_done()
