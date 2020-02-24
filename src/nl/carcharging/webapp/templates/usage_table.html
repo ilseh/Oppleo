@@ -302,7 +302,6 @@
 //          console.log(element.a_l1)
 
           $("span#energy_device_id").text("("+element.energy_device_id+")")
-          /*
           dt.row.add([
             element.created_at,
             element.kw_total,
@@ -320,7 +319,6 @@
             element.v_l3,
             element.hz
           ]).draw( false )
-          */
         })
       })
       .fail(function() {
@@ -357,23 +355,22 @@
         if (entryExists) {
           return
         }
-
         dt.row.add([
             msg.data.created_at,
-            msg.data.kw_total +'kWh',
-            msg.data.kwh_l1 +'kWh',
-            msg.data.kwh_l2 +'kWh',
-            msg.data.kwh_l3 +'kWh',
-            msg.data.a_l1 +'A',
-            msg.data.a_l2 +'A',
-            msg.data.a_l3 +'A',
-            msg.data.p_l1 +'W',
-            msg.data.p_l2 +'W',
-            msg.data.p_l3 +'W',
-            msg.data.v_l1 +'V',
-            msg.data.v_l1 +'V',
-            msg.data.v_l3 +'V',
-            msg.data.hz +'Hz'
+            msg.data.kw_total,
+            msg.data.kwh_l1,
+            msg.data.kwh_l2,
+            msg.data.kwh_l3,
+            msg.data.a_l1,
+            msg.data.a_l2,
+            msg.data.a_l3,
+            msg.data.p_l1,
+            msg.data.p_l2,
+            msg.data.p_l3,
+            msg.data.v_l1,
+            msg.data.v_l1,
+            msg.data.v_l3,
+            msg.data.hz
           ]).draw( false )
       })
       $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
