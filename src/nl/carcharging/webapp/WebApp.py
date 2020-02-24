@@ -212,6 +212,16 @@ if __name__ == "__main__":
             wsEmitQueue=wsEmitQueue
             )
 
+    """
+    device_measurement = EnergyDeviceMeasureModel().get_last_saved(WebAppConfig.ENERGY_DEVICE_ID)
+    from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+    WebSocketUtil.emit(
+            'status_update', 
+            device_measurement.to_str(),
+            namespace='/usage'
+        )
+    """
+
     if GenericUtil.isProd():
         # Start the Energy Device Monitor
         meuThread.start()

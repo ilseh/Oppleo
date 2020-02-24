@@ -14,6 +14,9 @@ class WebSocketUtil(object):
         if WebAppConfig.wsEmitQueue is not None:
             msg = {}
             msg['event'] = event
+            while 'data' in data:
+                # Nested, unravel
+                data = data['data']
             msg['data'] = data
             msg['namespace'] = namespace
             WebSocketUtil.logger.debug(f'Submit msg to websocket emit queue ... {msg}')
