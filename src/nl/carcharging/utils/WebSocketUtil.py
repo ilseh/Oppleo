@@ -19,9 +19,12 @@ class WebSocketUtil(object):
                 # Nested, unravel
                 data = data['data']
             """
-            msg['data'] = data
-            msg['status'] = status
-            msg['id'] = id
+            if data is not None:
+                msg['data'] = data
+            if status is not None:
+                msg['status'] = status
+            if id is not None:
+                msg['id'] = id
             msg['namespace'] = namespace
             WebSocketUtil.logger.debug(f'Submit msg to websocket emit queue ... {msg}')
             WebAppConfig.wsEmitQueue.put(msg)

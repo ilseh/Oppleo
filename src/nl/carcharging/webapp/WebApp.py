@@ -213,7 +213,7 @@ if __name__ == "__main__":
             wsEmitQueue=wsEmitQueue
             )
 
-    """
+    
     device_measurement = EnergyDeviceMeasureModel().get_last_saved(WebAppConfig.ENERGY_DEVICE_ID)
     from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
     WebSocketUtil.emit(
@@ -221,7 +221,10 @@ if __name__ == "__main__":
             device_measurement.to_str(),
             namespace='/usage'
         )
-    """
+    while True:
+        appSocketIO.sleep(1)
+        pass
+    
 
     if GenericUtil.isProd():
         # Start the Energy Device Monitor
