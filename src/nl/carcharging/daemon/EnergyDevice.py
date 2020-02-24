@@ -3,6 +3,7 @@ import logging
 
 from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.carcharging.utils.GenericUtil import GenericUtil
+from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
 
 
 SECONDS_IN_HOUR = 60 * 60
@@ -71,11 +72,7 @@ class EnergyDevice():
             if self.appSocketIO is not None:
                 # Emit as web socket update
                 self.counter += 1
-                self.logger.debug(f'Send msg {self.counter} via websocket ...{device_measurement.to_str()}')
-                """
-                self.appSocketIO.emit('status_update', { 'data': device_measurement.to_str() }, namespace='/usage')
-                """
-                from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+                self.logger.debug(f'Queue msg {self.counter} to be send via websocket ...{device_measurement.to_str()}')
                 WebSocketUtil.emit(
                         event='status_update', 
                         data=device_measurement.to_str(), 
