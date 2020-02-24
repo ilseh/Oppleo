@@ -1,7 +1,7 @@
     
 import logging
 
-from src.nl.carcharging.config.WebAppConfig import WebAppConfig
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 
 class WebSocketUtil(object):
