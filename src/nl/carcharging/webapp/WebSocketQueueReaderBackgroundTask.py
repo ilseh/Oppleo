@@ -41,10 +41,11 @@ class WebSocketQueueReaderBackgroundTask(object):
                 self.counter += 1
                 self.logger.debug(f'Send msg {self.counter} via websocket ...{msg}')
                 self.appSocketIO.emit('status_update', { 'data': 'whatever' }, namespace='/usage')
+                self.appSocketIO.emit('status_update', { 'data': msg['data'] } }, namespace='/usage')
                 self.appSocketIO.emit(
                         msg['event'],
                         { 'data' : msg['data'] },
-                        msg['namespace']
+                        namespace=msg['namespace']
                     )
                 self.wsEmitQueue.task_done()
             self.appSocketIO.sleep(0.5)
