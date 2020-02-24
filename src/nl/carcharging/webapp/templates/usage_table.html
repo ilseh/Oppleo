@@ -180,6 +180,7 @@
                        (d.getSeconds() < 10 ? '0' : '') + d.getSeconds()
               }
               if ( type === "sort" || type === 'type' ) {
+                // return plan data for sorting
                 return data;
               }
               // Default - type = 'display' - on screen or other exports
@@ -210,12 +211,15 @@
                   return ""
                 }
                 return (Math.round(data * 10) /10)
-              } else {
-                // Default - type = 'display' - on screen or other exports
-                return data == undefined || data === "None" ? 
-                        "-" : 
-                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'kWh</span>'
               }
+              if ( type === "sort" || type === 'type' ) {
+                // return plan data for sorting
+                return data;
+              }
+              // Default - type = 'display' - on screen or other exports
+              return data == undefined || data === "None" ? 
+                      "-" : 
+                      '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'kWh</span>'
             }
           }, {
             "targets": [5, 6, 7],
@@ -230,12 +234,15 @@
                   return ""
                 }
                 return (Math.round(data * 10) /10)
-              } else {
-                // Default - type = 'display' - on screen or other exports
-                return data == undefined || data === "None" ? 
-                        "-" : 
-                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'A</span>'
               }
+              if ( type === "sort" || type === 'type' ) {
+                // return plan data for sorting
+                return data;
+              }
+              // Default - type = 'display' - on screen or other exports
+              return data == undefined || data === "None" ? 
+                      "-" : 
+                      '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'A</span>'
             }
           }, {
             "targets": [8, 9, 10],
@@ -250,12 +257,15 @@
                   return ""
                 }
                 return (Math.round(data * 10) /10)
-              } else {
-                // Default - type = 'display' - on screen or other exports
-                return data == undefined || data === "None" ? 
-                        "-" : 
-                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'W</span>'
               }
+              if ( type === "sort" || type === 'type' ) {
+                // return plan data for sorting
+                return data;
+              }
+              // Default - type = 'display' - on screen or other exports
+              return data == undefined || data === "None" ? 
+                      "-" : 
+                      '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'W</span>'
             }
           }, {
             "targets": [11, 12, 13],
@@ -270,12 +280,15 @@
                   return ""
                 }
                 return (Math.round(data * 10) /10)
-              } else {
-                // Default - type = 'display' - on screen or other exports
-                return data == undefined || data === "None" ? 
-                        "-" : 
-                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'V</span>'
               }
+              if ( type === "sort" || type === 'type' ) {
+                // return plan data for sorting
+                return data;
+              }
+              // Default - type = 'display' - on screen or other exports
+              return data == undefined || data === "None" ? 
+                      "-" : 
+                      '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'V</span>'
             }
           }, {
             "targets": [14],
@@ -290,18 +303,20 @@
                   return ""
                 }
                 return ((Math.round(data * 10) /10).toFixed(1).replace('.', ','))
-              } else {
-                // Default - type = 'display' - on screen or other exports
-                return data == undefined || data === "None" ? 
-                        "-" : 
-                        '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'Hz</span>'
               }
+              if ( type === "sort" || type === 'type' ) {
+                // return plan data for sorting
+                return data;
+              }
+              // Default - type = 'display' - on screen or other exports
+              return data == undefined || data === "None" ? 
+                      "-" : 
+                      '<span style="text-align: right;">' + (Math.round(data * 10) /10).toFixed(1) + 'Hz</span>'
             }
           }]
         })
         dt.draw('full-reset')
         data.forEach(element => {
-//          console.log(element.a_l1)
 
           $("span#energy_device_id").text("("+element.energy_device_id+")")
           dt.row.add([

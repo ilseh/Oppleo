@@ -102,6 +102,7 @@ def load_user(username):
     return User.get(username)
 
 
+"""
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
     global webApplogger, threadLock, wsClientCnt, wsThread, appSocketIO
@@ -144,7 +145,7 @@ def disconnect():
         wsClientCnt -= 1
     webApplogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
 
-"""
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('errorpages/404.html'), 404
