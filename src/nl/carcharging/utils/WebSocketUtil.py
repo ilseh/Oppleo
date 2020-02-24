@@ -12,12 +12,11 @@ class WebSocketUtil(object):
         global WebAppConfig
 
         if WebAppConfig.wsEmitQueue is not None:
-            WebSocketUtil.logger.debug(f'Submit msg to websocket emit queue ... {msg}')
-
             msg = {}
             msg['event'] = event
             msg['data'] = data
             msg['namespace'] = namespace
+            WebSocketUtil.logger.debug(f'Submit msg to websocket emit queue ... {msg}')
             WebAppConfig.wsEmitQueue.put(msg)
         else:
             WebSocketUtil.logger.debug('Websocket emit queue not instantiated')
