@@ -486,7 +486,7 @@ class ChargerHandlerThread(object):
                     self.counter += 1
                     self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
 
-                    with WebAppConfig.app.test_request_context('/'):
+                    with WebAppConfig.app_context():
                         self.appSocketIO.emit(
                             'charge_session_data_update', 
                             { 
