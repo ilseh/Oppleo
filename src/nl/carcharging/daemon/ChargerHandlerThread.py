@@ -293,11 +293,9 @@ class ChargerHandlerThread(object):
             """
             from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
             WebSocketUtil.emit(
-                    'charge_session_started', 
-                    { 
-                            'id': WebAppConfig.ENERGY_DEVICE_ID,
-                            'data': charge_session.to_str() 
-                    }, 
+                    event='charge_session_started', 
+                    id=WebAppConfig.ENERGY_DEVICE_ID,
+                    data=charge_session.to_str(),
                     namespace='/charge_session'
                 )
 
@@ -326,11 +324,9 @@ class ChargerHandlerThread(object):
             """
             from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
             WebSocketUtil.emit(
-                    'charge_session_ended', 
-                    { 
-                            'id': WebAppConfig.ENERGY_DEVICE_ID,
-                            'data': charge_session.to_str() 
-                    }, 
+                    event='charge_session_ended', 
+                    id=WebAppConfig.ENERGY_DEVICE_ID,
+                    data=charge_session.to_str(),
                     namespace='/charge_session'
                 )
 
@@ -412,11 +408,9 @@ class ChargerHandlerThread(object):
                     """
                     from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
                     WebSocketUtil.emit(
-                            'charge_session_status_update', 
-                            { 
-                                'status': evse_state, 
-                                'id': WebAppConfig.ENERGY_DEVICE_ID
-                            }, 
+                            event='charge_session_status_update', 
+                            status=evse_state, 
+                            id=WebAppConfig.ENERGY_DEVICE_ID, 
                             namespace='/charge_session'
                         )
             if not self.ledlighter.is_charging_light_on():
@@ -442,11 +436,10 @@ class ChargerHandlerThread(object):
                     """
                     from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
                     WebSocketUtil.emit(
-                            'charge_session_status_update', 
-                            {   # INACTIVE IS ALSO CONNECTED
-                                'status': EvseState.EVSE_STATE_CONNECTED, 
-                                'id': WebAppConfig.ENERGY_DEVICE_ID
-                            }, 
+                            event='charge_session_status_update', 
+                            # INACTIVE IS ALSO CONNECTED
+                            status=EvseState.EVSE_STATE_CONNECTED, 
+                            id=WebAppConfig.ENERGY_DEVICE_ID, 
                             namespace='/charge_session'
                         )
                 if self.ledlighter.is_charging_light_on():
@@ -541,11 +534,9 @@ class ChargerHandlerThread(object):
                     """
                     from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
                     WebSocketUtil.emit(
-                            'charge_session_data_update', 
-                            { 
-                                'id': WebAppConfig.ENERGY_DEVICE_ID,
-                                'data': open_charge_session_for_device.to_str() 
-                            }, 
+                            event='charge_session_data_update', 
+                            id=WebAppConfig.ENERGY_DEVICE_ID,
+                            data=open_charge_session_for_device.to_str(), 
                             namespace='/charge_session'
                         )
 

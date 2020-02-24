@@ -77,8 +77,8 @@ class EnergyDevice():
                 """
                 from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
                 WebSocketUtil.emit(
-                        'status_update', 
-                        device_measurement.to_str(), 
+                        event='status_update', 
+                        data=device_measurement.to_str(), 
                         namespace='/usage'
                     )
 
@@ -87,17 +87,15 @@ class EnergyDevice():
         else:
             self.logger.debug('Not saving new measurement, no signbificant change and not older than 1 hour')
 
-        
+        """
         self.logger.debug('TESTING ------ SEND MEASUREMENT THROUGH QUEUE -------')
         from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
         WebSocketUtil.emit(
-                'status_update', 
-                { 
-                    'data': device_measurement.to_str()
-                }, 
+                event='status_update', 
+                data=device_measurement.to_str(), 
                 namespace='/usage'
             )
-        
+        """
 
 
     def is_a_value_changed(self, old_measurement, new_measurement):
