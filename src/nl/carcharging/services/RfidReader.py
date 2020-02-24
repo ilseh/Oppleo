@@ -33,6 +33,7 @@ class RfidReaderProd(object):
         text = None
         lastRun = 0
         while id is None:
+            # This call returns every time, with id is None when no rfid tag was detected
             id, text = self.reader.read_no_block()
             """
             TODO Off peak hours

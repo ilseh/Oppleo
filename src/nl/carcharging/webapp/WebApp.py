@@ -45,8 +45,26 @@ from flask_wtf.csrf import CSRFProtect
 CSRFProtect(app)
 
 
+"""
+  THREADING
+  Determing which threading model is used. Priority is eventlet, gevent, threading
+  Set this variable to "threading", "eventlet" or "gevent", or leave it set to None for 
+  the application to choose the best option based on available packages.
+
+  https://stackoverflow.com/questions/34581255/python-flask-socketio-send-message-from-thread-not-always-working
+  https://github.com/miguelgrinberg/Flask-SocketIO/blob/e024b7ec9db4837196d8a46ad1cb82bc1e15f1f3/example/app.py#L30-L31
+
+"""
+#async_mode = None
+async_mode = 'threading'
+
 from flask_socketio import SocketIO, emit
-appSocketIO = SocketIO(app)
+#socketio = SocketIO(app, async_mode=async_mode)
+webApplogger.debug('async_mode is ' + async_mode)
+appSocketIO = SocketIO(app, async_mode=async_mode)
+
+
+#appSocketIO = SocketIO(app)
 # Make it available through WebAppConfig
 WebAppConfig.appSocketIO = appSocketIO
 
