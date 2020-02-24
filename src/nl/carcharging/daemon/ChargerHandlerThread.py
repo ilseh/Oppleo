@@ -482,10 +482,12 @@ class ChargerHandlerThread(object):
                 self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
 #                open_charge_session_for_device.save() 
                 # Emit changes via web socket
-                if self.appSocketIO is not None:
+                if self.appSocketIO is not None and WebAppConfig.app is not None:
                     self.counter += 1
                     self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
-                    self.appSocketIO.emit(
+
+                    with WebAppConfig.app.test_request_context('/'):
+                        self.appSocketIO.emit(
                             'charge_session_data_update', 
                             { 
                                 'id': WebAppConfig.ENERGY_DEVICE_ID,
