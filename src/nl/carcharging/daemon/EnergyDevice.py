@@ -78,6 +78,9 @@ class EnergyDevice():
             self.logger.debug('Not saving new measurement because values of interest have not changed and last saved measurement'
                         ' is not older than 1 hour')
 
+        # TODO TEMP FOR TESTING SEND EMIT ALWAYS
+        self.callback(device_measurement)
+
 
     def is_a_value_changed(self, old_measurement, new_measurement):
         measurements_of_interest = {'kwh_l1', 'kwh_l2', 'kwh_l3', 'p_l1', 'p_l2', 'p_l3', 'a_l1', 'a_l2', 'a_l3',
