@@ -43,16 +43,12 @@ class WebSocketQueueReaderBackgroundTask(object):
                 # self.appSocketIO.emit('status_update', { 'data': 'whatever' }, namespace='/usage')
                 # self.appSocketIO.emit('status_update1', { 'data': msg['data'] }, namespace='/usage')
                 m_body = {}
-                self.logger.debug('STEP 1')
                 if 'data' in msg and msg['data'] is not None:
                     m_body['data'] = msg['data']
-                self.logger.debug('STEP 2')
                 if 'id' in msg and  msg['id'] is not None:
                     m_body['id'] = msg['id']
-                self.logger.debug('STEP 3')
                 if 'status' in msg and  msg['status'] is not None:
                     m_body['status'] = msg['status']
-                self.logger.debug('STEP 4')
                 self.appSocketIO.emit(
                         event=msg['event'],
                         data=m_body,
