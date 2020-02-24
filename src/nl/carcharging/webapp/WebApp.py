@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+from nl.carcharging.webapp.WebSocketQueueReaderBackgroundTask import WebSocketQueueReaderBackgroundTask
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
 WebAppConfig.initLogger('CarChargerWebApp')
@@ -54,6 +55,7 @@ import nl.carcharging.models.Base
 
 from flask_login import LoginManager
 import threading
+from queue import Queue
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import event
 
@@ -76,6 +78,9 @@ from nl.carcharging.services.EvseReader import EvseReader
 from nl.carcharging.webapp.flaskRoutes import flaskRoutes
 
 
+# Create an emit queue, for other Threads to communicate to th ews emit background task
+wsEmitQueue = Queue()
+WebAppConfig.wsEmitQueue = wsEmitQueue
 
 
 # The CarCharger root flaskRoutes
@@ -87,6 +92,7 @@ WebAppConfig.login_manager.init_app(app)
 
 threadLock = threading.Lock()
 wsThread = WebSocketThread()
+wsqrbBackgroundTask = WebSocketQueueReaderBackgroundTask()
 
 wsClientCnt = 0
 
@@ -121,12 +127,22 @@ def disconnect():
             wsThread.stop()
 """
 
-# This event currently is not used, just for reference
-@appSocketIO.on('my event', namespace='/usage')
-def handle_usage_event(json):
-    global webApplogger
-    webApplogger.debug('received json: ' + str(json))
-    return ( 'one', 2 )    # client callback
+
+@appSocketIO.on("connect", namespace="/usage")
+def connect():
+    global webApplogger, threadLock, wsClientCnt
+    with threadLock:
+        wsClientCnt += 1
+    webApplogger.debug('socketio.connect wsClientCnt {}'.format(wsClientCnt))
+    emit("server_status", "server_up")
+
+
+@appSocketIO.on("disconnect", namespace="/usage")
+def disconnect():
+    global webApplogger, threadLock, wsClientCnt
+    with threadLock:
+        wsClientCnt -= 1
+    webApplogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
 
 
 @app.errorhandler(404)
@@ -188,6 +204,24 @@ if __name__ == "__main__":
     meuThread.addCallback(chThread.energyUpdate)
     WebAppConfig.meuThread = meuThread
     WebAppConfig.chThread = chThread
+
+    # Starting the web socket queue reader background task
+    webApplogger.debug('Starting queue reader background task...')
+    wsqrbBackgroundTask.start(
+            appSocketIO=appSocketIO,
+            wsEmitQueue=wsEmitQueue
+            )
+
+    """
+    msg = {}
+    msg['event'] = 'status_update'
+    msg['data'] = 'test data' # device_measurement.to_str()
+    msg['namespace'] = '/usage'
+    wsEmitQueue.put(msg)
+    """
+
+    #while True:
+    #    appSocketIO.sleep(1)
 
     if GenericUtil.isProd():
         # Start the Energy Device Monitor

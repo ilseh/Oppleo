@@ -123,6 +123,7 @@ class WebAppConfig(object):
     meuThread = None
     chThread = None
 
+    wsEmitQueue = None
 
     @staticmethod
     def loadConfig(filename='carcharger.ini'):

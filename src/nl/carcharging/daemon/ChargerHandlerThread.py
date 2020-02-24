@@ -281,6 +281,7 @@ class ChargerHandlerThread(object):
         # Emit websocket update
         if self.appSocketIO is not None:
             self.logger.debug(f'Send msg charge_session_started via websocket ...{charge_session.to_str()}')
+            """
             self.appSocketIO.emit(
                     'charge_session_started', 
                     { 
@@ -289,6 +290,16 @@ class ChargerHandlerThread(object):
                     }, 
                     namespace='/charge_session'
                     )
+            """
+            from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+            WebSocketUtil.emit(
+                    'charge_session_started', 
+                    { 
+                            'id': WebAppConfig.ENERGY_DEVICE_ID,
+                            'data': charge_session.to_str() 
+                    }, 
+                    namespace='/charge_session'
+                )
 
 
     # evse_reader_thread
@@ -303,6 +314,7 @@ class ChargerHandlerThread(object):
         # Emit websocket update
         if self.appSocketIO is not None:
             self.logger.debug(f'Send msg charge_session_ended via websocket ...{charge_session.to_str()}')
+            """
             self.appSocketIO.emit(
                     'charge_session_ended', 
                     { 
@@ -311,6 +323,16 @@ class ChargerHandlerThread(object):
                     }, 
                     namespace='/charge_session'
                     )
+            """
+            from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+            WebSocketUtil.emit(
+                    'charge_session_ended', 
+                    { 
+                            'id': WebAppConfig.ENERGY_DEVICE_ID,
+                            'data': charge_session.to_str() 
+                    }, 
+                    namespace='/charge_session'
+                )
 
 
     # evse_reader_thread
@@ -378,6 +400,7 @@ class ChargerHandlerThread(object):
                 self.is_status_charging = True
                 if self.appSocketIO is not None:
                     self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
+                    """
                     self.appSocketIO.emit(
                             'charge_session_status_update', 
                             { 
@@ -386,6 +409,16 @@ class ChargerHandlerThread(object):
                             }, 
                             namespace='/charge_session'
                             )
+                    """
+                    from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+                    WebSocketUtil.emit(
+                            'charge_session_status_update', 
+                            { 
+                                'status': evse_state, 
+                                'id': WebAppConfig.ENERGY_DEVICE_ID
+                            }, 
+                            namespace='/charge_session'
+                        )
             if not self.ledlighter.is_charging_light_on():
                 self.logger.debug('Start charging light pulse')
                 self.ledlighter.charging()
@@ -397,6 +430,7 @@ class ChargerHandlerThread(object):
                 self.logger.debug("Charging is stopped")
                 if self.appSocketIO is not None:
                     self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
+                    """
                     self.appSocketIO.emit(
                             'charge_session_status_update', 
                             {   # INACTIVE IS ALSO CONNECTED
@@ -405,6 +439,16 @@ class ChargerHandlerThread(object):
                             }, 
                             namespace='/charge_session'
                             )
+                    """
+                    from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+                    WebSocketUtil.emit(
+                            'charge_session_status_update', 
+                            {   # INACTIVE IS ALSO CONNECTED
+                                'status': EvseState.EVSE_STATE_CONNECTED, 
+                                'id': WebAppConfig.ENERGY_DEVICE_ID
+                            }, 
+                            namespace='/charge_session'
+                        )
                 if self.ledlighter.is_charging_light_on():
                     self.ledlighter.back_to_previous_light()
 
@@ -480,14 +524,13 @@ class ChargerHandlerThread(object):
                 open_charge_session_for_device.total_price = \
                     round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
                 self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
-#                open_charge_session_for_device.save() 
+                open_charge_session_for_device.save() 
                 # Emit changes via web socket
                 if self.appSocketIO is not None and WebAppConfig.app is not None:
                     self.counter += 1
                     self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
-
-                    with WebAppConfig.app.app_context():
-                        self.appSocketIO.emit(
+                    """
+                    self.appSocketIO.emit(
                             'charge_session_data_update', 
                             { 
                                 'id': WebAppConfig.ENERGY_DEVICE_ID,
@@ -495,4 +538,14 @@ class ChargerHandlerThread(object):
                             }, 
                             namespace='/charge_session'
                             )
+                    """
+                    from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+                    WebSocketUtil.emit(
+                            'charge_session_data_update', 
+                            { 
+                                'id': WebAppConfig.ENERGY_DEVICE_ID,
+                                'data': open_charge_session_for_device.to_str() 
+                            }, 
+                            namespace='/charge_session'
+                        )
 
