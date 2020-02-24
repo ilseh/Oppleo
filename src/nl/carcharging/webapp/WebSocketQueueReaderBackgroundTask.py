@@ -50,8 +50,8 @@ class WebSocketQueueReaderBackgroundTask(object):
                 if 'status' in msg and  msg['status'] is not None:
                     m_body['status'] = msg['status']
                 self.appSocketIO.emit(
-                        event=msg['event'],
-                        data=m_body,
+                        msg['event'],
+                        m_body,
                         namespace=msg['namespace']
                     )
                 self.wsEmitQueue.task_done()
