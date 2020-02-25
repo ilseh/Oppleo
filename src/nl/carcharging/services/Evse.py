@@ -1,31 +1,42 @@
 import logging
+import threading
 
 from nl.carcharging.utils.GenericUtil import GenericUtil
+from nl.carcharging.config.WebAppConfig import WebAppConfig
+from threading import Lock
 
 GPIO = GenericUtil.importGpio()
 
-switch_pin = 5  # GPIO5 pin 29
 
 class EvseProd(object):
     logger = logging.getLogger('nl.carcharging.services.EvseProd')
-
+    threadLock = None
     try:
-        GPIO.setmode(GPIO.BCM) # Use physical pin numbering
-        GPIO.setup(switch_pin, GPIO.OUT, initial=GPIO.HIGH)
+        # GPIO.setmode(GPIO.BCM) # Use physical pin numbering
+        GPIO.setup(WebAppConfig.pinEvseSwitch, GPIO.OUT, initial=GPIO.HIGH)
     except Exception as ex:
         logger.debug("Could not setmode GPIO, assuming dev env")
 
+    def __init__(self):
+        self.threadLock = Lock()
+
 
     def switch_on(self):
-        self.logger.debug("Product evse on")
-        # Setting the output to LOW enables the charging. Keep low.
-        GPIO.output(switch_pin, GPIO.LOW)
+        global WebAppConfig
+
+        with self.threadLock:
+            self.logger.debug("Product evse on")
+            # Setting the output to LOW enables the charging. Keep low.
+            GPIO.output(WebAppConfig.pinEvseSwitch, GPIO.LOW)
 
 
     def switch_off(self):
-        self.logger.debug("Product Evse off")
-        # Setting the output to HIGH disables the charging. Keep high.
-        GPIO.output(switch_pin, GPIO.HIGH)
+        global WebAppConfig
+
+        with self.threadLock:
+            self.logger.debug("Product Evse off")
+            # Setting the output to HIGH disables the charging. Keep high.
+            GPIO.output(WebAppConfig.pinEvseSwitch, GPIO.HIGH)
 
 
 class EvseDev(object):
@@ -36,6 +47,7 @@ class EvseDev(object):
 
     def switch_off(self):
         self.logger.debug("Fake turn evse off")
+
 
 class Evse(object):
 

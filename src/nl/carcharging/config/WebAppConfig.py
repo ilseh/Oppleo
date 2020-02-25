@@ -92,6 +92,12 @@ class WebAppConfig(object):
     autoSessionCondenseSameOdometer = False
 
     # GPIO MODE - BCM or BOARD (BCM is more future proof/ less direct hardware related)
+    #   -1 if GPIO.setmode() is not set
+    #   11 if GPIO.setmode(GPIO.BCM) is active
+    #   10 if GPIO.setmode(GPIO.BOARD) is active
+    # Once you’ve set the mode, you can only change it once you’ve done a GPIO.cleanup(). But you can only do 
+    # GPIO.cleanup() once you’ve configured a port. You can’t flick between GPIO modes without first setting up 
+    # a port, then cleaning up.
     gpioMode = 'BCM'
     # Pulsing LED values
     pulseLedMin = 3
@@ -102,6 +108,8 @@ class WebAppConfig(object):
     pinLedBlue = 16
     # Raspberry PINs - Buzzer - PIN 16/ GPIO23
     pinBuzzer = 23 
+    # Raspberry PINs - Buzzer - PIN 29/ GPIO5
+    pinEvseSwitch = 5
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
