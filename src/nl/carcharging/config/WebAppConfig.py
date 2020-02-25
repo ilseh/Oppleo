@@ -111,6 +111,12 @@ class WebAppConfig(object):
     # Raspberry PINs - Buzzer - PIN 29/ GPIO5
     pinEvseSwitch = 5
 
+    # Peak/ Off Peak enabled. If enabled the EVSE will be disabled during off-peak hours
+    peakHoursOffPeakEnabled = True
+    # Off Peak disabled for this period (not-persistent)
+    peakHoursAllowPeakOnePeriod = False
+    
+
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
     sqlalchemy_session = None
@@ -122,8 +128,6 @@ class WebAppConfig(object):
 
     # The time between database queries for energy state updates, in seconds
     device_measurement_check_interval = 7
-    # The time between peak/ off peak checks to enable or disable the EVSE, in seconds
-    off_peak_check_interval = 60
 
     prowlEnabled = True
     prowlApiKey = '5df94c19d71b4b456efcb49996406fa62e717a44'

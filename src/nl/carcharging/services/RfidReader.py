@@ -31,33 +31,9 @@ class RfidReaderProd(object):
         #   return self.reader.read()
         id = None
         text = None
-        lastRun = 0
         while id is None:
             # This call returns every time, with id is None when no rfid tag was detected
             id, text = self.reader.read_no_block()
-            """
-            TODO Off peak hours
-            if check for offpeak
-                if off peak and reader is enabled but evse is not, go ahead and open evse 
-                    (and possibly wake car for charging)
-                    oh, and reset any 'over-ride off peak for once' authorizations
-                if not off peak and reader is enabled, go ahead and close evse
-                    maybe warn through prowl?
-            Check only once per 1 or 5 minutes, to prevent database overload and bad rfid response 
-            """
-            # Sleep is interruptable by other threads, but sleeing 7 seconds before checking if 
-            # stop is requested is a bit long, so sleep for 0.1 seconds, then check passed time
-            if (time.time() *1000.0) > (lastRun + (WebAppConfig.off_peak_check_interval *1000.0)):
-                # time to run again
-
-                """
-                from nl.carcharging.models.OffPeakHoursModel import OffPeakHoursModel
-                ohm = OffPeakHoursModel()
-                is_op = ohm.is_off_peak_now()
-                if is_op and 
-                """
-
-                lastRun = time.time() *1000.0
             # Sleep for just a little to yield for other threads
             WebAppConfig.appSocketIO.sleep(0.05)
 

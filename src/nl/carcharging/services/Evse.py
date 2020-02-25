@@ -38,6 +38,16 @@ class EvseProd(object):
             # Setting the output to HIGH disables the charging. Keep high.
             GPIO.output(WebAppConfig.pinEvseSwitch, GPIO.HIGH)
 
+    # Read the state
+    def is_enabled(self):
+        global WebAppConfig
+
+        with self.threadLock:
+            # Note: LOW is ON, and HIGH is OFF
+            state = GPIO.input(WebAppConfig.pinEvseSwitch)
+            self.logger.debug("Product Evse read state {} (return {})".format(state, (not state)))
+            return not GPIO.input(WebAppConfig.pinEvseSwitch)
+
 
 class EvseDev(object):
     logger = logging.getLogger('nl.carcharging.services.EvseDev')
@@ -47,6 +57,10 @@ class EvseDev(object):
 
     def switch_off(self):
         self.logger.debug("Fake turn evse off")
+
+    def is_enabled(self):
+        self.logger.debug("Fake read evse state")
+        return True
 
 
 class Evse(object):
@@ -65,3 +79,6 @@ class Evse(object):
 
     def switch_off(self):
         self.evse.switch_off()
+
+    def is_enabled(self):
+        return self.evse.is_enabled()
