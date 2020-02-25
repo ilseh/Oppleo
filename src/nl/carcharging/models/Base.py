@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -26,6 +27,8 @@ WebAppConfig.sqlalchemy_session_factory = session_factory
 WebAppConfig.sqlalchemy_session = DbSession
 
 def init_db():
+    logger = logging.getLogger('nl.carcharging.models.Base init_db()')
+
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
@@ -36,7 +39,11 @@ def init_db():
     import nl.carcharging.models.OffPeakHoursModel
     import nl.carcharging.models.RfidModel
     import nl.carcharging.models.User
-    Base.metadata.create_all(bind=engine)
- 
+    try:
+        Base.metadata.create_all(bind=engine)
+    except:
+        logger.error('COULD NOT CONNECT TO DATABASE!!!')
+        raise SystemExit
+
 init_db()
 
