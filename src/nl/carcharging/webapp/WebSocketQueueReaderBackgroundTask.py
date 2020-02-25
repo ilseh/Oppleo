@@ -54,7 +54,6 @@ class WebSocketQueueReaderBackgroundTask(object):
                         data=m_body,
                         namespace=msg['namespace']
                     )
-                self.logger.debug('STEP 5')
                 self.wsEmitQueue.task_done()
             self.appSocketIO.sleep(0.5)
 
