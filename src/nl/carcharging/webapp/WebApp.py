@@ -68,6 +68,7 @@ from nl.carcharging.webapp.WebSocketThread import WebSocketThread
 
 from nl.carcharging.daemon.MeasureElectricityUsageThread import MeasureElectricityUsageThread
 from nl.carcharging.daemon.ChargerHandlerThread import ChargerHandlerThread
+from nl.carcharging.daemon.PeakHoursMonitorThread import PeakHoursMonitorThread
 from nl.carcharging.utils.EnergyUtil import EnergyUtil
 from nl.carcharging.services.Charger import Charger
 from nl.carcharging.services.LedLighter import LedLighter
@@ -203,8 +204,11 @@ if __name__ == "__main__":
                     appSocketIO=appSocketIO
                 )
     meuThread.addCallback(chThread.energyUpdate)
+    phmThread = PeakHoursMonitorThread(appSocketIO)
+
     WebAppConfig.meuThread = meuThread
     WebAppConfig.chThread = chThread
+    WebAppConfig.phmThread = phmThread
 
     # Starting the web socket queue reader background task
     webApplogger.debug('Starting queue reader background task...')
@@ -231,6 +235,10 @@ if __name__ == "__main__":
         meuThread.start()
         # Start the RFID Monitor
         chThread.start()
+
+    # Start the Peak Hours Monitor
+    phmThread.start()
+
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(

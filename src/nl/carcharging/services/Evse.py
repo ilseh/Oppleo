@@ -7,6 +7,14 @@ from threading import Lock
 
 GPIO = GenericUtil.importGpio()
 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 
 class EvseProd(object):
     logger = logging.getLogger('nl.carcharging.services.EvseProd')
@@ -62,20 +70,35 @@ class EvseDev(object):
         self.logger.debug("Fake read evse state")
         return True
 
-
-class Evse(object):
+"""
+  This is a Singleton. This allows the Off Peak status to be stored, and captures EVSE being switched
+  ON in off-peak hours before it actually is switched on.
+"""
+class Evse(object, metaclass=Singleton):
+    isOffPeak = False
 
     def __init__(self):
         self.logger = logging.getLogger('nl.carcharging.services.Evse')
         if GenericUtil.isProd():
             self.logger.debug("Using production Evse")
-            self.evse = EvseProd();
+            self.evse = EvseProd()
         else:
             self.logger.debug("Using fake Evse")
             self.evse = EvseDev()
 
     def switch_on(self):
-        self.evse.switch_on()
+        if not WebAppConfig.peakHoursOffPeakEnabled or \
+                    self.isOffPeak or \
+                    WebAppConfig.peakHoursAllowPeakOnePeriod:
+            self.logger.debug('EVSE switched ON (OffPeakEnabled:{}, offPeak={}, PeakAllowed={}).'.format( \
+                            WebAppConfig.peakHoursOffPeakEnabled, \
+                            self.isOffPeak, \
+                            WebAppConfig.peakHoursAllowPeakOnePeriod
+                            )
+                        )
+            self.evse.switch_on()
+        else:
+            self.logger.debug('Evse NOT switched on. Waiting for Off Peak hours')
 
     def switch_off(self):
         self.evse.switch_off()

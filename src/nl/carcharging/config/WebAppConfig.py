@@ -134,6 +134,7 @@ class WebAppConfig(object):
 
     meuThread = None
     chThread = None
+    phmThread = None
 
     wsEmitQueue = None
 

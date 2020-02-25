@@ -20,8 +20,8 @@ class PeakHoursMonitorThread(object):
 
     sleepInterval = 0.25
 
-    def __init__(self, 
-                appSocketIO: appSocketIO
+    def __init__(self, \
+                appSocketIO: appSocketIO \
                 ):
         self.threadLock = threading.Lock()
         self.stop_event = threading.Event()
@@ -61,7 +61,6 @@ class PeakHoursMonitorThread(object):
         offPeakWindowCheckLastRun = 0
         ohm = OffPeakHoursModel()
         evse = Evse()
-        isOffPeak = False
         while not self.stop_event.is_set():
 
             """ 
@@ -69,9 +68,13 @@ class PeakHoursMonitorThread(object):
             """
             if (time.time() *1000.0) > (offPeakWindowCheckLastRun + (self.offPeakWindowCheckInterval *1000.0)):
                 # Time to determine if it is Off Peak again
-                wasOffPeak = isOffPeak
-                isOffPeak = ohm.is_off_peak_now()
-                self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format(wasOffPeak, isOffPeak))
+                wasOffPeak = evse.isOffPeak
+                evse.isOffPeak = ohm.is_off_peak_now()
+                self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( \
+                                wasOffPeak, \
+                                evse.isOffPeak
+                                )
+                            )
                 offPeakWindowCheckLastRun = time.time() *1000.0
 
             """ 
@@ -83,7 +86,7 @@ class PeakHoursMonitorThread(object):
 
                 # If the EVSE is enabled, it is Peak hours, OffPeak enabled in settings, and not overridden 
                 # for one session, switch the EVSE off untill the next Off Peak hours
-                if (not isOffPeak and \
+                if (not evse.isOffPeak and \
                     evse.is_enabled() and \
                     WebAppConfig.peakHoursOffPeakEnabled and \
                     not WebAppConfig.peakHoursAllowPeakOnePeriod):
@@ -93,7 +96,7 @@ class PeakHoursMonitorThread(object):
 
                 # If the EVSE is disabled, it is Off Peak hours, and there is an open charge session, enable the EVSE
                 # Clear one-session override
-                if (isOffPeak and not evse.is_enabled()):
+                if (evse.isOffPeak and not evse.is_enabled()):
                     # Only see if charge session exists in the database if the EVSE is enabled Off Peak
                     csm = ChargeSessionModel.get_open_charge_session_for_device(
                                                 WebAppConfig.ENERGY_DEVICE_ID
@@ -105,13 +108,11 @@ class PeakHoursMonitorThread(object):
                     # Off peak now, reset the one session peak authorization
                     WebAppConfig.peakHoursAllowPeakOnePeriod = False
 
-
                 changeEvseStatusCheckLastRun = time.time() *1000.0
                 pass
 
-
             # Sleep for quite a while, and yield for other threads
-            WebAppConfig.appSocketIO.sleep(self.sleepInterval)
+            self.appSocketIO.sleep(self.sleepInterval)
 
         self.logger.info("Stopping PeakHoursMonitorThread")
 
