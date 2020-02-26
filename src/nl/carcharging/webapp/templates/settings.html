@@ -9,6 +9,11 @@
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
+  <!-- Ion slider -->
+  <link href="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.css') }}"rel="stylesheet" type="text/css"/>
+  <link href="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.skinFlat.css') }}"rel="stylesheet" type="text/css"/>
+  <script src="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.min.js') }}"></script>
+
   <style>
     .paginate_button {
         padding: 0px !important;
@@ -105,6 +110,18 @@
         JSON.stringify(diag_data, undefined, 2) 
       )
       $('pre#diag_json').show()
+      $("#range_03").ionRangeSlider({
+        type: "double",
+        grid: true,
+        min: 0,
+        max: 24,
+        from: 7,
+        to: 23,
+        postfix: 'u',
+        prefix: '',
+        skin: "sharp"
+      })
+
       // Remove spinner
       $('.spinner').hide()
     })
@@ -156,7 +173,7 @@
               <div class="tab-content">
 
                   <div class="tab-pane{% if active==1 %} active{% endif %}" id="v-charger">
-                    <div class="col-lg-6">
+                    <div class="col-lg-12">
                       <div class="card-box">
                         <h4 class="m-t-0 header-title"><i class="fas fa-charging-station"></i> Laadpunt</h4>
                         <table class="table table-striped table-sm">
@@ -164,7 +181,7 @@
                             {% if ('charger_name' in charger_config) %}
                             <tr>
                               <td class="text-dark">Naam laadpunt:</td>
-                              <td class="text-primary">{{ charger_config['charger_name'] }}</td>
+                              <td class="text-primary" style="width: 75%;">{{ charger_config['charger_name'] }}</td>
                             </tr>
                             {% endif %}
                             <tr>
@@ -183,7 +200,93 @@
                               <td class="text-primary">{{ charger_config['modified_at'] }}</td>
                             </tr>
                             {% endif %}
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> Daluren</th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Daluren ingeschakeld:</td>
+                              <td class="text-primary">{{ webappconfig.peakHoursOffPeakEnabled }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Eenmalig piekuren toestaan:</td>
+                              <td class="text-primary">{{ webappconfig.peakHoursAllowPeakOnePeriod }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Maandag:</td>
+                              <td class="text-primary">
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 10%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Dinsdag:</td>
+                              <td class="text-primary">
+                                <div class="form-group">
+                                  <label for="range_03" class="control-label"><b>Prefix</b> <span class="font-normal text-muted f-s-12 clearfix">showing grid and adding prefix "$"</span></label>
+                                  <div class="m-b-20">
+                                      <input type="text" id="range_03">
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Woensdag:</td>
+                              <td class="text-primary">
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 10%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Donderdag:</td>
+                              <td class="text-primary">
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 10%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Vrijdag:</td>
+                              <td class="text-primary">
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 10%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Zaterdag:</td>
+                              <td class="text-primary">
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Zondag:</td>
+                              <td class="text-primary">
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                              </td>
+                            </tr>
+
+
+
                           </tbody>
+
+
                         </table>
                       </div>
                     </div>
