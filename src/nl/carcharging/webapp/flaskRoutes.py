@@ -30,6 +30,7 @@ from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
 from nl.carcharging.api.TeslaApi import TeslaAPI
 from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
+from nl.carcharging.services.Evse import Evse
 from nl.carcharging.services.EvseReaderProd import EvseState
 """ 
  - make sure all url_for routes point to this blueprint
@@ -556,25 +557,34 @@ def active_charge_session():
         ChargeSessionModel.get_open_charge_session_for_device(
                 WebAppConfig.ENERGY_DEVICE_ID
         )
+    evse = Evse()
     if open_charge_session_for_device is None:
         # None, no active session
         return jsonify({
-            'status': 404, 
-            'id': WebAppConfig.ENERGY_DEVICE_ID, 
-            'reason': 'No active charge session'
+            'status'    : 404, 
+            'id'        : WebAppConfig.ENERGY_DEVICE_ID, 
+            'session'   : 'None',
+            'enabled'   : 'True' if evse.is_enabled() else 'False',
+            'charging'  : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
+            'isOffPeak' : 'True' if evse.isOffPeak else 'False',
+            'reason'    : 'No active charge session'
             })
     try:
         return jsonify({ 
-            'status': json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
-            'id': WebAppConfig.ENERGY_DEVICE_ID, 
-            'data': open_charge_session_for_device.to_str() 
+            'status'    : 200,
+            'id'        : WebAppConfig.ENERGY_DEVICE_ID, 
+            'session'   : 'Active' if open_charge_session_for_device is not None else 'None',
+            'enabled'   : 'True' if evse.is_enabled() else 'False',
+            'charging'  : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
+            'isOffPeak' : 'True' if evse.isOffPeak else 'False',
+            'data'      : open_charge_session_for_device.to_str() 
             })
     except Exception as e:
         pass
     return jsonify({ 
-        'status': json.dump(EvseState.EVSE_STATE_UNKNOWN),
-        'id': WebAppConfig.ENERGY_DEVICE_ID, 
-        'reason': 'Could not determine charge session'
+        'status'        : 500, 
+        'id'            : WebAppConfig.ENERGY_DEVICE_ID, 
+        'reason'        : 'Could not determine charge session'
         })
 
 
@@ -803,3 +813,4 @@ def TeslaApi_RevokeOAuth(token=None):
         'expires_in': '',
         'vehicles' : ''
         })
+

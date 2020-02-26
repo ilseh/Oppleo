@@ -3,7 +3,7 @@ import threading
 
 from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.config.WebAppConfig import WebAppConfig
-from threading import Lock
+from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
 
 GPIO = GenericUtil.importGpio()
 
@@ -26,7 +26,7 @@ class EvseProd(object):
         logger.debug("Could not setmode GPIO, assuming dev env")
 
     def __init__(self):
-        self.threadLock = Lock()
+        self.threadLock = threading.Lock()
 
 
     def switch_on(self):
@@ -75,6 +75,8 @@ class EvseDev(object):
   ON in off-peak hours before it actually is switched on.
 """
 class Evse(object, metaclass=Singleton):
+    logger = None
+    evse = None
     isOffPeak = False
 
     def __init__(self):
@@ -97,11 +99,22 @@ class Evse(object, metaclass=Singleton):
                             )
                         )
             self.evse.switch_on()
+            WebSocketUtil.emit(
+                    event='evse_enabled', 
+                    id=WebAppConfig.ENERGY_DEVICE_ID,
+                    namespace='/evse_status'
+                )
+
         else:
             self.logger.debug('Evse NOT switched on. Waiting for Off Peak hours')
 
     def switch_off(self):
         self.evse.switch_off()
+        WebSocketUtil.emit(
+                event='evse_disabled', 
+                id=WebAppConfig.ENERGY_DEVICE_ID,
+                namespace='/evse_status'
+            )
 
     def is_enabled(self):
         return self.evse.is_enabled()

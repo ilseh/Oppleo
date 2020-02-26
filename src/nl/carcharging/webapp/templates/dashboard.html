@@ -303,32 +303,44 @@
         // log data to the console so we can see
         console.log(result)
         switch(parseInt(result.status)) {
+          case 200:                   // Active charge session
+
+            /*
+            result.session // Is there an Active Charge session? Should be Active (None should return 404)
+            result.enabled // Is the EVSE Enabled? True or False
+            result.charging // Is the vehicle charging? EVSE_STATE_CONNECTED or EVSE_STATE_CHARGING
+            result.isOffPeak // True or False based on Off Peak hours
+            result.data // Active or None
+            */
+
+            // Is the vehicle charging? EVSE_STATE_CONNECTED or EVSE_STATE_CHARGING
+            if (result.charging == EVSE_STATE_CONNECTED) {
+              // Ready for charging, but no activity (yellow)
+              $('div#statusReady').find('div').find('p').text(
+                chargeDetailStr(result.id, result.data)
+              )
+              $('div#statusReady').show()
+              $('div#statusCharging').hide()
+            }
+            if (result.charging == EVSE_STATE_CHARGING) {
+              // Ready for charging, but no activity (yellow)
+              $('div#statusCharging').find('div').find('p').text(
+                chargeDetailStr(result.id, result.data)
+              )
+              $('div#statusReady').hide()
+              $('div#statusCharging').show()
+            }
+            $('div#statusAvailable').hide()
+            $('div#statusError').hide()
+
+            break
           case 404:                   // No charge session found (green)
-          case EVSE_STATE_INACTIVE:   // No charge session (green)
             $('div#statusAvailable').show()
             $('div#statusReady').hide()
             $('div#statusCharging').hide()
             $('div#statusError').hide()
             break
-          case EVSE_STATE_CONNECTED:  // Ready for charging, but no activity (yellow)
-            $('div#statusReady').find('div').find('p').text(
-              chargeDetailStr(result.id, result.data)
-            )
-            $('div#statusAvailable').hide()
-            $('div#statusReady').show()
-            $('div#statusCharging').hide()
-            $('div#statusError').hide()
-            break
-          case EVSE_STATE_CHARGING:   // Charging activity (blue)
-            $('div#statusCharging').find('div').find('p').text(
-              chargeDetailStr(result.id, result.data)
-            )
-            $('div#statusAvailable').hide()
-            $('div#statusReady').hide()
-            $('div#statusCharging').show()
-            $('div#statusError').hide()
-            break
-          case EVSE_STATE_UNKNOWN:    // Error (red)
+          case 500:    // Error (red)
           default:
             $('div#statusAvailable').hide()
             $('div#statusReady').hide()
