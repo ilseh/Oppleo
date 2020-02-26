@@ -561,23 +561,23 @@ def active_charge_session():
     if open_charge_session_for_device is None:
         # None, no active session
         return jsonify({
-            'status'    : 404, 
-            'id'        : WebAppConfig.ENERGY_DEVICE_ID, 
-            'session'   : 'None',
-            'enabled'   : 'True' if evse.is_enabled() else 'False',
-            'charging'  : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
-            'isOffPeak' : 'True' if evse.isOffPeak else 'False',
-            'reason'    : 'No active charge session'
+            'status'        : 404, 
+            'id'            : WebAppConfig.ENERGY_DEVICE_ID, 
+            'chargeSession' : 'None',
+            'evseEnabled'   : 'True' if evse.is_enabled() else 'False',
+            'charging'      : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
+            'offPeak'       : 'True' if evse.isOffPeak else 'False',
+            'reason'        : 'No active charge session'
             })
     try:
         return jsonify({ 
-            'status'    : 200,
-            'id'        : WebAppConfig.ENERGY_DEVICE_ID, 
-            'session'   : 'Active' if open_charge_session_for_device is not None else 'None',
-            'enabled'   : 'True' if evse.is_enabled() else 'False',
-            'charging'  : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
-            'isOffPeak' : 'True' if evse.isOffPeak else 'False',
-            'data'      : open_charge_session_for_device.to_str() 
+            'status'        : 200,
+            'id'            : WebAppConfig.ENERGY_DEVICE_ID, 
+            'chargeSession' : 'Active' if open_charge_session_for_device is not None else 'None',
+            'evseEnabled'   : 'True' if evse.is_enabled() else 'False',
+            'charging'      : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
+            'offPeak'       : 'True' if evse.isOffPeak else 'False',
+            'data'          : open_charge_session_for_device.to_str() 
             })
     except Exception as e:
         pass

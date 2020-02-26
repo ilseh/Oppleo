@@ -405,7 +405,11 @@
       console.log(timestamp() + " file load completed")
 
       $('input#enabled').bootstrapToggle()
-
+      $('[data-toggle=tooltip]').tooltip({ 
+        boundary: 'window', 
+        trigger : 'hover'   // Allow button clicks
+      })
+ 
       hideChargeSession()
       getChargeSessionStatus()
       getUsageData(1)
@@ -424,56 +428,62 @@
       <!-- Page-Title -->
       <div class="row">
           <div class="col-sm-12">
-              <div class="page-title-box">
-                  <h4 class="page-title">Dashboard</h4>
+                <div class="page-title-box">
+                  <div class="btn-group pull-right">
+
+                      <span class="badge badge-success"
+                            id="evseEnabled"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="EVSE ingeschakeld."
+                            >
+                            <i class="fas fa-charging-station"></i>
+                      </span>
+                      &nbsp;
+                      <span class="badge badge-primary"
+                            id="chargeSession"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Laadsessie actief."
+                            >
+                            <i class="far fa-clipboard"></i>
+                      </span>
+                      &nbsp;
+                      <span class="badge badge-success"
+                            id="offPeak"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Daluren actief."
+                            >
+                            <i class="far fa-clock"></i>
+                      </span>
+                      &nbsp;
+                      <span class="badge badge-primary"
+                            id="charging"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Laden..."
+                            >
+                            <i class="mdi mdi-battery-charging-40"></i>
+                      </span>
+                      &nbsp;
+                      <span class="badge badge-dark">22,4kWh</span>
+                      &nbsp;
+                      <span class="badge badge-dark">&euro; 1,34</span>
+        
+                </div>
+                <h4 class="page-title">Dashboard</h4>
               </div>
+
+
+
           </div>
       </div>
       <!-- end page title end breadcrumb -->
-
-      <div class="row">
-        <div class="col-sm-12">
-            <div id="controlBar" class="card m-b-20 text-white">
-                <div class="card-body">
-                    <p class="card-text">
-
-                      <form id="rfid-change-form" class="form-horizontal m-t-20" method="POST" action="">
-                
-                                <input type="checkbox" 
-                                  checked
-                                  name="enabled"
-                                  id="enabled"
-                                  data-toggle="toggle"
-                                  data-on="<i class='far fa-thumbs-up'></i></i> Open EVSE"
-                                  data-off="<i class='far fa-thumbs-down'></i> Sluit EVSE"
-                                  data-onstyle="primary"
-                                  data-offstyle="dark"
-                                  data-size="sm"
-                                  data-height="40"
-                                  data-width="180"
-                                />
-                                <input type="checkbox" 
-                                  checked
-                                  name="enabled"
-                                  id="enabled2"
-                                  data-toggle="toggle"
-                                  data-on="<i class='far fa-thumbs-up'></i></i> Dal- en piektarief"
-                                  data-off="<i class='far fa-thumbs-down'></i> Alleen Daltarief"
-                                  data-onstyle="success"
-                                  data-offstyle="dark"
-                                  data-size="sm"
-                                  data-height="40"
-                                  data-width="180"
-                                />
-
-                        </form>
-
-                    </p>
-                </div>
-            </div>
-        </div>
-      </div>
-
 
       <div class="row">
         <div class="col-sm-12">
