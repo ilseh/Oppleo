@@ -11,6 +11,10 @@
   <script src="{{ url_for('static', filename='plugins/jquery-circliful/js/jquery.circliful.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/jquery-circliful/js/jquery.circliful.min.js') }}"></script>
   
+  <!-- Bootstrap switch button -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
+  <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
+
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
@@ -399,6 +403,9 @@
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed")
+
+      $('input#enabled').bootstrapToggle()
+
       hideChargeSession()
       getChargeSessionStatus()
       getUsageData(1)
@@ -423,6 +430,50 @@
           </div>
       </div>
       <!-- end page title end breadcrumb -->
+
+      <div class="row">
+        <div class="col-sm-12">
+            <div id="controlBar" class="card m-b-20 text-white">
+                <div class="card-body">
+                    <p class="card-text">
+
+                      <form id="rfid-change-form" class="form-horizontal m-t-20" method="POST" action="">
+                
+                                <input type="checkbox" 
+                                  checked
+                                  name="enabled"
+                                  id="enabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> Open EVSE"
+                                  data-off="<i class='far fa-thumbs-down'></i> Sluit EVSE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="40"
+                                  data-width="180"
+                                />
+                                <input type="checkbox" 
+                                  checked
+                                  name="enabled"
+                                  id="enabled2"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> Dal- en piektarief"
+                                  data-off="<i class='far fa-thumbs-down'></i> Alleen Daltarief"
+                                  data-onstyle="success"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="40"
+                                  data-width="180"
+                                />
+
+                        </form>
+
+                    </p>
+                </div>
+            </div>
+        </div>
+      </div>
+
 
       <div class="row">
         <div class="col-sm-12">
