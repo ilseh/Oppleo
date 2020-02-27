@@ -327,7 +327,7 @@
       })
       chargeSessionSocket.on('charge_session_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        updateChargingIndicator( (msg.status == EVSE_STATE_CHARGING), false, true )
+        updateChargingIndicator( true, (msg.status == EVSE_STATE_CHARGING), false, true )
       })
       chargeSessionSocket.on('charge_session_data_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
