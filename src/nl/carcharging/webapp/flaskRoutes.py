@@ -547,7 +547,7 @@ def usage_data_since(since_timestamp, cnt=-1):
 
 @flaskRoutes.route("/active_charge_session", methods=["GET"])
 @flaskRoutes.route("/active_charge_session/", methods=["GET"])
-@authenticated_resource
+# @authenticated_resource
 def active_charge_session():
     global WebAppConfig
 
@@ -561,23 +561,27 @@ def active_charge_session():
     if open_charge_session_for_device is None:
         # None, no active session
         return jsonify({
-            'status'        : 404, 
-            'id'            : WebAppConfig.ENERGY_DEVICE_ID, 
-            'chargeSession' : 'None',
-            'evseEnabled'   : 'True' if evse.is_enabled() else 'False',
-            'charging'      : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
-            'offPeak'       : 'True' if evse.isOffPeak else 'False',
-            'reason'        : 'No active charge session'
+            'status'            : 404, 
+            'id'                : WebAppConfig.ENERGY_DEVICE_ID, 
+            'chargeSession'     : False,
+            'evseEnabled'       : True if evse.is_enabled() else False,
+            'charging'          : True if WebAppConfig.chThread.is_status_charging else False,
+            'offPeakEnabled'    : WebAppConfig.peakHoursOffPeakEnabled,
+            'offPeak'           : True if evse.isOffPeak else False,
+            'auth'              : True if (current_user.is_authenticated) else False,
+            'reason'            : 'No active charge session'
             })
     try:
         return jsonify({ 
-            'status'        : 200,
-            'id'            : WebAppConfig.ENERGY_DEVICE_ID, 
-            'chargeSession' : 'Active' if open_charge_session_for_device is not None else 'None',
-            'evseEnabled'   : 'True' if evse.is_enabled() else 'False',
-            'charging'      : json.dumps(EvseState.EVSE_STATE_CHARGING) if WebAppConfig.chThread.is_status_charging else json.dumps(EvseState.EVSE_STATE_CONNECTED),
-            'offPeak'       : 'True' if evse.isOffPeak else 'False',
-            'data'          : open_charge_session_for_device.to_str() 
+            'status'            : 200,
+            'id'                : WebAppConfig.ENERGY_DEVICE_ID, 
+            'chargeSession'     : True if open_charge_session_for_device is not None else False,
+            'evseEnabled'       : True if evse.is_enabled() else False,
+            'charging'          : True if WebAppConfig.chThread.is_status_charging else False,
+            'offPeakEnabled'    : WebAppConfig.peakHoursOffPeakEnabled,
+            'offPeak'           : True if evse.isOffPeak else False,
+            'auth'              : True if (current_user.is_authenticated) else False,
+            'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated) else None
             })
     except Exception as e:
         pass

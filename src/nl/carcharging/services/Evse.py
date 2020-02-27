@@ -68,7 +68,7 @@ class EvseDev(object):
 
     def is_enabled(self):
         self.logger.debug("Fake read evse state")
-        return True
+        return False
 
 """
   This is a Singleton. This allows the Off Peak status to be stored, and captures EVSE being switched
