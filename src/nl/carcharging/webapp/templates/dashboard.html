@@ -19,10 +19,10 @@
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
   <style>
-  div#statusCharging {
+  span.badge-primary {
     background-color: #0a7aa3; /*#222; */
     animation-name: chargingColor;
-    animation-duration: 3s;
+    animation-duration: 1.5s;
     animation-iteration-count: infinite;
   }
   @keyframes chargingColor {
@@ -36,7 +36,7 @@
       background-color: #0a7aa3; /* #222; */
     }
   }
-  div#statusError {
+  span.badge-danger {
     background-color: #a31c2a; 
     animation-name: errorColor;
     animation-duration: 0.5s;
@@ -53,7 +53,7 @@
       background-color: #a31c2a;
     }
   }
-  .badge {
+  .badge-danger, .badge-warning, .badge-primary, .badge-success {
     cursor: help;
   }
 
@@ -228,72 +228,6 @@
       $('div#statusCharging').find('div').find('p').text(
         chargeDetailStr(result.id, result.data)
       )
-      $('div#statusAvailable').hide()
-      $('div#statusReady').show()
-      $('div#statusCharging').hide()
-      $('div#statusError').hide()
-    }
-    function chargeDetailStr(id, data) {
-      return 'Er is op ' + id + 
-             ' op ' + data.start_time + ' een laadsessie gestart met beginstand ' + data.start_value + 'kWh.' +
-             (Number.isInteger(data.km) ? ' De km-stand bij het begin van de laadsessie is ' + data.km + 'km.' : '' ) + 
-             ' De huidige meterstand is ' + data.end_value + 'kWh. Het verbruik deze sessie is ' + data.total_energy + 'kWh,' + 
-             ' wat met een tarief van € ' + (Math.round(data.tariff * 100) /100).toFixed(2) + 
-             ' een subtotaal is van € ' + (Math.round(data.total_price * 100) /100).toFixed(2) + '.'
-    }
-    function updateDataChargeSession( result ) {
-      console.log('updateDataChargeSession()')
-      $('div#statusReady').find('div').find('p').text(
-        chargeDetailStr(result.id, result.data)
-      )
-      $('div#statusCharging').find('div').find('p').text(
-        chargeDetailStr(result.id, result.data)
-      )
-    }
-    function updateStatusChargeSession( result ) {
-      console.log('updateStatusChargeSession()')
-      // Depending on the EVSE State, either show ready or charging
-      switch (parseInt(result.status)) {
-        case EVSE_STATE_INACTIVE:   // No charge session (green)
-          $('div#statusAvailable').show()
-          $('div#statusReady').hide()
-          $('div#statusCharging').hide()
-          $('div#statusError').hide()
-          break
-        case EVSE_STATE_CONNECTED:  // Ready for charging, but no activity (yellow)
-          $('div#statusAvailable').hide()
-          $('div#statusReady').show()
-          $('div#statusCharging').hide()
-          $('div#statusError').hide()
-          break
-        case EVSE_STATE_CHARGING:   // Charging activity (blue)
-          $('div#statusAvailable').hide()
-          $('div#statusReady').hide()
-          $('div#statusCharging').show()
-          $('div#statusError').hide()
-          break
-        case EVSE_STATE_UNKNOWN:    // Error (red)
-        default:
-          $('div#statusAvailable').hide()
-          $('div#statusReady').hide()
-          $('div#statusCharging').hide()
-          $('div#statusError').show()
-          break
-      }
-    }
-    function endChargeSession( data ) {
-      console.log('endChargeSession()')
-      $('div#statusAvailable').show()
-      $('div#statusReady').hide()
-      $('div#statusCharging').hide()
-      $('div#statusError').hide()
-    }
-    function hideChargeSession( ) {
-      console.log('hideChargeSession()')
-      $('div#statusAvailable').hide()
-      $('div#statusReady').hide()
-      $('div#statusCharging').hide()
-      $('div#statusError').hide()
     }
 
     function getChargeSessionStatus( ) {
@@ -318,64 +252,36 @@
             result.data // Active or None
             */
             error = false
-            updateEvseIndicator( result.evseEnabled, error )
-            updateChargeSessionIndicator( result.chargeSession, error )
-            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, error )
-            updateChargingIndicator( result.charging, error )
+            on = true
+            updateEvseIndicator( result.evseEnabled, error, on )
+            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, error, on )
+            updateChargingIndicator( result.chargeSession, result.charging, error, on )
             if (result.auth) {
-              updateTotalIndicator( result.data.total_energy, result.data.total_price, result.chargeSession )
+              updateTotalIndicator( result.data.total_energy, result.data.total_price, result.chargeSession, on )
             } else {
               // If not logged in, no charge session information is returned
-              updateTotalIndicator( '', '', false)
+              updateTotalIndicator( '', '', false, on)
             }
-            updateAuthIndicator( result.auth )
-            // Is the vehicle charging? EVSE_STATE_CONNECTED or EVSE_STATE_CHARGING
-            if (result.charging == EVSE_STATE_CONNECTED) {
-              // Ready for charging, but no activity (yellow)
-              $('div#statusReady').find('div').find('p').text(
-                chargeDetailStr(result.id, result.data)
-              )
-              $('div#statusReady').show()
-              $('div#statusCharging').hide()
-            }
-            if (result.charging == EVSE_STATE_CHARGING) {
-              // Ready for charging, but no activity (yellow)
-              $('div#statusCharging').find('div').find('p').text(
-                chargeDetailStr(result.id, result.data)
-              )
-              $('div#statusReady').hide()
-              $('div#statusCharging').show()
-            }
-            $('div#statusAvailable').hide()
-            $('div#statusError').hide()
-
+            updateAuthIndicator( result.auth, on )
             break
           case 404:                   // No charge session found (green)
             error = false
-            updateEvseIndicator( result.evseEnabled, error )
-            updateChargeSessionIndicator( result.chargeSession, error )
-            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, error )
-            updateChargingIndicator( result.charging, error )
-            updateTotalIndicator( '', '', result.chargeSession )
-            updateAuthIndicator( result.auth )
-            $('div#statusAvailable').show()
-            $('div#statusReady').hide()
-            $('div#statusCharging').hide()
-            $('div#statusError').hide()
+            on = true
+            updateEvseIndicator( result.evseEnabled, error, on )
+            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, error, on )
+            updateChargingIndicator( result.chargeSession, result.charging, error, on )
+            updateTotalIndicator( '', '', result.chargeSession, on )
+            updateAuthIndicator( result.auth, on )
             break
           case 500:    // Error (red)
           default:
             error = true
-            updateEvseIndicator( false, error )
-            updateChargeSessionIndicator( false, error )
-            updateOffPeakIndicator( false, false, error )
-            updateChargingIndicator( false, error )
-            updateTotalIndicator( '', '', false )
-            updateAuthIndicator( false )
-            $('div#statusAvailable').hide()
-            $('div#statusReady').hide()
-            $('div#statusCharging').hide()
-            $('div#statusError').show()
+            on = true
+            updateEvseIndicator( false, error, on )
+            updateOffPeakIndicator( false, false, error, on )
+            updateChargingIndicator( false, false, error, on )
+            updateTotalIndicator( '', '', false, on )
+            updateAuthIndicator( false, on )
             break
         }
         $('[data-toggle=tooltip]').tooltip({ 
@@ -389,13 +295,12 @@
         console.log(result)
         // If not logged in, no session data. Hide all
         error = true
-        updateEvseIndicator( false, error )
-        updateChargeSessionIndicator( false, error )
-        updateOffPeakIndicator( false, false, error )
-        updateChargingIndicator( false, error )
-        updateTotalIndicator( '', '', false )
-        updateAuthIndicator( false )
-        hideChargeSession()
+        on = true
+        updateEvseIndicator( false, error, on )
+        updateOffPeakIndicator( false, false, error, on )
+        updateChargingIndicator( false, false, error, on )
+        updateTotalIndicator( '', '', false, on )
+        updateAuthIndicator( false, on )
       })
       .always(function() {
         // Remove spinner?
@@ -418,19 +323,19 @@
       // this is a callback that triggers when the "my response" event is emitted by the server.
       chargeSessionSocket.on('charge_session_started', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        startChargeSession( msg )
+        updateChargingIndicator( true, false, false, true )
       })
       chargeSessionSocket.on('charge_session_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        updateStatusChargeSession( msg )
+        updateChargingIndicator( (msg.status == EVSE_STATE_CHARGING), false, true )
       })
       chargeSessionSocket.on('charge_session_data_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        updateDataChargeSession( msg )
+        updateTotalIndicator( msg.data.total_energy, msg.data.total_price, true, true )
       })
       chargeSessionSocket.on('charge_session_ended', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        endChargeSession( msg )
+        updateChargingIndicator( false, false, false, true )
       })
     }
     //example of triggering an event on click of a form submit button
@@ -438,62 +343,65 @@
         socket.emit('my event', {data: $('#emit_data').val()});
     }
 
-    function updateEvseIndicator( evseEnabled, error ) {
+    function updateEvseIndicator( evseEnabled, error, on ) {
+      // Dark when off
+      $('span#evseEnabledIndicator').toggleClass('badge-dark', !on)
+      if (!on) $('span#evseEnabledIndicator').attr('data-original-title','')
       // Red on error
-      $('span#evseEnabledIndicator').toggleClass('badge-danger', error)
-      if (error) $('span#evseEnabledIndicator').prop('title', 'EVSE status onbekend')
+      $('span#evseEnabledIndicator').toggleClass('badge-danger', (on && error))
+      if (on && error) $('span#evseEnabledIndicator').attr('data-original-title','EVSE status onbekend')
       // Dark if no evse enabled
-      $('span#evseEnabledIndicator').toggleClass('badge-warning', (!error && !evseEnabled))
-      if ((!error && !evseEnabled)) $('span#evseEnabledIndicator').prop('title', 'EVSE geblokkeerd')
-      if ((!error && !evseEnabled)) $('span#evseEnabledIndicator').attr('data-original-title','EVSE geblokkeerd')
+      $('span#evseEnabledIndicator').toggleClass('badge-warning', (on && !error && !evseEnabled))
+      if (on && !error && !evseEnabled) $('span#evseEnabledIndicator').attr('data-original-title','EVSE geblokkeerd')
       // Green if evse enabled
-      $('span#evseEnabledIndicator').toggleClass('badge-success', (!error && evseEnabled))
-      if ((!error && evseEnabled)) $('span#evseEnabledIndicator').prop('title', 'EVSE ingeschakeld')
-      if ((!error && evseEnabled)) $('span#evseEnabledIndicator').attr('data-original-title','EVSE ingeschakeld')
+      $('span#evseEnabledIndicator').toggleClass('badge-success', (on && !error && evseEnabled))
+      if (on && !error && evseEnabled) $('span#evseEnabledIndicator').attr('data-original-title','EVSE ingeschakeld')
     }
-    function updateChargeSessionIndicator( chargeSession, error ) {
+    function updateChargingIndicator( chargeSession, charging, error, on ) {
+      // Dark when off
+      $('span#chargingIndicator').toggleClass('badge-dark', !on)
+      if (!on) $('span#chargingIndicator').attr('data-original-title','')
+      if (!on) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
       // Red on error
-      $('span#chargeSessionIndicator').toggleClass('badge-danger', error)
-      if (!error) $('span#chargeSessionIndicator').attr('data-original-title','Laadsessie onbekend')
-      // Dark if no charge session
-      $('span#chargeSessionIndicator').toggleClass('badge-dark', (!error && !chargeSession))
-      if (!error && !chargeSession) $('span#chargeSessionIndicator').attr('data-original-title','Geen laadsessie actief')
-      // Green if charge session active
-      $('span#chargeSessionIndicator').toggleClass('badge-success', (!error && chargeSession))
-      if (!error && chargeSession) $('span#chargeSessionIndicator').attr('data-original-title','Laadsessie open')
+      $('span#chargingIndicator').toggleClass('badge-danger', (on && error))
+      if (on && error) $('span#chargingIndicator').attr('data-original-title','Laadsessie status onbekend')
+      if (on && error) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
+      // Dark if no session active
+      $('span#chargingIndicator').toggleClass('badge-dark', (on && !error && !chargeSession))
+      if (on && !error && !chargeSession) $('span#chargingIndicator').attr('data-original-title','Geen laadsessie actief')
+      if (on && !error && !chargeSession) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
+      // Yellow if session active, but not charging
+      $('span#chargingIndicator').toggleClass('badge-warning', (on && !error && chargeSession && !charging))
+      if (on && !error && chargeSession && !charging) $('span#chargingIndicator').attr('data-original-title','Standby')
+      if (on && !error && chargeSession && !charging) $('span#chargingIndicator').html('<i class="mdi mdi-battery-charging-40"></i>')
+      // Blue if charging (should have an active session active)
+      $('span#chargingIndicator').toggleClass('badge-primary', (on && !error && chargeSession && charging))
+      if (on && !error && chargeSession && charging) $('span#chargingIndicator').attr('data-original-title','Actief aan het laden')
+      if (on && !error && chargeSession && charging) $('span#chargingIndicator').html('<i class="mdi mdi-battery-charging-40"></i>')
     }
     // Error: red, not enabled: gray, enabled peak: orange, off prak: green
-    function updateOffPeakIndicator( offPeakEnabled, offPeak, error ) {
+    function updateOffPeakIndicator( offPeakEnabled, offPeak, error, on ) {
+      // Dark when off
+      $('span#offPeakIndicator').toggleClass('badge-dark', !on)
+      if (!on) $('span#offPeakIndicator').attr('data-original-title','')
       // Red on error
-      $('span#offPeakIndicator').toggleClass('badge-danger', error)
-      if (error) $('span#offPeakIndicator').prop('title', 'Status daluren onbekend')
-      if (error) $('span#offPeakIndicator').attr('data-original-title','Laadsessie open')
+      $('span#offPeakIndicator').toggleClass('badge-danger', (on && error))
+      if (on && error) $('span#offPeakIndicator').attr('data-original-title','Laadsessie open')
       // Dark if disabled
-      $('span#offPeakIndicator').toggleClass('badge-dark', (!error && !offPeakEnabled))
-      if (!error && !offPeakEnabled) $('span#offPeakIndicator').attr('data-original-title','Daluren niet ingesteld')
+      $('span#offPeakIndicator').toggleClass('badge-dark', (on && !error && !offPeakEnabled))
+      if (on && !error && !offPeakEnabled) $('span#offPeakIndicator').attr('data-original-title','Daluren niet ingesteld')
       // Orange if enabled and peak
-      $('span#offPeakIndicator').toggleClass('badge-warning', (!error && offPeakEnabled && !offPeak))
-      if (!error && offPeakEnabled && !offPeak) $('span#offPeakIndicator').attr('data-original-title','Buiten daluren')
+      $('span#offPeakIndicator').toggleClass('badge-warning', (on && !error && offPeakEnabled && !offPeak))
+      if (on && !error && offPeakEnabled && !offPeak) $('span#offPeakIndicator').attr('data-original-title','Buiten daluren')
       // Green is enabled and off peak
-      $('span#offPeakIndicator').toggleClass('badge-success', (!error && offPeakEnabled && offPeak))
-      if (!error && offPeakEnabled && offPeak) $('span#offPeakIndicator').attr('data-original-title','Daluren')
+      $('span#offPeakIndicator').toggleClass('badge-success', (on && !error && offPeakEnabled && offPeak))
+      if (on && !error && offPeakEnabled && offPeak) $('span#offPeakIndicator').attr('data-original-title','Daluren')
     }
-    function updateChargingIndicator( charging, error ) {
-      // Red on error
-      $('span#chargingIndicator').toggleClass('badge-danger', error)
-      if (error) $('span#chargingIndicator').attr('data-original-title','Laadsessie onbekend')
-      // Dark if not charging
-      $('span#chargingIndicator').toggleClass('badge-warning', (!error && !charging))
-      if (!error && !charging) $('span#chargingIndicator').attr('data-original-title','Standby')
-      // Blue if charging
-      $('span#chargingIndicator').toggleClass('badge-primary', (!error && charging))
-      if (!error && charging) $('span#chargingIndicator').attr('data-original-title','Actief aan het laden')
-    }
-    function updateTotalIndicator( kwh, price, chargeSession ) {
-      $('span#totalKwhIndicator').toggle(chargeSession)
-      $('span#totalKwhIndicatorSpacer').toggle(chargeSession)
-      $('span#totalPriceIndicator').toggle(chargeSession)
-      $('span#totalPriceIndicatorSpacer').toggle(chargeSession)
+    function updateTotalIndicator( kwh, price, chargeSession, on ) {
+      $('span#totalKwhIndicator').toggle(chargeSession && on)
+      $('span#totalKwhIndicatorSpacer').toggle(chargeSession && on)
+      $('span#totalPriceIndicator').toggle(chargeSession && on)
+      $('span#totalPriceIndicatorSpacer').toggle(chargeSession && on)
       $('span#totalKwhIndicator').html(kwh + 'kWh')
       $('span#totalPriceIndicator').html('&euro; ' + price)
     }
@@ -511,7 +419,6 @@
         trigger : 'hover'   // Allow button clicks
       })
       updateTotalIndicator( '', '', false )
-      hideChargeSession()
       getChargeSessionStatus()
       getUsageData(1)
       startWebSocket()
@@ -540,16 +447,6 @@
                             title="EVSE-status onbekend"
                             >
                             <i class="fas fa-charging-station"></i>
-                      </span>
-                      <span id="chargeSessionIndicatorSpacer">&nbsp;</span>
-                      <span class="badge badge-dark"
-                            id="chargeSessionIndicator"
-                            data-toggle="tooltip" 
-                            data-placement="bottom" 
-                            data-html="true" 
-                            title="Laadsessie onbekend"
-                            >
-                            <i class="far fa-clipboard"></i>
                       </span>
                       <span id="offPeakIndicatorSpacer">&nbsp;</span>
                       <span class="badge badge-dark"
@@ -585,50 +482,6 @@
           </div>
       </div>
       <!-- end page title end breadcrumb -->
-
-      <div class="row">
-        <div class="col-sm-12">
-            <div id="statusAvailable" class="card m-b-20 bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Beschikbaar</h5>
-                    <p class="card-text">Laadpunt beschikbaar. Bied een geldige RFID-token aan.</p>
-                </div>
-            </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-sm-12">
-            <div id="statusReady" class="card m-b-20 bg-warning text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Standby</h5>
-                    <p class="card-text"></p>
-                </div>
-            </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-sm-12">
-            <div id="statusCharging" class="card m-b-20 text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Laden</h5>
-                    <p class="card-text"></p>
-                </div>
-            </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-sm-12">
-            <div id="statusError" class="card m-b-20 text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Fout</h5>
-                    <p class="card-text">Geen idee of er een actieve laadsessie is helaas...</p>
-                </div>
-            </div>
-        </div>
-      </div>
 
       <div class="row">
 
