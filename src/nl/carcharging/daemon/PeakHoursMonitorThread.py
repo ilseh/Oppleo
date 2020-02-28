@@ -106,6 +106,16 @@ class PeakHoursMonitorThread(object):
                     # Switch the EVSE off untill Off Peak hours
                     evse.switch_off()  
 
+                # If the EVSE is not enabled, it is Peak hours, OffPeak is not enabled or
+                # OffPeak is enabled in settings, and overridden for one session, switch the EVSE on
+                if (not evse.isOffPeak and \
+                    not evse.is_enabled() and \
+                    ( not WebAppConfig.peakHoursOffPeakEnabled or \
+                        ( WebAppConfig.peakHoursOffPeakEnabled and WebAppConfig.peakHoursAllowPeakOnePeriod) )):
+                    self.logger.debug('Peak hours, EVSE ON and Off Peak enabled (not bypassed). Switching EVSE OFF')
+                    # Switch the EVSE on
+                    evse.switch_on()  
+
                 # If the EVSE is disabled, it is Off Peak hours, and there is an open charge session, enable the EVSE
                 # Clear one-session override
                 if (evse.isOffPeak and not evse.is_enabled()):
