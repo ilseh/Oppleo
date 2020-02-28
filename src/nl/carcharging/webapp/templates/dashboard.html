@@ -53,7 +53,7 @@
       background-color: #a31c2a;
     }
   }
-  .badge-danger, .badge-warning, .badge-primary, .badge-success {
+  .badge-danger, .badge-warning, .badge-primary, .badge-success, .badge-secondary {
     cursor: help;
   }
 
@@ -244,13 +244,6 @@
         console.log(result)
         switch(parseInt(result.status)) {
           case 200:                   // Active charge session
-            /*
-            result.session // Is there an Active Charge session? Should be Active (None should return 404)
-            result.enabled // Is the EVSE Enabled? True or False
-            result.charging // Is the vehicle charging? EVSE_STATE_CONNECTED or EVSE_STATE_CHARGING
-            result.isOffPeak // True or False based on Off Peak hours
-            result.data // Active or None
-            */
             error = false
             on = true
             updateEvseIndicator( result.evseEnabled, error, on )
@@ -262,7 +255,7 @@
               // If not logged in, no charge session information is returned
               updateTotalIndicator( '', '', false, on)
             }
-            updateAuthIndicator( result.auth, on )
+            updateAuthIndicator( result.auth, error, on )
             break
           case 404:                   // No charge session found (green)
             error = false
@@ -271,7 +264,7 @@
             updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, error, on )
             updateChargingIndicator( result.chargeSession, result.charging, error, on )
             updateTotalIndicator( '', '', result.chargeSession, on )
-            updateAuthIndicator( result.auth, on )
+            updateAuthIndicator( result.auth, error, on )
             break
           case 500:    // Error (red)
           default:
@@ -281,7 +274,7 @@
             updateOffPeakIndicator( false, false, error, on )
             updateChargingIndicator( false, false, error, on )
             updateTotalIndicator( '', '', false, on )
-            updateAuthIndicator( false, on )
+            updateAuthIndicator( false, error, on )
             break
         }
         $('[data-toggle=tooltip]').tooltip({ 
@@ -300,7 +293,7 @@
         updateOffPeakIndicator( false, false, error, on )
         updateChargingIndicator( false, false, error, on )
         updateTotalIndicator( '', '', false, on )
-        updateAuthIndicator( false, on )
+        updateAuthIndicator( false, error, on )
       })
       .always(function() {
         // Remove spinner?
@@ -360,6 +353,7 @@
     function updateChargingIndicator( chargeSession, charging, error, on ) {
       // Dark when off
       $('span#chargingIndicator').toggleClass('badge-dark', !on)
+      $('span#chargingIndicator').toggleClass('badge-outlined', !on)
       if (!on) $('span#chargingIndicator').attr('data-original-title','')
       if (!on) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
       // Red on error
@@ -367,12 +361,13 @@
       if (on && error) $('span#chargingIndicator').attr('data-original-title','Laadsessie status onbekend')
       if (on && error) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
       // Dark if no session active
-      $('span#chargingIndicator').toggleClass('badge-dark', (on && !error && !chargeSession))
+      $('span#chargingIndicator').toggleClass('badge-secondary', (on && !error && !chargeSession))
+      $('span#chargingIndicator').toggleClass('badge-outlined', (on && !error && !chargeSession))
       if (on && !error && !chargeSession) $('span#chargingIndicator').attr('data-original-title','Geen laadsessie actief')
       if (on && !error && !chargeSession) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
       // Yellow if session active, but not charging
       $('span#chargingIndicator').toggleClass('badge-warning', (on && !error && chargeSession && !charging))
-      if (on && !error && chargeSession && !charging) $('span#chargingIndicator').attr('data-original-title','Standby')
+      if (on && !error && chargeSession && !charging) $('span#chargingIndicator').attr('data-original-title','Niet aan het laden')
       if (on && !error && chargeSession && !charging) $('span#chargingIndicator').html('<i class="mdi mdi-battery-charging-40"></i>')
       // Blue if charging (should have an active session active)
       $('span#chargingIndicator').toggleClass('badge-primary', (on && !error && chargeSession && charging))
@@ -388,7 +383,8 @@
       $('span#offPeakIndicator').toggleClass('badge-danger', (on && error))
       if (on && error) $('span#offPeakIndicator').attr('data-original-title','Laadsessie open')
       // Dark if disabled
-      $('span#offPeakIndicator').toggleClass('badge-dark', (on && !error && !offPeakEnabled))
+      $('span#offPeakIndicator').toggleClass('badge-secondary', (on && !error && !offPeakEnabled))
+      $('span#offPeakIndicator').toggleClass('badge-outlined', (on && !error && !offPeakEnabled))
       if (on && !error && !offPeakEnabled) $('span#offPeakIndicator').attr('data-original-title','Daluren niet ingesteld')
       // Orange if enabled and peak
       $('span#offPeakIndicator').toggleClass('badge-warning', (on && !error && offPeakEnabled && !offPeak))
@@ -405,9 +401,20 @@
       $('span#totalKwhIndicator').html(kwh + 'kWh')
       $('span#totalPriceIndicator').html('&euro; ' + price)
     }
-    function updateAuthIndicator( auth ) {
-      $('span#authStatusIndicator').toggle(!auth)
-      $('span#authStatusIndicatorSpacer').toggle(!auth)
+    function updateAuthIndicator( auth, error, on ) {
+      // Dark when off
+      $('span#authStatusIndicator').toggleClass('badge-dark', !on)
+      if (!on) $('span#authStatusIndicator').attr('data-original-title','')
+      // Red on error
+      $('span#authStatusIndicator').toggleClass('badge-danger', (on && error))
+      if (on && error) $('span#authStatusIndicator').attr('data-original-title','')
+      // Dark if not logged in
+      $('span#authStatusIndicator').toggleClass('badge-secondary', (on && !error && !auth))
+      $('span#authStatusIndicator').toggleClass('badge-outlined', (on && !error && !auth))
+      if (on && !error && !auth) $('span#authStatusIndicator').attr('data-original-title','Niet aangemeld')
+      // Green if logged in
+      $('span#authStatusIndicator').toggleClass('badge-success', (on && !error && auth))
+      if (on && !error && auth) $('span#authStatusIndicator').attr('data-original-title','Aangemeld')
     }
 
     jQuery(document).ready(function () {
@@ -469,11 +476,33 @@
                             <i class="mdi mdi-battery-charging-40"></i>
                       </span>
                       <span id="totalKwhIndicatorSpacer">&nbsp;</span>
-                      <span class="badge badge-dark" id="totalKwhIndicator"></span>
+                      <span class="badge badge-outlined badge-secondary"
+                            id="totalKwhIndicator"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Laadenergie deze sessie tot nu toe"
+                            >
+                      </span>
                       <span id="totalPriceIndicatorSpacer">&nbsp;</span>
-                      <span class="badge badge-dark" id="totalPriceIndicator"></span>
+                      <span class="badge badge-outlined badge-secondary"
+                            id="totalPriceIndicator"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Laadkosten deze sessie tot nu toe"
+                            >
+                      </span>
                       <span id="authStatusIndicatorSpacer">&nbsp;</span>
-                      <span class="badge badge-dark" id="authStatusIndicator">Niet aangemeld</span>
+                      <span class="badge badge-dark"
+                            id="authStatusIndicator"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Niet aangemeld"
+                            >
+                            <i class="fas fa-user"></i>
+                      </span>
         
                 </div>
                 <h4 class="page-title">Dashboard</h4>
