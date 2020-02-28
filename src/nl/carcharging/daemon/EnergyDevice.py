@@ -73,11 +73,12 @@ class EnergyDevice():
                 # Emit as web socket update
                 self.counter += 1
                 self.logger.debug(f'Queue msg {self.counter} to be send via websocket ...{device_measurement.to_str()}')
+                # Info heeft actuele kWh meter gegevens, geen laadpas info, dus public
                 WebSocketUtil.emit(
                         event='status_update', 
                         data=device_measurement.to_str(), 
                         namespace='/usage',
-                        public=False
+                        public=True
                     )
 
             # Callbacks to notify update
