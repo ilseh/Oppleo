@@ -14,6 +14,10 @@
   <link href="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.skinFlat.css') }}"rel="stylesheet" type="text/css"/>
   <script src="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.min.js') }}"></script>
 
+  <!-- Bootstrap switch button -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
+  <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
+
   <style>
     .paginate_button {
         padding: 0px !important;
@@ -102,6 +106,44 @@
       )
     }
 
+    function updateSettings( param, value ) {
+      console.log(timestamp() + ' updateSettings()')            
+      // Show spinner
+      $('.spinner').show()
+      data = {
+            csrf_token    : '{{ csrf_token() }}' 
+          }
+      $.ajax({
+        type		    : 'POST',
+        url			    : ('/update_settings/' + param +'/' + value),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200:
+            $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Instelling aangepast.');
+            break
+          case 404:
+          default:
+            $.Notification.notify('warning','top left', 'Onbekend', 'Instelling onbekend. Niet gewijzigd.');
+            break
+        }
+
+      })
+      .fail(function(data) {
+        $.Notification.notify('error','top left', 'Connectie fout', 'Instelling niet gewijzigd.');
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
     var diag_data = {{ diag_json | safe }}
 
     jQuery(document).ready(function() {
@@ -120,6 +162,14 @@
         postfix: 'u',
         prefix: '',
         skin: "sharp"
+      })
+      $('input#peakHoursAllowPeakOnePeriod').bootstrapToggle()
+      $('input#peakHoursAllowPeakOnePeriod').change(function() {
+        updateSettings( 'peakHoursAllowPeakOnePeriod', $(this).prop('checked') )
+      })
+      $('input#peakHoursOffPeakEnabled').bootstrapToggle()
+      $('input#peakHoursOffPeakEnabled').change(function() {
+        updateSettings( 'peakHoursOffPeakEnabled', $(this).prop('checked') )
       })
 
       // Remove spinner
@@ -208,11 +258,51 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Daluren ingeschakeld:</td>
-                              <td class="text-primary">{{ webappconfig.peakHoursOffPeakEnabled }}</td>
+                              <td class="text-primary">
+                                {{ webappconfig.peakHoursOffPeakEnabled }}
+                                <form id="peak-hours-off-peak-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if webappconfig.peakHoursOffPeakEnabled %}checked{% endif %}
+                                    name="peakHoursOffPeakEnabled"
+                                    id="peakHoursOffPeakEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Eenmalig piekuren toestaan:</td>
-                              <td class="text-primary">{{ webappconfig.peakHoursAllowPeakOnePeriod }}</td>
+                              <td class="text-primary">
+                                
+                                
+                                {{ webappconfig.peakHoursAllowPeakOnePeriod }}
+
+                                <form id="peak-hours-allow-peak-once-form">
+                                  <input type="checkbox" 
+                                    {% if webappconfig.peakHoursAllowPeakOnePeriod %}checked{% endif %}
+                                    name="peakHoursAllowPeakOnePeriod"
+                                    id="peakHoursAllowPeakOnePeriod"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                                  
+                              
+                              
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Maandag:</td>

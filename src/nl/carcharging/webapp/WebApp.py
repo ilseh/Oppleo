@@ -132,19 +132,37 @@ def disconnect():
 
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
-    global webApplogger, threadLock, wsClientCnt
+    global webApplogger, WebAppConfig, threadLock, wsClientCnt
     with threadLock:
         wsClientCnt += 1
-    webApplogger.debug('socketio.connect wsClientCnt {}'.format(wsClientCnt))
+        if request.sid not in WebAppConfig.connectedClients.keys():
+            WebAppConfig.connectedClients[request.sid] = {
+                                'sid'   : request.sid,
+                                'auth'  : current_user.is_authenticated,
+                                'stats' : 'connected'
+                                }
+    webApplogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
+                    request.sid, \
+                    wsClientCnt, \
+                    WebAppConfig.connectedClients \
+                    )
+                )
     emit("server_status", "server_up")
 
 
 @appSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
-    global webApplogger, threadLock, wsClientCnt
+    global webApplogger, WebAppConfig, threadLock, wsClientCnt
     with threadLock:
         wsClientCnt -= 1
-    webApplogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
+        res = WebAppConfig.connectedClients.pop(request.sid, None)
+    webApplogger.debug('socketio.disconnect sid: {} wsClientCnt: {} connectedClients:{} res:{}'.format( \
+                    request.sid, \
+                    wsClientCnt, \
+                    WebAppConfig.connectedClients, \
+                    res
+                    )
+                )
 
 
 @app.errorhandler(404)

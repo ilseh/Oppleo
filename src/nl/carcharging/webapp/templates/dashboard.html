@@ -53,7 +53,7 @@
       background-color: #a31c2a;
     }
   }
-  .badge-danger, .badge-warning, .badge-primary, .badge-success, .badge-secondary {
+  .badge-danger, .badge-warning, .badge-primary, .badge-success, .badge-secondary, .badge-info {
     cursor: help;
   }
 
@@ -247,7 +247,7 @@
             error = false
             on = true
             updateEvseIndicator( result.evseEnabled, error, on )
-            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, error, on )
+            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, result.offPeakAllowedOnce, error, on )
             updateChargingIndicator( result.chargeSession, result.charging, error, on )
             if (result.auth) {
               updateTotalIndicator( result.data.total_energy, result.data.total_price, result.chargeSession, on )
@@ -261,7 +261,7 @@
             error = false
             on = true
             updateEvseIndicator( result.evseEnabled, error, on )
-            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, error, on )
+            updateOffPeakIndicator( result.offPeakEnabled, result.offPeak, result.offPeakAllowedOnce, error, on )
             updateChargingIndicator( result.chargeSession, result.charging, error, on )
             updateTotalIndicator( '', '', result.chargeSession, on )
             updateAuthIndicator( result.auth, error, on )
@@ -271,7 +271,7 @@
             error = true
             on = true
             updateEvseIndicator( false, error, on )
-            updateOffPeakIndicator( false, false, error, on )
+            updateOffPeakIndicator( false, false, false, error, on )
             updateChargingIndicator( false, false, error, on )
             updateTotalIndicator( '', '', false, on )
             updateAuthIndicator( false, error, on )
@@ -290,7 +290,7 @@
         error = true
         on = true
         updateEvseIndicator( false, error, on )
-        updateOffPeakIndicator( false, false, error, on )
+        updateOffPeakIndicator( false, false, false, error, on )
         updateChargingIndicator( false, false, error, on )
         updateTotalIndicator( '', '', false, on )
         updateAuthIndicator( false, error, on )
@@ -330,10 +330,20 @@
         console.log('Received: ' + JSON.stringify(msg))
         updateChargingIndicator( false, false, false, true )
       })
-    }
-    //example of triggering an event on click of a form submit button
-    function sendSocketMsg() {
-        socket.emit('my event', {data: $('#emit_data').val()});
+      chargeSessionSocket.on('off_peak_status_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateOffPeakIndicator( msg.data.offPeakEnabled, msg.data.isOffPeak, msg.data.peakAllowOnePeriod, false, true )
+      })
+      // start up the SocketIO connection to the server on namespace /evse_status
+      evseStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/evse_status')
+      evseStatusSocket.on('evse_enabled', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateEvseIndicator( true, false, true )
+      })
+      evseStatusSocket.on('evse_disabled', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateEvseIndicator( false, false, true )
+      })
     }
 
     function updateEvseIndicator( evseEnabled, error, on ) {
@@ -374,8 +384,8 @@
       if (on && !error && chargeSession && charging) $('span#chargingIndicator').attr('data-original-title','Actief aan het laden')
       if (on && !error && chargeSession && charging) $('span#chargingIndicator').html('<i class="mdi mdi-battery-charging-40"></i>')
     }
-    // Error: red, not enabled: gray, enabled peak: orange, off prak: green
-    function updateOffPeakIndicator( offPeakEnabled, offPeak, error, on ) {
+    // Error: red, not enabled: gray, enabled peak: orange, off peak: green, allowed-once: blue (info)
+    function updateOffPeakIndicator( offPeakEnabled, offPeak, offPeakAllowedOnce, error, on ) {
       // Dark when off
       $('span#offPeakIndicator').toggleClass('badge-dark', !on)
       if (!on) $('span#offPeakIndicator').attr('data-original-title','')
@@ -386,12 +396,15 @@
       $('span#offPeakIndicator').toggleClass('badge-secondary', (on && !error && !offPeakEnabled))
       $('span#offPeakIndicator').toggleClass('badge-outlined', (on && !error && !offPeakEnabled))
       if (on && !error && !offPeakEnabled) $('span#offPeakIndicator').attr('data-original-title','Daluren niet ingesteld')
-      // Orange if enabled and peak
-      $('span#offPeakIndicator').toggleClass('badge-warning', (on && !error && offPeakEnabled && !offPeak))
-      if (on && !error && offPeakEnabled && !offPeak) $('span#offPeakIndicator').attr('data-original-title','Buiten daluren')
       // Green is enabled and off peak
       $('span#offPeakIndicator').toggleClass('badge-success', (on && !error && offPeakEnabled && offPeak))
       if (on && !error && offPeakEnabled && offPeak) $('span#offPeakIndicator').attr('data-original-title','Daluren')
+      // Blue if enabled and allowed once
+      $('span#offPeakIndicator').toggleClass('badge-info', (on && !error && offPeakEnabled && !offPeak && offPeakAllowedOnce))
+      if (on && !error && offPeakEnabled && !offPeak && offPeakAllowedOnce) $('span#offPeakIndicator').attr('data-original-title','Eenmalig piekuren toegestaan')
+      // Orange if enabled and peak
+      $('span#offPeakIndicator').toggleClass('badge-warning', (on && !error && offPeakEnabled && !offPeak && !offPeakAllowedOnce))
+      if (on && !error && offPeakEnabled && !offPeak && !offPeakAllowedOnce) $('span#offPeakIndicator').attr('data-original-title','Buiten daluren')
     }
     function updateTotalIndicator( kwh, price, chargeSession, on ) {
       $('span#totalKwhIndicator').toggle(chargeSession && on)

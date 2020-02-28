@@ -70,6 +70,18 @@ class PeakHoursMonitorThread(object):
                 # Time to determine if it is Off Peak again
                 wasOffPeak = evse.isOffPeak
                 evse.isOffPeak = ohm.is_off_peak_now()
+                if (wasOffPeak != evse.isOffPeak):
+                    # Send change notification
+                    WebSocketUtil.emit(
+                            event='off_peak_status_update', 
+                                id=WebAppConfig.ENERGY_DEVICE_ID,
+                                data={ 'isOffPeak': evse.isOffPeak,
+                                       'offPeakEnabled': WebAppConfig.peakHoursOffPeakEnabled,
+                                       'peakAllowOnePeriod': WebAppConfig.peakHoursAllowPeakOnePeriod
+                                },
+                                namespace='/charge_session',
+                                public=True
+                            )
                 self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( \
                                 wasOffPeak, \
                                 evse.isOffPeak

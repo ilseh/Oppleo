@@ -49,11 +49,28 @@ class WebSocketQueueReaderBackgroundTask(object):
                     m_body['id'] = msg['id']
                 if 'status' in msg and  msg['status'] is not None:
                     m_body['status'] = msg['status']
-                self.appSocketIO.emit(
-                        event=msg['event'],
-                        data=m_body,
-                        namespace=msg['namespace']
-                    )
+                if ('public' in msg and msg['public']):
+                    self.appSocketIO.emit(
+                            event=msg['event'],
+                            data=m_body,
+                            namespace=msg['namespace']
+                        )
+                else:
+                    """
+                        Private messages
+                        - Emit only to authenticated clients
+                        - room is the request.sid of the specific client
+                    """
+                    for connectedClient in WebAppConfig.connectedClients:
+                        if 'auth' in connectedClient and connectedClient['auth']:
+                            # Authenticated client, emit data
+                            self.appSocketIO.emit(
+                                    event=msg['event'],
+                                    data=m_body,
+                                    namespace=msg['namespace'],
+                                    room=connectedClient['sid']
+                                    )
+
                 self.wsEmitQueue.task_done()
             self.appSocketIO.sleep(0.5)
 

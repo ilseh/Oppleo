@@ -26,12 +26,15 @@ from nl.carcharging.models.ChargeSessionModel import ChargeSessionModel
 from nl.carcharging.models.RfidModel import RfidModel
 from nl.carcharging.models.ChargerConfigModel import ChargerConfigModel
 from nl.carcharging.models.EnergyDeviceModel import EnergyDeviceModel
+from nl.carcharging.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.carcharging.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.carcharging.webapp.RfidChangeForm import RfidChangeForm
 from nl.carcharging.api.TeslaApi import TeslaAPI
 from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.carcharging.services.Evse import Evse
 from nl.carcharging.services.EvseReaderProd import EvseState
+from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+
 """ 
  - make sure all url_for routes point to this blueprint
 """
@@ -567,6 +570,7 @@ def active_charge_session():
             'evseEnabled'       : True if evse.is_enabled() else False,
             'charging'          : True if WebAppConfig.chThread.is_status_charging else False,
             'offPeakEnabled'    : WebAppConfig.peakHoursOffPeakEnabled,
+            'offPeakAllowedOnce': WebAppConfig.peakHoursAllowPeakOnePeriod,
             'offPeak'           : True if evse.isOffPeak else False,
             'auth'              : True if (current_user.is_authenticated) else False,
             'reason'            : 'No active charge session'
@@ -579,6 +583,7 @@ def active_charge_session():
             'evseEnabled'       : True if evse.is_enabled() else False,
             'charging'          : True if WebAppConfig.chThread.is_status_charging else False,
             'offPeakEnabled'    : WebAppConfig.peakHoursOffPeakEnabled,
+            'offPeakAllowedOnce': WebAppConfig.peakHoursAllowPeakOnePeriod,
             'offPeak'           : True if evse.isOffPeak else False,
             'auth'              : True if (current_user.is_authenticated) else False,
             'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated) else None
@@ -818,3 +823,39 @@ def TeslaApi_RevokeOAuth(token=None):
         'vehicles' : ''
         })
 
+
+# Always returns json
+@flaskRoutes.route("/update_settings/<path:param>/<path:value>", methods=["POST"])
+@authenticated_resource  # CSRF Token is valid
+def update_settings(param=None, value=None):
+    if (param == 'peakHoursOffPeakEnabled'):
+        WebAppConfig.peakHoursOffPeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        ophm = OffPeakHoursModel()
+        WebSocketUtil.emit(
+                event='off_peak_status_update', 
+                    id=WebAppConfig.ENERGY_DEVICE_ID,
+                    data={ 'isOffPeak': ophm.is_off_peak_now(),
+                           'offPeakEnabled': WebAppConfig.peakHoursOffPeakEnabled,
+                           'peakAllowOnePeriod': WebAppConfig.peakHoursAllowPeakOnePeriod
+                    },
+                    namespace='/charge_session',
+                    public=True
+                )
+        return jsonify({ 'status': 200, 'param': param, 'value': WebAppConfig.peakHoursOffPeakEnabled })
+
+    if (param == 'peakHoursAllowPeakOnePeriod'):
+        WebAppConfig.peakHoursAllowPeakOnePeriod = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        ophm = OffPeakHoursModel()
+        WebSocketUtil.emit(
+                event='off_peak_status_update', 
+                    id=WebAppConfig.ENERGY_DEVICE_ID,
+                    data={ 'isOffPeak': ophm.is_off_peak_now(),
+                           'offPeakEnabled': WebAppConfig.peakHoursOffPeakEnabled,
+                           'peakAllowOnePeriod': WebAppConfig.peakHoursAllowPeakOnePeriod
+                    },
+                    namespace='/charge_session',
+                    public=True
+                )
+        return jsonify({ 'status': 200, 'param': param, 'value': WebAppConfig.peakHoursAllowPeakOnePeriod })
+
+    return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

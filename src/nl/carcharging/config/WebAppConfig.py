@@ -49,6 +49,9 @@ class WebAppConfig(object):
     # Raspberry PINs - Buzzer - PIN 16/ GPIO23
     INI_PIN_BUZZER = 'PIN_BUZZER' 
 
+    # Off peak
+    INI_PEAK_HOURS_OFF_PEAK_ENABLED = 'PEAK_HOURS_OFF_PEAK_ENABLED'
+
     # ini content
     ini_settings = None
 
@@ -115,7 +118,10 @@ class WebAppConfig(object):
     peakHoursOffPeakEnabled = True
     # Off Peak disabled for this period (not-persistent)
     peakHoursAllowPeakOnePeriod = False
-    
+
+    # Global location to store all connected clients keyed by request.sid (websocket room)    
+    connectedClients = {}
+
 
     sqlalchemy_engine = None
     sqlalchemy_session_factory = None
@@ -205,6 +211,8 @@ class WebAppConfig(object):
                 WebAppConfig.pinLedBlue = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PIN_LED_BLUE, WebAppConfig.pinLedBlue)
 
                 WebAppConfig.pinBuzzer = WebAppConfig.getIntOption(targetSectionName, WebAppConfig.INI_PIN_BUZZER, WebAppConfig.pinBuzzer)
+
+                WebAppConfig.peakHoursOffPeakEnabled = WebAppConfig.getBooleanOption(targetSectionName, WebAppConfig.INI_PEAK_HOURS_OFF_PEAK_ENABLED, WebAppConfig.peakHoursOffPeakEnabled)
 
         # Which environment is active?
         mainSectionDict = WebAppConfig.configSectionMap(WebAppConfig.INI_MAIN)

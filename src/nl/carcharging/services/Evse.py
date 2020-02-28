@@ -102,7 +102,8 @@ class Evse(object, metaclass=Singleton):
             WebSocketUtil.emit(
                     event='evse_enabled', 
                     id=WebAppConfig.ENERGY_DEVICE_ID,
-                    namespace='/evse_status'
+                    namespace='/evse_status',
+                    public=True
                 )
 
         else:
@@ -113,7 +114,8 @@ class Evse(object, metaclass=Singleton):
         WebSocketUtil.emit(
                 event='evse_disabled', 
                 id=WebAppConfig.ENERGY_DEVICE_ID,
-                namespace='/evse_status'
+                namespace='/evse_status',
+                public=True
             )
 
     def is_enabled(self):

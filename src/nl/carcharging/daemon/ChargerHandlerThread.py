@@ -22,6 +22,7 @@ from nl.carcharging.services.RfidReader import RfidReader
 from nl.carcharging.utils.EnergyUtil import EnergyUtil
 from nl.carcharging.utils.GenericUtil import GenericUtil
 from nl.carcharging.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
+from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
 
 GenericUtil.importGpio()
 GenericUtil.importMfrc522()
@@ -522,21 +523,12 @@ class ChargerHandlerThread(object):
                 if self.appSocketIO is not None and WebAppConfig.app is not None:
                     self.counter += 1
                     self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
-                    """
-                    self.appSocketIO.emit(
-                            'charge_session_data_update', 
-                            { 
-                                'id': WebAppConfig.ENERGY_DEVICE_ID,
-                                'data': open_charge_session_for_device.to_str() 
-                            }, 
-                            namespace='/charge_session'
-                            )
-                    """
-                    from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
+                    # Emit only to authenticated users, not public
                     WebSocketUtil.emit(
                             event='charge_session_data_update', 
                             id=WebAppConfig.ENERGY_DEVICE_ID,
                             data=open_charge_session_for_device.to_str(), 
-                            namespace='/charge_session'
+                            namespace='/charge_session',
+                            public=False
                         )
 
