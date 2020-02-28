@@ -138,7 +138,7 @@ def connect():
         if request.sid not in WebAppConfig.connectedClients.keys():
             WebAppConfig.connectedClients[request.sid] = {
                                 'sid'   : request.sid,
-                                'auth'  : True if current_user.is_authenticated else False,
+                                'auth'  : True if (current_user.is_authenticated) else False,
                                 'stats' : 'connected'
                                 }
     webApplogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
