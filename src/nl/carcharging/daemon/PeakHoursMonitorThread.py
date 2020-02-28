@@ -144,7 +144,7 @@ class PeakHoursMonitorThread(object):
                             self.logger.debug('Off Peak hours, EVSE OFF and Active charge session. Switching EVSE ON')
                             evse.switch_on()
                     if evse.isOffPeak:
-                        with threading.Lock:
+                        with self.threadLock:
                             # Off peak now, reset the one session peak authorization
                             WebAppConfig.peakHoursAllowPeakOnePeriod = False
 
