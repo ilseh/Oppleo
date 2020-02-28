@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 
+from nl.carcharging.config.WebAppConfig import WebAppConfig
 """ 
   As Flask uses it's own socketio implementation, which allows emit only from the main Thread or greenlet threads
   started as background task, this is a greenlet thread background task reading from a queue and emitting messages
@@ -61,15 +62,19 @@ class WebSocketQueueReaderBackgroundTask(object):
                         - Emit only to authenticated clients
                         - room is the request.sid of the specific client
                     """
-                    for connectedClient in WebAppConfig.connectedClients:
+                    for sid, connectedClient in WebAppConfig.connectedClients.items():
                         if 'auth' in connectedClient and connectedClient['auth']:
                             # Authenticated client, emit data
+                            self.logger.debug('Sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
                             self.appSocketIO.emit(
                                     event=msg['event'],
                                     data=m_body,
                                     namespace=msg['namespace'],
                                     room=connectedClient['sid']
                                     )
+                        else:
+                            self.logger.debug('NOT sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
+
 
                 self.wsEmitQueue.task_done()
             self.appSocketIO.sleep(0.5)
