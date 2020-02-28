@@ -53,7 +53,7 @@ WebAppConfig.appSocketIO = appSocketIO
 # Init the database
 import nl.carcharging.models.Base
 
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 import threading
 from queue import Queue
 from sqlalchemy.exc import OperationalError
