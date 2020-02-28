@@ -422,7 +422,7 @@
       if (on && chargeSession) {
         gaugeOneSession = (Math.round(kwh * 10) /10).toFixed(1) + 'kWh &euro; ' + (Math.round(price * 100) /100).toFixed(2)
       } else {
-        gaugeOneSession = 'Geen sessie'
+        gaugeOneSession = '-'
       }
     }
     function updateAuthIndicator( auth, error, on ) {
