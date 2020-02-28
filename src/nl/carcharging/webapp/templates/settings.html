@@ -9,14 +9,12 @@
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
-  <!-- Ion slider -->
-  <link href="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.css') }}"rel="stylesheet" type="text/css"/>
-  <link href="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.skinFlat.css') }}"rel="stylesheet" type="text/css"/>
-  <script src="{{ url_for('static', filename='plugins/ion-rangeslider/ion.rangeSlider.min.js') }}"></script>
-
   <!-- Bootstrap switch button -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
   <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
+
+  <!-- Rulez ruler -->
+  <script src="{{ url_for('static', filename='plugins/rulez/rulez.min.js') }}"></script>
 
   <style>
     .paginate_button {
@@ -90,7 +88,12 @@
 /*      background-color: sandybrown; */
       padding-left: 20px;
     }
-    
+
+    .rulez {
+        margin-left: 10px;
+        width: 90%;
+        height: 40px;
+    }
   </style>
 
   <script>
@@ -152,17 +155,6 @@
         JSON.stringify(diag_data, undefined, 2) 
       )
       $('pre#diag_json').show()
-      $("#range_03").ionRangeSlider({
-        type: "double",
-        grid: true,
-        min: 0,
-        max: 24,
-        from: 7,
-        to: 23,
-        postfix: 'u',
-        prefix: '',
-        skin: "sharp"
-      })
       $('input#peakHoursAllowPeakOnePeriod').bootstrapToggle()
       $('input#peakHoursAllowPeakOnePeriod').change(function() {
         updateSettings( 'peakHoursAllowPeakOnePeriod', $(this).prop('checked') )
@@ -180,6 +172,24 @@
       $('input#autoSessionCondenseSameOdometer').change(function() {
         updateSettings( 'autoSessionCondenseSameOdometer', $(this).prop('checked') )
       })
+      var offPeakSunday = document.getElementById('offPeakSunday')
+      var offPeakSundayRulez = new Rulez({
+          element: offPeakSunday,
+          divisions: [{
+            pixelGap: 25,
+            lineLength: 10
+          },{
+            pixelGap: 100,
+            lineLength: 20
+          }],
+          texts: [{
+              pixelGap: 50,
+              className: 'red',
+              rotation: 45
+          }]
+      })
+      offPeakSundayRulez.render()
+
       // Remove spinner
       $('.spinner').hide()
     })
@@ -305,6 +315,15 @@
                               </td>
                             </tr>
                             <tr>
+                              <td class="text-dark">Zondag:</td>
+                              <td class="text-primary">
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <svg id="offPeakSunday" class="rulez" xmlns="http://www.w3.org/2000/svg"></svg>
+                              </td>
+                            </tr>
+                            <tr>
                               <td class="text-dark">Maandag:</td>
                               <td class="text-primary">
                                 <div class="progress m-b-20">
@@ -317,11 +336,10 @@
                             <tr>
                               <td class="text-dark">Dinsdag:</td>
                               <td class="text-primary">
-                                <div class="form-group">
-                                  <label for="range_03" class="control-label"><b>Prefix</b> <span class="font-normal text-muted f-s-12 clearfix">showing grid and adding prefix "$"</span></label>
-                                  <div class="m-b-20">
-                                      <input type="text" id="range_03">
-                                  </div>
+                                <div class="progress m-b-20">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 10%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                               </td>
                             </tr>
@@ -357,14 +375,6 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Zaterdag:</td>
-                              <td class="text-primary">
-                                <div class="progress m-b-20">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Zondag:</td>
                               <td class="text-primary">
                                 <div class="progress m-b-20">
                                   <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
