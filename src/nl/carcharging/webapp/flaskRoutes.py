@@ -859,4 +859,12 @@ def update_settings(param=None, value=None):
                 )
         return jsonify({ 'status': 200, 'param': param, 'value': WebAppConfig.peakHoursAllowPeakOnePeriod })
 
+    if (param == 'autoSessionEnabled'):
+        WebAppConfig.autoSessionEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': WebAppConfig.autoSessionEnabled })
+
+    if (param == 'autoSessionCondenseSameOdometer'):
+        WebAppConfig.autoSessionCondenseSameOdometer = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': WebAppConfig.autoSessionCondenseSameOdometer })
+
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

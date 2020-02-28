@@ -172,6 +172,14 @@
         updateSettings( 'peakHoursOffPeakEnabled', $(this).prop('checked') )
       })
 
+      $('input#autoSessionEnabled').bootstrapToggle()
+      $('input#autoSessionEnabled').change(function() {
+        updateSettings( 'autoSessionEnabled', $(this).prop('checked') )
+      })
+      $('input#autoSessionCondenseSameOdometer').bootstrapToggle()
+      $('input#autoSessionCondenseSameOdometer').change(function() {
+        updateSettings( 'autoSessionCondenseSameOdometer', $(this).prop('checked') )
+      })
       // Remove spinner
       $('.spinner').hide()
     })
@@ -259,7 +267,6 @@
                             <tr>
                               <td class="text-dark">Daluren ingeschakeld:</td>
                               <td class="text-primary">
-                                {{ webappconfig.peakHoursOffPeakEnabled }}
                                 <form id="peak-hours-off-peak-enabled-form">
                                   <input type="checkbox" 
                                     {% if webappconfig.peakHoursOffPeakEnabled %}checked{% endif %}
@@ -280,10 +287,6 @@
                             <tr>
                               <td class="text-dark">Eenmalig piekuren toestaan:</td>
                               <td class="text-primary">
-                                
-                                
-                                {{ webappconfig.peakHoursAllowPeakOnePeriod }}
-
                                 <form id="peak-hours-allow-peak-once-form">
                                   <input type="checkbox" 
                                     {% if webappconfig.peakHoursAllowPeakOnePeriod %}checked{% endif %}
@@ -299,9 +302,6 @@
                                     data-width="70"
                                   />
                                 </form>
-                                  
-                              
-                              
                               </td>
                             </tr>
                             <tr>
@@ -567,7 +567,7 @@
                               <th colspan="2">&nbsp;</th>
                             </tr>
                             <tr>
-                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> GPIO</th>
+                              <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> General-Purpose Input/Output (GPIO)</th>
                             </tr>
                             <tr>
                               <td class="text-dark">GPIO Mode:</td>
@@ -575,19 +575,27 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Red Led:</td>
-                              <td class="text-primary">{{ webappconfig.pinLedRed }}</td>
+                              <td class="text-primary">{% if webappconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ webappconfig.pinLedRed }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Green Led:</td>
-                              <td class="text-primary">{{ webappconfig.pinLedGreen }}</td>
+                              <td class="text-primary">{% if webappconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ webappconfig.pinLedGreen }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Blue Led:</td>
-                              <td class="text-primary">{{ webappconfig.pinLedBlue }}</td>
+                              <td class="text-primary">{% if webappconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ webappconfig.pinLedBlue }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Buzzer:</td>
-                              <td class="text-primary">{{ webappconfig.pinBuzzer }}</td>
+                              <td class="text-primary">{% if webappconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ webappconfig.pinBuzzer }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">EVSE Switch:</td>
+                              <td class="text-primary">{% if webappconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ webappconfig.pinEvseSwitch }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">EVSE Led:</td>
+                              <td class="text-primary">{% if webappconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ webappconfig.pinEvseLed }}</td>
                             </tr>
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -610,8 +618,24 @@
                               <th colspan="2" style="line-height: 40px;"><i class="fas fa-tasks"> Auto-session</th>
                             </tr>
                             <tr>
-                              <td class="text-dark">Enabled:</td>
-                              <td class="text-primary">{{ webappconfig.autoSessionEnabled }}</td>
+                              <td class="text-dark">Ingeschakeld:</td>
+                              <td class="text-primary">
+                                <form id="peak-hours-off-peak-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if webappconfig.autoSessionEnabled %}checked{% endif %}
+                                    name="autoSessionEnabled"
+                                    id="autoSessionEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Minutes:</td>
@@ -622,8 +646,24 @@
                               <td class="text-primary">{{ webappconfig.autoSessionEnergy }}kWh</td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Condense sessions:</td>
-                              <td class="text-primary">{{ webappconfig.autoSessionCondenseSameOdometer }}</td>
+                              <td class="text-dark">Condense sessies:</td>
+                              <td class="text-primary">
+                                <form id="peak-hours-off-peak-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if webappconfig.autoSessionCondenseSameOdometer %}checked{% endif %}
+                                    name="autoSessionCondenseSameOdometer"
+                                    id="autoSessionCondenseSameOdometer"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
                             </tr>
                                                         
                             {% if ('os' in diag) %}

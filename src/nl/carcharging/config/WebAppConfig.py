@@ -113,6 +113,8 @@ class WebAppConfig(object):
     pinBuzzer = 23 
     # Raspberry PINs - Buzzer - PIN 29/ GPIO5
     pinEvseSwitch = 5
+    # Raspberry PINs - Buzzer - PIN 31/ GPIO6
+    pinEvseLed = 6
 
     # Peak/ Off Peak enabled. If enabled the EVSE will be disabled during off-peak hours
     peakHoursOffPeakEnabled = True

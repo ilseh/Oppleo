@@ -41,7 +41,6 @@ EVSE_MIN_TIME_TO_PULSE = 500  # Min time im ms between rising edges to be pulsin
 # (ie turned on) and is not pulsing. Value is chosen intuitively.
 EVSE_MAX_TIME_TO_PULSE = 4 * EVSE_MIN_TIME_TO_PULSE
 
-PWM_GPIO = 6  # 4
 SAMPLE_TIME = 0.05  # .05 sec
 
 
@@ -100,13 +99,13 @@ class EvseReaderProd:
         global WebAppConfig
 
         self.logger.debug('In loop, doing setup GPIO')
-        # TODO - set GPIO mode globally
-        GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
-        GPIO.setup(6, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        # set GPIO mode globally (to BCM)
+        # GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
+        GPIO.setup(WebAppConfig.pinEvseLed, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         pigpio_pi = pigpio.pi()
 
-        evse_reader = EvseReaderUtil(pigpio_pi, PWM_GPIO)
+        evse_reader = EvseReaderUtil(pigpio_pi, WebAppConfig.pinEvseLed)
         self.logger.debug('Init EvseReaderUtil done')
 
         evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
