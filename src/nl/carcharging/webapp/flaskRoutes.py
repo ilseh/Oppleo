@@ -134,7 +134,7 @@ def login():
 def authenticated_resource(function):
     @wraps(function)
     def decorated(*args, **kwargs):
-        if (current_user.is_authenticated()):
+        if (current_user.is_authenticated:
             return function(*args, **kwargs)
         # return abort(403) # unauthenticated
         # Not allowed.
@@ -585,8 +585,8 @@ def active_charge_session():
             'offPeakEnabled'    : WebAppConfig.peakHoursOffPeakEnabled,
             'offPeakAllowedOnce': WebAppConfig.peakHoursAllowPeakOnePeriod,
             'offPeak'           : True if evse.isOffPeak else False,
-            'auth'              : current_user.is_authenticated(),
-            'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated()) else None
+            'auth'              : True if current_user.is_authenticated else False,
+            'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated else None
             })
     except Exception as e:
         flaskRoutesLogger.error("active_charge_session - could not return information", exc_info=True)
