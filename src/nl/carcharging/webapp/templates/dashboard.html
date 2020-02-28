@@ -76,11 +76,13 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
+    gaugeOneStatus = ''
+    gaugeOneSession = ''
 
     function updateGauges( data ) {
       updateGauger( 'gauger_1',       // id
-                    'Available',       // title
-                    'No session',   // subtitle
+                    gaugeOneStatus,   // title
+                    gaugeOneSession,  // subtitle
                     '0km/u',          // scale min
                     '100km/u',        // scale max
                     Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l3)+parseFloat(data.p_l3))/factor_Whkm),  // percentage
@@ -300,7 +302,6 @@
       })
     }
 
-
     var socket = undefined
     function startWebSocket() {
       console.log(timestamp() + ' startWebSocket()')
@@ -366,23 +367,28 @@
       $('span#chargingIndicator').toggleClass('badge-outlined', !on)
       if (!on) $('span#chargingIndicator').attr('data-original-title','')
       if (!on) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
+      if (!on) gaugeOneStatus = 'Uitgeschakeld'
       // Red on error
       $('span#chargingIndicator').toggleClass('badge-danger', (on && error))
       if (on && error) $('span#chargingIndicator').attr('data-original-title','Laadsessie status onbekend')
       if (on && error) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
+      if (on && error) gaugeOneStatus = 'Foutmelding'
       // Dark if no session active
       $('span#chargingIndicator').toggleClass('badge-secondary', (on && !error && !chargeSession))
       $('span#chargingIndicator').toggleClass('badge-outlined', (on && !error && !chargeSession))
       if (on && !error && !chargeSession) $('span#chargingIndicator').attr('data-original-title','Geen laadsessie actief')
       if (on && !error && !chargeSession) $('span#chargingIndicator').html('<i class="far fa-clipboard"></i>')
+      if (on && !error && !chargeSession) gaugeOneStatus = 'Geen sessie'
       // Yellow if session active, but not charging
       $('span#chargingIndicator').toggleClass('badge-warning', (on && !error && chargeSession && !charging))
       if (on && !error && chargeSession && !charging) $('span#chargingIndicator').attr('data-original-title','Niet aan het laden')
       if (on && !error && chargeSession && !charging) $('span#chargingIndicator').html('<i class="mdi mdi-battery-charging-40"></i>')
+      if (on && !error && chargeSession && !charging) gaugeOneStatus = 'Wachten'
       // Blue if charging (should have an active session active)
       $('span#chargingIndicator').toggleClass('badge-primary', (on && !error && chargeSession && charging))
       if (on && !error && chargeSession && charging) $('span#chargingIndicator').attr('data-original-title','Actief aan het laden')
       if (on && !error && chargeSession && charging) $('span#chargingIndicator').html('<i class="mdi mdi-battery-charging-40"></i>')
+      if (on && !error && chargeSession && charging) gaugeOneStatus = 'Laden'
     }
     // Error: red, not enabled: gray, enabled peak: orange, off peak: green, allowed-once: blue (info)
     function updateOffPeakIndicator( offPeakEnabled, offPeak, offPeakAllowedOnce, error, on ) {
@@ -411,8 +417,13 @@
       $('span#totalKwhIndicatorSpacer').toggle(chargeSession && on)
       $('span#totalPriceIndicator').toggle(chargeSession && on)
       $('span#totalPriceIndicatorSpacer').toggle(chargeSession && on)
-      $('span#totalKwhIndicator').html(kwh + 'kWh')
-      $('span#totalPriceIndicator').html('&euro; ' + price)
+      $('span#totalKwhIndicator').html((Math.round(kwh * 10) /10).toFixed(1) + 'kWh')
+      $('span#totalPriceIndicator').html('&euro; ' + (Math.round(price * 100) /100).toFixed(2))
+      if (on && chargeSession) {
+        gaugeOneSession = (Math.round(kwh * 10) /10).toFixed(1) + 'kWh &euro; ' + (Math.round(price * 100) /100).toFixed(2)
+      } else {
+        gaugeOneSession = 'Geen sessie'
+      }
     }
     function updateAuthIndicator( auth, error, on ) {
       // Dark when off
