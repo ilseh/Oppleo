@@ -589,6 +589,7 @@ def active_charge_session():
             'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated()) else None
             })
     except Exception as e:
+        flaskRoutesLogger.error("active_charge_session - could not return information", exc_info=True)
         pass
     return jsonify({ 
         'status'        : 500, 
