@@ -282,22 +282,12 @@ class ChargerHandlerThread(object):
         # Emit websocket update
         if self.appSocketIO is not None:
             self.logger.debug(f'Send msg charge_session_started via websocket ...{charge_session.to_str()}')
-            """
-            self.appSocketIO.emit(
-                    'charge_session_started', 
-                    { 
-                        'id': WebAppConfig.ENERGY_DEVICE_ID,
-                        'data': charge_session.to_str() 
-                    }, 
-                    namespace='/charge_session'
-                    )
-            """
-            from nl.carcharging.utils.WebSocketUtil import WebSocketUtil
             WebSocketUtil.emit(
                     event='charge_session_started', 
                     id=WebAppConfig.ENERGY_DEVICE_ID,
                     data=charge_session.to_str(),
-                    namespace='/charge_session'
+                    namespace='/charge_session',
+                    public=False
                 )
 
 
@@ -328,7 +318,8 @@ class ChargerHandlerThread(object):
                     event='charge_session_ended', 
                     id=WebAppConfig.ENERGY_DEVICE_ID,
                     data=charge_session.to_str(),
-                    namespace='/charge_session'
+                    namespace='/charge_session',
+                    public=False
                 )
 
 
@@ -412,7 +403,8 @@ class ChargerHandlerThread(object):
                             event='charge_session_status_update', 
                             status=evse_state, 
                             id=WebAppConfig.ENERGY_DEVICE_ID, 
-                            namespace='/charge_session'
+                            namespace='/charge_session',
+                            public=True
                         )
             if not self.ledlighter.is_charging_light_on():
                 self.logger.debug('Start charging light pulse')
@@ -441,7 +433,8 @@ class ChargerHandlerThread(object):
                             # INACTIVE IS ALSO CONNECTED
                             status=EvseState.EVSE_STATE_CONNECTED, 
                             id=WebAppConfig.ENERGY_DEVICE_ID, 
-                            namespace='/charge_session'
+                            namespace='/charge_session',
+                            public=True
                         )
                 if self.ledlighter.is_charging_light_on():
                     self.ledlighter.back_to_previous_light()
