@@ -506,6 +506,16 @@ def settings(active=1):
     diag_json = json.dumps(diag)
     # threading.enumerate() not json serializable
     diag['threading']['enum'] = threading.enumerate()
+    # OffPeakHoursModel not resializable
+    diag['offPeak'] = {}
+    diag['offPeak']['all'] = OffPeakHoursModel.get_all()
+    diag['offPeak']['monday'] = OffPeakHoursModel.get_monday()
+    diag['offPeak']['tuesday'] = OffPeakHoursModel.get_tuesday()
+    diag['offPeak']['wednesday'] = OffPeakHoursModel.get_wednesday()
+    diag['offPeak']['thursday'] = OffPeakHoursModel.get_thursday()
+    diag['offPeak']['friday'] = OffPeakHoursModel.get_friday()
+    diag['offPeak']['saturday'] = OffPeakHoursModel.get_saturday()
+    diag['offPeak']['sunday'] = OffPeakHoursModel.get_sunday()
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
                 active=active, 

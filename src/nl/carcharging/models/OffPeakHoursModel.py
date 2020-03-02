@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+from enum import IntEnum
 
 from marshmallow import fields, Schema
 from marshmallow.fields import Boolean
@@ -7,12 +8,26 @@ from marshmallow.fields import Boolean
 from sqlalchemy import Column, Integer, Boolean, String, Time, orm, and_, or_, cast, Time, func
 from nl.carcharging.models.Base import Base, DbSession
 
+# enum.Enum is not jsonify serializable, IntEnum can be dumped using json.dumps()
+class Weekday(IntEnum):
+    MONDAY = 0 
+    TUESDAY = 1  
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
+
 
 class OffPeakHoursModel(Base):
+    logger = logging.getLogger('nl.carcharging.models.OffPeakHoursModel')
     __tablename__ = 'off_peak_hours'
 
     weekday_en = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ]
     weekday_nl = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag' ]
+
+    month_en = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
+    month_nl = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December' ]
 
     id = Column(Integer, primary_key=True)
     weekday = Column(String(20))
@@ -25,7 +40,7 @@ class OffPeakHoursModel(Base):
     off_peak_end = Column(Time)
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.carcharging.models.OffPeakHoursModel')
+        pass
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
@@ -57,9 +72,19 @@ class OffPeakHoursModel(Base):
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
 
 
-    def weekdayToStr(self, weekday) -> str:
+    def weekdayToEnStr(self, weekday) -> str:
         return self.weekday_en[weekday % len(self.weekday_en)]
+    def weekdayToNlStr(self, weekday) -> str:
+        return self.weekday_nl[weekday % len(self.weekday_nl)]
 
+    def weekdayEnStr(self) -> str:
+        return self.weekday_en[self.weekday % len(self.weekday_en)]
+    def weekdayNlStr(self) -> str:
+        return self.weekday_nl[self.weekday % len(self.weekday_nl)]
+    def monthEnStr(self) -> str:
+        return self.month_en[(self.holiday_month -1) % len(self.month_en)]
+    def monthNlStr(self) -> str:
+        return self.month_nl[(self.holiday_month -1) % len(self.month_nl)]
 
     # Timestamp of type datetime
     def is_off_peak_now(self) -> bool:
@@ -77,7 +102,7 @@ class OffPeakHoursModel(Base):
         r = None
         try:
             r = db_session.query(OffPeakHoursModel) \
-                          .filter(OffPeakHoursModel.weekday == self.weekdayToStr(timestamp.weekday())) \
+                          .filter(OffPeakHoursModel.weekday == self.weekdayToEnStr(timestamp.weekday())) \
                           .filter(OffPeakHoursModel.off_peak_start <= cast(timestamp, Time)) \
                           .filter(OffPeakHoursModel.off_peak_end >= cast(timestamp, Time))
         except Exception as e:
@@ -117,6 +142,82 @@ class OffPeakHoursModel(Base):
         self.logger.debug('is_off_peak(): {} not within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
         return False
 
+
+    def is_day(self, dow) -> bool:
+        return self.weekday == self.weekday_nl[dow] or \
+               self.weekday == self.weekday_en[dow]
+    def is_weekday(self) -> bool:
+        return self.weekday != None and isinstance(self.weekday, str) and \
+               ( self.weekday in self.weekday_nl or self.weekday in self.weekday_en )
+
+    def is_holiday(self) -> bool:
+        return not self.is_weekday()
+
+    def is_monday(self) -> bool:
+        return self.is_day(Weekday.MONDAY)
+    def is_tuesday(self) -> bool:
+        return self.is_day(Weekday.TUESDAY)
+    def is_wednesday(self) -> bool:
+        return self.is_day(Weekday.WEDNESDAY)
+    def is_thursday(self) -> bool:
+        return self.is_day(Weekday.THURSDAY)
+    def is_friday(self) -> bool:
+        return self.is_day(Weekday.FRIDAY)
+    def is_saturday(self) -> bool:
+        return self.is_day(Weekday.SATURDAY)
+    def is_sunday(self) -> bool:
+        return self.is_day(Weekday.SUNDAY)
+
+
+    
+    @staticmethod
+    def get_all():
+        db_session = DbSession()
+        r = None
+        try:
+            r = db_session.query(OffPeakHoursModel) \
+                          .all()
+        except Exception as e:
+            # Nothing to roll back
+            OffPeakHoursModel.logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
+        return r
+
+    
+    @staticmethod
+    def get_weekday(weekday):
+        db_session = DbSession()
+        r = None
+        try:
+            r = db_session.query(OffPeakHoursModel) \
+                          .filter(OffPeakHoursModel.weekday == self.weekdayToEnStr(weekday)) \
+                          .all()
+        except Exception as e:
+            # Nothing to roll back
+            OffPeakHoursModel.logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
+        return r
+        
+    @staticmethod
+    def get_monday():
+        return OffPeakHoursModel.get_weekday(Weekday.MONDAY)
+    @staticmethod
+    def get_tuesday():
+        return OffPeakHoursModel.get_weekday(Weekday.TUESDAY)
+    @staticmethod
+    def get_wednesday():
+        return OffPeakHoursModel.get_weekday(Weekday.WEDNESDAY)
+    @staticmethod
+    def get_thursday():
+        return OffPeakHoursModel.get_weekday(Weekday.THURSDAY)
+    @staticmethod
+    def get_friday():
+        return OffPeakHoursModel.get_weekday(Weekday.FRIDAY)
+    @staticmethod
+    def get_saturday():
+        return OffPeakHoursModel.get_weekday(Weekday.SATURDAY)
+    @staticmethod
+    def get_sunday():
+        return OffPeakHoursModel.get_weekday(Weekday.SUNDAY)
+        
 
     def get_count(self, q):
         count = 0

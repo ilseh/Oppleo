@@ -305,7 +305,7 @@
                               </th>
                             </tr>
                             <tr>
-                              <td class="text-dark">Daluren ingeschakeld:</td>
+                              <td class="text-dark">Alleen laden binnen daluren:</td>
                               <td class="text-primary">
                                 <form id="peak-hours-off-peak-enabled-form">
                                   <input type="checkbox" 
@@ -325,7 +325,7 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Eenmalig piekuren toestaan:</td>
+                              <td class="text-dark">Eenmalig laden buiten daluren:</td>
                               <td class="text-primary">
                                 <form id="peak-hours-allow-peak-once-form">
                                   <input type="checkbox" 
@@ -353,6 +353,18 @@
                                 <div class="hours-of-day"></div>
                               </td>
                             </tr>
+                            <tr>
+                              <td class="text-dark">Maandag:</td>
+                              <td class="text-primary" id="offPeakMonday">
+                                <div class="progress">
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 29.166%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24"></div>
+                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 66.667%" aria-valuenow="60" aria-valuemin="7" aria-valuemax="24"></div>
+                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 4.1666%" aria-valuenow="23" aria-valuemin="0" aria-valuemax="24"></div>
+                                </div>
+                                <div class="hours-of-day"></div>
+                              </td>
+                            </tr>
+
                             <tr>
                               <td class="text-dark">Maandag:</td>
                               <td class="text-primary" id="offPeakMonday">
@@ -420,6 +432,23 @@
 
 
 
+                            {% if 'offPeak' in diag %}
+                            {% for offPeak in diag['offPeak'] %}
+                            {% if offPeak.is_holiday() %}
+                            <tr>
+                              <td class="text-dark">{{ offPeak.description }}:</td>
+                              <td class="text-primary">
+                                {% if offPeak.recurring %} 
+                                  Elk jaar op {{ offPeak.holiday_day }} {{ offPeak.monthNlStr() }}
+                                {% endif %}
+                                {% if not offPeak.recurring %} 
+                                  In {{ offPeak.holiday_year }} op {{ offPeak.holiday_day }} {{ offPeak.monthNlStr() }}
+                                {% endif %}
+                              </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
                           </tbody>
 
 
