@@ -12,6 +12,7 @@ class EnergyDeviceMeasureModel(Base):
     """
     EnergyDeviceMeasure Model
     """
+    logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
 
     # table name
     __tablename__ = 'energy_device_measures'
@@ -35,8 +36,7 @@ class EnergyDeviceMeasureModel(Base):
     hz = Column(Float)
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.carcharging.models.EnergyDeviceMeasureModel')
-
+        pass
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
@@ -125,6 +125,26 @@ class EnergyDeviceMeasureModel(Base):
                     since_ts.strftime("%d/%m/%Y, %H:%M:%S"), energy_used)
                     )
         return energy_used
+
+
+    # returns the created_at value at which the first time thi kwh value was measured
+    @staticmethod
+    def get_time_of_kwh(energy_device_id, kw_total):
+        db_session = DbSession()
+        edmm = None
+        try:
+            edmm = db_session.query(EnergyDeviceMeasureModel) \
+                             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                             .filter(EnergyDeviceMeasureModel.kw_total == kw_total) \
+                             .filter(EnergyDeviceMeasureModel.a_l1 == 0) \
+                             .filter(EnergyDeviceMeasureModel.a_l2 == 0) \
+                             .filter(EnergyDeviceMeasureModel.a_l3 == 0) \
+                             .order_by(EnergyDeviceMeasureModel.created_at.asc()) \
+                             .first()
+        except Exception as e:
+            # Nothing to roll back
+            EnergyDeviceMeasureModel.logger.error("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ), exc_info=True)
+        return edmm.created_at if edmm is not None else None 
 
 
     def get_created_at_str(self):

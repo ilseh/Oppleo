@@ -209,6 +209,19 @@ if __name__ == "__main__":
             webApplogger.debug("Start a new session")
     """
 
+    """
+        TESTING DETECTION OF THE END_TIME ON AUTO SESSION
+    from nl.carcharging.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+    end_time = EnergyDeviceMeasureModel.get_time_of_kwh(
+                        'laadpaal_noord',
+                        '1501.6'
+                        )
+    end_time_str = str(end_time.strftime("%d/%m/%Y, %H:%M:%S"))
+    from datetime import datetime
+    now = datetime.now()
+    now_str = str(now.strftime("%d/%m/%Y, %H:%M:%S"))
+    """
+
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(

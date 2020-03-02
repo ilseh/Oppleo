@@ -296,7 +296,12 @@ class ChargerHandlerThread(object):
     # lock threads before calling this
     def end_charge_session(self, charge_session):
         charge_session.end_value = self.energy_util.getTotalKWHHValue()
-        charge_session.end_time = datetime.now()
+        # end_time is the time the kWh was updated to this value, and the current went to 0
+        end_time = EnergyDeviceMeasureModel.get_time_of_kwh(
+                        charge_session.energy_device_id,
+                        charge_session.end_value
+                        )
+        charge_session.end_time = end_time if end_time is not None else datetime.now()
         charge_session.total_energy = charge_session.end_value - charge_session.start_value
         charge_session.total_price = round(charge_session.total_energy * charge_session.tariff * 100) /100
         charge_session.save()
