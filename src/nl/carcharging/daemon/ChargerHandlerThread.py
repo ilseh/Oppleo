@@ -223,7 +223,8 @@ class ChargerHandlerThread(object):
             if self.has_rfid_open_session(rfid_latest_session):
                 self.buzz_ok()
                 self.logger.debug("Stopping charging session for rfid %s" % rfid)
-                self.end_charge_session(rfid_latest_session)
+                # Set end-time to now (when RFID was presented)
+                self.end_charge_session(rfid_latest_session, False)
             else:
                 self.authorize(rfid)
                 self.buzz_ok()
@@ -294,14 +295,18 @@ class ChargerHandlerThread(object):
     # evse_reader_thread
     # rfid_reader_thread
     # lock threads before calling this
-    def end_charge_session(self, charge_session):
+    def end_charge_session(self, charge_session, detect=False):
         charge_session.end_value = self.energy_util.getTotalKWHHValue()
-        # end_time is the time the kWh was updated to this value, and the current went to 0
-        end_time = EnergyDeviceMeasureModel.get_time_of_kwh(
-                        charge_session.energy_device_id,
-                        charge_session.end_value
-                        )
-        charge_session.end_time = end_time if end_time is not None else datetime.now()
+        if detect:
+            # end_time is the time the kWh was updated to this value, and the current went to 0
+            end_time = EnergyDeviceMeasureModel.get_time_of_kwh(
+                            charge_session.energy_device_id,
+                            charge_session.end_value
+                            )
+            charge_session.end_time = end_time if end_time is not None else datetime.now()
+            self.logger.debug('Detected end time is {}'.format(charge_session.end_time.strftime("%d/%m/%Y, %H:%M:%S")))
+        else:
+            charge_session.end_time = datetime.now()
         charge_session.total_energy = charge_session.end_value - charge_session.start_value
         charge_session.total_price = round(charge_session.total_energy * charge_session.tariff * 100) /100
         charge_session.save()
@@ -478,7 +483,8 @@ class ChargerHandlerThread(object):
                 with self.threadLock:
                     # Lock to prevent the session to be hijacked when someone simultaneously presents the rfid card
                     charge_session = ChargeSessionModel.get_open_charge_session_for_device(self.device)
-                    self.end_charge_session(charge_session)
+                    # Try to detect the last power consumption
+                    self.end_charge_session(charge_session, True)
                     # Verify if the auto session was generated correctly. If the odometer value is equal, the session should be condensed
                     # Condense after the odometer update has completed! Done in the same thread
                     self.start_charge_session(

@@ -437,7 +437,8 @@ def stop_charge_session(charge_session_id=None):
         with threadLock:
             charge_session = ChargeSessionModel.get_one_charge_session(charge_session_id)
             if charge_session is not None:
-                WebAppConfig.chThread.end_charge_session(charge_session)
+                # End session now, through WEB, not detecting the latest consumption
+                WebAppConfig.chThread.end_charge_session(charge_session, False)
                 WebAppConfig.chThread.buzz_ok()
                 WebAppConfig.chThread.update_charger_and_led(False)
             else:
