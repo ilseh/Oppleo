@@ -145,10 +145,8 @@
                     '#36404a',        // fillColor
                     '#98a6ad'         // insetColor
                   )
-
     }
 
-    var dt = undefined
     function getUsageData( n ) {
       console.log(timestamp() + ' getUsageData()')
       $.ajax({
@@ -174,6 +172,10 @@
       })
     }
 
+    function updateGaugeTitle(id, title, subTitle) {
+      $('#' + id + '_title').html(title)
+      $('#' + id + '_subtitle').html(subTitle)
+    }
     function updateGauger( id,            // The element id
                            title,
                            subTitle,
@@ -219,7 +221,6 @@
         .circliful()
       $('#' + id + '_inset').toggleClass('invisible', false);    
       $('#' + id + '_insettitle').toggleClass('invisible', false);    
-      
     }
 
     function startChargeSession( result ) {
@@ -255,9 +256,10 @@
               updateTotalIndicator( result.data.total_energy, result.data.total_price, result.chargeSession, on )
             } else {
               // If not logged in, no charge session information is returned
-              updateTotalIndicator( '', '', false, on)
+              updateTotalIndicator( undefined, undefined, result.chargeSession, on)
             }
             updateAuthIndicator( result.auth, error, on )
+            updateGaugeTitle('gauger_1', gaugeOneStatus, gaugeOneSession)
             break
           case 404:                   // No charge session found (green)
             error = false
@@ -413,16 +415,20 @@
       if (on && !error && offPeakEnabled && !offPeak && !offPeakAllowedOnce) $('span#offPeakIndicator').attr('data-original-title','Buiten daluren')
     }
     function updateTotalIndicator( kwh, price, chargeSession, on ) {
-      $('span#totalKwhIndicator').toggle(chargeSession && on)
-      $('span#totalKwhIndicatorSpacer').toggle(chargeSession && on)
-      $('span#totalPriceIndicator').toggle(chargeSession && on)
-      $('span#totalPriceIndicatorSpacer').toggle(chargeSession && on)
-      $('span#totalKwhIndicator').html((Math.round(kwh * 10) /10).toFixed(1) + 'kWh')
-      $('span#totalPriceIndicator').html('&euro; ' + (Math.round(price * 100) /100).toFixed(2))
+      $('span#totalKwhIndicator').toggle(chargeSession && on && kwh != undefined)
+      $('span#totalKwhIndicatorSpacer').toggle(chargeSession && on && kwh != undefined)
+      $('span#totalPriceIndicator').toggle(chargeSession && on && price != undefined)
+      $('span#totalPriceIndicatorSpacer').toggle(chargeSession && on && price != undefined)
+      $('span#totalKwhIndicator').html(kwh != undefined ? (Math.round(kwh * 10) /10).toFixed(1) + 'kWh' : '')
+      $('span#totalPriceIndicator').html(price != undefined ? '&euro; ' + (Math.round(price * 100) /100).toFixed(2) : '')
       if (on && chargeSession) {
-        gaugeOneSession = (Math.round(kwh * 10) /10).toFixed(1) + 'kWh &euro; ' + (Math.round(price * 100) /100).toFixed(2)
+        if (kwh != undefined && price != undefined) {
+          gaugeOneSession = (Math.round(kwh * 10) /10).toFixed(1) + 'kWh &euro; ' + (Math.round(price * 100) /100).toFixed(2)
+        } else {
+          gaugeOneSession = "Laadsessie actief"
+        }
       } else {
-        gaugeOneSession = ''
+        gaugeOneSession = 'Geen laadsessie'
       }
     }
     function updateAuthIndicator( auth, error, on ) {
