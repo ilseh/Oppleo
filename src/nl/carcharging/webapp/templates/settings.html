@@ -432,8 +432,8 @@
 
 
 
-                            {% if 'offPeak' in diag %}
-                            {% for offPeak in diag['offPeak'] %}
+                            {% if 'offPeak' in diag and 'all' in diag['offPeak'] %}
+                            {% for offPeak in diag['offPeak']['all'] %}
                             {% if offPeak.is_holiday() %}
                             <tr>
                               <td class="text-dark">{{ offPeak.description }}:</td>
