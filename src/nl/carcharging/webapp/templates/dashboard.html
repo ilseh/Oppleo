@@ -415,10 +415,14 @@
       if (on && !error && offPeakEnabled && !offPeak && !offPeakAllowedOnce) $('span#offPeakIndicator').attr('data-original-title','Buiten daluren')
     }
     function updateTotalIndicator( kwh, price, chargeSession, on ) {
-      $('span#totalKwhIndicator').toggle(chargeSession && on && kwh != undefined)
-      $('span#totalKwhIndicatorSpacer').toggle(chargeSession && on && kwh != undefined)
-      $('span#totalPriceIndicator').toggle(chargeSession && on && price != undefined)
-      $('span#totalPriceIndicatorSpacer').toggle(chargeSession && on && price != undefined)
+//      $('span#totalKwhIndicator').toggle(chargeSession && on && kwh != undefined)
+      $('span#totalKwhIndicator').toggle(false)
+//      $('span#totalKwhIndicatorSpacer').toggle(chargeSession && on && kwh != undefined)
+      $('span#totalKwhIndicatorSpacer').toggle(false)
+//      $('span#totalPriceIndicator').toggle(chargeSession && on && price != undefined)
+      $('span#totalPriceIndicator').toggle(false)
+//      $('span#totalPriceIndicatorSpacer').toggle(chargeSession && on && price != undefined)
+      $('span#totalPriceIndicatorSpacer').toggle(false)
       $('span#totalKwhIndicator').html(kwh != undefined ? (Math.round(kwh * 10) /10).toFixed(1) + 'kWh' : '')
       $('span#totalPriceIndicator').html(price != undefined ? '&euro; ' + (Math.round(price * 100) /100).toFixed(2) : '')
       if (on && chargeSession) {
