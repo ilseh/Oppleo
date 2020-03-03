@@ -71,11 +71,12 @@ class OffPeakHoursModel(Base):
             db_session.rollback()
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
 
-
-    def weekdayToEnStr(self, weekday) -> str:
-        return self.weekday_en[weekday % len(self.weekday_en)]
-    def weekdayToNlStr(self, weekday) -> str:
-        return self.weekday_nl[weekday % len(self.weekday_nl)]
+    @staticmethod
+    def weekdayToEnStr(weekday) -> str:
+        return OffPeakHoursModel.weekday_en[weekday % len(OffPeakHoursModel.weekday_en)]
+    @staticmethod
+    def weekdayToNlStr(weekday) -> str:
+        return OffPeakHoursModel.weekday_nl[weekday % len(OffPeakHoursModel.weekday_nl)]
 
     def weekdayEnStr(self) -> str:
         return self.weekday_en[self.weekday % len(self.weekday_en)]
@@ -102,7 +103,7 @@ class OffPeakHoursModel(Base):
         r = None
         try:
             r = db_session.query(OffPeakHoursModel) \
-                          .filter(OffPeakHoursModel.weekday == self.weekdayToEnStr(timestamp.weekday())) \
+                          .filter(OffPeakHoursModel.weekday == OffPeakHoursModel.weekdayToEnStr(timestamp.weekday())) \
                           .filter(OffPeakHoursModel.off_peak_start <= cast(timestamp, Time)) \
                           .filter(OffPeakHoursModel.off_peak_end >= cast(timestamp, Time))
         except Exception as e:
@@ -189,7 +190,7 @@ class OffPeakHoursModel(Base):
         r = None
         try:
             r = db_session.query(OffPeakHoursModel) \
-                          .filter(OffPeakHoursModel.weekday == self.weekdayToEnStr(weekday)) \
+                          .filter(OffPeakHoursModel.weekday == OffPeakHoursModel.weekdayToEnStr(weekday)) \
                           .all()
         except Exception as e:
             # Nothing to roll back
