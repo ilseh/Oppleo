@@ -509,6 +509,7 @@ def settings(active=1):
     diag['threading']['enum'] = threading.enumerate()
     # OffPeakHoursModel not resializable
     diag['offPeak'] = {}
+    diag['offPeak']['allReps'] = OffPeakHoursModel.get_all_representations_nl()
     diag['offPeak']['all'] = OffPeakHoursModel.get_all()
     diag['offPeak']['monday'] = OffPeakHoursModel.get_monday()
     diag['offPeak']['tuesday'] = OffPeakHoursModel.get_tuesday()

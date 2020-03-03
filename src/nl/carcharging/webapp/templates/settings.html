@@ -210,11 +210,7 @@
       $('td[id^=offPeak] > div:nth-child(2)').each(function( index ) {
         var id = $(this).parent().attr("id")
         for (i = 0; i < 24; i++) {
-          if (id != 'offPeakSunday' && id != 'offPeakSaturday' && (i >= 7 && i < 23)) {
-            $(this).append( "<span style='color: #ef5350;'>" + (i %24) + "</span>" )
-          } else {
-            $(this).append( "<span style='color: #00b19d;'>" + (i %24) + "</span>" )
-          }
+          $(this).append( "<span style='color: #00b19d;'>" + (i %24) + "</span>" )
         }
       })
 
@@ -344,93 +340,26 @@
                                 </form>
                               </td>
                             </tr>
-                            <tr>
-                              <td class="text-dark">Zondag:</td>
-                              <td class="text-primary" id="offPeakSunday">
-                                <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <div class="hours-of-day"></div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Maandag:</td>
-                              <td class="text-primary" id="offPeakMonday">
-                                <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 29.166%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 66.667%" aria-valuenow="60" aria-valuemin="7" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 4.1666%" aria-valuenow="23" aria-valuemin="0" aria-valuemax="24"></div>
-                                </div>
-                                <div class="hours-of-day"></div>
-                              </td>
-                            </tr>
 
+                            {% if 'offPeak' in diag and 'allReps' in diag['offPeak'] %}
+                            {% for weekday in diag['offPeak']['allReps'] %}
+                            {% set weekdayOffPeak = diag['offPeak']['allReps'][weekday] %}
                             <tr>
-                              <td class="text-dark">Maandag:</td>
-                              <td class="text-primary" id="offPeakMonday">
+                              <td class="text-dark">{{ weekday }}:</td>
+                              <td class="text-primary" id="offPeak{{ weekday }}">
                                 <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 29.166%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 66.667%" aria-valuenow="60" aria-valuemin="7" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 4.1666%" aria-valuenow="23" aria-valuemin="0" aria-valuemax="24"></div>
+                                  {% for section in weekdayOffPeak %}
+                                  {% set diffMins = section['diffMins'] %}
+                                  {% set diffMinsPercentage = (diffMins / (24 * 60)) *100 %}
+                                  {% set offPeak = section['offPeak'] %}
+                                  <div class="progress-bar progress-bar-striped {% if section['offPeak'] %}progress-bar-animated bg-success{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ diffMinsPercentage }}%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                  {% endfor %}
                                 </div>
                                 <div class="hours-of-day"></div>
                               </td>
                             </tr>
-                            <tr>
-                              <td class="text-dark">Dinsdag:</td>
-                              <td class="text-primary" id="offPeakTuesday">
-                                <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 29.166%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 66.667%" aria-valuenow="60" aria-valuemin="7" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 4.1666%" aria-valuenow="23" aria-valuemin="0" aria-valuemax="24"></div>
-                                </div>
-                                <div class="hours-of-day"></div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Woensdag:</td>
-                              <td class="text-primary" id="offPeakWednesday">
-                                <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 29.166%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 66.667%" aria-valuenow="60" aria-valuemin="7" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 4.1666%" aria-valuenow="23" aria-valuemin="0" aria-valuemax="24"></div>
-                                </div>
-                                <div class="hours-of-day"></div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Donderdag:</td>
-                              <td class="text-primary" id="offPeakThursday">
-                                <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 29.166%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 66.667%" aria-valuenow="60" aria-valuemin="7" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 4.1666%" aria-valuenow="23" aria-valuemin="0" aria-valuemax="24"></div>
-                                </div>
-                                <div class="hours-of-day"></div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Vrijdag:</td>
-                              <td class="text-primary" id="offPeakFriday">
-                                <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 29.166%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped bg-danger" role="progressbar" style="width: 66.667%" aria-valuenow="60" aria-valuemin="7" aria-valuemax="24"></div>
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 4.1666%" aria-valuenow="23" aria-valuemin="0" aria-valuemax="24"></div>
-                                </div>
-                                <div class="hours-of-day"></div>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Zaterdag:</td>
-                              <td class="text-primary" id="offPeakSaturday">
-                                <div class="progress">
-                                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <div class="hours-of-day"></div>
-                              </td>
-                            </tr>
-
-
+                            {%- endfor -%}
+                            {%- endif -%}
 
                             {% if 'offPeak' in diag and 'all' in diag['offPeak'] %}
                             {% for offPeak in diag['offPeak']['all'] %}

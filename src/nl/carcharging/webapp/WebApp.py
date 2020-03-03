@@ -225,11 +225,15 @@ if __name__ == "__main__":
 
     """
         TESTING OffPeak segments
+    
     from nl.carcharging.models.OffPeakHoursModel import OffPeakHoursModel, Weekday
     segm1 = OffPeakHoursModel.get_representation(Weekday.MONDAY)
     segm2 = OffPeakHoursModel.get_representation(Weekday.SATURDAY)
-    segm3 = OffPeakHoursModel.get_representation(Weekday.SUNDAY)
     segm4 = OffPeakHoursModel.get_representation(Weekday.WEDNESDAY)
+
+    segm3 = OffPeakHoursModel.get_all_representations_nl()
+    for key, value in segm3.items(): 
+        print(key, value) 
     """
 
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread

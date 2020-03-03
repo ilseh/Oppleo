@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 from enum import IntEnum
+from collections import OrderedDict
 
 from marshmallow import fields, Schema
 from marshmallow.fields import Boolean
@@ -220,6 +221,9 @@ class OffPeakHoursModel(Base):
     def get_sunday():
         return OffPeakHoursModel.get_weekday(Weekday.SUNDAY)
 
+    @staticmethod
+    def diffMins(end, start):
+        return ((end.hour * 60) + end.minute) - ((start.hour * 60) + start.minute)
 
     """
         This method returns a representation of peak/ off peak hours during a weekday
@@ -232,31 +236,30 @@ class OffPeakHoursModel(Base):
     """
     @staticmethod
     def get_representation(weekday):
+        section_start_time = datetime.now().time()
+        section_start_time = section_start_time.replace(hour=0, minute=0, second=0, microsecond=0)
         op_list = OffPeakHoursModel.get_weekday(weekday)
         if op_list is None or len(op_list) == 0:
             # Return an empty weekday, all hours are peak
-            return [{ 'start': '00:00', 'end': '23:59', 'offPeak': False}]
+            section_end_time = datetime.now().time()
+            section_end_time = section_start_time.replace(hour=23, minute=59, second=0, microsecond=0)
+            return [{ 'start': section_start_time, 'end': section_end_time, 'diffMins': OffPeakHoursModel.diffMins(section_end_time, section_start_time), 'offPeak': False}]
         repr = []
-
-
-
-
-        section_start_time = datetime.now().time()
-        section_start_time = section_start_time.replace(hour=0, minute=0, second=0, microsecond=0)
         for op_entry in op_list:
             if (section_start_time < op_entry.off_peak_start):
                 # Gap of peak in between
-                repr.append({ 'start': section_start_time, 'end': op_entry.off_peak_start, 'offPeak': False})
+                repr.append({ 'start': section_start_time, 'end': op_entry.off_peak_start, 'diffMins': OffPeakHoursModel.diffMins(op_entry.off_peak_start, section_start_time), 'offPeak': False})
                 # Add off peak period
-                repr.append({ 'start': op_entry.off_peak_start, 'end': op_entry.off_peak_end, 'offPeak': True})
+                repr.append({ 'start': op_entry.off_peak_start, 'end': op_entry.off_peak_end, 'diffMins': OffPeakHoursModel.diffMins(op_entry.off_peak_end, op_entry.off_peak_start), 'offPeak': True})
             if (section_start_time == op_entry.off_peak_start):
                 # If previous section was also off-peak
                 if len(repr) > 0 and repr[-1]['offPeak']:
                     # extend existing off peak period
                     repr[-1]['offPeak']['end'] = op_entry.off_peak_end
+                    repr[-1]['offPeak']['diffMins'] = OffPeakHoursModel.diffMins(repr[-1]['offPeak']['end'], repr[-1]['offPeak']['start'])
                 else:
                     # add off peak period
-                    repr.append({ 'start': op_entry.off_peak_start, 'end': op_entry.off_peak_end, 'offPeak': True})
+                    repr.append({ 'start': op_entry.off_peak_start, 'end': op_entry.off_peak_end, 'diffMins': OffPeakHoursModel.diffMins(op_entry.off_peak_end, op_entry.off_peak_start), 'offPeak': True})
             if (section_start_time > op_entry.off_peak_start):
                 # Double covered! Only limited support for such situations
                 if section_start_time > op_entry.off_peak_end:
@@ -272,12 +275,28 @@ class OffPeakHoursModel(Base):
                     if repr[-1]['offPeak']:
                         # Extend existing off peak period
                         repr[-1]['offPeak']['end'] = op_entry.off_peak_end
+                        repr[-1]['offPeak']['diffMins'] = OffPeakHoursModel.diffMins(repr[-1]['offPeak']['end'], repr[-1]['offPeak']['start'])
                     else:
                         # Section partly doubles previous peak section, definately not handling this correctly
                         OffPeakHoursModel.logger.warn('OffPeak weekday {} partly double covering entries not interpreted correctly')
                 pass
             # Move to next section
             section_start_time = section_start_time.replace(hour=op_entry.off_peak_end.hour, minute=op_entry.off_peak_end.minute)
+        return repr
+
+
+    @staticmethod
+    def get_all_representations_nl():
+        repr = OrderedDict()
+        for wday in Weekday:
+            repr[OffPeakHoursModel.weekday_nl[wday.value]] = OffPeakHoursModel.get_representation(wday.value)
+        return repr
+
+    @staticmethod
+    def get_all_representations_en():
+        repr = OrderedDict()
+        for wday in Weekday:
+            repr[OffPeakHoursModel.weekday_en[wday.value]] = OffPeakHoursModel.get_representation(wday.value)
         return repr
 
 
