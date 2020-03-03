@@ -191,6 +191,7 @@ class OffPeakHoursModel(Base):
         try:
             r = db_session.query(OffPeakHoursModel) \
                           .filter(OffPeakHoursModel.weekday == OffPeakHoursModel.weekdayToEnStr(weekday)) \
+                          .order_by(OffPeakHoursModel.off_peak_start.asc()) \
                           .all()
         except Exception as e:
             # Nothing to roll back
@@ -218,7 +219,62 @@ class OffPeakHoursModel(Base):
     @staticmethod
     def get_sunday():
         return OffPeakHoursModel.get_weekday(Weekday.SUNDAY)
-        
+
+
+    """
+        This method returns a representation of peak/ off peak hours during a weekday
+        Representation is a list of consecutive entries
+        { 
+            start: 00:00
+            end: 07:00
+            offPeak: True/False
+        }
+    """
+    @staticmethod
+    def get_representation(weekday):
+        op_list = OffPeakHoursModel.get_weekday(weekday)
+        if op_list is None or len(op_list) == 0:
+            # Return an empty weekday, all hours are peak
+            return [{ 'start': '00:00', 'end': '23:59', 'offPeak': False}]
+        repr = []
+        section_start_time = 0
+        for op_entry in op_list:
+            if (section_start_time < op_entry.off_peak_start):
+                # Gap of peak in between
+                repr.append({ 'start': section_start_time, 'end': op_entry.off_peak_start, 'offPeak': False})
+                # Add off peak period
+                repr.append({ 'start': op_entry.off_peak_start, 'end': op_entry.off_peak_end, 'offPeak': True})
+            if (section_start_time == op_entry.off_peak_start):
+                # If previous section was also off-peak
+                if len(repr) > 0 and repr[-1]['offPeak']:
+                    # extend existing off peak period
+                    repr[-1]['offPeak']['end'] = op_entry.off_peak_end
+                else:
+                    # add off peak period
+                    repr.append({ 'start': op_entry.off_peak_start, 'end': op_entry.off_peak_end, 'offPeak': True})
+            if (section_start_time > op_entry.off_peak_start):
+                # Double covered! Only limited support for such situations
+                if section_start_time > op_entry.off_peak_end:
+                    # Completely double covered
+                    if repr[-1]['offPeak']:
+                        # Section completely doubles previous section.
+                        OffPeakHoursModel.logger.debug('OffPeak weekday {} config has entries double covering')
+                    else:
+                        # Section completely doubles previous peak section, definately not handling this correctly
+                        OffPeakHoursModel.logger.warn('OffPeak weekday {} completely double covering entries not interpreted correctly')
+                else:
+                    # Was previous period off peak?
+                    if repr[-1]['offPeak']:
+                        # Extend existing off peak period
+                        repr[-1]['offPeak']['end'] = op_entry.off_peak_end
+                    else:
+                        # Section partly doubles previous peak section, definately not handling this correctly
+                        OffPeakHoursModel.logger.warn('OffPeak weekday {} partly double covering entries not interpreted correctly')
+                pass
+            # Move to next section
+            section_start_time = op_entry.off_peak_start
+        return repr
+
 
     def get_count(self, q):
         count = 0
