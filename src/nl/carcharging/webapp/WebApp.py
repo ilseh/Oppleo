@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+from nl.carcharging.models.OffPeakHoursModel import OffPeakHoursModel, Weekday
 from nl.carcharging.webapp.WebSocketQueueReaderBackgroundTask import WebSocketQueueReaderBackgroundTask
 from nl.carcharging.config.WebAppConfig import WebAppConfig
 
@@ -220,6 +221,15 @@ if __name__ == "__main__":
     from datetime import datetime
     now = datetime.now()
     now_str = str(now.strftime("%d/%m/%Y, %H:%M:%S"))
+    """
+
+    """
+        TESTING OffPeak segments
+    from nl.carcharging.models.OffPeakHoursModel import OffPeakHoursModel, Weekday
+    segm1 = OffPeakHoursModel.get_representation(Weekday.MONDAY)
+    segm2 = OffPeakHoursModel.get_representation(Weekday.SATURDAY)
+    segm3 = OffPeakHoursModel.get_representation(Weekday.SUNDAY)
+    segm4 = OffPeakHoursModel.get_representation(Weekday.WEDNESDAY)
     """
 
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread

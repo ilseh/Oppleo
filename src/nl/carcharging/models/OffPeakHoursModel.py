@@ -237,7 +237,12 @@ class OffPeakHoursModel(Base):
             # Return an empty weekday, all hours are peak
             return [{ 'start': '00:00', 'end': '23:59', 'offPeak': False}]
         repr = []
-        section_start_time = 0
+
+
+
+
+        section_start_time = datetime.now().time()
+        section_start_time = section_start_time.replace(hour=0, minute=0, second=0, microsecond=0)
         for op_entry in op_list:
             if (section_start_time < op_entry.off_peak_start):
                 # Gap of peak in between
@@ -272,7 +277,7 @@ class OffPeakHoursModel(Base):
                         OffPeakHoursModel.logger.warn('OffPeak weekday {} partly double covering entries not interpreted correctly')
                 pass
             # Move to next section
-            section_start_time = op_entry.off_peak_start
+            section_start_time = section_start_time.replace(hour=op_entry.off_peak_end.hour, minute=op_entry.off_peak_end.minute)
         return repr
 
 
