@@ -78,10 +78,23 @@
     }
     gaugeOneStatus = ''
     gaugeOneSession = ''
+    gaugeOnePower = ''
+
+    function formatSizePower( f ) {
+      f = parseFloat(f)
+      u = 'W'
+      if (f > 1000) {
+        f = Math.round(f /100) /10
+        u = 'kW'
+      }
+      return f + u
+    }
 
     function updateGauges( data ) {
+      gaugeOnePower = (Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l2)+parseFloat(data.p_l3))*10)/10)
+      gaugeOnePower = formatSizePower(gaugeOnePower)
       updateGauger( 'gauger_1',       // id
-                    gaugeOneStatus,   // title
+                    gaugeOneStatus + ' ' + gaugeOnePower,   // title
                     gaugeOneSession,  // subtitle
                     '0km/u',          // scale min
                     '100km/u',        // scale max
@@ -259,7 +272,7 @@
               updateTotalIndicator( undefined, undefined, result.chargeSession, on)
             }
             updateAuthIndicator( result.auth, error, on )
-            updateGaugeTitle('gauger_1', gaugeOneStatus, gaugeOneSession)
+            updateGaugeTitle('gauger_1', gaugeOneStatus + ' ' + gaugeOnePower, gaugeOneSession)
             break
           case 404:                   // No charge session found (green)
             error = false
