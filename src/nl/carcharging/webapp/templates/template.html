@@ -396,8 +396,13 @@
                                     <a href="#"><i class="fas fa-exclamation-triangle"></i> Beheer</a>
                                     <ul class="submenu">
                                         <li>
+                                            <a href="{{ url_for('flaskRoutes.restart') }}" class="stay">
+                                                <i class="fas fa-redo-alt"></i> Herstart applicatie
+                                            </a>
+                                        </li>
+                                        <li>
                                             <a href="{{ url_for('flaskRoutes.reboot') }}" class="stay">
-                                                <i class="fas fa-redo-alt"></i> Herstarten
+                                                <i class="fas fa-redo-alt"></i> Herstart systeem
                                             </a>
                                         </li>
                                         <li>

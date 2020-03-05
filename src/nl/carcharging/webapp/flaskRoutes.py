@@ -239,6 +239,7 @@ def shutdown():
         return render_template("authorize.html", 
             form=AuthorizeForm(),
             requesttitle="Uitschakelen",
+            requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
             buttontitle="Schakel uit!",
             webappconfig=WebAppConfig
             )
@@ -256,6 +257,7 @@ def shutdown():
         return render_template("authorize.html", 
                 form=form, 
                 requesttitle="Uitschakelen",
+                requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
                 buttontitle="Schakel uit!",
                 errormsg="Het wachtwoord is onjuist",
                 webappconfig=WebAppConfig
@@ -273,6 +275,7 @@ def reboot():
         return render_template("authorize.html", 
             form=AuthorizeForm(),
             requesttitle="Herstarten",
+            requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
             buttontitle="Herstart!",
             webappconfig=WebAppConfig
             )
@@ -290,6 +293,43 @@ def reboot():
         return render_template("authorize.html", 
                 form=form, 
                 requesttitle="Herstarten",
+                requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
+                buttontitle="Herstart!",
+                errormsg="Het wachtwoord is onjuist",
+                webappconfig=WebAppConfig
+                )
+
+
+@flaskRoutes.route("/restart", methods=["GET", "POST"])
+@flaskRoutes.route("/restart/", methods=["GET", "POST"])
+@authenticated_resource
+def restart():
+    global flaskRoutesLogger, WebAppConfig
+    # For GET requests, display the authorize form. 
+    flaskRoutesLogger.debug('/restart {}'.format(request.method))
+    if (request.method == 'GET'):
+        return render_template("authorize.html", 
+            form=AuthorizeForm(),
+            requesttitle="Herstarten",
+            requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
+            buttontitle="Herstart!",
+            webappconfig=WebAppConfig
+            )
+    # For POST requests, login the current user by processing the form.
+    form = AuthorizeForm()
+    if form.validate_on_submit() and \
+       check_password_hash(current_user.password, form.password.data):
+        flaskRoutesLogger.debug('Restart requested and authorized. Restarting in 2 seconds...')
+        # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
+        os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
+        return render_template("restarting.html", 
+                    webappconfig=WebAppConfig
+                    )
+    else:
+        return render_template("authorize.html", 
+                form=form, 
+                requesttitle="Herstarten",
+                requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
                 buttontitle="Herstart!",
                 errormsg="Het wachtwoord is onjuist",
                 webappconfig=WebAppConfig

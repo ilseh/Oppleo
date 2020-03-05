@@ -84,6 +84,18 @@
       <span class="logo-lg"><i class="fas fa-lock"></i></i> <span>{{ requesttitle }}</span> </span>
   </div>
 
+  {% if requestdescription %}
+  <div class="text-center">
+    &nbsp;
+  </div>
+  <div class="text-center" style="color: #3bafda;">
+    <span>{{ requestdescription|safe }}</span>
+  </div>
+  <div class="text-center">
+    &nbsp;
+  </div>
+  {% endif %}
+
   <div class="text-center">
     &nbsp;
   </div>
