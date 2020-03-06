@@ -127,6 +127,9 @@ class OppleoConfig(object):
     # Off Peak disabled for this period (not-persistent)
     peakHoursAllowPeakOnePeriod = False
 
+
+    ccm = None
+
     # Global location to store all connected clients keyed by request.sid (websocket room)    
     connectedClients = {}
 
@@ -232,8 +235,12 @@ class OppleoConfig(object):
                 OppleoConfig.TESTING = OppleoConfig.getBooleanOption(envSectionName, OppleoConfig.INI_TESTING, False)
 
         ccm = ChargerConfigModel.get_config()
-        i = 0
-
+        ChargerConfigModel.ccm = ccm
+        # TODO: Get all params from the database rather than from the ini file
+        OppleoConfig.autoSessionEnabled = ccm.autosession_enabled
+        OppleoConfig.autoSessionMinutes = ccm.autosession_minutes
+        OppleoConfig.autoSessionEnergy = ccm.autosession_energy
+        OppleoConfig.autoSessionCondenseSameOdometer = ccm.autosession_acondense_same_odometer
 
 
     @staticmethod
