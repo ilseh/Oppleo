@@ -1,5 +1,5 @@
 [Unit]
-Description=CarCharger Web Application
+Description=Oppleo Application
 After=syslog.target network.target pigpiod.service
 
 [Service]
@@ -16,7 +16,7 @@ WorkingDirectory=#WORKINGDIR_PLACEHOLDER/src/
 Environment=PYTHONPATH=#WORKINGDIR_PLACEHOLDER/src
 Environment=#WORKINGDIR_PLACEHOLDER/src
 
-ExecStart=#WORKINGDIR_PLACEHOLDER/venv/bin/python3 #WORKINGDIR_PLACEHOLDER/src/nl/carcharging/webapp/WebApp.py socketserver
+ExecStart=#WORKINGDIR_PLACEHOLDER/venv/bin/python3 #WORKINGDIR_PLACEHOLDER/src/nl/oppleo/webapp/WebApp.py socketserver
 
 [Install]
 # start with default stuff when we enable automatic startup

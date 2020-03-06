@@ -7,17 +7,17 @@ env
 .coverage
 src/.DS_Store
 src/static/.DS_Store
-src/nl/carcharging/.DS_Store
-src/nl/carcharging/models/.DS_Store
-src/nl/carcharging/views/.DS_Store
-src/nl/carcharging/services/.DS_Store
-src/nl/carcharging/utils/.DS_Store
-src/nl/carcharging/api/.DS_Store
-src/nl/carcharging/config/.DS_Store
-src/nl/carcharging/daemon/.DS_Store
-src/nl/carcharging/webapp/.DS_Store
+src/nl/oppleo/.DS_Store
+src/nl/oppleo/models/.DS_Store
+src/nl/oppleo/views/.DS_Store
+src/nl/oppleo/services/.DS_Store
+src/nl/oppleo/utils/.DS_Store
+src/nl/oppleo/api/.DS_Store
+src/nl/oppleo/config/.DS_Store
+src/nl/oppleo/daemon/.DS_Store
+src/nl/oppleo/webapp/.DS_Store
 # DON'T SEND THE INI FILE WITH PASSWORDS TO GITHUB !!!
-src/nl/carcharging/config/carcharger.ini
+src/nl/oppleo/config/carcharger.ini
 # DON'T SEND THE CURL CMD FILE WITH UNIFI PASSWORDS TO GITHUB !!!
 snapshot/grab_img.sh
 # Don't store the service file, generate a new one at each platform

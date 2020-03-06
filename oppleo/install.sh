@@ -1,6 +1,6 @@
 # Reaspberry config
-echo "Install script for the CarChargerWebApp service"
-echo "v0.2 31-01-2020"
+echo "Install script for the Oppleo service"
+echo "v0.3 06-03-2020"
 
 # Some systemd commands
 # 1. systemd version
@@ -53,13 +53,13 @@ else
 fi
 echo "  done checking pigpiod prereq."
 
-echo "Installing the WebApp systemd service..."
+echo "Installing the Oppleo systemd service..."
 echo " determining the location of the install script..."
-# DIR holds the directory of webapp
+# DIR holds the directory of oppleo
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo " install script in dir $DIR..."
 # PRJDIR holds the root directory of rhe project
-PRJDIR=${DIR%"/webapp"}
+PRJDIR=${DIR%"/oppleo"}
 echo " project root $PRJDIR..."
 echo " activate virtual environment..."
 source $PRJDIR/venv/bin/activate
@@ -80,17 +80,17 @@ if [ "$raspberry" = true ]; then
     echo " On a raspberry :)"
     echo " - installing raspberry dependencies incl mfrc522, RPi.GPIO, and spidev..."
     pip install -r $PRJDIR/requirements_raspberry.txt > /dev/null 2>&1
-    echo " - preparing service file CarChargerWebApp.service from template by updating path..."
-    sed 's?#WORKINGDIR_PLACEHOLDER?'$PRJDIR'?'g < $DIR/CarChargerWebApp.service.template >$DIR/CarChargerWebApp.service
-    echo " - stopping CarChargerWebApp if running..."
-    sudo systemctl stop CarChargerWebApp
-    echo " - Update config/ installing CarChargerWebApp.service for systemd..."
-    sudo cp $DIR/CarChargerWebApp.service /etc/systemd/system/CarChargerWebApp.service
+    echo " - preparing service file Oppleo.service from template by updating path..."
+    sed 's?#WORKINGDIR_PLACEHOLDER?'$PRJDIR'?'g < $DIR/Oppleo.service.template >$DIR/Oppleo.service
+    echo " - stopping Oppleo if running..."
+    sudo systemctl stop Oppleo.service
+    echo " - Update config/ installing Oppleo.service for systemd..."
+    sudo cp $DIR/Oppleo.service /etc/systemd/system/Oppleo.service
     echo " - reloading daemon config..."
     sudo systemctl daemon-reload
-    echo " - starting CarChargerWebApp systemd daemon..."
-    sudo systemctl start CarChargerWebApp
-    sudo systemctl status CarChargerWebApp
+    echo " - starting Oppleo systemd daemon..."
+    sudo systemctl start Oppleo.service
+    sudo systemctl status Oppleo.service
 else
     echo " Not on a raspberry..."
     echo " - installing dependencies without mfrc522, RPi.GPIO, and spidev..."

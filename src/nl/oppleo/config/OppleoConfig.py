@@ -1,5 +1,5 @@
 
-from configparser import ConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
+from configparser import RawConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
 import os
 from nl.oppleo.config import Logger
@@ -165,9 +165,9 @@ class OppleoConfig(object):
             OppleoConfig.initLogger()
         OppleoConfig.logger.debug('Initializing Oppleo...')
         # Load the ini file
-        OppleoConfig.ini_settings = ConfigParser()
+        OppleoConfig.ini_settings = RawConfigParser()
         # Allow dynamic fields in the config ini file
-        OppleoConfig.ini_settings._interpolation = ExtendedInterpolation()
+        # OppleoConfig.ini_settings._interpolation = ExtendedInterpolation()
         #OppleoConfig.ini_settings.read(filename)
         try:
             # The absolute dir the script is in

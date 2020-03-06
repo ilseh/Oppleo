@@ -18,17 +18,17 @@
             "request": "launch",
             "console": "integratedTerminal",
             "pythonPath": "${config:python.pythonPath}",
-            "program": "./src/nl/carcharging/webapp/WebApp.py",
+            "program": "./src/nl/oppleo/webapp/Oppleo.py",
             "gevent": true,
             "cwd": "${workspaceFolder}",
             "args": [],
             "env": {
-                "FLASK_APP": "WebApp.py",
+                "FLASK_APP": "Oppleo.py",
                 "FLASK_ENV": "development",
                 "PYTHONPATH": "./src",
                 "FLASK_DEBUG": "0",
                 "DATABASE_URL": "postgresql://charger:charger@10.0.1.160:5432/charger",
-                "CARCHARGING_ENV": "development"
+                "oppleo_ENV": "development"
             },
             "jinja": true
         },
@@ -43,7 +43,7 @@
                 "PYTHONPATH": "./src",
                 "FLASK_DEBUG": "0",
                 "DATABASE_URL": "postgresql://charger:charger@10.0.1.160:5432/charger",
-                "CARCHARGING_ENV": "development"
+                "oppleo_ENV": "development"
             },
             "args": [
                 "run",

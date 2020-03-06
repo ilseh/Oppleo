@@ -3,5 +3,5 @@ ABSDIR=$(dirname $ABSPATH)
 
 source "$ABSDIR/.profile"
 
-python3 "$ABSDIR/src/nl/carcharging/runner/DevicesStarter.py" stop
-python3 "$ABSDIR/src/nl/carcharging/runner/DevicesStarter.py" kill
+python3 "$ABSDIR/src/nl/oppleo/runner/DevicesStarter.py" stop
+python3 "$ABSDIR/src/nl/oppleo/runner/DevicesStarter.py" kill

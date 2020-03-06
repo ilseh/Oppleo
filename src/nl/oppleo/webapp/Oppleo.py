@@ -6,12 +6,12 @@ from nl.oppleo.webapp.WebSocketQueueReaderBackgroundTask import WebSocketQueueRe
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 
 OppleoConfig.initLogger('Oppleo')
-webApplogger = logging.getLogger('nl.oppleo.webapp.Oppleo')
-webApplogger.debug('Initializing Oppleo...')
+oppleoLogger = logging.getLogger('nl.oppleo.webapp.Oppleo')
+oppleoLogger.debug('Initializing Oppleo...')
 
 import sys
 print('Reporting sys.version %s : ' % sys.version)
-webApplogger.debug('sys.version %s : ' % sys.version)
+oppleoLogger.debug('sys.version %s : ' % sys.version)
 
 OppleoConfig.loadConfig()
 
@@ -19,13 +19,13 @@ from nl.oppleo.utils.GenericUtil import GenericUtil
 try:
     GPIO = GenericUtil.importGpio()
     if OppleoConfig.gpioMode == "BOARD":
-        webApplogger.info("Setting GPIO MODE to BOARD")
+        oppleoLogger.info("Setting GPIO MODE to BOARD")
         GPIO.setmode(GPIO.BOARD) if OppleoConfig.gpioMode == "BOARD" else GPIO.setmode(GPIO.BCM)
     else:
-        webApplogger.info("Setting GPIO MODE to BCM")
+        oppleoLogger.info("Setting GPIO MODE to BCM")
         GPIO.setmode(GPIO.BCM)
 except Exception as ex:
-    webApplogger.debug("Could not setmode of GPIO, assuming dev env")
+    oppleoLogger.debug("Could not setmode of GPIO, assuming dev env")
 
 from flask import Flask, render_template, jsonify, redirect, request, url_for, session, current_app
 
@@ -107,33 +107,33 @@ def load_user(username):
 """
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
-    global webApplogger, threadLock, wsClientCnt, wsThread, appSocketIO
+    global oppleoLogger, threadLock, wsClientCnt, wsThread, appSocketIO
     with threadLock:
         wsClientCnt += 1
-        webApplogger.debug('socketio.connect wsClientCnt {}'.format(wsClientCnt))
+        oppleoLogger.debug('socketio.connect wsClientCnt {}'.format(wsClientCnt))
         if wsClientCnt == 1:
-            webApplogger.debug('Starting thread')
+            oppleoLogger.debug('Starting thread')
             wsThread.start(appSocketIO)
     emit("server_status", "server_up")
-    webApplogger.debug("Client connected...")
+    oppleoLogger.debug("Client connected...")
 
 @appSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
-    global webApplogger, threadLock, wsClientCnt, wsThread, appSocketIO
-    webApplogger.debug('Client disconnected.')
+    global oppleoLogger, threadLock, wsClientCnt, wsThread, appSocketIO
+    oppleoLogger.debug('Client disconnected.')
     with threadLock:
         wsClientCnt -= 1
-        webApplogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
+        oppleoLogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
         if wsClientCnt == 0:
             # stop thread
-            webApplogger.debug('Requesting thread stop')
+            oppleoLogger.debug('Requesting thread stop')
             wsThread.stop()
 """
 
 
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
-    global webApplogger, OppleoConfig, threadLock, wsClientCnt
+    global oppleoLogger, OppleoConfig, threadLock, wsClientCnt
     with threadLock:
         wsClientCnt += 1
         if request.sid not in OppleoConfig.connectedClients.keys():
@@ -142,7 +142,7 @@ def connect():
                                 'auth'  : True if (current_user.is_authenticated) else False,
                                 'stats' : 'connected'
                                 }
-    webApplogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
+    oppleoLogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
                     request.sid, \
                     wsClientCnt, \
                     OppleoConfig.connectedClients \
@@ -153,11 +153,11 @@ def connect():
 
 @appSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
-    global webApplogger, OppleoConfig, threadLock, wsClientCnt
+    global oppleoLogger, OppleoConfig, threadLock, wsClientCnt
     with threadLock:
         wsClientCnt -= 1
         res = OppleoConfig.connectedClients.pop(request.sid, None)
-    webApplogger.debug('socketio.disconnect sid: {} wsClientCnt: {} connectedClients:{} res:{}'.format( \
+    oppleoLogger.debug('socketio.disconnect sid: {} wsClientCnt: {} connectedClients:{} res:{}'.format( \
                     request.sid, \
                     wsClientCnt, \
                     OppleoConfig.connectedClients, \
@@ -174,15 +174,15 @@ def page_not_found(e):
 @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
 @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')
 def EnergyDeviceMeasureModel_after_insert(mapper, connection, target):
-    global webApplogger
-    webApplogger.debug("'after_insert' or 'after_update' event for EnergyDeviceMeasureModel")
+    global oppleoLogger
+    oppleoLogger.debug("'after_insert' or 'after_update' event for EnergyDeviceMeasureModel")
 
 
 @event.listens_for(RfidModel, 'after_update')
 @event.listens_for(RfidModel, 'after_insert')
 def RfidModel_after_update(mapper, connection, target):
-    global webApplogger
-    webApplogger.debug("'after_insert' or 'after_update' event for RfidModel")
+    global oppleoLogger
+    oppleoLogger.debug("'after_insert' or 'after_update' event for RfidModel")
 
 
 if __name__ == "__main__":
@@ -203,11 +203,11 @@ if __name__ == "__main__":
                 (datetime.today() - timedelta(minutes=OppleoConfig.autoSessionMinutes))
                 )
         if kwh_used > OppleoConfig.autoSessionEnergy:
-            webApplogger.debug('More energy used than {}kWh in {} minutes'.format(e, t))
-            webApplogger.debug("Keep the current session")
+            oppleoLogger.debug('More energy used than {}kWh in {} minutes'.format(e, t))
+            oppleoLogger.debug("Keep the current session")
         else:
-            webApplogger.debug('Less energy used than {}kWh in {} minutes'.format(e, t))
-            webApplogger.debug("Start a new session")
+            oppleoLogger.debug('Less energy used than {}kWh in {} minutes'.format(e, t))
+            oppleoLogger.debug("Start a new session")
     """
 
     """
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     OppleoConfig.phmThread = phmThread
 
     # Starting the web socket queue reader background task
-    webApplogger.debug('Starting queue reader background task...')
+    oppleoLogger.debug('Starting queue reader background task...')
     wsqrbBackgroundTask.start(
             appSocketIO=appSocketIO,
             wsEmitQueue=wsEmitQueue
@@ -281,7 +281,7 @@ if __name__ == "__main__":
             OppleoConfig.useReloader
             )
         )
-    webApplogger.debug('Starting web server on {}:{} (debug:{}, use_reloader={})...'
+    oppleoLogger.debug('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
             OppleoConfig.httpHost, 
             OppleoConfig.httpPort,
