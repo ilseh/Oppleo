@@ -38,24 +38,24 @@
 2019-12-29 18:35:01,831:DEBUG:nl.charging.services.EnergyUtil:Not production environment, getting fake data
 2019-12-29 18:35:01,832:DEBUG:nl.charging.services.EnergyUtil:returning fake data
 2019-12-29 18:35:01,834:DEBUG:measure_electricity_usage:Measurement returned {'energy_device_id': 'device_1', 'kwh_l1': 1532.34, 'kwh_l2': 1542.34, 'kwh_l3': 1534.34, 'a_l1': 534.34, 'a_l2': 534.34, 'a_l3': 534.34, 'kw_total': 50034.34}
-2019-12-29 18:35:01,836:DEBUG:nl.carcharging.models.EnergyDeviceMeasureModel:Initializing EnergyDeviceMeasureModel with {'energy_device_id': 'device_1', 'kwh_l1': 1532.34, 'kwh_l2': 1542.34, 'kwh_l3': 1534.34, 'a_l1': 534.34, 'a_l2': 534.34, 'a_l3': 534.34, 'kw_total': 50034.34}
+2019-12-29 18:35:01,836:DEBUG:nl.oppleo.models.EnergyDeviceMeasureModel:Initializing EnergyDeviceMeasureModel with {'energy_device_id': 'device_1', 'kwh_l1': 1532.34, 'kwh_l2': 1542.34, 'kwh_l3': 1534.34, 'a_l1': 534.34, 'a_l2': 534.34, 'a_l3': 534.34, 'kw_total': 50034.34}
 2019-12-29 18:35:01,865:ERROR:apscheduler.executors.default:Job "handle_measurement (trigger: interval[0:00:10], next run at: 2019-12-29 18:35:11 CET)" raised an exception
 Traceback (most recent call last):
   File "/home/ilse/repos/RestfulCharging/venv/lib/python3.6/site-packages/apscheduler/executors/base.py", line 125, in run_job
     retval = job.func(*job.args, **job.kwargs)
-  File "/home/ilse/repos/RestfulCharging/src/nl/carcharging/daemon/MeasureElectricityUsage.py", line 127, in handle_measurement
+  File "/home/ilse/repos/RestfulCharging/src/nl/oppleo/daemon/MeasureElectricityUsage.py", line 127, in handle_measurement
     last_save_measurement = EnergyDeviceMeasureModel.get_last_one()
-  File "/home/ilse/repos/RestfulCharging/src/nl/carcharging/models/EnergyDeviceMeasureModel.py", line 52, in get_last_one
+  File "/home/ilse/repos/RestfulCharging/src/nl/oppleo/models/EnergyDeviceMeasureModel.py", line 52, in get_last_one
     return session.query(EnergyDeviceMeasureModel)\
 AttributeError: 'Query' object has no attribute 'order'
 2019-12-29 18:35:07,151:ERROR:measure_electricity_usage:Traceback (most recent call last):
-2019-12-29 18:35:07,153:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/carcharging/daemon/MeasureElectricityUsage.py", line 202, in <module>
+2019-12-29 18:35:07,153:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/oppleo/daemon/MeasureElectricityUsage.py", line 202, in <module>
 2019-12-29 18:35:07,153:ERROR:measure_electricity_usage:    main()
-2019-12-29 18:35:07,154:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/carcharging/daemon/MeasureElectricityUsage.py", line 185, in main
+2019-12-29 18:35:07,154:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/oppleo/daemon/MeasureElectricityUsage.py", line 185, in main
 2019-12-29 18:35:07,156:ERROR:measure_electricity_usage:    service.run()
-2019-12-29 18:35:07,159:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/carcharging/daemon/MeasureElectricityUsage.py", line 96, in run
+2019-12-29 18:35:07,159:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/oppleo/daemon/MeasureElectricityUsage.py", line 96, in run
 2019-12-29 18:35:07,160:ERROR:measure_electricity_usage:    self.create_save_measurement_jobs()
-2019-12-29 18:35:07,160:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/carcharging/daemon/MeasureElectricityUsage.py", line 111, in create_save_measurement_jobs
+2019-12-29 18:35:07,160:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/src/nl/oppleo/daemon/MeasureElectricityUsage.py", line 111, in create_save_measurement_jobs
 2019-12-29 18:35:07,161:ERROR:measure_electricity_usage:    scheduler.start()
 2019-12-29 18:35:07,169:ERROR:measure_electricity_usage:  File "/home/ilse/repos/RestfulCharging/venv/lib/python3.6/site-packages/apscheduler/schedulers/blocking.py", line 19, in start
 2019-12-29 18:35:07,170:ERROR:measure_electricity_usage:    self._main_loop()

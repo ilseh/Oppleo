@@ -4,13 +4,13 @@ from getpass import getpass
 import sys
 
 from flask import current_app
-from nl.carcharging.config.WebAppConfig import WebAppConfig
-from nl.carcharging.models.Base import DbSession
-from nl.carcharging.models.User import User
-#from nl.carcharging.webapp.WebApp import app, User
+from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.models.Base import DbSession
+from nl.oppleo.models.User import User
+#from nl.oppleo.webapp.WebApp import app, User
 from werkzeug.security import generate_password_hash, check_password_hash
 
-WebAppConfig.initLogger('reset_users')
+OppleoConfig.initLogger('reset_users')
 
 def main():
     

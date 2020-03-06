@@ -1,5 +1,5 @@
 import os
-from nl.carcharging.services.EnergyUtil import EnergyUtil
+from nl.oppleo.services.EnergyUtil import EnergyUtil
 from flask_injector import FlaskInjector
 from src.app import create_app
 import logging

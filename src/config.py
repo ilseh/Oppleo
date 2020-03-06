@@ -1,5 +1,5 @@
 import os
-from nl.carcharging.config import Logger
+from nl.oppleo.config import Logger
 import logging
 
 class Config(object):
@@ -20,7 +20,7 @@ class Production(Config):
     TESTING = False
 
 # Global variable does work in werkzeug but not un uWSGI
-# Therefore added as static to WebAppConfig Class
+# Therefore added as static to OppleoConfig Class
 app_config = {
     'development': Development,
     'production': Production,
