@@ -1,6 +1,10 @@
 import datetime
 import json
 import logging
+from nl.oppleo.config.OppleoDatabaseConfig import OppleoDatabaseConfig
+OppleoDatabaseConfig.initLogger()
+OppleoDatabaseConfig.loadConfig()
+
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel, Weekday
 from nl.oppleo.webapp.WebSocketQueueReaderBackgroundTask import WebSocketQueueReaderBackgroundTask
 from nl.oppleo.config.OppleoConfig import OppleoConfig
@@ -35,8 +39,8 @@ app = Flask(__name__)
 OppleoConfig.app = app
 
 #app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = OppleoConfig.SQLALCHEMY_TRACK_MODIFICATIONS
-app.config['SQLALCHEMY_DATABASE_URI'] = OppleoConfig.DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = OppleoDatabaseConfig.SQLALCHEMY_TRACK_MODIFICATIONS
+app.config['SQLALCHEMY_DATABASE_URI'] = OppleoDatabaseConfig.DATABASE_URL
 app.config['EXPLAIN_TEMPLATE_LOADING'] = OppleoConfig.EXPLAIN_TEMPLATE_LOADING
 # import os; os.urandom(24)
 app.config['SECRET_KEY'] = OppleoConfig.SECRET_KEY

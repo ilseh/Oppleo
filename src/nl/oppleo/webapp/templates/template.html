@@ -48,7 +48,7 @@
 		<meta name="msapplication-starturl" content="/">
 
         <script>
-            var factor_Whkm = {% if oppleooonfig is not none %}{{ oppleooonfig.factor_Whkm }}{% else %}162{% endif %}
+            var factor_Whkm = {% if oppleoconfig is not none %}{{ oppleoconfig.factor_Whkm }}{% else %}162{% endif %}
             var EVSE_STATE_UNKNOWN    = 0  // Initial
             var EVSE_STATE_INACTIVE   = 1  // SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
             var EVSE_STATE_CONNECTED  = 2  // SmartEVSE State B: LED ON full brightness, Car connected

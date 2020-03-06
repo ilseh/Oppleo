@@ -18,7 +18,11 @@ src/nl/oppleo/daemon/.DS_Store
 src/nl/oppleo/webapp/.DS_Store
 # DON'T SEND THE INI FILE WITH PASSWORDS TO GITHUB !!!
 src/nl/oppleo/config/carcharger.ini
+src/nl/oppleo/config/oppleo.ini
+src/nl/oppleo/config/oppleo.ini
+src/nl/oppleo/config/oppleo.database.ini
 # DON'T SEND THE CURL CMD FILE WITH UNIFI PASSWORDS TO GITHUB !!!
 snapshot/grab_img.sh
 # Don't store the service file, generate a new one at each platform
 webapp/CarChargerWebApp.service
+oppleo/Oppleo.service

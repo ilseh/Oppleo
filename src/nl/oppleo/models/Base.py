@@ -3,13 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.config.OppleoDatabaseConfig import OppleoDatabaseConfig
 
-if (OppleoConfig.ini_settings == None):
-    OppleoConfig.loadConfig()
+if (OppleoDatabaseConfig.ini_settings == None):
+    OppleoDatabaseConfig.loadConfig()
 
 engine = create_engine(
-            OppleoConfig.DATABASE_URL,
+            OppleoDatabaseConfig.DATABASE_URL,
             pool_size=5,                # Default is 5 - min conns kept in the pool
             max_overflow=10,            # Default is 10 - max conns handed out
 #            timeout=5,                  # Default 30 - time to give up connection
@@ -22,9 +22,9 @@ DbSession = scoped_session(session_factory)
 
 Base = declarative_base()
 
-OppleoConfig.sqlalchemy_engine = engine
-OppleoConfig.sqlalchemy_session_factory = session_factory
-OppleoConfig.sqlalchemy_session = DbSession
+OppleoDatabaseConfig.sqlalchemy_engine = engine
+OppleoDatabaseConfig.sqlalchemy_session_factory = session_factory
+OppleoDatabaseConfig.sqlalchemy_session = DbSession
 
 def init_db():
     logger = logging.getLogger('nl.oppleo.models.Base init_db()')

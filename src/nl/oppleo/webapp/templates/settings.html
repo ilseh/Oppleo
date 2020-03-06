@@ -278,7 +278,7 @@
                             {% endif %}
                             <tr>
                               <td class="text-dark">kWh Factor:</td >
-                              <td class="text-primary">{{ oppleooonfig.factor_Whkm }}</td>
+                              <td class="text-primary">{{ oppleoconfig.factor_Whkm }}</td>
                             </tr>
                             {% if ('charger_tariff' in charger_config) %}
                             <tr>
@@ -305,7 +305,7 @@
                               <td class="text-primary">
                                 <form id="peak-hours-off-peak-enabled-form">
                                   <input type="checkbox" 
-                                    {% if oppleooonfig.peakHoursOffPeakEnabled %}checked{% endif %}
+                                    {% if oppleoconfig.peakHoursOffPeakEnabled %}checked{% endif %}
                                     name="peakHoursOffPeakEnabled"
                                     id="peakHoursOffPeakEnabled"
                                     data-toggle="toggle"
@@ -325,7 +325,7 @@
                               <td class="text-primary">
                                 <form id="peak-hours-allow-peak-once-form">
                                   <input type="checkbox" 
-                                    {% if oppleooonfig.peakHoursAllowPeakOnePeriod %}checked{% endif %}
+                                    {% if oppleoconfig.peakHoursAllowPeakOnePeriod %}checked{% endif %}
                                     name="peakHoursAllowPeakOnePeriod"
                                     id="peakHoursAllowPeakOnePeriod"
                                     data-toggle="toggle"
@@ -480,15 +480,15 @@
                             {% endif %}
                             <tr>
                               <td class="text-dark">HTTP Host:</td>
-                              <td class="text-primary">{{ oppleooonfig.httpHost }}</td>
+                              <td class="text-primary">{{ oppleoconfig.httpHost }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">HTTP Port:</td>
-                              <td class="text-primary">{{ oppleooonfig.httpPort }}</td>
+                              <td class="text-primary">{{ oppleoconfig.httpPort }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Reloader:</td>
-                              <td class="text-primary">{{ oppleooonfig.useReloader }}</td>
+                              <td class="text-primary">{{ oppleoconfig.useReloader }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -508,15 +508,15 @@
                             </tr>
                             <tr>
                               <td class="text-dark">URL:</td>
-                              <td class="text-primary">{{ oppleooonfig.DATABASE_URL }}</td>
+                              <td class="text-primary">{{ oppleodatabaseconfig.DATABASE_URL }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">SQLAlchemy URL:</td>
-                              <td class="text-primary">{{ oppleooonfig.SQLALCHEMY_DATABASE_URI }}</td>
+                              <td class="text-primary">{{ oppleodatabaseconfig.SQLALCHEMY_DATABASE_URI }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">SQLAlchemy Pool Status:</td>
-                              <td class="text-primary">{{ oppleooonfig.sqlAlchemyPoolStatus() }}</td>
+                              <td class="text-primary">{{ oppleodatabaseconfig.sqlAlchemyPoolStatus() }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -577,31 +577,31 @@
                             </tr>
                             <tr>
                               <td class="text-dark">GPIO Mode:</td>
-                              <td class="text-primary">{{ oppleooonfig.gpioMode }}</td>
+                              <td class="text-primary">{{ oppleoconfig.gpioMode }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Red Led:</td>
-                              <td class="text-primary">{% if oppleooonfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleooonfig.pinLedRed }}</td>
+                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinLedRed }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Green Led:</td>
-                              <td class="text-primary">{% if oppleooonfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleooonfig.pinLedGreen }}</td>
+                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinLedGreen }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Blue Led:</td>
-                              <td class="text-primary">{% if oppleooonfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleooonfig.pinLedBlue }}</td>
+                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinLedBlue }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Buzzer:</td>
-                              <td class="text-primary">{% if oppleooonfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleooonfig.pinBuzzer }}</td>
+                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinBuzzer }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">EVSE Switch:</td>
-                              <td class="text-primary">{% if oppleooonfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleooonfig.pinEvseSwitch }}</td>
+                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinEvseSwitch }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">EVSE Led:</td>
-                              <td class="text-primary">{% if oppleooonfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleooonfig.pinEvseLed }}</td>
+                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinEvseLed }}</td>
                             </tr>
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -613,11 +613,11 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Led pulse min:</td>
-                              <td class="text-primary">{{ oppleooonfig.pulseLedMin }}%</td>
+                              <td class="text-primary">{{ oppleoconfig.pulseLedMin }}%</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Led pulse max:</td>
-                              <td class="text-primary">{{ oppleooonfig.pulseLedMax }}%</td>
+                              <td class="text-primary">{{ oppleoconfig.pulseLedMax }}%</td>
                             </tr>
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -632,7 +632,7 @@
                               <td class="text-primary">
                                 <form id="peak-hours-off-peak-enabled-form">
                                   <input type="checkbox" 
-                                    {% if oppleooonfig.autoSessionEnabled %}checked{% endif %}
+                                    {% if oppleoconfig.autoSessionEnabled %}checked{% endif %}
                                     name="autoSessionEnabled"
                                     id="autoSessionEnabled"
                                     data-toggle="toggle"
@@ -649,18 +649,18 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Minutes:</td>
-                              <td class="text-primary">{{ oppleooonfig.autoSessionMinutes }}</td>
+                              <td class="text-primary">{{ oppleoconfig.autoSessionMinutes }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Energy:</td>
-                              <td class="text-primary">{{ oppleooonfig.autoSessionEnergy }}kWh</td>
+                              <td class="text-primary">{{ oppleoconfig.autoSessionEnergy }}kWh</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Condense sessies:</td>
                               <td class="text-primary">
                                 <form id="peak-hours-off-peak-enabled-form">
                                   <input type="checkbox" 
-                                    {% if oppleooonfig.autoSessionCondenseSameOdometer %}checked{% endif %}
+                                    {% if oppleoconfig.autoSessionCondenseSameOdometer %}checked{% endif %}
                                     name="autoSessionCondenseSameOdometer"
                                     id="autoSessionCondenseSameOdometer"
                                     data-toggle="toggle"
@@ -766,7 +766,7 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Logfile:</td>
-                              <td class="text-primary">{{ oppleooonfig.LOG_FILE }}</td>
+                              <td class="text-primary">{{ oppleoconfig.LOG_FILE }}</td>
                             </tr>
                           </tbody>
                         </table>

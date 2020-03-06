@@ -2,6 +2,7 @@
 from configparser import RawConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
 import os
+from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.config import Logger
 
 """
@@ -16,15 +17,11 @@ class OppleoConfig(object):
     INI_TARGET_PARAM = 'activeTarget'
     INI_ENV_PARAM = 'oppleoEnv'
 
-    INI_DATABASE_URL = 'DATABASE_URL'
     INI_ENERGY_DEVICE_ID = 'ENERGY_DEVICE_ID'
     INI_PYTHONPATH = 'PYTHONPATH'
-    INI_SQLALCHEMY_DATABASE_URI = 'SQLALCHEMY_DATABASE_URI'
-
-    INI_SQLALCHEMY_TRACK_MODIFICATIONS = 'SQLALCHEMY_TRACK_MODIFICATIONS'
-    INI_EXPLAIN_TEMPLATE_LOADING = 'EXPLAIN_TEMPLATE_LOADING'
     INI_SECRET_KEY = 'SECRET_KEY'
     INI_WTF_CSRF_SECRET_KEY = 'WTF_CSRF_SECRET_KEY'
+    INI_EXPLAIN_TEMPLATE_LOADING = 'EXPLAIN_TEMPLATE_LOADING'
 
     INI_HTTP_HOST = 'HTTP_HOST'
     INI_HTTP_PORT = 'HTTP_PORT'
@@ -62,12 +59,8 @@ class OppleoConfig(object):
     ini_settings = None
 
     # INI params
-    DATABASE_URL = None
     ENERGY_DEVICE_ID = 'NONE'
     PYTHONPATH = ''
-    SQLALCHEMY_DATABASE_URI = None
-
-    SQLALCHEMY_TRACK_MODIFICATIONS = True
     EXPLAIN_TEMPLATE_LOADING = False
     # Replace the SECRET_KEY and WTF_CSRF_SECRET_KEY with random strings. In Python import os and use os.urandom(24) to generate.
     # If these are not in the ini file, each restart all logins expire.
@@ -137,14 +130,9 @@ class OppleoConfig(object):
     # Global location to store all connected clients keyed by request.sid (websocket room)    
     connectedClients = {}
 
-
-    sqlalchemy_engine = None
-    sqlalchemy_session_factory = None
-    sqlalchemy_session = None
-
     # OppleoConfig Logger
     logger = None
-    PROCESS_NAME = 'PythonProc'
+    PROCESS_NAME = 'Oppleo'
     LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
 
     # The time between database queries for energy state updates, in seconds
@@ -199,12 +187,8 @@ class OppleoConfig(object):
             if not OppleoConfig.ini_settings.has_section(targetSectionName):
                 OppleoConfig.logger.debug('Ini file has no ' + targetSectionName + ' section.')
             else:
-                OppleoConfig.DATABASE_URL = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_DATABASE_URL)
                 OppleoConfig.ENERGY_DEVICE_ID = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_ENERGY_DEVICE_ID)
                 OppleoConfig.PYTHONPATH = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_PYTHONPATH)
-                OppleoConfig.SQLALCHEMY_DATABASE_URI = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_SQLALCHEMY_DATABASE_URI)
-
-                OppleoConfig.SQLALCHEMY_TRACK_MODIFICATIONS = OppleoConfig.getBooleanOption(targetSectionName, OppleoConfig.INI_SQLALCHEMY_TRACK_MODIFICATIONS)
                 OppleoConfig.EXPLAIN_TEMPLATE_LOADING = OppleoConfig.getBooleanOption(targetSectionName, OppleoConfig.INI_EXPLAIN_TEMPLATE_LOADING)
                 OppleoConfig.SECRET_KEY = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_SECRET_KEY)
                 OppleoConfig.WTF_CSRF_SECRET_KEY = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_WTF_CSRF_SECRET_KEY)
@@ -246,6 +230,10 @@ class OppleoConfig(object):
                 OppleoConfig.PRODUCTION = ( envSectionName.lower() == OppleoConfig.INI_IS_PROD.lower() )
                 OppleoConfig.DEBUG = OppleoConfig.getBooleanOption(envSectionName, OppleoConfig.INI_DEBUG, False)
                 OppleoConfig.TESTING = OppleoConfig.getBooleanOption(envSectionName, OppleoConfig.INI_TESTING, False)
+
+        ccm = ChargerConfigModel.get_config()
+        i = 0
+
 
 
     @staticmethod
@@ -304,14 +292,3 @@ class OppleoConfig(object):
                 dict1[option] = None
         return dict1
 
-    @staticmethod
-    def sqlAlchemyPoolStatus() -> dict:
-        OppleoConfig.logger.debug('sqlAlchemyPoolStatus()')
-        if OppleoConfig.sqlalchemy_engine is None or \
-           OppleoConfig.sqlalchemy_engine.pool is None:
-            OppleoConfig.logger.warning('sqlAlchemyPoolStatus() - no engine or pool (None)')
-            return "Geen informatie"
-        else:
-            pool_status = OppleoConfig.sqlalchemy_engine.pool.status()
-            OppleoConfig.logger.info('sqlAlchemyPoolStatus() - %s' % pool_status)
-            return pool_status

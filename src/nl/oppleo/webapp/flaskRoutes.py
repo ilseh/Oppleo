@@ -16,6 +16,7 @@ from flask_login import LoginManager, login_required, login_user, logout_user, c
 from flask_socketio import SocketIO, emit
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.config.OppleoDatabaseConfig import OppleoDatabaseConfig
 
 from nl.oppleo.models.User import User
 from nl.oppleo.webapp.LoginForm import LoginForm
@@ -53,7 +54,7 @@ def index():
     try:
         return render_template(
             'dashboard.html',
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     except TemplateNotFound:
         abort(404)
@@ -73,7 +74,7 @@ def home():
 def page_not_found(e):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('404 page not found error handler')
-    # No need for oppleooonfig=OppleoConfig
+    # No need for oppleoconfig=OppleoConfig
     return render_template('errorpages/404.html'), 404
 
 
@@ -85,7 +86,7 @@ def login():
     if (request.method == 'GET'):
         return render_template("login.html", 
             form=LoginForm(),
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = LoginForm()
@@ -128,7 +129,7 @@ def login():
     return render_template("login.html", 
                 form=form, 
                 msg="Login failed",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 def authenticated_resource(function):
@@ -174,7 +175,7 @@ def change_password():
         return render_template(
             'change_password.html', 
             form=ChangePasswordForm(),
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
 
     form = ChangePasswordForm()
@@ -186,7 +187,7 @@ def change_password():
         return render_template(
             'change_password.html', 
             form=form,
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     if form.validate_on_submit():
         # Valid, change the password for the user now
@@ -195,7 +196,7 @@ def change_password():
         user.save()
         return render_template(
             'change_password_success.html', 
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # Translate errors
     if ('new_password' in form.errors):
@@ -215,7 +216,7 @@ def change_password():
     return render_template(
         'change_password.html', 
         form=form,
-        oppleooonfig=OppleoConfig
+        oppleoconfig=OppleoConfig
         )
 
 
@@ -224,7 +225,7 @@ def about():
     global flaskRoutesLogger, OppleoConfig
     flaskRoutesLogger.debug('/about {}'.format(request.method))
     return render_template("about.html",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -241,7 +242,7 @@ def shutdown():
             requesttitle="Uitschakelen",
             requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
             buttontitle="Schakel uit!",
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -251,7 +252,7 @@ def shutdown():
         # Simple os.system('sudo shutdown now') initiates shutdown before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; shutdown now' &>/dev/null")
         return render_template("shuttingdown.html", 
-                    oppleooonfig=OppleoConfig
+                    oppleoconfig=OppleoConfig
                     )
     else:
         return render_template("authorize.html", 
@@ -260,7 +261,7 @@ def shutdown():
                 requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
                 buttontitle="Schakel uit!",
                 errormsg="Het wachtwoord is onjuist",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -277,7 +278,7 @@ def reboot():
             requesttitle="Herstarten",
             requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
             buttontitle="Herstart!",
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -287,7 +288,7 @@ def reboot():
         # Simple os.system('sudo reboot') initiates reboot before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; reboot' &>/dev/null")
         return render_template("rebooting.html", 
-                    oppleooonfig=OppleoConfig
+                    oppleoconfig=OppleoConfig
                     )
     else:
         return render_template("authorize.html", 
@@ -296,7 +297,7 @@ def reboot():
                 requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
                 buttontitle="Herstart!",
                 errormsg="Het wachtwoord is onjuist",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -313,7 +314,7 @@ def restart():
             requesttitle="Herstarten",
             requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
             buttontitle="Herstart!",
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -323,7 +324,7 @@ def restart():
         # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
         return render_template("restarting.html", 
-                    oppleooonfig=OppleoConfig
+                    oppleoconfig=OppleoConfig
                     )
     else:
         return render_template("authorize.html", 
@@ -332,7 +333,7 @@ def restart():
                 requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
                 buttontitle="Herstart!",
                 errormsg="Het wachtwoord is onjuist",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -354,7 +355,7 @@ def delete_charge_session(id=None):
             form=AuthorizeForm(),
             requesttitle=str("Laadsessie " + str(id)),
             buttontitle=str("Verwijder laadsessie " + str(id)),
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -370,7 +371,7 @@ def delete_charge_session(id=None):
                 requesttitle=str("Laadsessie " + str(id)),
                 buttontitle=str("Verwijder laadsessie " + str(id)),
                 errormsg="Het wachtwoord is onjuist",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -391,7 +392,7 @@ def start_charge_session(rfid=None):
             form=AuthorizeForm(),
             requesttitle=str("Start laadsessie"),
             buttontitle="Start laadsessie",
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -418,7 +419,7 @@ def start_charge_session(rfid=None):
                             requesttitle=str("Start laadsessie " + str(id)),
                             buttontitle="Start laadsessie",
                             errormsg="Deze RFID is niet geautoriseerd.",
-                            oppleooonfig=OppleoConfig
+                            oppleoconfig=OppleoConfig
                             )
                 except ExpiredException as e:
                     flaskRoutesLogger.warn('Could not start charge session for rfid {}, Expired!'.format(id))
@@ -427,7 +428,7 @@ def start_charge_session(rfid=None):
                             requesttitle=str("Start laadsessie " + str(id)),
                             buttontitle="Start laadsessie",
                             errormsg="De geldigheid van deze RFID is verlopen.",
-                            oppleooonfig=OppleoConfig
+                            oppleoconfig=OppleoConfig
                             )
             else:
                 # A charge session was started elsewhere, fail
@@ -437,7 +438,7 @@ def start_charge_session(rfid=None):
                         requesttitle=str("Start laadsessie " + str(id)),
                         buttontitle="Start laadsessie",
                         errormsg="Er is al een laadsessie actief. Stop deze eerst.",
-                        oppleooonfig=OppleoConfig
+                        oppleoconfig=OppleoConfig
                         )
         return redirect(url_for('flaskRoutes.charge_sessions'))
     else:
@@ -446,7 +447,7 @@ def start_charge_session(rfid=None):
                 requesttitle=str("Start laadsessie " + str(id)),
                 buttontitle="Start laadsessie",
                 errormsg="Het wachtwoord is onjuist",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -467,7 +468,7 @@ def stop_charge_session(charge_session_id=None):
             form=AuthorizeForm(),
             requesttitle=str("Stop laadsessie " + str(charge_session_id)),
             buttontitle="Stop laadsessie",
-            oppleooonfig=OppleoConfig
+            oppleoconfig=OppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -490,7 +491,7 @@ def stop_charge_session(charge_session_id=None):
                 requesttitle=str("Stop laadsessie " + str(charge_session_id)),
                 buttontitle="Stop laadsessie",
                 errormsg="Het wachtwoord is onjuist",
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -502,7 +503,7 @@ def usage(cnt="undefined"):
     flaskRoutesLogger.debug('/usage ' + request.method)
     return render_template("usage_table.html", 
                 cnt=cnt,
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -514,7 +515,7 @@ def usage_table(cnt="undefined"):
     flaskRoutesLogger.debug('/usage_table {} {}'.format(cnt, request.method))
     return render_template("usage_table.html", 
                 cnt=cnt,
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -529,7 +530,7 @@ def usage_graph(cnt="undefined"):
     return render_template("usage_graph.html", 
                 cnt=cnt,
                 req_period=req_period,
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
 
 
@@ -538,7 +539,7 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, OppleoConfig, OppleoDatabaseConfig
     flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
     r = Raspberry()
     diag = r.get_all()
@@ -565,7 +566,8 @@ def settings(active=1):
                 diag_json=diag_json,
                 charger_config=charger_config_str,
                 energydevicemodel=EnergyDeviceModel.get(),
-                oppleooonfig=OppleoConfig
+                oppleodatabaseconfig=OppleoDatabaseConfig,
+                oppleoconfig=OppleoConfig
             )
 
 
@@ -661,7 +663,7 @@ def charge_sessions(since_timestamp=None):
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     if (not jsonRequested):
         return render_template("charge_sessions.html",
-                    oppleooonfig=OppleoConfig
+                    oppleoconfig=OppleoConfig
                     )
     # Request parameters
     # TODO - format request params and hand to model
@@ -698,13 +700,13 @@ def rfid_tokens(token=None):
         if (token == None):
             return render_template(
                 'tokens.html',
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
                 )
         rfid_model = RfidModel().get_one(token)
         if (rfid_model == None):
             return render_template(
                 'tokens.html', 
-                oppleooonfig=OppleoConfig
+                oppleoconfig=OppleoConfig
             )
         rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
         rfid_change_form = RfidChangeForm()
@@ -748,12 +750,12 @@ def rfid_tokens(token=None):
             return render_template("token.html",
                     rfid_model=rfid_model,
                     form=rfid_change_form,
-                    oppleooonfig=OppleoConfig
+                    oppleoconfig=OppleoConfig
                 )        
         return render_template("token.html",
                     rfid_model=rfid_model,
                     form=rfid_change_form,
-                    oppleooonfig=OppleoConfig
+                    oppleoconfig=OppleoConfig
                 )        
     # Check if token exist, if not rfid is None
     if (token == None):
