@@ -7,6 +7,7 @@ from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.utils.EnergyUtil import EnergyUtil
 from nl.oppleo.daemon.EnergyDevice import EnergyDevice
 
+oppleoConfig = OppleoConfig()
 
 class MeasureElectricityUsageThread(object):
     appSocketIO = None
@@ -37,6 +38,8 @@ class MeasureElectricityUsageThread(object):
         self.stop_event.set()
 
     def createEnergyDevicesList(self):
+        global oppleoConfig
+        
         self.logger.info('Searching for measurement devices configured in the db')
         energy_device = EnergyDeviceModel.get()
         if energy_device is None:
@@ -45,7 +48,7 @@ class MeasureElectricityUsageThread(object):
             self.logger.info('Found energy device %s' % energy_device.energy_device_id)
             self.energyDevice = EnergyDevice(
                                     energy_device_id=energy_device.energy_device_id,
-                                    modbusInterval=OppleoConfig.modbusInterval,
+                                    modbusInterval=oppleoConfig.modbusInterval,
                                     energyUtil=EnergyUtil(
                                         energy_device_id=energy_device.energy_device_id,
                                         appSocketIO=self.appSocketIO
@@ -54,7 +57,7 @@ class MeasureElectricityUsageThread(object):
                                     )
 
     def monitorEnergyDevicesLoop(self):
-        global OppleoConfig
+        global oppleoConfig
         self.logger.debug('monitorEnergyDevicesLoop()...')
         while not self.stop_event.is_set():
             if (self.energyDevice is not None):

@@ -1,28 +1,28 @@
 import logging
 import os
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 
-PROD = 'production'
+PROD = 'Production'
 
 
 class GenericUtil(object):
 
     @staticmethod
     def isProd():
-        if OppleoConfig.ini_settings is None:
-            OppleoConfig.loadConfig()
-        return OppleoConfig.PRODUCTION
+        if not OppleoSystemConfig.load_completed:
+            OppleoSystemConfig.loadConfig()
+        return OppleoSystemConfig.ENV == PROD
         # env_name = os.getenv('oppleo_ENV')
         # return env_name.lower() == PROD
 
-    # deprecated - use OppleoConfig.ENERGY_DEVICE_ID directly
+    # deprecated - use OppleoConfig.chargerName directly
     @staticmethod
     def getMeasurementDevice():
         # Configured in nl.cargarging.config.carcharger.ini file
-        if OppleoConfig.ini_settings is None:
-            OppleoConfig.loadConfig()
-        return OppleoConfig.ENERGY_DEVICE_ID
+        oppleoConfig = OppleoConfig()
+        return oppleoConfig.chargerName
         #return os.getenv('ENERGY_DEVICE_ID')
 
     @staticmethod

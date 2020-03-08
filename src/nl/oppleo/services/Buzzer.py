@@ -5,6 +5,7 @@ import logging
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
+oppleoConfig = OppleoConfig()
 GPIO = GenericUtil.importGpio()
 
 
@@ -29,22 +30,22 @@ class BuzzerProd(object):
     logger = logging.getLogger('nl.oppleo.services.BuzzerProd')
 
     def buzz(self, buzz_duration_s, iterations=1):
-        global OppleoConfig
+        global oppleoConfig
 
         self.logger.debug("Buzzing. Iteration %d, duration %.2f" % (iterations, buzz_duration_s))
 
-        GPIO.setup(OppleoConfig.pinBuzzer, GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup(oppleoConfig.pinBuzzer, GPIO.OUT, initial=GPIO.LOW)
 
         for i in range(iterations):
-            GPIO.output(OppleoConfig.pinBuzzer, GPIO.HIGH)  # Turn on
+            GPIO.output(oppleoConfig.pinBuzzer, GPIO.HIGH)  # Turn on
             time.sleep(buzz_duration_s)
-            GPIO.output(OppleoConfig.pinBuzzer, GPIO.LOW)  # Turn off
+            GPIO.output(oppleoConfig.pinBuzzer, GPIO.LOW)  # Turn off
             time.sleep(.05)
 
     def cleanup(self):
-        global OppleoConfig
+        global oppleoConfig
 
-        GPIO.output(OppleoConfig.pinBuzzer, GPIO.LOW)  # Turn off
+        GPIO.output(oppleoConfig.pinBuzzer, GPIO.LOW)  # Turn off
         self.logger.debug("GPIO cleanup done for %s" % self.color_desc())
 
 

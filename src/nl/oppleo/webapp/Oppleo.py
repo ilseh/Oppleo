@@ -1,15 +1,14 @@
 import datetime
 import json
 import logging
-from nl.oppleo.config.OppleoDatabaseConfig import OppleoDatabaseConfig
-OppleoDatabaseConfig.initLogger()
-OppleoDatabaseConfig.loadConfig()
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+OppleoSystemConfig.loadConfig()
 
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel, Weekday
 from nl.oppleo.webapp.WebSocketQueueReaderBackgroundTask import WebSocketQueueReaderBackgroundTask
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 
-OppleoConfig.initLogger('Oppleo')
+oppleoConfig = OppleoConfig()
 oppleoLogger = logging.getLogger('nl.oppleo.webapp.Oppleo')
 oppleoLogger.debug('Initializing Oppleo...')
 
@@ -17,14 +16,12 @@ import sys
 print('Reporting sys.version %s : ' % sys.version)
 oppleoLogger.debug('sys.version %s : ' % sys.version)
 
-OppleoConfig.loadConfig()
-
 from nl.oppleo.utils.GenericUtil import GenericUtil
 try:
     GPIO = GenericUtil.importGpio()
-    if OppleoConfig.gpioMode == "BOARD":
+    if oppleoConfig.gpioMode == "BOARD":
         oppleoLogger.info("Setting GPIO MODE to BOARD")
-        GPIO.setmode(GPIO.BOARD) if OppleoConfig.gpioMode == "BOARD" else GPIO.setmode(GPIO.BCM)
+        GPIO.setmode(GPIO.BOARD) if oppleoConfig.gpioMode == "BOARD" else GPIO.setmode(GPIO.BCM)
     else:
         oppleoLogger.info("Setting GPIO MODE to BCM")
         GPIO.setmode(GPIO.BCM)
@@ -35,16 +32,16 @@ from flask import Flask, render_template, jsonify, redirect, request, url_for, s
 
 # app initiliazation
 app = Flask(__name__)
-# Make it available through OppleoConfig
-OppleoConfig.app = app
+# Make it available through oppleoConfig
+oppleoConfig.app = app
 
 #app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = OppleoDatabaseConfig.SQLALCHEMY_TRACK_MODIFICATIONS
-app.config['SQLALCHEMY_DATABASE_URI'] = OppleoDatabaseConfig.DATABASE_URL
-app.config['EXPLAIN_TEMPLATE_LOADING'] = OppleoConfig.EXPLAIN_TEMPLATE_LOADING
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = OppleoSystemConfig.SQLALCHEMY_TRACK_MODIFICATIONS
+app.config['SQLALCHEMY_DATABASE_URI'] = OppleoSystemConfig.DATABASE_URL
+app.config['EXPLAIN_TEMPLATE_LOADING'] = OppleoSystemConfig.EXPLAIN_TEMPLATE_LOADING
 # import os; os.urandom(24)
-app.config['SECRET_KEY'] = OppleoConfig.SECRET_KEY
-app.config['WTF_CSRF_SECRET_KEY'] = OppleoConfig.WTF_CSRF_SECRET_KEY
+app.config['SECRET_KEY'] = oppleoConfig.secretKey
+app.config['WTF_CSRF_SECRET_KEY'] = oppleoConfig.csrfSecretKey
 
 from flask_wtf.csrf import CSRFProtect
 # https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
@@ -52,8 +49,8 @@ CSRFProtect(app)
 
 from flask_socketio import SocketIO, emit
 appSocketIO = SocketIO(app)
-# Make it available through OppleoConfig
-OppleoConfig.appSocketIO = appSocketIO
+# Make it available through oppleoConfig
+oppleoConfig.appSocketIO = appSocketIO
 
 # Init the database
 import nl.oppleo.models.Base
@@ -69,7 +66,6 @@ from nl.oppleo.models.Raspberry import Raspberry
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.User import User
 from nl.oppleo.models.RfidModel import RfidModel
-from nl.oppleo.webapp.WebSocketThread import WebSocketThread
 
 from nl.oppleo.daemon.MeasureElectricityUsageThread import MeasureElectricityUsageThread
 from nl.oppleo.daemon.ChargerHandlerThread import ChargerHandlerThread
@@ -86,62 +82,34 @@ from nl.oppleo.webapp.flaskRoutes import flaskRoutes
 
 # Create an emit queue, for other Threads to communicate to th ews emit background task
 wsEmitQueue = Queue()
-OppleoConfig.wsEmitQueue = wsEmitQueue
+oppleoConfig.wsEmitQueue = wsEmitQueue
 
 
 # The CarCharger root flaskRoutes
 app.register_blueprint(flaskRoutes) # no url_prefix
 
 # flask-login
-OppleoConfig.login_manager = LoginManager()
-OppleoConfig.login_manager.init_app(app)
+oppleoConfig.login_manager = LoginManager()
+oppleoConfig.login_manager.init_app(app)
 
 threadLock = threading.Lock()
-wsThread = WebSocketThread()
 wsqrbBackgroundTask = WebSocketQueueReaderBackgroundTask()
 
 wsClientCnt = 0
 
 
-@OppleoConfig.login_manager.user_loader
+@oppleoConfig.login_manager.user_loader
 def load_user(username):
     return User.get(username)
 
 
-"""
 @appSocketIO.on("connect", namespace="/usage")
 def connect():
-    global oppleoLogger, threadLock, wsClientCnt, wsThread, appSocketIO
+    global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
     with threadLock:
         wsClientCnt += 1
-        oppleoLogger.debug('socketio.connect wsClientCnt {}'.format(wsClientCnt))
-        if wsClientCnt == 1:
-            oppleoLogger.debug('Starting thread')
-            wsThread.start(appSocketIO)
-    emit("server_status", "server_up")
-    oppleoLogger.debug("Client connected...")
-
-@appSocketIO.on("disconnect", namespace="/usage")
-def disconnect():
-    global oppleoLogger, threadLock, wsClientCnt, wsThread, appSocketIO
-    oppleoLogger.debug('Client disconnected.')
-    with threadLock:
-        wsClientCnt -= 1
-        oppleoLogger.debug('socketio.disconnect wsClientCnt {}'.format(wsClientCnt))
-        if wsClientCnt == 0:
-            # stop thread
-            oppleoLogger.debug('Requesting thread stop')
-            wsThread.stop()
-"""
-
-
-@appSocketIO.on("connect", namespace="/usage")
-def connect():
-    global oppleoLogger, OppleoConfig, threadLock, wsClientCnt
-    with threadLock:
-        wsClientCnt += 1
-        if request.sid not in OppleoConfig.connectedClients.keys():
-            OppleoConfig.connectedClients[request.sid] = {
+        if request.sid not in oppleoConfig.connectedClients.keys():
+            oppleoConfig.connectedClients[request.sid] = {
                                 'sid'   : request.sid,
                                 'auth'  : True if (current_user.is_authenticated) else False,
                                 'stats' : 'connected'
@@ -149,7 +117,7 @@ def connect():
     oppleoLogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
                     request.sid, \
                     wsClientCnt, \
-                    OppleoConfig.connectedClients \
+                    oppleoConfig.connectedClients \
                     )
                 )
     emit("server_status", "server_up")
@@ -157,14 +125,14 @@ def connect():
 
 @appSocketIO.on("disconnect", namespace="/usage")
 def disconnect():
-    global oppleoLogger, OppleoConfig, threadLock, wsClientCnt
+    global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
     with threadLock:
         wsClientCnt -= 1
-        res = OppleoConfig.connectedClients.pop(request.sid, None)
+        res = oppleoConfig.connectedClients.pop(request.sid, None)
     oppleoLogger.debug('socketio.disconnect sid: {} wsClientCnt: {} connectedClients:{} res:{}'.format( \
                     request.sid, \
                     wsClientCnt, \
-                    OppleoConfig.connectedClients, \
+                    oppleoConfig.connectedClients, \
                     res
                     )
                 )
@@ -190,7 +158,6 @@ def RfidModel_after_update(mapper, connection, target):
 
 
 if __name__ == "__main__":
-    ##    wsThread.start(appSocketIO)
 
     """
     from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
@@ -200,13 +167,13 @@ if __name__ == "__main__":
     """
     from datetime import datetime, timedelta
 
-    if OppleoConfig.autoSessionEnabled: 
+    if oppleoConfig.autoSessionEnabled: 
         edmm = EnergyDeviceMeasureModel()
         kwh_used = edmm.get_usage_since(
-                OppleoConfig.ENERGY_DEVICE_ID,
-                (datetime.today() - timedelta(minutes=OppleoConfig.autoSessionMinutes))
+                oppleoConfig.chargerName,
+                (datetime.today() - timedelta(minutes=oppleoConfig.autoSessionMinutes))
                 )
-        if kwh_used > OppleoConfig.autoSessionEnergy:
+        if kwh_used > oppleoConfig.autoSessionEnergy:
             oppleoLogger.debug('More energy used than {}kWh in {} minutes'.format(e, t))
             oppleoLogger.debug("Keep the current session")
         else:
@@ -240,11 +207,39 @@ if __name__ == "__main__":
         print(key, value) 
     """
 
+    """
+    from nl.oppleo.config.oppleoConfigNEW import oppleoConfigNEW
+    oppleoConf = oppleoConfigNEW()
+    oppleoConf2 = oppleoConfigNEW()
+
+    t1 = oppleoConf.gpioMode
+    oppleoConf.gpioMode = 'BOARD'
+    t2 = oppleoConf.gpioMode
+    oppleoConf.gpioMode = 'BCM'
+    t3 = oppleoConf.gpioMode
+    try:
+        oppleoConf.gpioMode = 'TEST'
+    except TypeError as e:
+        pass
+    except ValueError as e:
+        pass
+
+
+    t1 = oppleoConf.pinLedRed
+    try:
+        oppleoConf.pinLedRed = 'TEST'
+    except TypeError as e:
+        pass
+    t2 = oppleoConf.pinLedRed
+    oppleoConf.pinLedRed = 2
+    t2 = oppleoConf.pinLedRed
+    """
+
 
     # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
     meuThread = MeasureElectricityUsageThread(appSocketIO)
     chThread = ChargerHandlerThread(
-                    device=OppleoConfig.ENERGY_DEVICE_ID,
+                    device=oppleoConfig.chargerName,
                     energy_util=meuThread.energyDevice.energyUtil, 
                     charger=Charger(), 
                     ledlighter=LedLighter(), 
@@ -256,9 +251,9 @@ if __name__ == "__main__":
     meuThread.addCallback(chThread.energyUpdate)
     phmThread = PeakHoursMonitorThread(appSocketIO)
 
-    OppleoConfig.meuThread = meuThread
-    OppleoConfig.chThread = chThread
-    OppleoConfig.phmThread = phmThread
+    oppleoConfig.meuThread = meuThread
+    oppleoConfig.chThread = chThread
+    oppleoConfig.phmThread = phmThread
 
     # Starting the web socket queue reader background task
     oppleoLogger.debug('Starting queue reader background task...')
@@ -279,24 +274,24 @@ if __name__ == "__main__":
 
     print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
-            OppleoConfig.httpHost, 
-            OppleoConfig.httpPort,
-            OppleoConfig.DEBUG,
-            OppleoConfig.useReloader
+            oppleoConfig.httpHost, 
+            oppleoConfig.httpPort,
+            OppleoSystemConfig.DEBUG,
+            oppleoConfig.useReloader
             )
         )
     oppleoLogger.debug('Starting web server on {}:{} (debug:{}, use_reloader={})...'
         .format(
-            OppleoConfig.httpHost, 
-            OppleoConfig.httpPort,
-            OppleoConfig.DEBUG,
-            OppleoConfig.useReloader
+            oppleoConfig.httpHost, 
+            oppleoConfig.httpPort,
+            OppleoSystemConfig.DEBUG,
+            oppleoConfig.useReloader
             )
         )
     appSocketIO.run(app, 
-                    port=OppleoConfig.httpPort, 
-                    debug=OppleoConfig.DEBUG, 
-                    use_reloader=OppleoConfig.useReloader, 
-                    host=OppleoConfig.httpHost
+                    port=oppleoConfig.httpPort, 
+                    debug=OppleoSystemConfig.DEBUG, 
+                    use_reloader=oppleoConfig.useReloader, 
+                    host=oppleoConfig.httpHost
                     )
 

@@ -3,11 +3,14 @@ import threading
 import time
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+
 """ 
   As Flask uses it's own socketio implementation, which allows emit only from the main Thread or greenlet threads
   started as background task, this is a greenlet thread background task reading from a queue and emitting messages
   to web sockets
 """
+
+oppleoConfig = OppleoConfig()
 
 class WebSocketQueueReaderBackgroundTask(object):
     # Count the message updates send through the websocket
@@ -27,7 +30,7 @@ class WebSocketQueueReaderBackgroundTask(object):
         self.stop_event.set()
 
     def websocket_start(self):
-        global OppleoConfig
+        global oppleoConfig
         self.logger.debug('Starting background task...')
         while not self.stop_event.is_set():
             # Sleep is interruptable by other threads, so sleep for 0.1 seconds, then check passed time
@@ -62,7 +65,7 @@ class WebSocketQueueReaderBackgroundTask(object):
                         - Emit only to authenticated clients
                         - room is the request.sid of the specific client
                     """
-                    for sid, connectedClient in OppleoConfig.connectedClients.items():
+                    for sid, connectedClient in oppleoConfig.connectedClients.items():
                         if 'auth' in connectedClient and connectedClient['auth']:
                             # Authenticated client, emit data
                             self.logger.debug('Sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))

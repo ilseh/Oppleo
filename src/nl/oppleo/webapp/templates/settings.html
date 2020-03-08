@@ -185,13 +185,13 @@
         JSON.stringify(diag_data, undefined, 2) 
       )
       $('pre#diag_json').show()
-      $('input#peakHoursAllowPeakOnePeriod').bootstrapToggle()
-      $('input#peakHoursAllowPeakOnePeriod').change(function() {
-        updateSettings( 'peakHoursAllowPeakOnePeriod', $(this).prop('checked') )
+      $('input#allowPeakOnePeriod').bootstrapToggle()
+      $('input#allowPeakOnePeriod').change(function() {
+        updateSettings( 'allowPeakOnePeriod', $(this).prop('checked') )
       })
-      $('input#peakHoursOffPeakEnabled').bootstrapToggle()
-      $('input#peakHoursOffPeakEnabled').change(function() {
-        updateSettings( 'peakHoursOffPeakEnabled', $(this).prop('checked') )
+      $('input#offpeakEnabled').bootstrapToggle()
+      $('input#offpeakEnabled').change(function() {
+        updateSettings( 'offpeakEnabled', $(this).prop('checked') )
       })
 
       $('input#autoSessionEnabled').bootstrapToggle()
@@ -305,9 +305,9 @@
                               <td class="text-primary">
                                 <form id="peak-hours-off-peak-enabled-form">
                                   <input type="checkbox" 
-                                    {% if oppleoconfig.peakHoursOffPeakEnabled %}checked{% endif %}
-                                    name="peakHoursOffPeakEnabled"
-                                    id="peakHoursOffPeakEnabled"
+                                    {% if oppleoconfig.offpeakEnabled %}checked{% endif %}
+                                    name="offpeakEnabled"
+                                    id="offpeakEnabled"
                                     data-toggle="toggle"
                                     data-on="<i class='far fa-thumbs-up'></i></i> JA"
                                     data-off="<i class='far fa-thumbs-down'></i> NEE"
@@ -325,9 +325,9 @@
                               <td class="text-primary">
                                 <form id="peak-hours-allow-peak-once-form">
                                   <input type="checkbox" 
-                                    {% if oppleoconfig.peakHoursAllowPeakOnePeriod %}checked{% endif %}
-                                    name="peakHoursAllowPeakOnePeriod"
-                                    id="peakHoursAllowPeakOnePeriod"
+                                    {% if oppleoconfig.allowPeakOnePeriod %}checked{% endif %}
+                                    name="allowPeakOnePeriod"
+                                    id="allowPeakOnePeriod"
                                     data-toggle="toggle"
                                     data-on="<i class='far fa-thumbs-up'></i></i> JA"
                                     data-off="<i class='far fa-thumbs-down'></i> NEE"
@@ -507,16 +507,12 @@
                               <td class="text-primary">Postgres</td>
                             </tr>
                             <tr>
-                              <td class="text-dark">URL:</td>
-                              <td class="text-primary">{{ oppleodatabaseconfig.DATABASE_URL }}</td>
-                            </tr>
-                            <tr>
                               <td class="text-dark">SQLAlchemy URL:</td>
-                              <td class="text-primary">{{ oppleodatabaseconfig.SQLALCHEMY_DATABASE_URI }}</td>
+                              <td class="text-primary">{{ oppleosystemconfig.DATABASE_URL }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">SQLAlchemy Pool Status:</td>
-                              <td class="text-primary">{{ oppleodatabaseconfig.sqlAlchemyPoolStatus() }}</td>
+                              <td class="text-primary">{{ oppleosystemconfig.sqlAlchemyPoolStatus() }}</td>
                             </tr>
                           </tbody>
                         </table>

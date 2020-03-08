@@ -3,6 +3,7 @@ import logging
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.PushMessageProwl import PushMessageProwl
 
+oppleoConfig = OppleoConfig()
 
 class PushMessage(object):
     logger = logging.getLogger('nl.oppleo.services.PushMessage')
@@ -15,9 +16,9 @@ class PushMessage(object):
 
     @staticmethod
     def sendMessage(title, message, priority=priorityNormal):
-        global OppleoConfig
+        global oppleoConfig
 
         PushMessage.logger.debug("sendMessage()")
-        if OppleoConfig.prowlEnabled:
+        if oppleoConfig.prowlEnabled:
             PushMessageProwl.sendMessage(title, message, priority)
 

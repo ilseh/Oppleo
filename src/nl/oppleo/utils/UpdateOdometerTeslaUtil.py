@@ -11,6 +11,8 @@ from nl.oppleo.models.RfidModel import RfidModel
 
 from nl.oppleo.services.PushMessage import PushMessage
 
+oppleoConfig = OppleoConfig()
+
 """
  Instantiate object
  Set the session id
@@ -42,7 +44,7 @@ class UpdateOdometerTeslaUtil:
 
     def start(self):
         self.logger.debug(f'{datetime.datetime.now()} - Launching background task...')
-        self.thread = OppleoConfig.appSocketIO.start_background_task(self.update_odometer)
+        self.thread = oppleoConfig.appSocketIO.start_background_task(self.update_odometer)
 
 
     def update_odometer(self):

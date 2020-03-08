@@ -2,9 +2,6 @@ import os
 from nl.oppleo.config import Logger
 import logging
 
-class Config(object):
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
-
 class Development(Config):
     """
     Development environment configuration

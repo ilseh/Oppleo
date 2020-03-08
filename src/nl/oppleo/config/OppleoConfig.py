@@ -6,99 +6,57 @@ from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.config import Logger
 
 """
- First init the Logger, then load the config
+ Instantiate an OppleoConfig() object. This will be a Singleton
+ 
 """
 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 # 
-class OppleoConfig(object):
-    # ini file param names
-    INI_MAIN = 'Oppleo'
-    # Params are all read as lowercase by ConfigParser (!)
-    INI_TARGET_PARAM = 'activeTarget'
-    INI_ENV_PARAM = 'oppleoEnv'
+class OppleoConfig(object, metaclass=Singleton):
 
-    INI_ENERGY_DEVICE_ID = 'ENERGY_DEVICE_ID'
-    INI_PYTHONPATH = 'PYTHONPATH'
-    INI_SECRET_KEY = 'SECRET_KEY'
-    INI_WTF_CSRF_SECRET_KEY = 'WTF_CSRF_SECRET_KEY'
-    INI_EXPLAIN_TEMPLATE_LOADING = 'EXPLAIN_TEMPLATE_LOADING'
+    """
+        Variables not stored in the database (hardcoded) 
+    """
 
-    INI_HTTP_HOST = 'HTTP_HOST'
-    INI_HTTP_PORT = 'HTTP_PORT'
-    INI_USE_RELOADER = 'USE_RELOADER'
-    INI_FACTOR_WHKM = 'FACTOR_WHKM'
-
-    INI_IS_PROD = 'Production'
-
-    INI_DEBUG = 'DEBUG'
-    INI_TESTING = 'TESTING'
-
-    INI_MODBUS_INTERVAL = 'MODBUS_INTERVAL'
-
-    INI_AUTO_SESSION_ENABLED = 'AUTO_SESSION_ENABLED'
-    INI_AUTO_SESSION_MINUTES = 'AUTO_SESSION_MINUTES'
-    INI_AUTO_SESSION_ENERGY = 'AUTO_SESSION_ENERGY'
-    INI_AUTO_SESSION_CONDENSE_SAME_ODOMETER = 'AUTO_SESSION_CONDENSE_SAME_ODOMETER'
-
-    # GPIO MODE - BCM or BOARD (BCM is more future proof/ less direct hardware related)
-    INI_GPIO_MODE = 'GPIO_MODE'
-    # Pulsing LED values
-    INI_PULSE_LED_MIN = 'PULSE_LED_MIN'
-    INI_PULSE_LED_MAX = 'PULSE_LED_MAX'
-    # Raspberry PINs - RGB LEDs
-    INI_PIN_LED_RED = 'PIN_LED_RED'
-    INI_PIN_LED_GREEN = 'PIN_LED_GREEN'
-    INI_PIN_LED_BLUE = 'PIN_LED_BLUE'
-    # Raspberry PINs - Buzzer - PIN 16/ GPIO23
-    INI_PIN_BUZZER = 'PIN_BUZZER' 
-
-    # Off peak
-    INI_PEAK_HOURS_OFF_PEAK_ENABLED = 'PEAK_HOURS_OFF_PEAK_ENABLED'
-
-    # ini content
-    ini_settings = None
+    # ENERGY_DEVICE_ID = 'NONE'
+    # PYTHONPATH = ''
+    # EXPLAIN_TEMPLATE_LOADING = False
 
     # INI params
-    ENERGY_DEVICE_ID = 'NONE'
-    PYTHONPATH = ''
-    EXPLAIN_TEMPLATE_LOADING = False
-    # Replace the SECRET_KEY and WTF_CSRF_SECRET_KEY with random strings. In Python import os and use os.urandom(24) to generate.
-    # If these are not in the ini file, each restart all logins expire.
-    SECRET_KEY = os.urandom(24)
-    WTF_CSRF_SECRET_KEY = os.urandom(24)
+    # PRODUCTION = False
+    # DEBUG = True
+    # TESTING = False
 
-    # INI params
-    PRODUCTION = False
-    DEBUG = True
-    TESTING = False
-
-    login_manager = None
-    # Flask app
-    app = None  
-    appSocketIO = None
-    httpHost = '0.0.0.0'  
-    httpPort = 80
-    useReloader = False
+    # httpHost = '0.0.0.0'  
+    # httpPort = 80
+    # useReloader = False
     # Factor to calculate km/h equivalent of Wh per km
     # Tesla is using 162, which matches the in-car screen
     # Actual average over first 16.836 km on Tesla Model 3 is 181.8
-    factor_Whkm = 162
+    # factor_Whkm = 162
 
     # Number of seconds between consecutive kwh meter readouts (via modbus). Only changes will be stored in the 
     # usage table. Greater values will lead to lagging change detection. Smaller values take more processing.
-    modbusInterval = 10
+    # modbusInterval = 10
 
     # Auto Session starts a new session when the EVSE starts charging and during the set amount of minutes less
     # than the amount of energy has been consumed (auto was away)
     # A Tesla Model 3 75kWh Dual Motor charges 0.2kWh every 1:23h (16 feb 2020)
-    autoSessionEnabled = False
-    autoSessionMinutes = 90
-    autoSessionEnergy = 0.1
+    # autoSessionEnabled = False
+    # autoSessionMinutes = 90
+    # autoSessionEnergy = 0.1
     # Condenses autyo-generated sessions (after a period of inactivity) if the odometer has not changed.
     # Auto-sessions can be generated after the charger was switched off in peak period. Start of off-peak then leads to 
     # an incorrectly auto-generated charge-session, while the vehicke actually has not moved.
     # This does not condense sessions stopped and started through RFID or WebApp.
-    autoSessionCondenseSameOdometer = False
+    # autoSessionCondenseSameOdometer = False
 
     # GPIO MODE - BCM or BOARD (BCM is more future proof/ less direct hardware related)
     #   -1 if GPIO.setmode() is not set
@@ -107,42 +65,47 @@ class OppleoConfig(object):
     # Once you’ve set the mode, you can only change it once you’ve done a GPIO.cleanup(). But you can only do 
     # GPIO.cleanup() once you’ve configured a port. You can’t flick between GPIO modes without first setting up 
     # a port, then cleaning up.
-    gpioMode = 'BCM'
+    # gpioMode = 'BCM'
     # Pulsing LED values
-    pulseLedMin = 3
-    pulseLedMax = 98
+    # pulseLedMin = 3
+    # pulseLedMax = 98
     # Raspberry PINs - RGB LEDs - PINS GPIO13 (Red), GPIO12 (Green) and GPIO 16 (Blue)
-    pinLedRed = 13
-    pinLedGreen = 12
-    pinLedBlue = 16
+    # pinLedRed = 13
+    # pinLedGreen = 12
+    # pinLedBlue = 16
     # Raspberry PINs - Buzzer - PIN 16/ GPIO23
-    pinBuzzer = 23 
+    # pinBuzzer = 23 
     # Raspberry PINs - Buzzer - PIN 29/ GPIO5
-    pinEvseSwitch = 5
+    # pinEvseSwitch = 5
     # Raspberry PINs - Buzzer - PIN 31/ GPIO6
-    pinEvseLed = 6
+    # pinEvseLed = 6
 
     # Peak/ Off Peak enabled. If enabled the EVSE will be disabled during off-peak hours
-    peakHoursOffPeakEnabled = True
+    # peakHoursOffPeakEnabled = True
     # Off Peak disabled for this period (not-persistent)
-    peakHoursAllowPeakOnePeriod = False
+    # peakHoursAllowPeakOnePeriod = False
 
 
-    ccm = None
+    """
+        Private variables
+    """
+    # OppleoConfig Logger
+    ___logger = None
+    __chargerConfigModel = None
 
-    # Global location to store all connected clients keyed by request.sid (websocket room)    
+
+    """
+        Global location to store all connected clients keyed by request.sid (websocket room)
+    """
     connectedClients = {}
 
-    # OppleoConfig Logger
-    logger = None
-    PROCESS_NAME = 'Oppleo'
-    LOG_FILE = '/tmp/%s.log' % PROCESS_NAME
-
-    # The time between database queries for energy state updates, in seconds
-    device_measurement_check_interval = 7
-
-    prowlEnabled = True
-    prowlApiKey = '5df94c19d71b4b456efcb49996406fa62e717a44'
+    """
+        Application wide global variables or handles which can be picked op from here
+    """
+    login_manager = None
+    # Flask app and socketio app
+    app = None  
+    appSocketIO = None
 
     meuThread = None
     chThread = None
@@ -150,152 +113,323 @@ class OppleoConfig(object):
 
     wsEmitQueue = None
 
-    @staticmethod
-    def loadConfig(filename='oppleo.ini'):
-        if OppleoConfig.logger is None:
-            OppleoConfig.initLogger()
-        OppleoConfig.logger.debug('Initializing Oppleo...')
-        # Load the ini file
-        OppleoConfig.ini_settings = RawConfigParser()
-        # Allow dynamic fields in the config ini file
-        # OppleoConfig.ini_settings._interpolation = ExtendedInterpolation()
-        #OppleoConfig.ini_settings.read(filename)
-        try:
-            # The absolute dir the script is in
-            configFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
-            OppleoConfig.logger.debug('Looking for ini file ' + configFile)
-            print('Looking for ini file ' + configFile)
-            OppleoConfig.ini_settings.read_file(open(configFile, "r"))
-        except FileNotFoundError:
-            OppleoConfig.logger.debug('Ini file not found!!!')
-            print('Ini file not found!!!')
-            os._exit(-1)
-            return
-        print('Configuration loaded')
-
-        # Read the ini file
-        if not OppleoConfig.ini_settings.has_section(OppleoConfig.INI_MAIN):
-            OppleoConfig.logger.debug('Ini file has no ' + OppleoConfig.INI_MAIN + ' section.')
-            return
-
-        mainSectionDict = OppleoConfig.configSectionMap(OppleoConfig.INI_MAIN)
-        if mainSectionDict is None:
-            return
-
-        # Which target is active?
-        if not OppleoConfig.ini_settings.has_option(OppleoConfig.INI_MAIN, OppleoConfig.INI_TARGET_PARAM):
-            OppleoConfig.logger.error('Ini file ERROR: No ' + OppleoConfig.INI_TARGET_PARAM + ' in ' + OppleoConfig.INI_MAIN)
-        else:
-            targetSectionName = OppleoConfig.getOption(OppleoConfig.INI_MAIN, OppleoConfig.INI_TARGET_PARAM)
-            if not OppleoConfig.ini_settings.has_section(targetSectionName):
-                OppleoConfig.logger.debug('Ini file has no ' + targetSectionName + ' section.')
-            else:
-                OppleoConfig.ENERGY_DEVICE_ID = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_ENERGY_DEVICE_ID)
-                OppleoConfig.PYTHONPATH = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_PYTHONPATH)
-                OppleoConfig.EXPLAIN_TEMPLATE_LOADING = OppleoConfig.getBooleanOption(targetSectionName, OppleoConfig.INI_EXPLAIN_TEMPLATE_LOADING)
-                OppleoConfig.SECRET_KEY = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_SECRET_KEY)
-                OppleoConfig.WTF_CSRF_SECRET_KEY = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_WTF_CSRF_SECRET_KEY)
-
-                OppleoConfig.httpHost = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_HTTP_HOST)
-                OppleoConfig.httpPort = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_HTTP_PORT, OppleoConfig.httpPort)
-                OppleoConfig.useReloader = OppleoConfig.getBooleanOption(targetSectionName, OppleoConfig.INI_USE_RELOADER, OppleoConfig.useReloader)
-
-                OppleoConfig.factor_Whkm = OppleoConfig.getFloatOption(targetSectionName, OppleoConfig.INI_FACTOR_WHKM, OppleoConfig.factor_Whkm)
-
-                OppleoConfig.modbusInterval = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_MODBUS_INTERVAL, OppleoConfig.modbusInterval)
-
-                OppleoConfig.autoSessionEnabled = OppleoConfig.getBooleanOption(targetSectionName, OppleoConfig.INI_AUTO_SESSION_ENABLED, OppleoConfig.autoSessionEnabled)
-                OppleoConfig.autoSessionMinutes = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_AUTO_SESSION_MINUTES, OppleoConfig.autoSessionMinutes)
-                OppleoConfig.autoSessionEnergy = OppleoConfig.getFloatOption(targetSectionName, OppleoConfig.INI_AUTO_SESSION_ENERGY, OppleoConfig.autoSessionEnergy)
-                OppleoConfig.autoSessionCondenseSameOdometer = OppleoConfig.getBooleanOption(targetSectionName, OppleoConfig.INI_AUTO_SESSION_CONDENSE_SAME_ODOMETER, OppleoConfig.autoSessionCondenseSameOdometer)
-
-                OppleoConfig.gpioMode = OppleoConfig.getOption(targetSectionName, OppleoConfig.INI_GPIO_MODE, OppleoConfig.gpioMode)
-
-                OppleoConfig.pulseLedMin = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_PULSE_LED_MIN, OppleoConfig.pulseLedMin)
-                OppleoConfig.pulseLedMax = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_PULSE_LED_MAX, OppleoConfig.pulseLedMax)
-                OppleoConfig.pinLedRed = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_PIN_LED_RED, OppleoConfig.pinLedRed)
-                OppleoConfig.pinLedGreen = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_PIN_LED_GREEN, OppleoConfig.pinLedGreen)
-                OppleoConfig.pinLedBlue = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_PIN_LED_BLUE, OppleoConfig.pinLedBlue)
-
-                OppleoConfig.pinBuzzer = OppleoConfig.getIntOption(targetSectionName, OppleoConfig.INI_PIN_BUZZER, OppleoConfig.pinBuzzer)
-
-                OppleoConfig.peakHoursOffPeakEnabled = OppleoConfig.getBooleanOption(targetSectionName, OppleoConfig.INI_PEAK_HOURS_OFF_PEAK_ENABLED, OppleoConfig.peakHoursOffPeakEnabled)
-
-        # Which environment is active?
-        mainSectionDict = OppleoConfig.configSectionMap(OppleoConfig.INI_MAIN)
-        if not OppleoConfig.ini_settings.has_option(OppleoConfig.INI_MAIN, OppleoConfig.INI_ENV_PARAM):
-            OppleoConfig.logger.error('Ini file ERROR: No ' + OppleoConfig.INI_ENV_PARAM + ' in ' + OppleoConfig.INI_MAIN)
-        else:
-            envSectionName = OppleoConfig.getOption(OppleoConfig.INI_MAIN, OppleoConfig.INI_ENV_PARAM)
-            if not OppleoConfig.ini_settings.has_section(envSectionName):
-                OppleoConfig.logger.debug('Ini file has no ' + envSectionName + ' section.')
-            else:
-                OppleoConfig.PRODUCTION = ( envSectionName.lower() == OppleoConfig.INI_IS_PROD.lower() )
-                OppleoConfig.DEBUG = OppleoConfig.getBooleanOption(envSectionName, OppleoConfig.INI_DEBUG, False)
-                OppleoConfig.TESTING = OppleoConfig.getBooleanOption(envSectionName, OppleoConfig.INI_TESTING, False)
-
-        ccm = ChargerConfigModel.get_config()
-        ChargerConfigModel.ccm = ccm
-        # TODO: Get all params from the database rather than from the ini file
-        OppleoConfig.autoSessionEnabled = ccm.autosession_enabled
-        OppleoConfig.autoSessionMinutes = ccm.autosession_minutes
-        OppleoConfig.autoSessionEnergy = ccm.autosession_energy
-        OppleoConfig.autoSessionCondenseSameOdometer = ccm.autosession_acondense_same_odometer
+    def __init__(self):
+        self.___logger = logging.getLogger('nl.oppleo.config.' + self.__class__.__name__)
+        self.___logger.debug('Initializing Oppleo...')
+        self.__chargerConfigModel = ChargerConfigModel.get_config()
 
 
-    @staticmethod
-    def initLogger(process_name='PythonProc'):
-        OppleoConfig.PROCESS_NAME = process_name
-        OppleoConfig.LOG_FILE = '/tmp/%s.log' % OppleoConfig.PROCESS_NAME
-#        OppleoConfig.LOG_FILE = '/home/pi/%s.log' % OppleoConfig.PROCESS_NAME
-        Logger.init_log(OppleoConfig.PROCESS_NAME, OppleoConfig.LOG_FILE)
-        OppleoConfig.logger = logging.getLogger('nl.oppleo.webapp.WebApp')
+    """
+        chargerName --> charger_name
+    """
+    @property
+    def chargerName(self):
+        return self.__chargerConfigModel.charger_name
+
+    @chargerName.setter
+    def chargerNames(self, value):
+        self.__chargerConfigModel.setAndSave('charger_name', value)
+
+    """
+        chargerTariff --> charger_tariff
+    """
+    @property
+    def chargerTariff(self):
+        return self.__chargerConfigModel.charger_tariff
+
+    @chargerTariff.setter
+    def chargerTariff(self, value):
+        self.__chargerConfigModel.setAndSave('charger_tariff', value)
+
+    """
+        modifiedAt --> modified_at
+    """
+    @property
+    def modifiedAt(self):
+        return self.__chargerConfigModel.modified_at
+
+    # In principle the modified_at is updated by ChargerConfigModel on saves
+    @modifiedAt.setter
+    def modifiedAt(self, value):
+        self.__chargerConfigModel.setAndSave('modified_at', value)
+
+    def generateNewSecretKeys(self):
+        self.secretKey = os.urandom(24)
+        self.csrfSecretKey = os.urandom(24)
+
+    """
+        secretKey --> secret_key
+    """
+    @property
+    def secretKey(self):
+        return self.__chargerConfigModel.secret_key
+
+    @secretKey.setter
+    def secretKey(self, value):
+        self.__chargerConfigModel.setAndSave('secret_key', value)
+
+    """
+        csrfSecretKey --> wtf_csrf_secret_key
+    """
+    @property
+    def csrfSecretKey(self):
+        return self.__chargerConfigModel.wtf_csrf_secret_key
+
+    @csrfSecretKey.setter
+    def csrfSecretKey(self, value):
+        self.__chargerConfigModel.setAndSave('wtf_csrf_secret_key', value)
+
+    """
+        httpHost --> http_host
+    """
+    @property
+    def httpHost(self):
+        return self.__chargerConfigModel.http_host
+
+    @httpHost.setter
+    def httpHost(self, value):
+        self.__chargerConfigModel.setAndSave('http_host', value)
+
+    """
+        httpPort --> http_port
+    """
+    @property
+    def httpPort(self):
+        return self.__chargerConfigModel.http_port
+
+    @httpPort.setter
+    def httpPort(self, value):
+        self.__chargerConfigModel.setAndSave('http_port', value)
 
 
-    @staticmethod
-    def getBooleanOption(section, option, default=False):
-        if not OppleoConfig.ini_settings.has_option(section, option):
-            OppleoConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
-            return default
-        return OppleoConfig.ini_settings.getboolean(section, option)
+    """
+        useReloader --> use_reloader
+    """
+    @property
+    def useReloader(self):
+        return self.__chargerConfigModel.use_reloader
 
-    @staticmethod
-    def getIntOption(section, option, default=0):
-        if not OppleoConfig.ini_settings.has_option(section, option):
-            OppleoConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
-            return default
-        return OppleoConfig.ini_settings.getint(section, option)
+    @useReloader.setter
+    def useReloader(self, value):
+        self.__chargerConfigModel.setAndSave('use_reloader', value)
 
-    @staticmethod
-    def getFloatOption(section, option, default=0):
-        if not OppleoConfig.ini_settings.has_option(section, option):
-            OppleoConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
-            return default
-        return OppleoConfig.ini_settings.getfloat(section, option)
+    """
+        factorWhkm --> factor_whkm
+    """
+    @property
+    def factorWhkm(self):
+        return self.__chargerConfigModel.factor_whkm
 
-    @staticmethod
-    def getOption(section, option, default=''):
-        if not OppleoConfig.ini_settings.has_option(section, option):
-            OppleoConfig.logger.error('Ini file ERROR: No ' + option + ' in ' + section)
-            return default
-        return OppleoConfig.ini_settings.get(section, option)
+    @factorWhkm.setter
+    def factorWhkm(self, value):
+        self.__chargerConfigModel.setAndSave('factor_whkm', value)
 
-    @staticmethod
-    def configSectionMap(section):
-        dict1 = {}
-        try:
-            options = OppleoConfig.ini_settings.options(section)
-        except NoSectionError:
-            OppleoConfig.logger.error('Ini file Section: %s not found in ini file' % section)
-            return
+    """
+        modbusInterval --> modbus_interval
+    """
+    @property
+    def modbusInterval(self):
+        return self.__chargerConfigModel.modbus_interval
 
-        for option in options:
-            try:
-                dict1[option] = OppleoConfig.ini_settings.get(section, option)
-                if dict1[option] == -1:
-                    OppleoConfig.logger.debug('Ini file excskip %s' % option)
-            except NoOptionError:
-                OppleoConfig.logger.error('Ini file exception on %s!' % option)
-                dict1[option] = None
-        return dict1
+    @modbusInterval.setter
+    def modbusInterval(self, value):
+        self.__chargerConfigModel.setAndSave('modbus_interval', value)
+
+    """
+        autoSessionEnabled --> autosession_enabled
+    """
+    @property
+    def autoSessionEnabled(self):
+        return self.__chargerConfigModel.autosession_enabled
+
+    @autoSessionEnabled.setter
+    def autoSessionEnabled(self, value):
+        self.__chargerConfigModel.setAndSave('autosession_enabled', value)
+
+    """
+        autoSessionMinutes --> autosession_minutes
+    """
+    @property
+    def autoSessionMinutes(self):
+        return self.__chargerConfigModel.autosession_minutes
+
+    @autoSessionMinutes.setter
+    def autoSessionMinutes(self, value):
+        self.__chargerConfigModel.setAndSave('autosession_minutes', value)
+
+    """
+        autoSessionEnergy --> autosession_energy
+    """
+    @property
+    def autoSessionEnergy(self):
+        return self.__chargerConfigModel.autosession_energy
+
+    @autoSessionEnergy.setter
+    def autoSessionEnergy(self, value):
+        self.__chargerConfigModel.setAndSave('autosession_energy', value)
+
+    """
+        autoSessionCondenseSameOdometer --> autosession_condense_same_odometer
+    """
+    @property
+    def autoSessionCondenseSameOdometer(self):
+        return self.__chargerConfigModel.autosession_condense_same_odometer
+
+    @autoSessionCondenseSameOdometer.setter
+    def autoSessionCondenseSameOdometer(self, value):
+        self.__chargerConfigModel.setAndSave('autosession_condense_same_odometer', value)
+
+    """
+        pulseLedMin --> pulseled_min
+    """
+    @property
+    def pulseLedMin(self):
+        return self.__chargerConfigModel.pulseled_min
+
+    @pulseLedMin.setter
+    def pulseLedMin(self, value):
+        self.__chargerConfigModel.setAndSave('pulseled_min', value)
+ 
+    """
+        pulseLedMax --> pulseled_max
+    """
+    @property
+    def pulseLedMax(self):
+        return self.__chargerConfigModel.pulseled_max
+
+    @pulseLedMax.setter
+    def pulseLedMax(self, value):
+        self.__chargerConfigModel.setAndSave('pulseled_max', value)
+
+    """
+        gpioMode --> gpio_mode
+    """
+    @property
+    def gpioMode(self):
+        return self.__chargerConfigModel.gpio_mode
+
+    @gpioMode.setter
+    def gpioMode(self, value):
+        self.__chargerConfigModel.setAndSave('gpio_mode', value, ['BCM', 'BOARD'])
+
+    """
+        pinLedRed --> pin_led_red
+    """
+    @property
+    def pinLedRed(self):
+        return self.__chargerConfigModel.pin_led_red
+
+    @pinLedRed.setter
+    def pinLedRed(self, value):
+        self.__chargerConfigModel.setAndSave('pin_led_red', value)
+ 
+    """
+        pinLedGreen --> pin_led_green
+    """
+    @property
+    def pinLedGreen(self):
+        return self.__chargerConfigModel.pin_led_green
+
+    @pinLedGreen.setter
+    def pinLedGreen(self, value):
+        self.__chargerConfigModel.setAndSave('pin_led_green', value)
+
+    """
+        pinLedBlue --> pin_led_blue
+    """
+    @property
+    def pinLedBlue(self):
+        return self.__chargerConfigModel.pin_led_blue
+
+    @pinLedBlue.setter
+    def pinLedBlue(self, value):
+        self.__chargerConfigModel.setAndSave('pin_led_blue', value)
+
+    """
+        pinBuzzer --> pin_buzzer
+    """
+    @property
+    def pinBuzzer(self):
+        return self.__chargerConfigModel.pin_buzzer
+
+    @pinBuzzer.setter
+    def pinBuzzer(self, value):
+        self.__chargerConfigModel.setAndSave('pin_buzzer', value)
+
+
+    """
+        pinEvseSwitch --> pin_evse_switch
+    """
+    @property
+    def pinEvseSwitch(self):
+        return self.__chargerConfigModel.pin_evse_switch
+
+    @pinEvseSwitch.setter
+    def pinEvseSwitch(self, value):
+        self.__chargerConfigModel.setAndSave('pin_evse_switch', value)
+
+    """
+        pinEvseLed --> pin_evse_led
+    """
+    @property
+    def pinEvseLed(self):
+        return self.__chargerConfigModel.pin_evse_led
+
+    @pinEvseLed.setter
+    def pinEvseLed(self, value):
+        self.__chargerConfigModel.setAndSave('pin_evse_led', value)
+
+
+
+    # Raspberry PINs - Buzzer - PIN 29/ GPIO5
+    pinEvseSwitch = 5
+    # Raspberry PINs - Buzzer - PIN 31/ GPIO6
+    pinEvseLed = 6
+
+
+    """
+        offpeakEnabled --> peakhours_offpeak_enabled
+    """
+    @property
+    def offpeakEnabled(self):
+        return self.__chargerConfigModel.peakhours_offpeak_enabled
+
+    @offpeakEnabled.setter
+    def offpeakEnabled(self, value):
+        self.__chargerConfigModel.setAndSave('peakhours_offpeak_enabled', value)
+
+    """
+        allowPeakOnePeriod --> peakhours_allow_peak_one_period
+    """
+    @property
+    def allowPeakOnePeriod(self):
+        return self.__chargerConfigModel.peakhours_allow_peak_one_period
+
+    @allowPeakOnePeriod.setter
+    def allowPeakOnePeriod(self, value):
+        self.__chargerConfigModel.setAndSave('peakhours_allow_peak_one_period', value)
+
+    """
+        prowlEnabled --> prowl_enabled
+    """
+    @property
+    def prowlEnabled(self):
+        return self.__chargerConfigModel.prowl_enabled
+
+    @prowlEnabled.setter
+    def prowlEnabled(self, value):
+        self.__chargerConfigModel.setAndSave('prowl_enabled', value)
+
+    """
+        prowlApiKey --> prowl_apikey
+    """
+    @property
+    def prowlApiKey(self):
+        return self.__chargerConfigModel.prowl_apikey
+
+    @prowlApiKey.setter
+    def prowlApiKey(self, value):
+        self.__chargerConfigModel.setAndSave('prowl_apikey', value)
+
+
 

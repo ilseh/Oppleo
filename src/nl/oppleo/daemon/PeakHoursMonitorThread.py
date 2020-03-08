@@ -8,6 +8,7 @@ from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+oppleoConfig = OppleoConfig()
 
 class PeakHoursMonitorThread(object):
     thread = None
@@ -77,10 +78,10 @@ class PeakHoursMonitorThread(object):
                         # Send change notification
                         WebSocketUtil.emit(
                                 event='off_peak_status_update', 
-                                    id=OppleoConfig.ENERGY_DEVICE_ID,
+                                    id=oppleoConfig.chargerName,
                                     data={ 'isOffPeak': evse.isOffPeak,
-                                        'offPeakEnabled': OppleoConfig.peakHoursOffPeakEnabled,
-                                        'peakAllowOnePeriod': OppleoConfig.peakHoursAllowPeakOnePeriod
+                                        'offPeakEnabled': oppleoConfig.offpeakEnabled,
+                                        'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
                                     },
                                     namespace='/charge_session',
                                     public=True
@@ -105,25 +106,13 @@ class PeakHoursMonitorThread(object):
                     #    switch the EVSE off untill the next Off Peak hours
                     if (evse.is_enabled() and \
                             ( not evse.isOffPeak and \
-                            OppleoConfig.peakHoursOffPeakEnabled and \
-                            not OppleoConfig.peakHoursAllowPeakOnePeriod  \
+                            oppleoConfig.offpeakEnabled and \
+                            not oppleoConfig.allowPeakOnePeriod  \
                             ) \
                     ):
                         self.logger.debug('Peak hours, EVSE ON and Off Peak enabled (not bypassed). Switching EVSE OFF')
                         # Switch the EVSE off untill Off Peak hours
                         evse.switch_off()  
-
-                    """
-                    # If the EVSE is not enabled, it is Peak hours, OffPeak is not enabled or
-                    # OffPeak is enabled in settings, and overridden for one session, switch the EVSE on
-                    if (not evse.isOffPeak and \
-                        not evse.is_enabled() and \
-                        ( not OppleoConfig.peakHoursOffPeakEnabled or \
-                            ( OppleoConfig.peakHoursOffPeakEnabled and OppleoConfig.peakHoursAllowPeakOnePeriod) )):
-                        self.logger.debug('Peak hours, EVSE ON and Off Peak enabled (not bypassed). Switching EVSE OFF')
-                        # Switch the EVSE on
-                        evse.switch_on()  
-                    """
 
                     # When to switch the EVSE on:
                     #    if the EVSE is disabled (on is already on), and
@@ -133,11 +122,11 @@ class PeakHoursMonitorThread(object):
                     #    and there is an active charge session (don't switch on without)
                     # Clear one-session override
                     if (not evse.is_enabled() and \
-                        ( evse.isOffPeak or not OppleoConfig.peakHoursOffPeakEnabled or OppleoConfig.peakHoursAllowPeakOnePeriod) \
+                        ( evse.isOffPeak or not oppleoConfig.offpeakEnabled or oppleoConfig.allowPeakOnePeriod) \
                     ):
                         # Only see if charge session exists in the database if the EVSE is enabled Off Peak
                         csm = ChargeSessionModel.get_open_charge_session_for_device(
-                                                    OppleoConfig.ENERGY_DEVICE_ID
+                                                    oppleoConfig.chargerName
                                                     )
                         if csm is not None:
                             # Open charge session, enable the EVSE
@@ -146,7 +135,7 @@ class PeakHoursMonitorThread(object):
                     if evse.isOffPeak:
                         with self.threadLock:
                             # Off peak now, reset the one session peak authorization
-                            OppleoConfig.peakHoursAllowPeakOnePeriod = False
+                            oppleoConfig.allowPeakOnePeriod = False
 
                     changeEvseStatusCheckLastRun = time.time() *1000.0
                     pass

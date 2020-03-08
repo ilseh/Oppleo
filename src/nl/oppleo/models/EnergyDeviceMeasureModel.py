@@ -12,7 +12,7 @@ class EnergyDeviceMeasureModel(Base):
     """
     EnergyDeviceMeasure Model
     """
-    logger = logging.getLogger('nl.oppleo.models.EnergyDeviceMeasureModel')
+    __logger = logging.getLogger('nl.oppleo.models.EnergyDeviceMeasureModel')
 
     # table name
     __tablename__ = 'energy_device_measures'
@@ -58,11 +58,11 @@ class EnergyDeviceMeasureModel(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
 
 
     def get_last_saved(self, energy_device_id):
-        self.logger.debug("get_last_saved() energy_device_id {} ".format(energy_device_id))
+        self.__logger.debug("get_last_saved() energy_device_id {} ".format(energy_device_id))
         return self.get_last_n_saved(energy_device_id, 1)[0]
 
 
@@ -77,7 +77,7 @@ class EnergyDeviceMeasureModel(Base):
                              .all()
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
         return edmm
 
     def get_last_n_saved_since(self, energy_device_id, since_ts, n=-1):
@@ -99,12 +99,12 @@ class EnergyDeviceMeasureModel(Base):
                                  .all()
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return edmm
 
 
     def get_usage_since(self, energy_device_id, since_ts):
-        self.logger.debug("get_usage_since() energy_device_id {} since_ts {}".format(energy_device_id, str(since_ts)))
+        self.__logger.debug("get_usage_since() energy_device_id {} since_ts {}".format(energy_device_id, str(since_ts)))
         db_session = DbSession()
         energy_at_ts = 0
         try:
@@ -115,13 +115,13 @@ class EnergyDeviceMeasureModel(Base):
                                     .first()
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         energy_now = self.get_last_saved(energy_device_id)
         if energy_now is None or energy_at_ts is None:
-            self.logger.warn('get_usage_since() - could not get data from database')
+            self.__logger.warn('get_usage_since() - could not get data from database')
             return 0
         energy_used = round((energy_now.kw_total - energy_at_ts.kw_total) *10) /10
-        self.logger.debug('get_usage_since() - since {} usage {}kWh'.format(
+        self.__logger.debug('get_usage_since() - since {} usage {}kWh'.format(
                     since_ts.strftime("%d/%m/%Y, %H:%M:%S"), energy_used)
                     )
         return energy_used
@@ -143,7 +143,7 @@ class EnergyDeviceMeasureModel(Base):
                              .first()
         except Exception as e:
             # Nothing to roll back
-            EnergyDeviceMeasureModel.logger.error("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ), exc_info=True)
+            EnergyDeviceMeasureModel.__logger.error("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ), exc_info=True)
         return edmm.created_at if edmm is not None else None 
 
 

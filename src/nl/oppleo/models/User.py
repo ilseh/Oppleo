@@ -4,7 +4,6 @@ from sqlalchemy import orm, Column, String, Boolean
 import logging
 
 from nl.oppleo.models.Base import Base, DbSession
-from nl.oppleo.config.OppleoConfig import OppleoConfig
 
 # generate_password_hash(password, method='sha256')
 
@@ -18,7 +17,7 @@ class User(Base):
     authenticated = Column(Boolean, default=False)
 
     def __init__(self, username=None, password=None, authenticated=None):
-        self.logger = logging.getLogger('nl.oppleo.models.User')
+        self.__logger = logging.getLogger('nl.oppleo.models.User')
         # If the variables are already initialized by the reconstructor, let them be
         if self.username is None and self.password is None:
             self.username = username
@@ -41,7 +40,7 @@ class User(Base):
                             .first()
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query {} table in database".format(self.__tablename__ ), exc_info=True)
         return user
 
 
@@ -52,7 +51,7 @@ class User(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
 
     def is_active(self):
         """True, as all users are active."""
@@ -81,7 +80,7 @@ class User(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
 
 
     # Delete all users
@@ -95,6 +94,6 @@ class User(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
 
 

@@ -3,14 +3,18 @@ import logging
 import time
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.GenericUtil import GenericUtil
+
+LOGGER_PATH = "nl.oppleo.service.RfidReader"
+logger = logging.getLogger(LOGGER_PATH)
+oppleoConfig = OppleoConfig()
+
 try:
     from mfrc522 import SimpleMFRC522
 except RuntimeError:
-    logging.debug('Assuming dev env')
+    logger.debug('Assuming dev env')
 except ModuleNotFoundError:
-    logging.debug('Assuming dev env')
+    logger.debug('Assuming dev env')
 
-LOGGER_PATH = "nl.oppleo.service.RfidReader"
 
 class RfidReaderDev(object):
 
@@ -26,7 +30,7 @@ class RfidReaderProd(object):
 
 
     def read(self):
-        global OppleoConfig
+        global oppleoConfig
         # SimpleMFRC522() read() blocks other threads, call no block instead to allow other threads to run
         #   return self.reader.read()
         id = None
@@ -35,7 +39,7 @@ class RfidReaderProd(object):
             # This call returns every time, with id is None when no rfid tag was detected
             id, text = self.reader.read_no_block()
             # Sleep for just a little to yield for other threads
-            OppleoConfig.appSocketIO.sleep(0.05)
+            oppleoConfig.appSocketIO.sleep(0.05)
 
         return id, text
 

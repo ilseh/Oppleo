@@ -8,11 +8,11 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 
 LOGGER_PATH = "nl.oppleo.services.EvseReaderProd"
 
+oppleoConfig = OppleoConfig()
+
 try:
     import pigpio
 except ModuleNotFoundError:
-    if OppleoConfig.logger == None:
-        OppleoConfig.initLogger('CarChargerWebApp')
     evseProdLogger = logging.getLogger(LOGGER_PATH)
     evseProdLogger.debug('EvseReaderProd: import pigpio caused ModuleNotFoundError!!!')
 
@@ -96,16 +96,16 @@ class EvseReaderProd:
         self.logger.setLevel(logging.WARNING)
 
     def loop(self, cb_until, cb_result):
-        global OppleoConfig
+        global oppleoConfig
 
         self.logger.debug('In loop, doing setup GPIO')
         # set GPIO mode globally (to BCM)
         # GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
-        GPIO.setup(OppleoConfig.pinEvseLed, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(oppleoConfig.pinEvseLed, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         pigpio_pi = pigpio.pi()
 
-        evse_reader = EvseReaderUtil(pigpio_pi, OppleoConfig.pinEvseLed)
+        evse_reader = EvseReaderUtil(pigpio_pi, oppleoConfig.pinEvseLed)
         self.logger.debug('Init EvseReaderUtil done')
 
         evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
@@ -119,7 +119,7 @@ class EvseReaderProd:
          - CONNECTED when 90 or higher?
          - when initially charging starts the freq can be measured as 22k and dc going from 0-2-0-1-1 (5x) -2-3-4 etc
            this triggers ERROR state. Place a filter on this.
-       """
+        """
 
         # Overall direction of the measured pulse. If current measure is equal to previous measure (EvseDirection.NONE)
         # the overall direction stays the direction before the direction became NONE. So when the measured value changes
@@ -150,7 +150,7 @@ class EvseReaderProd:
 
             self.logger.debug("In loop to read evse status")
 
-            OppleoConfig.appSocketIO.sleep(SAMPLE_TIME)
+            oppleoConfig.appSocketIO.sleep(SAMPLE_TIME)
 
             evse_dcf = evse_reader.evse_value()
 

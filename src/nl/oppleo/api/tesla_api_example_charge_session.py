@@ -18,14 +18,15 @@ from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
  its own thread. It needs to run in an environment where this is allowed and
  threads are enabled.
  """
+oppleoConfig = OppleoConfig()
 
 # app initiliazation
 app = Flask(__name__)
-# Make it available through OppleoConfig
-OppleoConfig.app = app
+# Make it available through oppleoConfig
+oppleoConfig.app = app
 appSocketIO = SocketIO(app)
-# Make it available through OppleoConfig
-OppleoConfig.appSocketIO = appSocketIO
+# Make it available through oppleoConfig
+oppleoConfig.appSocketIO = appSocketIO
 
 
 # Instantiate the helper object

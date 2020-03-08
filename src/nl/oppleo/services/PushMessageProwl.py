@@ -4,6 +4,7 @@ import requests
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 
+oppleoConfig = OppleoConfig()
 
 class PushMessageProwl(object):
     logger = logging.getLogger('nl.oppleo.services.PushMessageProwl')
@@ -20,7 +21,7 @@ class PushMessageProwl(object):
 
     @staticmethod
     def sendMessage(title, message, priority=priorityNormal):
-        global OppleoConfig
+        global oppleoConfig
         if PushMessageProwl.logger is None:
             logger = logging.getLogger('nl.oppleo.services.PushMessageProwl')
         PushMessageProwl.logger.debug("sendMessage()")
@@ -29,9 +30,9 @@ class PushMessageProwl(object):
         url_response = hs.URLAction("https://api.prowlapp.com/publicapi/add", "POST", url, "Content-Type: application/x-www-form-urlencoded")  
         """
         data = {
-            'apikey'        : OppleoConfig.prowlApiKey,
+            'apikey'        : oppleoConfig.prowlApiKey,
             'priority'      : priority,
-            'application'   : str('Oppleo' + ' ' + OppleoConfig.ENERGY_DEVICE_ID),
+            'application'   : str('Oppleo' + ' ' + oppleoConfig.chargerName),
             'event'         : title,
             'description'   : message
         }

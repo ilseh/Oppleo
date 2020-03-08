@@ -24,6 +24,8 @@ from nl.oppleo.utils.GenericUtil import GenericUtil
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+oppleoConfig = OppleoConfig()
+
 GenericUtil.importGpio()
 GenericUtil.importMfrc522()
 
@@ -194,7 +196,7 @@ class ChargerHandlerThread(object):
                 self.ledlighter.error(duration=.6)
             # Sleep to prevent re-reading the same tag twice
             # time.sleep(0.25)
-            OppleoConfig.appSocketIO.sleep(0.75)
+            oppleoConfig.appSocketIO.sleep(0.75)
         self.logger.info("Stopping RfidReader")
 
 
@@ -285,7 +287,7 @@ class ChargerHandlerThread(object):
             self.logger.debug(f'Send msg charge_session_started via websocket ...{charge_session.to_str()}')
             WebSocketUtil.emit(
                     event='charge_session_started', 
-                    id=OppleoConfig.ENERGY_DEVICE_ID,
+                    id=oppleoConfig.chargerName,
                     data=charge_session.to_str(),
                     namespace='/charge_session',
                     public=False
@@ -317,7 +319,7 @@ class ChargerHandlerThread(object):
             self.appSocketIO.emit(
                     'charge_session_ended', 
                     { 
-                        'id': OppleoConfig.ENERGY_DEVICE_ID,
+                        'id': oppleoConfig.chargerName,
                         'data': charge_session.to_str() 
                     }, 
                     namespace='/charge_session'
@@ -326,7 +328,7 @@ class ChargerHandlerThread(object):
             from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
             WebSocketUtil.emit(
                     event='charge_session_ended', 
-                    id=OppleoConfig.ENERGY_DEVICE_ID,
+                    id=oppleoConfig.chargerName,
                     data=charge_session.to_str(),
                     namespace='/charge_session',
                     public=False
@@ -403,7 +405,7 @@ class ChargerHandlerThread(object):
                             'charge_session_status_update', 
                             { 
                                 'status': evse_state, 
-                                'id': OppleoConfig.ENERGY_DEVICE_ID
+                                'id': oppleoConfig.chargerName
                             }, 
                             namespace='/charge_session'
                             )
@@ -412,7 +414,7 @@ class ChargerHandlerThread(object):
                     WebSocketUtil.emit(
                             event='charge_session_status_update', 
                             status=evse_state, 
-                            id=OppleoConfig.ENERGY_DEVICE_ID, 
+                            id=oppleoConfig.chargerName, 
                             namespace='/charge_session',
                             public=True
                         )
@@ -432,7 +434,7 @@ class ChargerHandlerThread(object):
                             'charge_session_status_update', 
                             {   # INACTIVE IS ALSO CONNECTED
                                 'status': EvseState.EVSE_STATE_CONNECTED, 
-                                'id': OppleoConfig.ENERGY_DEVICE_ID
+                                'id': oppleoConfig.chargerName
                             }, 
                             namespace='/charge_session'
                             )
@@ -442,7 +444,7 @@ class ChargerHandlerThread(object):
                             event='charge_session_status_update', 
                             # INACTIVE IS ALSO CONNECTED
                             status=EvseState.EVSE_STATE_CONNECTED, 
-                            id=OppleoConfig.ENERGY_DEVICE_ID, 
+                            id=oppleoConfig.chargerName, 
                             namespace='/charge_session',
                             public=True
                         )
@@ -456,28 +458,28 @@ class ChargerHandlerThread(object):
     # Only called upon switch from not-charging to chargin by the EVSE, so a session is ongoin
     # evse_reader_thread
     def handle_auto_session(self):
-        self.logger.debug('handle_auto_session() enabled: {}'.format(OppleoConfig.autoSessionEnabled))
+        self.logger.debug('handle_auto_session() enabled: {}'.format(oppleoConfig.autoSessionEnabled))
         # Open session, otherwise this method is not called
-        if OppleoConfig.autoSessionEnabled: 
+        if oppleoConfig.autoSessionEnabled: 
             edmm = EnergyDeviceMeasureModel()
             kwh_used = edmm.get_usage_since(
-                    OppleoConfig.ENERGY_DEVICE_ID,
-                    (datetime.today() - timedelta(minutes=OppleoConfig.autoSessionMinutes))
+                    oppleoConfig.chargerName,
+                    (datetime.today() - timedelta(minutes=oppleoConfig.autoSessionMinutes))
                     )
-            if kwh_used > OppleoConfig.autoSessionEnergy:
+            if kwh_used > oppleoConfig.autoSessionEnergy:
                 self.logger.debug('Keep the current session. More energy ({}kWh) used than {}kWh in {} minutes'
                            .format(
                                 kwh_used,
-                                OppleoConfig.autoSessionEnergy, 
-                                OppleoConfig.autoSessionMinutes
+                                oppleoConfig.autoSessionEnergy, 
+                                oppleoConfig.autoSessionMinutes
                             )
                         )
             else:
                 self.logger.info('Start a new session (auto-session). Less energy ({}kWh) used than {}kWh in {} minutes'
                            .format(
                                 kwh_used,
-                                OppleoConfig.autoSessionEnergy,
-                                OppleoConfig.autoSessionMinutes
+                                oppleoConfig.autoSessionEnergy,
+                                oppleoConfig.autoSessionMinutes
                             )
                         )
                 with self.threadLock:
@@ -490,7 +492,7 @@ class ChargerHandlerThread(object):
                     self.start_charge_session(
                             rfid=charge_session.rfid,
                             trigger=ChargeSessionModel.TRIGGER_AUTO,
-                            condense=OppleoConfig.autoSessionCondenseSameOdometer
+                            condense=oppleoConfig.autoSessionCondenseSameOdometer
                             )
 
 
@@ -524,13 +526,13 @@ class ChargerHandlerThread(object):
                 self.logger.debug('energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
                 open_charge_session_for_device.save() 
                 # Emit changes via web socket
-                if self.appSocketIO is not None and OppleoConfig.app is not None:
+                if self.appSocketIO is not None and oppleoConfig.app is not None:
                     self.counter += 1
                     self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
                     # Emit only to authenticated users, not public
                     WebSocketUtil.emit(
                             event='charge_session_data_update', 
-                            id=OppleoConfig.ENERGY_DEVICE_ID,
+                            id=oppleoConfig.chargerName,
                             data=open_charge_session_for_device.to_str(), 
                             namespace='/charge_session',
                             public=False

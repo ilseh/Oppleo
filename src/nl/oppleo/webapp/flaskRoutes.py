@@ -16,7 +16,7 @@ from flask_login import LoginManager, login_required, login_user, logout_user, c
 from flask_socketio import SocketIO, emit
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.config.OppleoDatabaseConfig import OppleoDatabaseConfig
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 
 from nl.oppleo.models.User import User
 from nl.oppleo.webapp.LoginForm import LoginForm
@@ -36,6 +36,8 @@ from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReaderProd import EvseState
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+oppleoConfig = OppleoConfig()
+
 """ 
  - make sure all url_for routes point to this blueprint
 """
@@ -49,12 +51,12 @@ threadLock = threading.Lock()
 
 @flaskRoutes.route('/', methods=['GET'])
 def index():
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/ {}'.format(request.method))
     try:
         return render_template(
             'dashboard.html',
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     except TemplateNotFound:
         abort(404)
@@ -74,19 +76,19 @@ def home():
 def page_not_found(e):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('404 page not found error handler')
-    # No need for oppleoconfig=OppleoConfig
+    # No need for oppleoconfig=oppleoConfig
     return render_template('errorpages/404.html'), 404
 
 
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
 def login():
     # For GET requests, display the login form. 
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/login {}'.format(request.method))
     if (request.method == 'GET'):
         return render_template("login.html", 
             form=LoginForm(),
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = LoginForm()
@@ -129,7 +131,7 @@ def login():
     return render_template("login.html", 
                 form=form, 
                 msg="Login failed",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 def authenticated_resource(function):
@@ -169,13 +171,13 @@ def logout():
 @flaskRoutes.route("/change_password", methods=["GET", "POST"])
 @authenticated_resource
 def change_password():
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/change_password {}'.format(request.method))
     if (request.method == 'GET'):
         return render_template(
             'change_password.html', 
             form=ChangePasswordForm(),
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
 
     form = ChangePasswordForm()
@@ -187,7 +189,7 @@ def change_password():
         return render_template(
             'change_password.html', 
             form=form,
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     if form.validate_on_submit():
         # Valid, change the password for the user now
@@ -196,7 +198,7 @@ def change_password():
         user.save()
         return render_template(
             'change_password_success.html', 
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # Translate errors
     if ('new_password' in form.errors):
@@ -216,16 +218,16 @@ def change_password():
     return render_template(
         'change_password.html', 
         form=form,
-        oppleoconfig=OppleoConfig
+        oppleoconfig=oppleoConfig
         )
 
 
 @flaskRoutes.route("/about")
 def about():
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/about {}'.format(request.method))
     return render_template("about.html",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -233,7 +235,7 @@ def about():
 @flaskRoutes.route("/shutdown/", methods=["GET", "POST"])
 @authenticated_resource
 def shutdown():
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     # For GET requests, display the authorize form. 
     flaskRoutesLogger.debug('/shutdown {}'.format(request.method))
     if (request.method == 'GET'):
@@ -242,7 +244,7 @@ def shutdown():
             requesttitle="Uitschakelen",
             requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
             buttontitle="Schakel uit!",
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -252,7 +254,7 @@ def shutdown():
         # Simple os.system('sudo shutdown now') initiates shutdown before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; shutdown now' &>/dev/null")
         return render_template("shuttingdown.html", 
-                    oppleoconfig=OppleoConfig
+                    oppleoconfig=oppleoConfig
                     )
     else:
         return render_template("authorize.html", 
@@ -261,7 +263,7 @@ def shutdown():
                 requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
                 buttontitle="Schakel uit!",
                 errormsg="Het wachtwoord is onjuist",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -269,7 +271,7 @@ def shutdown():
 @flaskRoutes.route("/reboot/", methods=["GET", "POST"])
 @authenticated_resource
 def reboot():
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     # For GET requests, display the authorize form. 
     flaskRoutesLogger.debug('/reboot {}'.format(request.method))
     if (request.method == 'GET'):
@@ -278,7 +280,7 @@ def reboot():
             requesttitle="Herstarten",
             requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
             buttontitle="Herstart!",
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -288,7 +290,7 @@ def reboot():
         # Simple os.system('sudo reboot') initiates reboot before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; reboot' &>/dev/null")
         return render_template("rebooting.html", 
-                    oppleoconfig=OppleoConfig
+                    oppleoconfig=oppleoConfig
                     )
     else:
         return render_template("authorize.html", 
@@ -297,7 +299,7 @@ def reboot():
                 requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
                 buttontitle="Herstart!",
                 errormsg="Het wachtwoord is onjuist",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -305,7 +307,7 @@ def reboot():
 @flaskRoutes.route("/restart/", methods=["GET", "POST"])
 @authenticated_resource
 def restart():
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     # For GET requests, display the authorize form. 
     flaskRoutesLogger.debug('/restart {}'.format(request.method))
     if (request.method == 'GET'):
@@ -314,7 +316,7 @@ def restart():
             requesttitle="Herstarten",
             requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
             buttontitle="Herstart!",
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -324,7 +326,7 @@ def restart():
         # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
         return render_template("restarting.html", 
-                    oppleoconfig=OppleoConfig
+                    oppleoconfig=oppleoConfig
                     )
     else:
         return render_template("authorize.html", 
@@ -333,7 +335,7 @@ def restart():
                 requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
                 buttontitle="Herstart!",
                 errormsg="Het wachtwoord is onjuist",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -341,11 +343,11 @@ def restart():
 @flaskRoutes.route("/delete_charge_session/<int:id>", methods=["GET", "POST"])
 @authenticated_resource
 def delete_charge_session(id=None):
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     if id is None:
         return jsonify({
             'status': 404, 
-            'id': OppleoConfig.ENERGY_DEVICE_ID, 
+            'id': oppleoConfig.chargerName, 
             'reason': 'Laadsessie niet gevonden'
             })
     # For GET requests, display the authorize form. 
@@ -355,7 +357,7 @@ def delete_charge_session(id=None):
             form=AuthorizeForm(),
             requesttitle=str("Laadsessie " + str(id)),
             buttontitle=str("Verwijder laadsessie " + str(id)),
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -371,18 +373,18 @@ def delete_charge_session(id=None):
                 requesttitle=str("Laadsessie " + str(id)),
                 buttontitle=str("Verwijder laadsessie " + str(id)),
                 errormsg="Het wachtwoord is onjuist",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
 @flaskRoutes.route("/start_charge_session/<int:rfid>", methods=["GET", "POST"])
 @authenticated_resource
 def start_charge_session(rfid=None):
-    global flaskRoutesLogger, OppleoConfig, threadLock
+    global flaskRoutesLogger, oppleoConfig, threadLock
     if rfid is None:
         return jsonify({
             'status': 404, 
-            'id': OppleoConfig.ENERGY_DEVICE_ID, 
+            'id': oppleoConfig.chargerName, 
             'reason': 'RFID niet gevonden'
             })
     # For GET requests, display the authorize form. 
@@ -392,7 +394,7 @@ def start_charge_session(rfid=None):
             form=AuthorizeForm(),
             requesttitle=str("Start laadsessie"),
             buttontitle="Start laadsessie",
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -401,17 +403,17 @@ def start_charge_session(rfid=None):
         flaskRoutesLogger.debug('start_charge_session requested and authorized.')
         with threadLock:
 
-            charge_session = ChargeSessionModel.get_open_charge_session_for_device(OppleoConfig.ENERGY_DEVICE_ID)
+            charge_session = ChargeSessionModel.get_open_charge_session_for_device(oppleoConfig.chargerName)
             if charge_session is None:
                 try:
-                    OppleoConfig.chThread.authorize(rfid)
-                    OppleoConfig.chThread.start_charge_session(
+                    oppleoConfig.chThread.authorize(rfid)
+                    oppleoConfig.chThread.start_charge_session(
                                     rfid=rfid,
                                     trigger=ChargeSessionModel.TRIGGER_WEB,
                                     condense=False
                                 )
-                    OppleoConfig.chThread.buzz_ok()
-                    OppleoConfig.chThread.update_charger_and_led(True)
+                    oppleoConfig.chThread.buzz_ok()
+                    oppleoConfig.chThread.update_charger_and_led(True)
                 except NotAuthorizedException as e:
                     flaskRoutesLogger.warn('Could not start charge session for rfid {}, NotAuthorized!'.format(id))
                     return render_template("authorize.html", 
@@ -419,7 +421,7 @@ def start_charge_session(rfid=None):
                             requesttitle=str("Start laadsessie " + str(id)),
                             buttontitle="Start laadsessie",
                             errormsg="Deze RFID is niet geautoriseerd.",
-                            oppleoconfig=OppleoConfig
+                            oppleoconfig=oppleoConfig
                             )
                 except ExpiredException as e:
                     flaskRoutesLogger.warn('Could not start charge session for rfid {}, Expired!'.format(id))
@@ -428,7 +430,7 @@ def start_charge_session(rfid=None):
                             requesttitle=str("Start laadsessie " + str(id)),
                             buttontitle="Start laadsessie",
                             errormsg="De geldigheid van deze RFID is verlopen.",
-                            oppleoconfig=OppleoConfig
+                            oppleoconfig=oppleoConfig
                             )
             else:
                 # A charge session was started elsewhere, fail
@@ -438,7 +440,7 @@ def start_charge_session(rfid=None):
                         requesttitle=str("Start laadsessie " + str(id)),
                         buttontitle="Start laadsessie",
                         errormsg="Er is al een laadsessie actief. Stop deze eerst.",
-                        oppleoconfig=OppleoConfig
+                        oppleoconfig=oppleoConfig
                         )
         return redirect(url_for('flaskRoutes.charge_sessions'))
     else:
@@ -447,18 +449,18 @@ def start_charge_session(rfid=None):
                 requesttitle=str("Start laadsessie " + str(id)),
                 buttontitle="Start laadsessie",
                 errormsg="Het wachtwoord is onjuist",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
 @flaskRoutes.route("/stop_charge_session/<int:charge_session_id>", methods=["GET", "POST"])
 @authenticated_resource
 def stop_charge_session(charge_session_id=None):
-    global flaskRoutesLogger, OppleoConfig, threadLock
+    global flaskRoutesLogger, oppleoConfig, threadLock
     if charge_session_id is None:
         return jsonify({
             'status': 404, 
-            'id': OppleoConfig.ENERGY_DEVICE_ID, 
+            'id': oppleoConfig.chargerName, 
             'reason': 'Laadsessie niet gevonden'
             })
     # For GET requests, display the authorize form. 
@@ -468,7 +470,7 @@ def stop_charge_session(charge_session_id=None):
             form=AuthorizeForm(),
             requesttitle=str("Stop laadsessie " + str(charge_session_id)),
             buttontitle="Stop laadsessie",
-            oppleoconfig=OppleoConfig
+            oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
@@ -479,9 +481,9 @@ def stop_charge_session(charge_session_id=None):
             charge_session = ChargeSessionModel.get_one_charge_session(charge_session_id)
             if charge_session is not None:
                 # End session now, through WEB, not detecting the latest consumption
-                OppleoConfig.chThread.end_charge_session(charge_session, False)
-                OppleoConfig.chThread.buzz_ok()
-                OppleoConfig.chThread.update_charger_and_led(False)
+                oppleoConfig.chThread.end_charge_session(charge_session, False)
+                oppleoConfig.chThread.buzz_ok()
+                oppleoConfig.chThread.update_charger_and_led(False)
             else:
                 flaskRoutesLogger.warn('Could not stop charge session {}, session not found!'.format(charge_session_id))
         return redirect(url_for('flaskRoutes.charge_sessions'))
@@ -491,7 +493,7 @@ def stop_charge_session(charge_session_id=None):
                 requesttitle=str("Stop laadsessie " + str(charge_session_id)),
                 buttontitle="Stop laadsessie",
                 errormsg="Het wachtwoord is onjuist",
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -499,11 +501,11 @@ def stop_charge_session(charge_session_id=None):
 @flaskRoutes.route("/usage/")
 @flaskRoutes.route("/usage/<int:cnt>")
 def usage(cnt="undefined"):
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/usage ' + request.method)
     return render_template("usage_table.html", 
                 cnt=cnt,
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -511,11 +513,11 @@ def usage(cnt="undefined"):
 @flaskRoutes.route("/usage_table/")
 @flaskRoutes.route("/usage_table/<int:cnt>")
 def usage_table(cnt="undefined"):
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/usage_table {} {}'.format(cnt, request.method))
     return render_template("usage_table.html", 
                 cnt=cnt,
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -524,13 +526,13 @@ def usage_table(cnt="undefined"):
 @flaskRoutes.route("/usage_graph/<int:cnt>")
 @authenticated_resource
 def usage_graph(cnt="undefined"):
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     req_period = request.args['period'] if 'period' in request.args else None
     flaskRoutesLogger.debug('/usage_graph cnt:{} method:{} type:{}'.format(cnt, request.method, req_period))
     return render_template("usage_graph.html", 
                 cnt=cnt,
                 req_period=req_period,
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
 
 
@@ -539,7 +541,7 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-    global flaskRoutesLogger, OppleoConfig, OppleoDatabaseConfig
+    global flaskRoutesLogger, oppleoConfig, OppleoSystemConfig
     flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
     r = Raspberry()
     diag = r.get_all()
@@ -566,8 +568,8 @@ def settings(active=1):
                 diag_json=diag_json,
                 charger_config=charger_config_str,
                 energydevicemodel=EnergyDeviceModel.get(),
-                oppleodatabaseconfig=OppleoDatabaseConfig,
-                oppleoconfig=OppleoConfig
+                oppleosystemconfig=OppleoSystemConfig,
+                oppleoconfig=oppleoConfig
             )
 
 
@@ -578,8 +580,8 @@ def usage_data(cnt=100):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data {} {}'.format(cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = OppleoConfig.ENERGY_DEVICE_ID
-    qr = device_measurement.get_last_n_saved(energy_device_id=OppleoConfig.ENERGY_DEVICE_ID,n=cnt)
+    device_measurement.energy_device_id = oppleoConfig.chargerName
+    qr = device_measurement.get_last_n_saved(energy_device_id=oppleoConfig.chargerName,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
@@ -593,8 +595,8 @@ def usage_data_since(since_timestamp, cnt=-1):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = OppleoConfig.ENERGY_DEVICE_ID
-    qr = device_measurement.get_last_n_saved_since(energy_device_id=OppleoConfig.ENERGY_DEVICE_ID,since_ts=since_timestamp,n=cnt)
+    device_measurement.energy_device_id = oppleoConfig.chargerName
+    qr = device_measurement.get_last_n_saved_since(energy_device_id=oppleoConfig.chargerName,since_ts=since_timestamp,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
@@ -606,25 +608,25 @@ def usage_data_since(since_timestamp, cnt=-1):
 @flaskRoutes.route("/active_charge_session/", methods=["GET"])
 # @authenticated_resource
 def active_charge_session():
-    global OppleoConfig
+    global oppleoConfig
 
     flaskRoutesLogger.debug(f'active_charge_session()')
     # Open charge session for this energy device?
     open_charge_session_for_device = \
         ChargeSessionModel.get_open_charge_session_for_device(
-                OppleoConfig.ENERGY_DEVICE_ID
+                oppleoConfig.chargerName
         )
     evse = Evse()
     if open_charge_session_for_device is None:
         # None, no active session
         return jsonify({
             'status'            : 404, 
-            'id'                : OppleoConfig.ENERGY_DEVICE_ID, 
+            'id'                : oppleoConfig.chargerName, 
             'chargeSession'     : False,
             'evseEnabled'       : True if evse.is_enabled() else False,
-            'charging'          : True if OppleoConfig.chThread.is_status_charging else False,
-            'offPeakEnabled'    : OppleoConfig.peakHoursOffPeakEnabled,
-            'offPeakAllowedOnce': OppleoConfig.peakHoursAllowPeakOnePeriod,
+            'charging'          : True if oppleoConfig.chThread.is_status_charging else False,
+            'offPeakEnabled'    : oppleoConfig.offpeakEnabled,
+            'offPeakAllowedOnce': oppleoConfig.allowPeakOnePeriod,
             'offPeak'           : True if evse.isOffPeak else False,
             'auth'              : True if (current_user.is_authenticated) else False,
             'reason'            : 'No active charge session'
@@ -632,12 +634,12 @@ def active_charge_session():
     try:
         return jsonify({ 
             'status'            : 200,
-            'id'                : OppleoConfig.ENERGY_DEVICE_ID, 
+            'id'                : oppleoConfig.chargerName, 
             'chargeSession'     : True if open_charge_session_for_device is not None else False,
             'evseEnabled'       : True if evse.is_enabled() else False,
-            'charging'          : True if OppleoConfig.chThread.is_status_charging else False,
-            'offPeakEnabled'    : OppleoConfig.peakHoursOffPeakEnabled,
-            'offPeakAllowedOnce': OppleoConfig.peakHoursAllowPeakOnePeriod,
+            'charging'          : True if oppleoConfig.chThread.is_status_charging else False,
+            'offPeakEnabled'    : oppleoConfig.offpeakEnabled,
+            'offPeakAllowedOnce': oppleoConfig.allowPeakOnePeriod,
             'offPeak'           : True if evse.isOffPeak else False,
             'auth'              : True if (current_user.is_authenticated) else False,
             'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated) else None
@@ -647,7 +649,7 @@ def active_charge_session():
         pass
     return jsonify({ 
         'status'        : 500, 
-        'id'            : OppleoConfig.ENERGY_DEVICE_ID, 
+        'id'            : oppleoConfig.chargerName, 
         'reason'        : 'Could not determine charge session'
         })
 
@@ -657,13 +659,13 @@ def active_charge_session():
 @flaskRoutes.route("/charge_sessions/")
 @authenticated_resource
 def charge_sessions(since_timestamp=None):
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/charge_sessions {} {}'.format(since_timestamp, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     if (not jsonRequested):
         return render_template("charge_sessions.html",
-                    oppleoconfig=OppleoConfig
+                    oppleoconfig=oppleoConfig
                     )
     # Request parameters
     # TODO - format request params and hand to model
@@ -672,9 +674,9 @@ def charge_sessions(since_timestamp=None):
     req_limit = request.args['limit'] if 'limit' in request.args else None
 
     charge_sessions = ChargeSessionModel()
-    charge_sessions.energy_device_id = OppleoConfig.ENERGY_DEVICE_ID
+    charge_sessions.energy_device_id = oppleoConfig.chargerName
     qr = charge_sessions.get_last_n_sessions_since(
-        energy_device_id=OppleoConfig.ENERGY_DEVICE_ID,
+        energy_device_id=oppleoConfig.chargerName,
         since_ts=None,
         n=-1
         )
@@ -691,7 +693,7 @@ def charge_sessions(since_timestamp=None):
 @flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
 @authenticated_resource
 def rfid_tokens(token=None):
-    global flaskRoutesLogger, OppleoConfig
+    global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/rfid_tokens {} {}'.format(token, request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
@@ -700,13 +702,13 @@ def rfid_tokens(token=None):
         if (token == None):
             return render_template(
                 'tokens.html',
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
                 )
         rfid_model = RfidModel().get_one(token)
         if (rfid_model == None):
             return render_template(
                 'tokens.html', 
-                oppleoconfig=OppleoConfig
+                oppleoconfig=oppleoConfig
             )
         rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
         rfid_change_form = RfidChangeForm()
@@ -750,12 +752,12 @@ def rfid_tokens(token=None):
             return render_template("token.html",
                     rfid_model=rfid_model,
                     form=rfid_change_form,
-                    oppleoconfig=OppleoConfig
+                    oppleoconfig=oppleoConfig
                 )        
         return render_template("token.html",
                     rfid_model=rfid_model,
                     form=rfid_change_form,
-                    oppleoconfig=OppleoConfig
+                    oppleoconfig=oppleoConfig
                 )        
     # Check if token exist, if not rfid is None
     if (token == None):
@@ -883,42 +885,42 @@ def TeslaApi_RevokeOAuth(token=None):
 @flaskRoutes.route("/update_settings/<path:param>/<path:value>", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
 def update_settings(param=None, value=None):
-    if (param == 'peakHoursOffPeakEnabled'):
-        OppleoConfig.peakHoursOffPeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+    if (param == 'offpeakEnabled'):
+        oppleoConfig.offpeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         ophm = OffPeakHoursModel()
         WebSocketUtil.emit(
                 event='off_peak_status_update', 
-                    id=OppleoConfig.ENERGY_DEVICE_ID,
+                    id=oppleoConfig.chargerName,
                     data={ 'isOffPeak': ophm.is_off_peak_now(),
-                           'offPeakEnabled': OppleoConfig.peakHoursOffPeakEnabled,
-                           'peakAllowOnePeriod': OppleoConfig.peakHoursAllowPeakOnePeriod
+                           'offPeakEnabled': oppleoConfig.offpeakEnabled,
+                           'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
                     },
                     namespace='/charge_session',
                     public=True
                 )
-        return jsonify({ 'status': 200, 'param': param, 'value': OppleoConfig.peakHoursOffPeakEnabled })
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.offpeakEnabled })
 
-    if (param == 'peakHoursAllowPeakOnePeriod'):
-        OppleoConfig.peakHoursAllowPeakOnePeriod = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+    if (param == 'allowPeakOnePeriod'):
+        oppleoConfig.allowPeakOnePeriod = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         ophm = OffPeakHoursModel()
         WebSocketUtil.emit(
                 event='off_peak_status_update', 
-                    id=OppleoConfig.ENERGY_DEVICE_ID,
+                    id=oppleoConfig.chargerName,
                     data={ 'isOffPeak': ophm.is_off_peak_now(),
-                           'offPeakEnabled': OppleoConfig.peakHoursOffPeakEnabled,
-                           'peakAllowOnePeriod': OppleoConfig.peakHoursAllowPeakOnePeriod
+                           'offPeakEnabled': oppleoConfig.offpeakEnabled,
+                           'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
                     },
                     namespace='/charge_session',
                     public=True
                 )
-        return jsonify({ 'status': 200, 'param': param, 'value': OppleoConfig.peakHoursAllowPeakOnePeriod })
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.allowPeakOnePeriod })
 
     if (param == 'autoSessionEnabled'):
-        OppleoConfig.autoSessionEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': OppleoConfig.autoSessionEnabled })
+        oppleoConfig.autoSessionEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.autoSessionEnabled })
 
     if (param == 'autoSessionCondenseSameOdometer'):
-        OppleoConfig.autoSessionCondenseSameOdometer = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': OppleoConfig.autoSessionCondenseSameOdometer })
+        oppleoConfig.autoSessionCondenseSameOdometer = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.autoSessionCondenseSameOdometer })
 
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

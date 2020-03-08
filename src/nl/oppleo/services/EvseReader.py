@@ -7,14 +7,18 @@ import traceback
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.EvseReaderProd import EvseReaderProd, EvseState
 from nl.oppleo.utils.GenericUtil import GenericUtil
+
+LOGGER_PATH = "nl.oppleo.service.EvseReader"
+oppleoConfig = OppleoConfig()
+logger = logging.getLogger(LOGGER_PATH)
+
 try:
     from mfrc522 import SimpleMFRC522
 except RuntimeError:
-    logging.debug('Assuming dev env')
+    logger.debug('Assuming dev env')
 except ModuleNotFoundError:
-    logging.debug('Assuming dev env')
+    logger.debug('Assuming dev env')
 
-LOGGER_PATH = "nl.oppleo.service.EvseReader"
 
 
 class EvseReaderDev(object):
@@ -22,10 +26,10 @@ class EvseReaderDev(object):
         self.logger = logging.getLogger(LOGGER_PATH + 'Dev')
 
     def loop(self, cb_until, cb_result):
-        global OppleoConfig
+        global oppleoConfig
         while not cb_until():
             self.logger.debug('Fake run Evse Read loop')
-            OppleoConfig.app.sleep(0.5)
+            oppleoConfig.appSocketIO.sleep(0.5)
             cb_result(EvseState.EVSE_STATE_UNKNOWN)
 
 

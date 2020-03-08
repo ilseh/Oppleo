@@ -6,6 +6,7 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.LedLightProdHardware import LedLightProdHardware
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
+oppleoConfig = OppleoConfig()
 GenericUtil.importGpio()
 
 # Interval in ms to update led light
@@ -28,7 +29,7 @@ class LedLightPulseProd(object):
         return int(round(time.time() * 1000))
 
     def _pulse(self):
-        global OppleoConfig
+        global oppleoConfig
 
         pulse_led_value = 0
         pulse_led_millis = 0
@@ -40,8 +41,8 @@ class LedLightPulseProd(object):
             t = threading.currentThread()
             while getattr(t, "do_run", True):
                 if self.millis() > (pulse_led_millis + FREQ_MS_TO_UPDATE_LED):
-                    if ((pulse_led_up and (pulse_led_value >= OppleoConfig.pulseLedMax)) or
-                            ((not pulse_led_up) and (pulse_led_value <= OppleoConfig.pulseLedMin))):
+                    if ((pulse_led_up and (pulse_led_value >= oppleoConfig.pulseLedMax)) or
+                            ((not pulse_led_up) and (pulse_led_value <= oppleoConfig.pulseLedMin))):
                         pulse_led_up = not pulse_led_up
                     if pulse_led_up:
                         pulse_led_value += 1

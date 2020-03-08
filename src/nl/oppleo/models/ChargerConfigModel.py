@@ -24,6 +24,7 @@ class ChargerConfigModel(Base):
     use_reloader = Column(Boolean) 
 
     factor_whkm = Column(Integer) 
+    modbus_interval = Column(Integer) 
 
     autosession_enabled = Column(Boolean) 
     autosession_minutes = Column(Integer) 
@@ -37,6 +38,8 @@ class ChargerConfigModel(Base):
     pin_led_green = Column(Integer) 
     pin_led_blue = Column(Integer) 
     pin_buzzer = Column(Integer) 
+    pin_evse_switch = Column(Integer) 
+    pin_evse_led = Column(Integer) 
 
     peakhours_offpeak_enabled = Column(Boolean)
     peakhours_allow_peak_one_period = Column(Boolean) 
@@ -58,6 +61,21 @@ class ChargerConfigModel(Base):
         for key in data:
             setattr(self, key, data.get(key))
         self.modified_at = datetime.datetime.now()
+
+    """
+        Set a single variable
+    """
+    def setAndSave(self, key, value, allowed=None):
+        curVal = getattr(self, key)
+        if not isinstance(value, type(curVal)):
+            raise TypeError("{} must be type {}".format(key, type(curVal)))
+        if allowed is not None and value not in allowed:
+            raise ValueError("{} value {} not within range {}".format(key, value, allowed))
+        setattr(self, key, value)
+        if curVal != getattr(self, key):
+            # Value changed
+            self.modified_at = datetime.datetime.now()
+            self.save()
 
     def save(self):
         db_session = DbSession()
@@ -114,31 +132,35 @@ class ChargerConfigSchema(Schema):
     charger_tariff = fields.Float(dump_only=True)
     modified_at = fields.DateTime(dump_only=True)
 
-    SECRET_KEY = fields.Str(dump_only=True)
-    WTF_CSRF_SECRET_KEY = fields.Str(dump_only=True)
+    secret_key = fields.Str(dump_only=True)
+    wtf_csrf_secret_key = fields.Str(dump_only=True)
 
-    httpHost = fields.Str(dump_only=True)
-    httpPort = fields.Int(dump_only=True)
-    useReloader = fields.Bool(dump_only=True)
+    http_host = fields.Str(dump_only=True)
+    http_port = fields.Int(dump_only=True)
+    use_reloader = fields.Bool(dump_only=True)
 
-    factorWhkm = fields.Integer(dump_only=True)
+    factor_whkm = fields.Float(dump_only=True)
+    modbus_interval = fields.Integer(dump_only=True) 
 
-    autoSessionEnabled = fields.Bool(dump_only=True)
-    autoSessionMinutes = fields.Int(dump_only=True)
-    autoSessionEnergy = fields.Float(dump_only=True)
-    autoSessionCondenseSameOdometer = fields.Bool(dump_only=True)
+    autosession_enabled = fields.Bool(dump_only=True)
+    autosession_minutes = fields.Int(dump_only=True)
+    autosession_energy = fields.Float(dump_only=True)
+    autosession_condense_same_odometer = fields.Bool(dump_only=True)
 
 
-    pulseLedMin = fields.Int(dump_only=True)
-    pulseLedMax = fields.Int(dump_only=True)
-    GPIO_Mode = fields.Str(dump_only=True)
-    pinLedRed = fields.Int(dump_only=True)
-    pinLedGreen = fields.Int(dump_only=True)
-    pinLedBlue = fields.Int(dump_only=True)
-    pinBuzzer = fields.Int(dump_only=True)
+    pulseled_min = fields.Int(dump_only=True)
+    pulseled_max = fields.Int(dump_only=True)
+    gpio_mode = fields.Str(dump_only=True)
+    pin_led_red = fields.Int(dump_only=True)
+    pin_led_green = fields.Int(dump_only=True)
+    pin_led_blue = fields.Int(dump_only=True)
+    pin_buzzer = fields.Int(dump_only=True)
 
-    peakHoursOffPeakEnabled = fields.Bool(dump_only=True)
-    peakHoursAllowPeakOnePeriod = fields.Bool(dump_only=True)
+    pin_evse_switch = fields.Int(dump_only=True)
+    pin_evse_led = fields.Int(dump_only=True)
 
-    prowlEnabled = fields.Bool(dump_only=True)
-    prowlApiKey = fields.Str(dump_only=True)
+    peakhours_offpeak_enabled = fields.Bool(dump_only=True)
+    peakhours_allow_peak_one_period = fields.Bool(dump_only=True)
+
+    prowl_enabled = fields.Bool(dump_only=True)
+    prowl_apikey = fields.Str(dump_only=True)

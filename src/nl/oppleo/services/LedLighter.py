@@ -5,6 +5,7 @@ import logging
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
+oppleoConfig = OppleoConfig()
 GPIO = GenericUtil.importGpio()
 
 from nl.oppleo.services.LedLight import LedLight
@@ -18,15 +19,16 @@ class LedLighter(object):
     lock = threading.Lock()
 
     def __init__(self):
+        global oppleoConfig
 
         # self.ledlightAvailable = LedLight(LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
-        self.ledlightAvailable = LedLight(OppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
+        self.ledlightAvailable = LedLight(oppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
         # self.ledlightReady = LedLight(LedLight.LED_RED, LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
-        self.ledlightReady = LedLight(OppleoConfig.pinLedRed, OppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
+        self.ledlightReady = LedLight(oppleoConfig.pinLedRed, oppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
         # self.ledlightCharging = LedLight(LedLight.LED_BLUE, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
-        self.ledlightCharging = LedLight(OppleoConfig.pinLedBlue, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
+        self.ledlightCharging = LedLight(oppleoConfig.pinLedBlue, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
         # self.ledlightError = LedLight(LedLight.LED_RED, intensity=LIGHT_INTENSITY_HIGH)
-        self.ledlightError = LedLight(OppleoConfig.pinLedRed, intensity=LIGHT_INTENSITY_HIGH)
+        self.ledlightError = LedLight(oppleoConfig.pinLedRed, intensity=LIGHT_INTENSITY_HIGH)
 
         # self.ledlight_configs = [self.ledlightAvailable, self.ledlightReady, self.ledlightCharging, self.ledlightError]
 
