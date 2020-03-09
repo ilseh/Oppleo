@@ -73,6 +73,18 @@ class OffPeakHoursModel(Base):
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
 
     @staticmethod
+    def deleteId(id):
+        db_session = DbSession()
+        try:
+            db_session.query(OffPeakHoursModel) \
+                      .filter(OffPeakHoursModel.id == id) \
+                      .delete()
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            OffPeakHoursModel.logger.error("Could not delete {} from {} table in database".format(id, OffPeakHoursModel.__tablename__ ), exc_info=True)
+
+    @staticmethod
     def weekdayToEnStr(weekday) -> str:
         return OffPeakHoursModel.weekday_en[weekday % len(OffPeakHoursModel.weekday_en)]
     @staticmethod

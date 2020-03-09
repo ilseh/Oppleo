@@ -554,6 +554,7 @@ def settings(active=1):
     diag['offPeak'] = {}
     diag['offPeak']['allReps'] = OffPeakHoursModel.get_all_representations_nl()
     diag['offPeak']['all'] = OffPeakHoursModel.get_all()
+
     diag['offPeak']['monday'] = OffPeakHoursModel.get_monday()
     diag['offPeak']['tuesday'] = OffPeakHoursModel.get_tuesday()
     diag['offPeak']['wednesday'] = OffPeakHoursModel.get_wednesday()
@@ -923,4 +924,36 @@ def update_settings(param=None, value=None):
         oppleoConfig.autoSessionCondenseSameOdometer = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.autoSessionCondenseSameOdometer })
 
+    # Add off peak database entry day|month|year|recurring|description (month is zero-based)
+    if (param == 'offPeakAddHolidayEntry'):
+        vAr = value.split('|')
+        ophm = OffPeakHoursModel()
+        ophm.holiday_day = vAr.pop(0)
+        ophm.holiday_month = vAr.pop(0)
+        ophm.holiday_year = vAr.pop(0)
+        ophm.recurring = True if vAr.pop(0).lower() in ['true', 1] else False
+        ophm.description = '|'.join(vAr)
+        ophm.off_peak_start = '00:00:00'
+        ophm.off_peak_end = '23:59:00'
+        ophm.is_holiday = True
+        # Save
+        ophm.save()
+        return jsonify({ 'status': 200, 'param': param, 'value': str(ophm.id) })
+
+    # Delete off peak database entry
+    if (param == 'offPeakDeleteEntry') and (isinstance(value, int) or RepresentsInt(value)):
+        # Delete
+        OffPeakHoursModel.deleteId(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
+
+
+
+def RepresentsInt(s):
+    try: 
+        int(s)
+        return True
+    except ValueError:
+        return False

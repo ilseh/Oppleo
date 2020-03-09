@@ -22,6 +22,7 @@
 
   <!-- Datepicker, Date range picker -->
   <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/datepicker-nl.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
 
   <!-- Socket IO -->
@@ -270,7 +271,8 @@
           autoclose: true,
           startDate : undefined,
           endDate   : undefined,
-          format: "d MM yyyy"    // 7 January 2020
+          format: "d MM yyyy",    // 7 January 2020
+          language: 'nl'
       })
       $("button[id^=show_]").click(function() {
           id = $(this).attr('id').split("show_").pop()

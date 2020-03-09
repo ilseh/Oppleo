@@ -13,13 +13,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
   <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
 
-
-  <!-- Datepicker -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/datepicker-nl.js') }}"></script>
-
-  
   <style>
     .paginate_button {
         padding: 0px !important;
@@ -166,42 +159,7 @@
         console.log(data)
         switch (data.status) {
           case 200:
-            switch (data.param) {
-              case 'offPeakAddHolidayEntry':
-                el = `<tr id="offPeakHoliday_` + data.value + `">
-                        <td class="text-dark">` + desc + `:</td>
-                        <td class="text-primary">` + 
-                          ( recurring ? 
-                            'Elk jaar op ' + hDaySplit[0] + ' ' + hDaySplit[1] :
-                            'In ' + hDaySplit[2] + ' op ' + hDaySplit[0] + ' ' + hDaySplit[1]
-                          ) +
-                          `<button 
-                            type="button" 
-                            id="offPeakDelete_` + data.value + `"
-                            style="float: right;"
-                            class="btn btn-xs btn-low-key-danger waves-effect waves-light" 
-                            > 
-                            <i class="fas fa-trash-alt"></i> Verwijder 
-                          </button>
-                        </td>
-                      </tr>`
-                $(el).insertBefore('tr#offPeakNewHolidayDate')
-                // Add delete buttons
-                $('#offPeakDelete_' + data.value).on('click', function(e) {
-                  var id = $(this).attr("id").replace("offPeakDelete_", "")
-                  updateSettings( 'offPeakDeleteEntry', id )
-                  // Remove from view
-                  $('tr#offPeakHoliday_' + id).remove()
-                })
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag opgeslagen [' + data.value + '].');
-                break
-              case 'offPeakDeleteEntry':
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag verwijderd [' + data.value + '].');
-                break
-              default:
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Instelling aangepast.');
-                break
-            }
+            $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Instelling aangepast.');
             break
           case 404:
           default:
@@ -244,89 +202,19 @@
       $('input#autoSessionCondenseSameOdometer').change(function() {
         updateSettings( 'autoSessionCondenseSameOdometer', $(this).prop('checked') )
       })
+      /*
+      for (i = 0; i < 24; i++) {
+        $('td[id^=offPeak] > div:nth-child(2)').append( "<span>" + (i %24) + "</span>" )
+      }
+      */
       $('td[id^=offPeak] > div:nth-child(2)').each(function( index ) {
         var id = $(this).parent().attr("id")
         for (i = 0; i < 24; i++) {
           $(this).append( "<span style='color: #00b19d;'>" + (i %24) + "</span>" )
         }
       })
-      $('#holidayDate').datepicker({
-          todayHighlight: true,
-          autoclose: true,
-          startDate : undefined,
-          endDate   : undefined,
-          format: "d MM yyyy",    // 7 January 2020
-          language: 'nl'
-      })
-      $('#offPeakNewDate').on('click', function(e) {
-        e.preventDefault()
-        console.log(this.id)
-        // Clean data fields
-        $('#holidayDate').val('')
-        $('#holidayDescription').val('')
-        // Set recurring to false
-        $('#offPeakNewRecurring').find('i').toggleClass('fa-calendar-day', true)
-        $('#offPeakNewRecurring').find('i').toggleClass('fa-redo-alt', false)
-        // Show input
-        $('tr#offPeakNewHolidayDate').toggle()
-        $('#offPeakNewCancel').show()
-        $('#offPeakNewSave').show()
-        $(this).hide()
-      })
-      $('#offPeakNewCancel').on('click', function(e) {
-        e.preventDefault()
-        console.log(this.id)
-        $('tr#offPeakNewHolidayDate').toggle()
-        $('#offPeakNewDate').show()
-        $('#offPeakNewSave').hide()
-        $(this).hide()
-      })
-      $('#offPeakNewRecurring').on('click', function(e) {
-        e.preventDefault()
-        console.log(this.id)
-        $(this).find('i').toggleClass('fa-calendar-day')
-        $(this).find('i').toggleClass('fa-redo-alt')
-      })
-      $('#offPeakNewSave').on('click', function(e) {
-        e.preventDefault()
-        console.log(this.id)
-        hDayDate = $('#holidayDate').val()
-        hDaySplit = hDayDate.split(' ')
-        if (hDaySplit == undefined || hDaySplit.length < 3) {
-          $.Notification.autoHideNotify('warning', 'top left', 'Waarschuwing', 'Geen of onjuist datumveld ingevoerd. Zon/feestdag niet opgeslagen...')
-          return
-        }
-        hDayMonth = -1
-        $.each(months, function(i, month) {
-					if (month == hDaySplit[1]) {
-            hDayMonth = i
-					}
-				})
-        if (hDayMonth == -1) {
-          $.Notification.autoHideNotify('warning', 'top left', 'Waarschuwing', 'Geen of onjuist datumveld ingevoerd. Zon/feestdag niet opgeslagen...')
-          return
-        }
-        desc = $('#holidayDescription').val()
-        if (desc.length == 0) {
-          $.Notification.autoHideNotify('warning', 'top left', 'Waarschuwing', 'Geen omschrijving ingevoerd. Zon/feestdag niet opgeslagen...')
-          return
-        }
-        recurring = $('button#offPeakNewRecurring').html().indexOf("fa-redo-alt") >= 0
-        updateSettings( 'offPeakAddHolidayEntry', hDaySplit[0] + '|' + hDayMonth + '|' + hDaySplit[2] + '|' + recurring + '|' + encodeURI(desc) )
-        $('tr#offPeakNewHolidayDate').toggle()
-        $('#offPeakNewDate').show()
-        $('#offPeakNewSave').hide()
-        $('#offPeakNewCancel').hide()
-      })
-      // Add delete buttons
-      $('button[id^=offPeakDelete]').on('click', function(e) {
-        var id = $(this).attr("id").replace("offPeakDelete_", "")
-        updateSettings( 'offPeakDeleteEntry', id )
-        // Remove from view
-        $('tr#offPeakHoliday_' + id).remove()
-      })
-      $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
-       // Remove spinner
+
+      // Remove spinner
       $('.spinner').hide()
     })
 
@@ -456,7 +344,7 @@
                             {% if 'offPeak' in diag and 'allReps' in diag['offPeak'] %}
                             {% for weekday in diag['offPeak']['allReps'] %}
                             {% set weekdayOffPeak = diag['offPeak']['allReps'][weekday] %}
-                            <tr">
+                            <tr>
                               <td class="text-dark">{{ weekday }}:</td>
                               <td class="text-primary" id="offPeak{{ weekday }}">
                                 <div class="progress">
@@ -476,7 +364,7 @@
                             {% if 'offPeak' in diag and 'all' in diag['offPeak'] %}
                             {% for offPeak in diag['offPeak']['all'] %}
                             {% if offPeak.is_holiday() %}
-                            <tr id="offPeakHoliday_{{ offPeak.id }}">
+                            <tr>
                               <td class="text-dark">{{ offPeak.description }}:</td>
                               <td class="text-primary">
                                 {% if offPeak.recurring %} 
@@ -485,82 +373,11 @@
                                 {% if not offPeak.recurring %} 
                                   In {{ offPeak.holiday_year }} op {{ offPeak.holiday_day }} {{ offPeak.monthNlStr() }}
                                 {% endif %}
-                                <button 
-                                  type="button" 
-                                  id="offPeakDelete_{{ offPeak.id }}"
-                                  style="float: right;"
-                                  class="btn btn-xs btn-low-key-danger waves-effect waves-light" 
-                                  > 
-                                  <i class="fas fa-trash-alt"></i> Verwijder 
-                                </button>
                               </td>
                             </tr>
                             {% endif %}
                             {% endfor %}
                             {% endif %}
-
-
-                            
-                            <tr id="offPeakNewHolidayDate" style="display: none;">
-                              <td class="text-primary" style="text-align: right;">Nieuwe zon/feestdag:</td>
-                              <td class="text-primary">
-
-                                  <div class="input-daterange input-group">
-                                    <span class="input-group-addon bg-primary b-0 text-white">
-                                      <i class="far fa-calendar-alt"></i>
-                                    </span>
-                                    <input type="text" id="holidayDate" class="form-control" name="holidayDate" placeholder="Datum" value=""/>
-                                    <span class="input-group-addon bg-primary b-0 text-white">
-                                      <i class="fas fa-heading"></i>
-                                    </span>
-                                    <input type="text" id="holidayDescription" class="form-control" name="holidayDescription" style="text-align: left; flex: 40%;" placeholder="Omschrijving" value=""/>
-                                    <button
-                                      id="offPeakNewRecurring"
-                                      type="button" 
-                                      class="btn waves-effect waves-light btn-primary" 
-                                      data-toggle="tooltip" 
-                                      data-placement="bottom" 
-                                      data-html="true" 
-                                      title="<em>Klik om jaarlijks terugkerend te maken</em>"
-                                      >
-                                      <i class="fas fa-calendar-day"></i>
-                                    </button> 
-                                  </div>
-                                                  
-                              </td>
-                            </tr>
-
-                            <tr>
-                              <td class="text-dark">&nbsp;</td>
-                              <td class="text-primary">
-                                <button 
-                                  type="button" 
-                                  id="offPeakNewDate" 
-                                  class="btn btn-outline-primary waves-effect waves-light"
-                                  > 
-                                  <i class='fas fa-edit'></i> Nieuwe zon/feestdag 
-                                </button>
-                                <button 
-                                  type="button" 
-                                  id="offPeakNewSave" 
-                                  style="float: right; display: none;"
-                                  class="btn btn-primary waves-effect waves-light"
-                                  > 
-                                  <i class='far fa-thumbs-up'></i> Opslaan 
-                                </button>
-                                <div style="float: right; width: 5px;">&nbsp;</div>
-                                <button 
-                                  type="button" 
-                                  id="offPeakNewCancel"
-                                  style="float: right; display: none;"
-                                  class="btn btn-secondary waves-effect waves-light" 
-                                  > 
-                                  <i class='fas fa-times'></i> Annuleren 
-                                </button>
-                              </td>
-                            </tr>
-
-
                           </tbody>
 
 
