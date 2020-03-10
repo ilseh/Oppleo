@@ -289,7 +289,8 @@ if __name__ == "__main__":
             )
         )
     appSocketIO.run(app, 
-                    port=oppleoConfig.httpPort, 
+#                    port=oppleoConfig.httpPort, 
+                    port=5000, 
                     debug=OppleoSystemConfig.DEBUG, 
                     use_reloader=oppleoConfig.useReloader, 
                     host=oppleoConfig.httpHost

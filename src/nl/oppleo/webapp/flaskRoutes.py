@@ -957,3 +957,16 @@ def RepresentsInt(s):
         return True
     except ValueError:
         return False
+
+
+
+
+
+
+@flaskRoutes.route("/test/")
+def test():
+    global flaskRoutesLogger, oppleoConfig
+
+    return render_template("test.html",
+            oppleoconfig=oppleoConfig
+            )
