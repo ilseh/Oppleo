@@ -130,6 +130,14 @@
       border-left: 1px solid #868e96; 
     }
 
+    .form-control {
+      color: #ffffff !important;
+      background-color: #434f5c;/* #576676; */
+    }
+    .form-control:disabled, .form-control[readonly] {
+      color: #3bafda !important;
+      background-color: rgba(0,0,0,.05);/* #576676; */
+    }
 
   </style>
 
@@ -268,7 +276,7 @@
         $('#offPeakNewRecurring').find('i').toggleClass('fa-calendar-day', true)
         $('#offPeakNewRecurring').find('i').toggleClass('fa-redo-alt', false)
         // Show input
-        $('tr#offPeakNewHolidayDate').toggle()
+        $('tr#offPeakNewHolidayDate').toggle(200)
         $('#offPeakNewCancel').show()
         $('#offPeakNewSave').show()
         $(this).hide()
@@ -276,7 +284,7 @@
       $('#offPeakNewCancel').on('click', function(e) {
         e.preventDefault()
         console.log(this.id)
-        $('tr#offPeakNewHolidayDate').toggle()
+        $('tr#offPeakNewHolidayDate').toggle(200)
         $('#offPeakNewDate').show()
         $('#offPeakNewSave').hide()
         $(this).hide()
@@ -326,6 +334,48 @@
         $('tr#offPeakHoliday_' + id).remove()
       })
       $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+
+      // Edit/ Save buttons
+      $('button[id^=editbutton_]').on('click', function(e) {
+        // editbutton_charger_name_editsave
+        // editbutton_charger_name_cancel
+        var id = $(this).attr("id").replace("editbutton_", "").replace("_editsave", "").replace("_cancel", "")
+        if ($(this).attr("id").endsWith("_cancel")) {
+          // Cancel
+          $('#' + id + '_input').attr('readonly', 'readonly')
+          $('#' + id + '_input').val($('#' + id + '_input').attr('placeholder'))
+          $('#editbutton_' + id + '_cancel').hide()
+          $('#editbutton_' + id + '_editsave').attr('data-original-title', 'Wijzigen')
+          $('#editbutton_' + id + '_editsave').tooltip('hide')
+          $('#editbutton_' + id + '_editsave').html('<i class="fas fa-lock"></i>')
+          $('#editbutton_' + id + '_editsave').toggleClass('btn-low-key-warning', true)
+          $('#editbutton_' + id + '_editsave').toggleClass('btn-primary', false)
+          
+        } else {
+          if ($(this).html().indexOf("fa-lock") >= 0) {
+            // Unlock
+            $('#' + id + '_input').removeAttr('readonly')
+            $('#editbutton_' + id + '_cancel').show()
+            $('#editbutton_' + id + '_editsave').attr('data-original-title', 'Opslaan')
+            $('#editbutton_' + id + '_editsave').tooltip('hide')
+            $('#editbutton_' + id + '_editsave').html('<i class="far fa-save"></i>')
+            $('#editbutton_' + id + '_editsave').toggleClass('btn-low-key-warning', false)
+            $('#editbutton_' + id + '_editsave').toggleClass('btn-primary', true)
+          } else {
+            // Save
+            // TODO - save it
+            $('#' + id + '_input').attr('placeholder', $('#' + id + '_input').val())
+            $('#' + id + '_input').attr('readonly', 'readonly')
+            $('#editbutton_' + id + '_cancel').hide()
+            $('#editbutton_' + id + '_editsave').attr('data-original-title', 'Wijzigen')
+            $('#editbutton_' + id + '_editsave').tooltip('hide')
+            $('#editbutton_' + id + '_editsave').html('<i class="fas fa-lock"></i>')
+            $('#editbutton_' + id + '_editsave').toggleClass('btn-low-key-warning', true)
+            $('#editbutton_' + id + '_editsave').toggleClass('btn-primary', false)
+          }
+        }
+      })
+
        // Remove spinner
       $('.spinner').hide()
     })
@@ -385,18 +435,136 @@
                             {% if ('charger_name' in charger_config) %}
                             <tr>
                               <td class="text-dark">Naam laadpunt:</td>
-                              <td class="text-primary" style="width: 75%;">{{ charger_config['charger_name'] }}</td>
+                              <td class="text-primary" style="width: 75%;">
+                                <div class="input-group">
+                                  <input 
+                                    class="form-control input-sm" 
+                                    type="text"
+                                    readonly="readonly"
+                                    id="charger_name_input" 
+                                    style="text-align: left;"
+                                    placeholder="{{ charger_config['charger_name'] }}"
+                                    value="{{ charger_config['charger_name'] }}"
+                                  />
+                                  <span class="input-group-btn">
+                                    <button
+                                      id="editbutton_charger_name_cancel"
+                                      type="button" 
+                                      class="btn btn-xs waves-effect waves-light btn-secondary"
+                                      style="display: none;"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="<em>Annuleren</em>"
+                                      >
+                                      <i class="fas fa-times"></i>
+                                    </button> 
+                                    <button
+                                      id="editbutton_charger_name_editsave"
+                                      type="button" 
+                                      class="btn btn-xs waves-effect waves-light btn-low-key-warning"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="<em>Wijzigen</em>"
+                                      >
+                                      <i class="fas fa-lock"></i>
+                                    </button> 
+                                  </span>
+                                </div>
+                              </td>
                             </tr>
                             {% endif %}
                             <tr>
-                              <td class="text-dark">kWh Factor:</td >
-                              <td class="text-primary">{{ oppleoconfig.factor_Whkm }}</td>
+                              <td class="text-dark">kWh Factor:</td>
+                              <td class="text-primary" style="width: 75%;">
+                                <div class="input-group">
+                                  <input 
+                                    class="form-control input-sm" 
+                                    type="text"
+                                    readonly="readonly"
+                                    id="factorWhkm_input" 
+                                    style="text-align: left;"
+                                    placeholder="{{ oppleoconfig.factorWhkm }}"
+                                    value="{{ oppleoconfig.factorWhkm }}"
+                                  />
+                                  <span class="input-group-btn">
+                                    <button
+                                      id="editbutton_factorWhkm_cancel"
+                                      type="button" 
+                                      class="btn btn-xs waves-effect waves-light btn-secondary"
+                                      style="display: none;"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="<em>Annuleren</em>"
+                                      >
+                                      <i class="fas fa-times"></i>
+                                    </button> 
+                                    <button
+                                      id="editbutton_factorWhkm_editsave"
+                                      type="button" 
+                                      class="btn btn-xs waves-effect waves-light btn-low-key-warning"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="<em>Wijzigen</em>"
+                                      >
+                                      <i class="fas fa-lock"></i>
+                                    </button> 
+                                  </span>
+                                </div>
+                              </td>
                             </tr>
                             {% if ('charger_tariff' in charger_config) %}
                             <tr>
                               <td class="text-dark">Laadpunt tarief:</td >
                               <td class="text-primary">&euro;  {{ charger_config['charger_tariff'] }}</td>
                             </tr>
+
+                            <tr>
+                              <td class="text-dark">Laadpunt tarief:</td>
+                              <td class="text-primary" style="width: 75%;">
+                                <div class="input-group">
+                                  <input 
+                                    class="form-control input-sm" 
+                                    type="text"
+                                    readonly="readonly"
+                                    id="charger_tariff_input" 
+                                    style="text-align: left;"
+                                    placeholder="{{ charger_config['charger_tariff'] }}"
+                                    value="{{ charger_config['charger_tariff'] }}"
+                                  />
+                                  <span class="input-group-btn">
+                                    <button
+                                      id="editbutton_charger_tariff_cancel"
+                                      type="button" 
+                                      class="btn btn-xs waves-effect waves-light btn-secondary"
+                                      style="display: none;"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="<em>Annuleren</em>"
+                                      >
+                                      <i class="fas fa-times"></i>
+                                    </button> 
+                                    <button
+                                      id="editbutton_charger_tariff_editsave"
+                                      type="button" 
+                                      class="btn btn-xs waves-effect waves-light btn-low-key-warning"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="<em>Wijzigen</em>"
+                                      >
+                                      <i class="fas fa-lock"></i>
+                                    </button> 
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+
+
                             {% endif %}
                             {% if ('modified_at' in charger_config) %}
                             <tr>
