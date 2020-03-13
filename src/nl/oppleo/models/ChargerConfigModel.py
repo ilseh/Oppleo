@@ -47,6 +47,8 @@ class ChargerConfigModel(Base):
     prowl_enabled = Column(Boolean) 
     prowl_apikey = Column(String(100)) 
 
+    log_file = Column(String(256)) 
+
 
     def __init__(self):
         pass
@@ -164,3 +166,5 @@ class ChargerConfigSchema(Schema):
 
     prowl_enabled = fields.Bool(dump_only=True)
     prowl_apikey = fields.Str(dump_only=True)
+
+    log_file = fields.Str(dump_only=True)

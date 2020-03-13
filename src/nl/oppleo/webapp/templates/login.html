@@ -15,14 +15,14 @@
 		<meta name="theme-color" content="#3BAFDA">
 
         <!-- App css -->
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/bootstrap/4.4.1/css/bootstrap.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-
+        
         <!-- jQuery  -->
         <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script><!-- Popper for Bootstrap --><!-- Tether for Bootstrap -->
-        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='plugins/bootstrap/4.4.1/js/bootstrap.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
@@ -102,8 +102,12 @@
     <div class="form-group row">
           <div class="col-12">
               <div class="input-group">
-                  <span class="input-group-addon"><i class="mdi mdi-account"></i></span>
-                  <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username" value="{% if form.username.data is not none %}{{ form.username.data }}{% endif %}">
+                <span class="input-group-prepend">
+                    <span class="input-group-text bg-secondary border border-secondary text-muted">
+                        <i class="mdi mdi-account"></i>
+                    </span>
+                </span>
+                <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username" value="{% if form.username.data is not none %}{{ form.username.data }}{% endif %}">
               </div>
           </div>
       </div>
@@ -111,9 +115,13 @@
       <div class="form-group row">
           <div class="col-12">
               <div class="input-group">
-                  <span class="input-group-addon"><i class="mdi mdi-radar"></i></span>
-                  <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password" value="{% if form.password.data is not none %}{{ form.password.data }}{% endif %}">
-                  <span class="input-group-btn">
+                <span class="input-group-prepend">
+                    <span class="input-group-text bg-secondary border border-secondary text-muted">
+                        <i class="mdi mdi-radar"></i>
+                    </span>
+                </span>
+                <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password" value="{% if form.password.data is not none %}{{ form.password.data }}{% endif %}">
+                <span class="input-group-append">
                     <button 
                         id="show_password"
                         type="button" 
@@ -125,7 +133,7 @@
                         >
                         <i class="far fa-eye"></i>
                     </button>
-                  </span>
+                </span>
               </div>
           </div>
       </div>

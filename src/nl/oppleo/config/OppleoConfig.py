@@ -127,7 +127,7 @@ class OppleoConfig(object, metaclass=Singleton):
         return self.__chargerConfigModel.charger_name
 
     @chargerName.setter
-    def chargerNames(self, value):
+    def chargerName(self, value):
         self.__chargerConfigModel.setAndSave('charger_name', value)
 
     """
@@ -430,6 +430,17 @@ class OppleoConfig(object, metaclass=Singleton):
     @prowlApiKey.setter
     def prowlApiKey(self, value):
         self.__chargerConfigModel.setAndSave('prowl_apikey', value)
+
+    """
+        logFile --> log_file
+    """
+    @property
+    def logFile(self):
+        return self.__chargerConfigModel.log_file
+
+    @logFile.setter
+    def logFile(self, value):
+        self.__chargerConfigModel.setAndSave('log_file', value)
 
 
 

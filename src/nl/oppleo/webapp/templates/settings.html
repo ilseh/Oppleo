@@ -18,8 +18,16 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/datepicker-nl.js') }}"></script>
-
   
+  <!-- Select2 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.css') }}">
+  <script src="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.js') }}"></script>
+
+  <!-- Oppleo edit web components -->
+  <script src="{{ url_for('static', filename='js/oppleo-edit-str.js') }}" shadydom></script>
+  <script src="{{ url_for('static', filename='js/oppleo-edit-select.js') }}" shadydom></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/oppleo-edit-select.css') }}">
+
   <style>
     .paginate_button {
         padding: 0px !important;
@@ -201,25 +209,37 @@
                   // Remove from view
                   $('tr#offPeakHoliday_' + id).remove()
                 })
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag opgeslagen [' + data.value + '].');
+                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag opgeslagen [' + data.value + '].')
                 break
               case 'offPeakDeleteEntry':
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag verwijderd [' + data.value + '].');
+                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag verwijderd [' + data.value + '].')
+                break
+              case 'chargerName':
+                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Laadpunt naam gewijzigd in ' + data.value + '.');
+                break
+              case 'factorWhkm':
+                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Whkm factor gewijzigd in ' + data.value + '.');
+                break
+              case 'chargerTariff':
+                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Laadpunt tarief gewijzigd in ' + data.value + '.');
                 break
               default:
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Instelling aangepast.');
+                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Instelling aangepast.')
                 break
             }
             break
+          case 409:
+            $.Notification.autoHideNotify('warning', 'top left', 'Foutmelding', 'Wijziging kon niet doorgevoerd worden. ' + data.reason)
+            break
           case 404:
           default:
-            $.Notification.notify('warning','top left', 'Onbekend', 'Instelling onbekend. Niet gewijzigd.');
+            $.Notification.notify('warning','top left', 'Onbekend', 'Instelling onbekend. Niet gewijzigd.')
             break
         }
 
       })
       .fail(function(data) {
-        $.Notification.notify('error','top left', 'Connectie fout', 'Instelling niet gewijzigd.');
+        $.Notification.notify('error','top left', 'Connectie fout', 'Instelling niet gewijzigd.')
       })
       .always(function() {
         // Remove spinner
@@ -334,6 +354,18 @@
         $('tr#offPeakHoliday_' + id).remove()
       })
       $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+      // Oppleo web component applied change
+      $('oppleo-edit-str').on('apply', (e) => {
+        console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+        // Submit
+        updateSettings( e.target.id, e.detail.newValue )
+      })
+      // Oppleo web component applied change
+      $('oppleo-edit-select').on('apply', (e) => {
+        console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' oldText:' + e.detail.oldText + ' newValue:' + e.detail.newValue + ' newText:' + e.detail.newText)
+        // Submit
+        updateSettings( e.target.id, e.detail.newValue )
+      })
 
       // Edit/ Save buttons
       $('button[id^=editbutton_]').on('click', function(e) {
@@ -432,139 +464,40 @@
                         <h4 class="m-t-0 header-title"><i class="fas fa-charging-station"></i> Laadpunt</h4>
                         <table class="table table-striped table-sm">
                           <tbody>
-                            {% if ('charger_name' in charger_config) %}
+                            {% if oppleoconfig %}
                             <tr>
                               <td class="text-dark">Naam laadpunt:</td>
                               <td class="text-primary" style="width: 75%;">
-                                <div class="input-group">
-                                  <input 
-                                    class="form-control input-sm" 
-                                    type="text"
-                                    readonly="readonly"
-                                    id="charger_name_input" 
-                                    style="text-align: left;"
-                                    placeholder="{{ charger_config['charger_name'] }}"
-                                    value="{{ charger_config['charger_name'] }}"
+                                <oppleo-edit-str 
+                                  id="chargerName"
+                                  value="{{ oppleoconfig.chargerName }}"
+                                  validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
+                                  info="Om openstaande laadsessies te voorkomen kan de naam van het laadpunt alleen worden gewijzigd wanneer de laadsessie is afgesloten."
                                   />
-                                  <span class="input-group-btn">
-                                    <button
-                                      id="editbutton_charger_name_cancel"
-                                      type="button" 
-                                      class="btn btn-xs waves-effect waves-light btn-secondary"
-                                      style="display: none;"
-                                      data-toggle="tooltip" 
-                                      data-placement="bottom" 
-                                      data-html="true" 
-                                      title="<em>Annuleren</em>"
-                                      >
-                                      <i class="fas fa-times"></i>
-                                    </button> 
-                                    <button
-                                      id="editbutton_charger_name_editsave"
-                                      type="button" 
-                                      class="btn btn-xs waves-effect waves-light btn-low-key-warning"
-                                      data-toggle="tooltip" 
-                                      data-placement="bottom" 
-                                      data-html="true" 
-                                      title="<em>Wijzigen</em>"
-                                      >
-                                      <i class="fas fa-lock"></i>
-                                    </button> 
-                                  </span>
-                                </div>
                               </td>
                             </tr>
-                            {% endif %}
                             <tr>
                               <td class="text-dark">kWh Factor:</td>
                               <td class="text-primary" style="width: 75%;">
-                                <div class="input-group">
-                                  <input 
-                                    class="form-control input-sm" 
-                                    type="text"
-                                    readonly="readonly"
-                                    id="factorWhkm_input" 
-                                    style="text-align: left;"
-                                    placeholder="{{ oppleoconfig.factorWhkm }}"
-                                    value="{{ oppleoconfig.factorWhkm }}"
+                                <oppleo-edit-str 
+                                  id="factorWhkm"
+                                  value="{{ oppleoconfig.factorWhkm }}"
+                                  validation="^([0-9])+$"
+                                  info="De Wh per km factor waarmee het km/h equivalent wordt berekend. Een waarde van 162 komt overeen met wat de Tesla Model 3 laat zien op het scherm in de auto. Een meer realistisch gemiddelde op basis van 16.836km in een Tesla Model 3 is 182Wh/km"
                                   />
-                                  <span class="input-group-btn">
-                                    <button
-                                      id="editbutton_factorWhkm_cancel"
-                                      type="button" 
-                                      class="btn btn-xs waves-effect waves-light btn-secondary"
-                                      style="display: none;"
-                                      data-toggle="tooltip" 
-                                      data-placement="bottom" 
-                                      data-html="true" 
-                                      title="<em>Annuleren</em>"
-                                      >
-                                      <i class="fas fa-times"></i>
-                                    </button> 
-                                    <button
-                                      id="editbutton_factorWhkm_editsave"
-                                      type="button" 
-                                      class="btn btn-xs waves-effect waves-light btn-low-key-warning"
-                                      data-toggle="tooltip" 
-                                      data-placement="bottom" 
-                                      data-html="true" 
-                                      title="<em>Wijzigen</em>"
-                                      >
-                                      <i class="fas fa-lock"></i>
-                                    </button> 
-                                  </span>
-                                </div>
                               </td>
                             </tr>
-                            {% if ('charger_tariff' in charger_config) %}
                             <tr>
                               <td class="text-dark">Laadpunt tarief:</td >
-                              <td class="text-primary">&euro;  {{ charger_config['charger_tariff'] }}</td>
-                            </tr>
-
-                            <tr>
-                              <td class="text-dark">Laadpunt tarief:</td>
-                              <td class="text-primary" style="width: 75%;">
-                                <div class="input-group">
-                                  <input 
-                                    class="form-control input-sm" 
-                                    type="text"
-                                    readonly="readonly"
-                                    id="charger_tariff_input" 
-                                    style="text-align: left;"
-                                    placeholder="{{ charger_config['charger_tariff'] }}"
-                                    value="{{ charger_config['charger_tariff'] }}"
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="chargerTariff"
+                                  prefix="&euro; " 
+                                  value="{{ oppleoconfig.chargerTariff }}"
+                                  validation="^[0-9]*[.]*[0-9]+$"
+                                  info="Standaard tarief in Den Haag in 2020 is &euro; 0.34. Het tarif kan alleen worden gewijzigd wanneer de laadsessie is afgesloten."
                                   />
-                                  <span class="input-group-btn">
-                                    <button
-                                      id="editbutton_charger_tariff_cancel"
-                                      type="button" 
-                                      class="btn btn-xs waves-effect waves-light btn-secondary"
-                                      style="display: none;"
-                                      data-toggle="tooltip" 
-                                      data-placement="bottom" 
-                                      data-html="true" 
-                                      title="<em>Annuleren</em>"
-                                      >
-                                      <i class="fas fa-times"></i>
-                                    </button> 
-                                    <button
-                                      id="editbutton_charger_tariff_editsave"
-                                      type="button" 
-                                      class="btn btn-xs waves-effect waves-light btn-low-key-warning"
-                                      data-toggle="tooltip" 
-                                      data-placement="bottom" 
-                                      data-html="true" 
-                                      title="<em>Wijzigen</em>"
-                                      >
-                                      <i class="fas fa-lock"></i>
-                                    </button> 
-                                  </span>
-                                </div>
-                              </td>
                             </tr>
-
-
                             {% endif %}
                             {% if ('modified_at' in charger_config) %}
                             <tr>
@@ -855,11 +788,19 @@
                           <tbody>
                             <tr>
                               <td class="text-dark">Database:</td>
-                              <td class="text-primary">Postgres</td>
+                              <td class="text-primary">PostgreSQL</td>
                             </tr>
                             <tr>
                               <td class="text-dark">SQLAlchemy URL:</td>
-                              <td class="text-primary">{{ oppleosystemconfig.DATABASE_URL }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="DATABASE_URL"
+                                prefix="" 
+                                value="{{ oppleosystemconfig.DATABASE_URL }}"
+                                validation="^(postgresql://)[a-zA-Z0-9]+(:)[a-zA-Z0-9]+(@)[a-zA-Z0-9.:/]+$"
+                                info="Alleen PostgresSQL ondersteund. Formaat: postgresql://charger:charger@10.0.1.160:5432/charger"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">SQLAlchemy Pool Status:</td>
@@ -867,13 +808,13 @@
                             </tr>
                           </tbody>
                         </table>
+                        <img src="{{ url_for('static', filename='images/postgresql.png') }}" width="100px">
                       </div>
                     </div>
                   </div>
 
-
                   <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-hardware">
-                    <div class="col-lg-6">
+                    <div class="col-lg-12">
                       <div class="card-box">
                         <h4 class="m-t-0 header-title"><i class="fas fa-microchip"></i> Platform</h4>
                         <table class="table table-striped table-sm">
@@ -924,31 +865,86 @@
                             </tr>
                             <tr>
                               <td class="text-dark">GPIO Mode:</td>
-                              <td class="text-primary">{{ oppleoconfig.gpioMode }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                id="gpioMode"
+                                options='[ { "text": "BCM: Broadcom SOC Channel (GPIO01 etc.)", "value": "BCM" },
+                                           { "text": "BOARD: De GPIO.BOARD spec (Pin 1 etc.)", "value": "BOARD" }
+                                       ]'
+                                selectedValue="{{ oppleoconfig.gpioMode }}"
+                                info="Raspberry Pi GPIO Pin definitie. De GPIO.BOARD spec refereert aan de pins per pin nummer op de header. GPIO.BCM spec refereert aan de pins per <b>Broadcom SOC Channel</b> nummer, als GPIO01. Bij elke Raspberry Pi versie kan de <i>BOARD</i> header Pin nummering verschillen, terwijl de <i>BCM</i> nummering meestal onveranderd blijft."
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Red Led:</td>
-                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinLedRed }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pinLedRed"
+                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                value="{{ oppleoconfig.pinLedRed }}"
+                                validation="^[0-9]+$"
+                                info="BCM GPIO Mode GPIO13"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Green Led:</td>
-                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinLedGreen }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pinLedGreen"
+                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                value="{{ oppleoconfig.pinLedGreen }}"
+                                validation="^[0-9]+$"
+                                info="BCM GPIO Mode GPIO12"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Blue Led:</td>
-                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinLedBlue }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pinLedBlue"
+                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                value="{{ oppleoconfig.pinLedBlue }}"
+                                validation="^[0-9]+$"
+                                info="BCM GPIO Mode GPIO16"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Buzzer:</td>
-                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinBuzzer }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pinBuzzer"
+                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                value="{{ oppleoconfig.pinBuzzer }}"
+                                validation="^[0-9]+$"
+                                info="BCM GPIO Mode GPIO23"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">EVSE Switch:</td>
-                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinEvseSwitch }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pinEvseSwitch"
+                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                value="{{ oppleoconfig.pinEvseSwitch }}"
+                                validation="^[0-9]+$"
+                                info="BCM GPIO Mode GPIO5"
+                                />
                             </tr>
                             <tr>
                               <td class="text-dark">EVSE Led:</td>
-                              <td class="text-primary">{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %}{{ oppleoconfig.pinEvseLed }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pinEvseLed"
+                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                value="{{ oppleoconfig.pinEvseLed }}"
+                                validation="^[0-9]+$"
+                                info="BCM GPIO Mode GPIO6"
+                                />
                             </tr>
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -960,11 +956,27 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Led pulse min:</td>
-                              <td class="text-primary">{{ oppleoconfig.pulseLedMin }}%</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pulseLedMin"
+                                suffix="%" 
+                                value="{{ oppleoconfig.pulseLedMin }}"
+                                validation="^([1-9][0-9]?|100)$"
+                                info="3%"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Led pulse max:</td>
-                              <td class="text-primary">{{ oppleoconfig.pulseLedMax }}%</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="pulseLedMax"
+                                suffix="%" 
+                                value="{{ oppleoconfig.pulseLedMax }}"
+                                validation="^([1-9][0-9]?|100)$"
+                                info="98%"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -996,11 +1008,27 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Minutes:</td>
-                              <td class="text-primary">{{ oppleoconfig.autoSessionMinutes }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="autoSessionMinutes"
+                                suffix="%" 
+                                value="{{ oppleoconfig.autoSessionMinutes }}"
+                                validation="^([1-9]+)$"
+                                info="Tesla Model 3 settings are 0.1kWh in 90 minutes"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Energy:</td>
-                              <td class="text-primary">{{ oppleoconfig.autoSessionEnergy }}kWh</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="autoSessionEnergy"
+                                suffix="%" 
+                                value="{{ oppleoconfig.autoSessionEnergy }}"
+                                validation="^([1-9]+)$"
+                                info="Tesla Model 3 settings are 0.1kWh in 90 minutes"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Condense sessies:</td>
@@ -1113,10 +1141,62 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Logfile:</td>
-                              <td class="text-primary">{{ oppleoconfig.LOG_FILE }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="logFile"
+                                value="{{ oppleoconfig.logFile }}"
+                                validation="^((/)+[a-zA-Z0-9\\-_/ ]*(.log))$"
+                                info="Default locatie is in /tmp/Oppleo.log en de extensie moet .log zijn. De applicatie moet worden herstart na het wijzigen van de log file om wijzigingen in gebruik te nemen."
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">SQLALCHEMY_TRACK_MODIFICATIONS:</td>
+                              <td class="text-primary">{{ oppleosystemconfig.SQLALCHEMY_TRACK_MODIFICATIONS }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">ENV:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                id="ENV"
+                                options='[ { "text": "Development", "value": "Development", "optgroup": "Environment setting" }, 
+                                           { "text": "Production", "value": "Production", "optgroup": "Environment setting" }
+                                         ]'
+                                selectedText="{{ oppleosystemconfig.ENV }}"
+                                info="Bij Production worden Threads gestart om o.a. de kWh meter uit te lezen en wijzigingen op te slaan in de database, en worde de EVSE aangestuurd. In Development worden hiervoor stubs gebruikt."
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">DEBUG:</td>
+                              <td class="text-primary">{{ oppleosystemconfig.DEBUG }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">TESTING:</td>
+                              <td class="text-primary">{{ oppleosystemconfig.TESTING }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">PYTHONPATH:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="PYTHONPATH"
+                                value="{{ oppleosystemconfig.PYTHONPATH }}"
+                                validation="^([a-zA-Z0-9\\-_/]{0,})$"
+                                info="Python PATH variable."
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">EXPLAIN_TEMPLATE_LOADING:</td>
+                              <td class="text-primary">{{ oppleosystemconfig.EXPLAIN_TEMPLATE_LOADING }}
+                              </td>
                             </tr>
                           </tbody>
                         </table>
+                        <img src="{{ url_for('static', filename='images/Powered-by-Raspberry-Pi-Logo.png') }}" width="100px">
 
                       </div>
                     </div>

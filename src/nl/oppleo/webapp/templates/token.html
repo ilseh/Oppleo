@@ -92,6 +92,7 @@
         console.log(res)
         switch(res.status) {
           case 200: // Ok
+            $.Notification.autoHideNotify('success', 'top left', 'OAuth Token', 'OAuth Token wijziging succesvol uitgevoerd.');
             // Example: OAuth token verloopt 20 February 2020, 16:55u
             updateOAuthTokenStatus(new Date((res.created_at *1000) + (res.expires_in *1000))) // Seconds to milliseconds
             // Add vehicle list
@@ -136,6 +137,7 @@
             break
           case 401:
             // Not Authorized - Tesla email/pw not correct
+            $.Notification.autoHideNotify('warning', 'top left', 'Autorisatie fout', 'Geen OAuth Token gegenereerd.');
             $('span#error-msg-title').html('Autorisatie fout.')
             $('h5#error-msg-sub').html('Tesla e-mail of wachtwoord niet correct.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -144,6 +146,7 @@
             break
           case 404:
             // RFID Token not found
+            $.Notification.autoHideNotify('error', 'top left', '404', 'RFID token onbekend.');
             $('span#error-msg-title').html('Fout...')
             $('h5#error-msg-sub').html('RFID token niet bekend.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -152,6 +155,7 @@
             break
           default:
             // ???
+            $.Notification.autoHideNotify('error', 'top left', 'Onbekende fout', 'Er is een onverwachte fout opgetreden.');
             $('span#error-msg-title').html('Fout [' + res.status + ']')
             $('h5#error-msg-sub').html('Onbekende fout opgetreden.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -164,6 +168,7 @@
         $('h5#error-msg-sub').html('')
         switch(res.status) {
           case 400:
+            $.Notification.autoHideNotify('error', 'top left', 'CSRF token ongeldig', 'CSRF token verlopen. Herlaad deze pagina en probeer het opnieuw.');
             if (res.responseText.toLowerCase().includes('the csrf token is invalid')) {
               $('span#error-msg-title').html('Het CSRF Token is niet geldig.')
               $('h5#error-msg-sub').html('Ververs de pagina en probeer opnieuw.')
@@ -172,6 +177,7 @@
             }
             break
           case 500:
+            $.Notification.autoHideNotify('error', 'top left', '500', 'Internal Server Error');
             $('span#error-msg-title').html('Internal Server Error [500]')
             break
           default:
@@ -221,14 +227,16 @@
     function setResetGetOdometer() {
       if ($('input[name="vehicle_make"]').val().toLowerCase() == "tesla") {
         $('input[name=get_odometer]').prop('disabled', false)
-        $('input[name=get_odometer]').attr('data-onstyle', "primary")
-        $('span#odo_2').hide()
+        $('input[name=get_odometer]').attr('data-onstyle', "text-primary")
+        $('span#odo_1').hide(100)
+        $('span#odo_2').hide(50)
       } else {
         $('input#get_odometer').bootstrapToggle('off')
         $('input#get_odometer').prop('checked', false).change()
         $('input[name=get_odometer]').prop('disabled', true)
-        $('input[name=get_odometer]').attr('data-onstyle', "secondary")
-        $('span#odo_2').show()
+        $('input[name=get_odometer]').attr('data-onstyle', "text-secondary")
+        $('span#odo_1').show(100)
+        $('span#odo_2').show(50)
       }
     }
 
@@ -254,7 +262,7 @@
 
     function updateOAuthTokenStatus(d) {
       // d is expiration date
-      $('span#oauth_token_status').html('Tesla autorisatie verloopt ' + 
+      $('input#oauth_token_status').attr('placeholder', 'Tesla autorisatie verloopt ' + 
         d.getDate() + ' ' + 
         months[d.getMonth()] + ' ' + 
         d.getFullYear() + ', ' +
@@ -329,8 +337,18 @@
       updateOAuthTokenStatus(new Date(({{ rfid_model['api_created_at'] }} *1000) + ({{ rfid_model['api_expires_in'] }} *1000))) // Seconds to milliseconds
       {% endif %}
       $('.info-button-style').hover(
-       function(){ $(this).addClass('btn-success') },
-       function(){ $(this).removeClass('btn-success') }
+        function() { // mouseenter
+          $(this).find('span').removeClass('bg-secondary')
+          $(this).find('span').addClass('bg-success')
+          $(this).find('span').removeClass('text-muted')
+          $(this).find('span').addClass('text-light')
+        },
+        function(){  // mouseleave
+          $(this).find('span').removeClass('bg-success')
+          $(this).find('span').addClass('bg-secondary') 
+          $(this).find('span').removeClass('text-light')
+          $(this).find('span').addClass('text-muted')
+        }
       )
       $('.spinner').hide()
     })
@@ -376,7 +394,7 @@
             </tr>
             <tr>
               <th><h5>Pasnummer</h5></th>
-              <td class="text-primary" style="vertical-align: middle; text-align: left;"><h4 style="padding-left: 10px;">{{ rfid_model['rfid'] }}</h4padding-left: 10px;></td>
+              <td class="text-primary" style="vertical-align: middle; text-align: left;"><h4 style="padding-left: 10px;">{{ rfid_model['rfid'] }}</h4></td>
             </tr>
             <tr>
               <th><h5>Naam</h5></th>
@@ -404,7 +422,6 @@
                       data-width="100"
                     />
                   </span>
-                  <span id="enabled_3" class="input-group-addon" style="width: 100%; background-color: #36404a; border: 0px; font-style: italic;">&nbsp;</span id="odo_1">
                 </div>
               </td>
             </tr>
@@ -412,21 +429,26 @@
               <th><h5>Registratie</h5></th>
               <td>
                 <div class="input-group">
-                  <span id="oauth_token" class="input-group-addon input-text-only">
-                    <i class="far fa-calendar-alt"></i>&nbsp;
-                    {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
-                    &nbsp;
-                    <i class="far fa-clock"></i>&nbsp;
-                    {% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-dark text-muted border-dark">
+                      <i class="far fa-calendar-alt"></i>
+                    </span>
+                  </div>
+                  <input type="text" class="form-control border-dark" disabled placeholder="{% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}">
+                  <span class="input-group-text bg-dark text-muted border-dark">
+                    <i class="far fa-clock"></i>
                   </span>
-                  <span class="input-group-addon info-button-style"
-                          data-toggle="tooltip" 
-                          data-placement="bottom" 
-                          data-html="true" 
-                          title="Eerste registratie van dit pasnummer op dit laadpunt. Automatisch gegenereerd."
-                          >
-                          <i class="fas fa-info-circle"></i>
-                  </span>
+                  <input type="text" class="form-control border-dark" disabled placeholder="{% if rfid_model['created_at'] is not none %}{{ rfid_model['created_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}">
+                  <div class="input-group-append info-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Eerste registratie van dit pasnummer op dit laadpunt. Automatisch gegenereerd."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -434,21 +456,26 @@
               <th><h5>Laatst aangeboden</h5></th>
               <td>
                 <div class="input-group">
-                  <span id="oauth_token" class="input-group-addon input-text-only">
-                    <i class="far fa-calendar-alt"></i>&nbsp;
-                    {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}
-                    &nbsp;
-                    <i class="far fa-clock"></i>&nbsp;
-                    {% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-dark text-muted border-dark">
+                      <i class="far fa-calendar-alt"></i>
+                    </span>
+                  </div>
+                  <input type="text" class="form-control border-dark" disabled placeholder="{% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}">
+                  <span class="input-group-text bg-dark text-muted border-dark">
+                    <i class="far fa-clock"></i>
                   </span>
-                  <span class="input-group-addon info-button-style"
-                          data-toggle="tooltip" 
-                          data-placement="bottom" 
-                          data-html="true" 
-                          title="Laatste gebruik van dit pasnummer op dit laadpunt. Automatisch gegenereerd."
-                          >
-                          <i class="fas fa-info-circle"></i>
-                  </span>
+                  <input type="text" class="form-control border-dark" disabled placeholder="{% if rfid_model['last_used_at'] is not none %}{{ rfid_model['last_used_at'].strftime(' %H:%Mu').replace(' 0', ' ').strip() }}{% endif %}">
+                  <div class="input-group-append info-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Laatste gebruik van dit pasnummer op dit laadpunt. Automatisch gegenereerd."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -456,20 +483,40 @@
               <th><h5>Toegestaan</h5></th>
               <td>
                 <div class="input-daterange input-group" id="valid-range">
-                  <span class="input-group-addon bg-primary b-0 text-white">Van</span>
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-primary b-0 text-light border-primary">
+                      Van
+                    </span>
+                  </div>
                   <input type="text" class="form-control" name="valid_from" 
-                      value="{% if rfid_model['valid_from'] is not none %}{{ rfid_model['valid_from'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
-                  <button class="input-group-addon bg-dark b-0 text-white"
-                    onclick="$('input[name=valid_from]').val(''); return false;">
+                         value="{% if rfid_model['valid_from'] is not none %}{{ rfid_model['valid_from'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
+                  <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                          onclick="$('input[name=valid_from]').val(''); return false;"
+                          data-toggle="tooltip" 
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="<em>Geen startdatum</em>"
+                          >
                     <i class="far fa-trash-alt"></i>
                   </button>    
-                  <span class="input-group-addon bg-primary b-0 text-white">Tot</span>
+                  <div class="input-group-append">
+                    <span class="input-group-text bg-primary b-0 text-light border-dark">
+                        Tot
+                    </span>
+                  </div>
                   <input type="text" class="form-control" name="valid_until"
-                      value="{% if rfid_model['valid_until'] is not none %}{{ rfid_model['valid_until'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
-                  <button class="input-group-addon bg-dark b-0 text-white"
-                    onclick="$('input[name=valid_until]').val(''); return false;">
-                    <i class="far fa-trash-alt"></i>
-                  </button>    
+                         value="{% if rfid_model['valid_until'] is not none %}{{ rfid_model['valid_until'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
+                  <div class="input-group-append">
+                    <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                            onclick="$('input[name=valid_until]').val(''); return false;"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="<em>Geen einddatum</em>"
+                            >
+                      <i class="far fa-trash-alt"></i>
+                    </button>    
+                  </div>
                 </div>
               </td>
             </tr>
@@ -526,9 +573,14 @@
                       data-width="100"
                     />
                   </span>
-                  <span id="odo_1" class="input-group-addon" style="width: 10%; background-color: #36404a; border: 0px;">&nbsp;</span>
-                  <span id="odo_2" class="input-group-addon" style="text-align: left; background-color: #36404a; border: 0px; font-style: italic;"><i class="mdi mdi-alert-outline"></i>&nbsp;Alleen beschikbaar voor Tesla</span>
-                  <span id="odo_3" class="input-group-addon" style="width: 100%; background-color: #36404a; border: 0px;">&nbsp;</span>
+                  <div class="input-group-append">
+                    <span id="odo_1" class="input-group-text bg-dark b-0 pl-4 text-light border-primary">
+                      <i class="mdi mdi-alert-outline"></i>
+                    </span>
+                    <span id="odo_2" class="input-group-text bg-dark b-0 pl-0 text-light border-primary">
+                      Alleen beschikbaar voor Tesla
+                    </span>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -536,7 +588,11 @@
               <th><h5>E-mail</h5></th>
               <td>
                 <div class="input-group">
-                  <span class="input-group-addon"><i class="mdi mdi-account"></i></span>
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
+                      <i class="mdi mdi-account"></i>
+                    </span>
+                  </div>
                   <input class="form-control" id="oauth_email" name="oauth_email" type="text" placeholder="E-mail" value="">
                 </div>
               </td>
@@ -545,9 +601,14 @@
               <th><h5>Wachtwoord</h5></th>
               <td>
                 <div class="input-group">
-                  <span class="input-group-addon"><i class="mdi mdi-radar"></i></span>
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
+                      <i class="mdi mdi-radar"></i>
+                    </span>
+                  </div>
                   <input class="form-control" id="oauth_password" name="oauth_password" type="password" placeholder="Password" value="">
-                  <span class="input-group-btn">
+
+                  <span class="input-group-append">
                     <button 
                         id="show_oauth_password"
                         type="button" 
@@ -610,43 +671,44 @@
               <th><h5 style="background-color: #36404a !important;"><i class="fas fa-key"></i> OAuth token</h5></th>
               <td>
                 <div class="input-group">
-                  <span id="oauth_token" class="input-group-addon input-text-only">
-                    <i class="fas fa-key"></i>&nbsp;<span id="oauth_token_status"></span>
-                  </span>
-                  <span class="input-group-addon info-button-style"
-                        data-toggle="tooltip" 
-                        data-placement="bottom" 
-                        data-html="true" 
-                        title="De autorisatie wordt bij gebruik automatisch verlengt. De autorisatie verloopt automatisch als de pas 45 dagen niet is gebruikt."
-                        >
-                        <i class="fas fa-info-circle"></i>
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-dark b-0 text-secondary border-dark">
+                      <i class="fas fa-key"></i>
                     </span>
-                  <span class="input-group-btn">
-                    <button 
-                        id="revoke_token"
-                        type="button" 
-                        class="btn waves-effect waves-light btn-primary" 
-                        data-toggle="tooltip" 
-                        data-placement="bottom" 
-                        data-html="true" 
-                        title="<em>Klik om de het autorisatie in te trekken</em>"
-                        >
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                  </span>
-                  <span class="input-group-btn">
-                    <button 
-                        id="refresh_token"
-                        type="button" 
-                        class="btn waves-effect waves-light btn-primary" 
-                        data-toggle="tooltip" 
-                        data-placement="bottom" 
-                        data-html="true" 
-                        title="<em>Klik om de het token te refreshen</em>"
-                        >
-                        <i class="fas fa-redo-alt"></i>
-                    </button>
-                  </span>
+                  </div>
+                  <input type="text" class="form-control border-dark" disabled id="oauth_token_status">
+                  <div class="input-group-append info-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="De autorisatie wordt bij gebruik automatisch verlengt. De autorisatie verloopt automatisch als de pas 45 dagen niet is gebruikt."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                  <div class="input-group-append">
+                    <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                            id="revoke_token"
+                            type="button" 
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="<em>Klik om de het autorisatie in te trekken</em>"
+                            >
+                      <i class="far fa-trash-alt"></i>
+                    </button>                    
+                    <button class="pl-3 pr-3 btn btn-primary text-white"
+                            id="refresh_token"
+                            type="button" 
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="<em>Klik om de het token te refreshen</em>"
+                            >
+                      <i class="fas fa-redo-alt"></i>
+                    </button>                    
+                  </div>
                 </div>
               </td>
             </tr>

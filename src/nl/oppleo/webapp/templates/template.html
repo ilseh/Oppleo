@@ -179,7 +179,14 @@
             background-image: none;
             border-color: #ffaa00;
         }
-
+        .form-control {
+            color: #ffffff !important;
+            background-color: #434f5c;
+        }
+        .form-control:disabled, .form-control[readonly] {
+            color: #3bafda !important;
+            background-color: rgba(0,0,0,.05) !important;
+        }
         .badge {
             display: inline-block;
             font-size: 11px;
@@ -270,7 +277,12 @@
             border-color: #343a40;
             color: #343a40
         }
-
+        .table {
+            color: #98a6ad;
+        }
+        .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+            line-height: 1.1;
+        }
         </style>
 
         {% endblock %}

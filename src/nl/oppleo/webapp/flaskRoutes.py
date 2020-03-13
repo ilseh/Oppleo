@@ -886,6 +886,13 @@ def TeslaApi_RevokeOAuth(token=None):
 @flaskRoutes.route("/update_settings/<path:param>/<path:value>", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
 def update_settings(param=None, value=None):
+
+    # With an open charge session, there params are not allowed to change
+    if param in ['chargerName', 'chargerTariff'] and \
+       ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerName):
+        return jsonify({ 'status': 409, 'param': param, 'reason': 'Er is een laadsessie actief.' })
+
+
     if (param == 'offpeakEnabled'):
         oppleoConfig.offpeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         ophm = OffPeakHoursModel()
@@ -946,6 +953,22 @@ def update_settings(param=None, value=None):
         OffPeakHoursModel.deleteId(value)
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
+    # chargerName
+    if (param == 'chargerName') and isinstance(value, str) and len(value) > 0:
+        oppleoConfig.chargerName = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # factorWhkm
+    if (param == 'factorWhkm') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.factorWhkm = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # chargerTariff
+    if (param == 'chargerTariff') and (isinstance(value, float) or RepresentsFloat(value)):
+        oppleoConfig.chargerTariff = float(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
 
@@ -958,6 +981,12 @@ def RepresentsInt(s):
     except ValueError:
         return False
 
+def RepresentsFloat(s):
+    try: 
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 
 
@@ -968,5 +997,13 @@ def test():
     global flaskRoutesLogger, oppleoConfig
 
     return render_template("test.html",
+            oppleoconfig=oppleoConfig
+            )
+
+@flaskRoutes.route("/test2/")
+def test2():
+    global flaskRoutesLogger, oppleoConfig
+
+    return render_template("test2.html",
             oppleoconfig=oppleoConfig
             )

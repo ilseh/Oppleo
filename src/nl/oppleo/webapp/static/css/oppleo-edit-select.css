@@ -1,0 +1,75 @@
+button {
+    cursor: pointer;
+  }
+  .btn-low-key-warning {
+      color: #868e96;
+      background-color: transparent;
+      background-image: none;
+      border-color: #868e96;
+  }
+  .btn-low-key-warning:hover, .btn-low-key-warning:focus, .btn-low-key-warning:active, .btn-low-key-warning.active, .open>.dropdown-toggle.btn-low-key-warning {
+      color: #fff;
+      background-color: #ffaa00;
+      background-image: none;
+      border-color: #ffaa00;
+  }
+  .form-control {
+    color: #ffffff !important;
+    background-color: #434f5c;
+  }
+  .form-control:disabled, .form-control[readonly] {
+    color: #3bafda !important;
+    background-color: rgba(0,0,0,.05) !important;
+  }
+  .input-group {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap; // For form validation feedback
+    align-items: stretch;
+    width: 100%;
+  }
+  span.input-group-text {
+  }
+  span#text_value {
+    color: #3bafda;
+    border: 0px;
+    background-color: #343a40;
+  }
+  span#info_text {
+    cursor: help;
+    border-color: rgb(76, 90, 103) !important;
+  }
+
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #3bafda;
+    background-color: #ffaa00 !important;
+    color: white;
+  }
+  .select2-dropdown {
+      background-color: #3d4853 !important;
+      color: #98a6ad !important;
+      border: 1px solid #4c5a67;
+  }             
+  .select2-container--default .select2-selection--single {
+      background-color: #3d4853 !important;
+      color: #98a6ad !important;
+  }
+  .select2-selection__rendered {
+      color: #98a6ad !important;
+  }            
+  .select2-container--default .select2-selection--single {
+      border: 1px solid #4c5a67;
+  }
+  .select2-container--default .select2-results__option[aria-selected=true] {
+      background-color: #00b19d;
+      background-color: #ffaa00;
+      background-color: #3bafda;
+      color: white;
+  }
+  .select2-search__field {
+      background-color: #434f5c !important;
+      color: white;
+  }     
+  .select2-container .select2-selection--single {
+    height: 100%;
+  }  

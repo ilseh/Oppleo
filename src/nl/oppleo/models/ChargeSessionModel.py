@@ -156,8 +156,8 @@ class ChargeSessionModel(Base):
     def get_latest_charge_session(device, rfid=None) -> ChargeSessionModel:
         db_session = DbSession()
         # Build query to get id of latest chargesession for this device.
-        qry_latest_id = db_session.query(func.max(ChargeSessionModel.id)).filter(ChargeSessionModel.energy_device_id ==
-                                                                                 device)
+        qry_latest_id = db_session.query(func.max(ChargeSessionModel.id)) \
+                                  .filter(ChargeSessionModel.energy_device_id == device)
         # If rfid is specified, expand the query with a filter on rfid.
         if rfid is not None:
             qry_latest_id = qry_latest_id.filter(ChargeSessionModel.rfid == str(rfid))
@@ -189,6 +189,23 @@ class ChargeSessionModel(Base):
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
         return open_charge_session_for_device
+
+    @staticmethod
+    def has_open_charge_session_for_device(device) -> bool:
+        db_session = DbSession()
+
+        open_charge_session_for_device = None
+        try:
+            # Build query to get id of latest chargesession for this device.
+            open_charge_session_for_device = db_session.query(ChargeSessionModel) \
+                            .filter(ChargeSessionModel.energy_device_id == device) \
+                            .filter(ChargeSessionModel.end_time == None) \
+                            .order_by(ChargeSessionModel.start_time.desc()) \
+                            .first()    # Call first to return an object instead of an array
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+        return open_charge_session_for_device != None
 
 
     def __repr(self) -> str:
