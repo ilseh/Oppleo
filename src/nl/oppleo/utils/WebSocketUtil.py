@@ -1,10 +1,6 @@
     
 import logging
 
-from nl.oppleo.config.OppleoConfig import OppleoConfig
-
-oppleoConfig = OppleoConfig()
-
 class WebSocketUtil(object):
     logger = logging.getLogger('nl.oppleo.utils.WebSocketUtil')
 
@@ -13,10 +9,15 @@ class WebSocketUtil(object):
                authenticated clients
     """ 
     @staticmethod
-    def emit(event='event', data=None, status=None, id=None, namespace=None, public=False):
-        global oppleoConfig
+    def emit(wsEmitQueue=None,      \
+             event='event',         \
+             data=None,             \
+             status=None,           \
+             id=None,               \
+             namespace=None,        \
+             public=False):
 
-        if oppleoConfig.wsEmitQueue is not None:
+        if wsEmitQueue is not None:
             msg = {}
             msg['event'] = event
             """
@@ -33,6 +34,6 @@ class WebSocketUtil(object):
             msg['namespace'] = namespace
             msg['public'] = public
             WebSocketUtil.logger.debug(f'Submit msg to websocket emit queue ... {msg}')
-            oppleoConfig.wsEmitQueue.put(msg)
+            wsEmitQueue.put(msg)
         else:
             WebSocketUtil.logger.debug('Websocket emit queue not instantiated')

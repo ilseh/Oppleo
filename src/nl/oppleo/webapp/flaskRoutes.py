@@ -324,7 +324,10 @@ def restart():
        check_password_hash(current_user.password, form.password.data):
         flaskRoutesLogger.debug('Restart requested and authorized. Restarting in 2 seconds...')
         # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
-        os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
+        try:
+            os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
+        except Exception as e:
+            pass
         return render_template("restarting.html", 
                     oppleoconfig=oppleoConfig
                     )
@@ -897,14 +900,15 @@ def update_settings(param=None, value=None):
         oppleoConfig.offpeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         ophm = OffPeakHoursModel()
         WebSocketUtil.emit(
+                wsEmitQueue=oppleoConfig.wsEmitQueue,
                 event='off_peak_status_update', 
-                    id=oppleoConfig.chargerName,
-                    data={ 'isOffPeak': ophm.is_off_peak_now(),
-                           'offPeakEnabled': oppleoConfig.offpeakEnabled,
-                           'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
-                    },
-                    namespace='/charge_session',
-                    public=True
+                id=oppleoConfig.chargerName,
+                data={ 'isOffPeak': ophm.is_off_peak_now(),
+                       'offPeakEnabled': oppleoConfig.offpeakEnabled,
+                       'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
+                },
+                namespace='/charge_session',
+                public=True
                 )
         return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.offpeakEnabled })
 
@@ -973,6 +977,19 @@ def update_settings(param=None, value=None):
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
 
 
+# Always returns json
+@flaskRoutes.route("/system_status/", methods=["GET"])
+@authenticated_resource
+def systemStatus():
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/system_status/')
+
+    return jsonify({
+        'status': 200, 
+        'restartRequired': oppleoConfig.restartRequired, 
+        'startTime': oppleoConfig.upSinceDatetimeStr
+        })
+
 
 def RepresentsInt(s):
     try: 
@@ -987,8 +1004,6 @@ def RepresentsFloat(s):
         return True
     except ValueError:
         return False
-
-
 
 
 

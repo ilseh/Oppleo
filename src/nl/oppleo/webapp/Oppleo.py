@@ -78,6 +78,7 @@ from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReader import EvseReader
 
 from nl.oppleo.webapp.flaskRoutes import flaskRoutes
+from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
 
 # Create an emit queue, for other Threads to communicate to th ews emit background task
@@ -103,7 +104,7 @@ def load_user(username):
     return User.get(username)
 
 
-@appSocketIO.on("connect", namespace="/usage")
+@appSocketIO.on("connect", namespace="/")
 def connect():
     global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
     with threadLock:
@@ -120,10 +121,23 @@ def connect():
                     oppleoConfig.connectedClients \
                     )
                 )
-    emit("server_status", "server_up")
+
+    WebSocketUtil.emit(
+            wsEmitQueue=oppleoConfig.wsEmitQueue,
+            event='update', 
+            id=oppleoConfig.chargerName,
+            data={
+                "restartRequired"   : oppleoConfig.restartRequired,
+                "upSince"           : oppleoConfig.upSinceDatetimeStr,
+                "clientsConnected"  : len(oppleoConfig.connectedClients)
+            },
+            namespace='/system_status',
+            public=False
+        )
 
 
-@appSocketIO.on("disconnect", namespace="/usage")
+
+@appSocketIO.on("disconnect", namespace="/")
 def disconnect():
     global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
     with threadLock:
@@ -288,6 +302,21 @@ if __name__ == "__main__":
             oppleoConfig.useReloader
             )
         )
+
+    WebSocketUtil.emit(
+            wsEmitQueue=oppleoConfig.wsEmitQueue,
+            event='update', 
+            id=oppleoConfig.chargerName,
+            data={
+                "restartRequired": oppleoConfig.restartRequired,
+                "upSince": oppleoConfig.upSinceDatetimeStr,
+                "clientsConnected"  : len(oppleoConfig.connectedClients)
+            },
+            namespace='/system_status',
+            public=False
+        )
+
+
     appSocketIO.run(app, 
 #                    port=oppleoConfig.httpPort, 
                     port=5000, 

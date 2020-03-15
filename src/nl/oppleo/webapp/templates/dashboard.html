@@ -11,12 +11,6 @@
   <script src="{{ url_for('static', filename='plugins/jquery-circliful/js/jquery.circliful.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/jquery-circliful/js/jquery.circliful.min.js') }}"></script>
   
-  <!-- Bootstrap switch button -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
-  <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
-
-  <!-- Socket IO -->
-  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
   <style>
   span.badge-primary {
@@ -316,6 +310,7 @@
         // Remove spinner?
       })
     }
+
 
     var socket = undefined
     function startWebSocket() {

@@ -843,6 +843,8 @@
                               <td class="text-primary">{{ diag['threading']['active_count'] }}</td>
                             </tr>
                             {% endif %}
+
+
                             {% if ('threading' in diag and 'enum' in diag['threading']) %}
                             {% for thread in diag['threading']['enum'] %}
                             <tr>
@@ -855,6 +857,18 @@
                             </tr>
                             {% endfor %}
                             {% endif %}
+
+
+                            {% for sid, connectedClient in oppleoconfig.connectedClients.items() %}
+                            <tr>
+                              <td class="text-dark">Connected WebClient:</td>
+                              <td class="text-primary">{{ sid }}</td>
+                            </tr>
+                            {% endfor %}
+
+
+
+
                             <tr>
                               <th colspan="2">&nbsp;</th>
                             </tr>

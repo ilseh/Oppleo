@@ -91,7 +91,7 @@ class ChargerHandlerThread(object):
 
     def start(self):
         self.stop_event.clear()
-        self.logger.debug('Launching background task...')
+        self.logger.debug('Launching Threads...')
 
         self.logger.debug('start_background_task() - evseReaderLoop')
         # self.evse_reader_thread = self.appSocketIO.start_background_task(self.evse_reader_thread)
@@ -286,6 +286,7 @@ class ChargerHandlerThread(object):
         if self.appSocketIO is not None:
             self.logger.debug(f'Send msg charge_session_started via websocket ...{charge_session.to_str()}')
             WebSocketUtil.emit(
+                    wsEmitQueue=oppleoConfig.wsEmitQueue,
                     event='charge_session_started', 
                     id=oppleoConfig.chargerName,
                     data=charge_session.to_str(),
@@ -315,18 +316,8 @@ class ChargerHandlerThread(object):
         # Emit websocket update
         if self.appSocketIO is not None:
             self.logger.debug(f'Send msg charge_session_ended via websocket ...{charge_session.to_str()}')
-            """
-            self.appSocketIO.emit(
-                    'charge_session_ended', 
-                    { 
-                        'id': oppleoConfig.chargerName,
-                        'data': charge_session.to_str() 
-                    }, 
-                    namespace='/charge_session'
-                    )
-            """
-            from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
             WebSocketUtil.emit(
+                    wsEmitQueue=oppleoConfig.wsEmitQueue,
                     event='charge_session_ended', 
                     id=oppleoConfig.chargerName,
                     data=charge_session.to_str(),
@@ -400,18 +391,8 @@ class ChargerHandlerThread(object):
                 self.is_status_charging = True
                 if self.appSocketIO is not None:
                     self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
-                    """
-                    self.appSocketIO.emit(
-                            'charge_session_status_update', 
-                            { 
-                                'status': evse_state, 
-                                'id': oppleoConfig.chargerName
-                            }, 
-                            namespace='/charge_session'
-                            )
-                    """
-                    from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
                     WebSocketUtil.emit(
+                            wsEmitQueue=oppleoConfig.wsEmitQueue,
                             event='charge_session_status_update', 
                             status=evse_state, 
                             id=oppleoConfig.chargerName, 
@@ -429,18 +410,8 @@ class ChargerHandlerThread(object):
                 self.logger.debug("Charging is stopped")
                 if self.appSocketIO is not None:
                     self.logger.debug(f'Send msg charge_session_status_update via websocket ...{evse_state}')
-                    """
-                    self.appSocketIO.emit(
-                            'charge_session_status_update', 
-                            {   # INACTIVE IS ALSO CONNECTED
-                                'status': EvseState.EVSE_STATE_CONNECTED, 
-                                'id': oppleoConfig.chargerName
-                            }, 
-                            namespace='/charge_session'
-                            )
-                    """
-                    from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
                     WebSocketUtil.emit(
+                            wsEmitQueue=oppleoConfig.wsEmitQueue,
                             event='charge_session_status_update', 
                             # INACTIVE IS ALSO CONNECTED
                             status=EvseState.EVSE_STATE_CONNECTED, 
@@ -531,6 +502,7 @@ class ChargerHandlerThread(object):
                     self.logger.debug(f'Send msg {self.counter} for charge_session_data_update via websocket...')
                     # Emit only to authenticated users, not public
                     WebSocketUtil.emit(
+                            wsEmitQueue=oppleoConfig.wsEmitQueue,
                             event='charge_session_data_update', 
                             id=oppleoConfig.chargerName,
                             data=open_charge_session_for_device.to_str(), 

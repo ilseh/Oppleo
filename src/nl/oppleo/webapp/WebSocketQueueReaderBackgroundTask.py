@@ -44,8 +44,6 @@ class WebSocketQueueReaderBackgroundTask(object):
                 # Emit as web socket update
                 self.counter += 1
                 self.logger.debug(f'Send msg {self.counter} via websocket ...{msg}')
-                # self.appSocketIO.emit('status_update', { 'data': 'whatever' }, namespace='/usage')
-                # self.appSocketIO.emit('status_update1', { 'data': msg['data'] }, namespace='/usage')
                 m_body = {}
                 if 'data' in msg and msg['data'] is not None:
                     m_body['data'] = msg['data']

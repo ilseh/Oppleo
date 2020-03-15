@@ -77,14 +77,15 @@ class PeakHoursMonitorThread(object):
                     if (wasOffPeak != evse.isOffPeak):
                         # Send change notification
                         WebSocketUtil.emit(
+                                wsEmitQueue=oppleoConfig.wsEmitQueue,
                                 event='off_peak_status_update', 
-                                    id=oppleoConfig.chargerName,
-                                    data={ 'isOffPeak': evse.isOffPeak,
+                                id=oppleoConfig.chargerName,
+                                data={ 'isOffPeak': evse.isOffPeak,
                                         'offPeakEnabled': oppleoConfig.offpeakEnabled,
                                         'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
                                     },
-                                    namespace='/charge_session',
-                                    public=True
+                                namespace='/charge_session',
+                                public=True
                                 )
                     self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( \
                                     wasOffPeak, \

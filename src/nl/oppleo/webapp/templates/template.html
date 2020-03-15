@@ -30,6 +30,13 @@
         <!-- Minton template -->
         <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
 
+        <!-- Bootstrap switch button -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
+        <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
+
+        <!-- Socket IO -->
+        <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
         <!-- Fontawesome -->
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
 
@@ -91,6 +98,62 @@
                 dObj.setSeconds(time[2]) 
                 return dObj
             }
+            function getSystemStatus( ) {
+                console.log(timestamp() + ' getSystemStatus()')
+                $.ajax({
+                    type		  : 'GET',
+                    url			  : '/system_status',
+                    dataType	: 'json',
+                    encode		: true,
+                    headers   : { 'ignore-login-next': 'true' }
+                }) // using the done promise callback
+                .done(function(result) {
+                    // log data to the console so we can see
+                    console.log(result)
+                    if (result.restartRequired) {
+                        // Red
+                        $('#topnav .topbar-main').css('background-color', '#ef5350')
+                        $('span.logo-large').html('<i class="fas fa-charging-station"></i> Herstart vereist')
+                    } 
+                    // On reload no need to make it blue, thats default
+                })
+                .fail(function(result) {
+                    console.log('getSystemStatus() FAILED')
+                })
+                .always(function() {
+                    // Remove spinner?
+                })
+            }    
+            function startSystemStatusWebSocket() {
+                // start up the SocketIO connection to the server on namespace /usage
+                let systemStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/system_status')
+                // this is a callback that triggers when the "my response" event is emitted by the server.
+                systemStatusSocket.on('update', function(msg) {
+                    console.log('Received: ' + JSON.stringify(msg))
+                    if (msg.id == '{{ oppleoconfig.chargerName }}') {
+                        if (msg.data.restartRequired) {
+                            // Red
+                            $('#topnav .topbar-main').css('background-color', '#ef5350')
+                            $('span.logo-large').html('<i class="fas fa-charging-station"></i> Herstart vereist')
+                        } else {
+                            // Blue
+                            $('#topnav .topbar-main').css('background-color', '#3bafda')
+                            $('span.logo-large').html('<i class="fas fa-charging-station"></i> EV Laadpunt')
+                        }
+                    }
+                })
+            }
+
+            jQuery(document).ready(function () {
+                console.log(timestamp() + " file load completed")
+                $('input#enabled').bootstrapToggle()
+                $('[data-toggle=tooltip]').tooltip({ 
+                    boundary: 'window', 
+                    trigger : 'hover'   // Allow button clicks
+                })
+                startSystemStatusWebSocket()
+                getSystemStatus()
+                })
         </script>
 
         <style>

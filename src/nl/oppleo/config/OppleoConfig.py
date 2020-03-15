@@ -1,9 +1,11 @@
 
 from configparser import RawConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
+from datetime import datetime
 import os
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.config import Logger
+from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
 """
  Instantiate an OppleoConfig() object. This will be a Singleton
@@ -92,6 +94,8 @@ class OppleoConfig(object, metaclass=Singleton):
     # OppleoConfig Logger
     ___logger = None
     __chargerConfigModel = None
+    __restartRequired = False
+    __upSinceDatetime = datetime.now()
 
 
     """
@@ -128,7 +132,8 @@ class OppleoConfig(object, metaclass=Singleton):
 
     @chargerName.setter
     def chargerName(self, value):
-        self.__chargerConfigModel.setAndSave('charger_name', value)
+ #       self.__chargerConfigModel.setAndSave('charger_name', value)
+        self.restartRequired = True
 
     """
         chargerTariff --> charger_tariff
@@ -156,6 +161,7 @@ class OppleoConfig(object, metaclass=Singleton):
     def generateNewSecretKeys(self):
         self.secretKey = os.urandom(24)
         self.csrfSecretKey = os.urandom(24)
+        self.restartRequired = True
 
     """
         secretKey --> secret_key
@@ -167,6 +173,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @secretKey.setter
     def secretKey(self, value):
         self.__chargerConfigModel.setAndSave('secret_key', value)
+        self.restartRequired = True
 
     """
         csrfSecretKey --> wtf_csrf_secret_key
@@ -178,6 +185,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @csrfSecretKey.setter
     def csrfSecretKey(self, value):
         self.__chargerConfigModel.setAndSave('wtf_csrf_secret_key', value)
+        self.restartRequired = True
 
     """
         httpHost --> http_host
@@ -189,6 +197,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @httpHost.setter
     def httpHost(self, value):
         self.__chargerConfigModel.setAndSave('http_host', value)
+        self.restartRequired = True
 
     """
         httpPort --> http_port
@@ -200,6 +209,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @httpPort.setter
     def httpPort(self, value):
         self.__chargerConfigModel.setAndSave('http_port', value)
+        self.restartRequired = True
 
 
     """
@@ -212,6 +222,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @useReloader.setter
     def useReloader(self, value):
         self.__chargerConfigModel.setAndSave('use_reloader', value)
+        self.restartRequired = True
 
     """
         factorWhkm --> factor_whkm
@@ -234,6 +245,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @modbusInterval.setter
     def modbusInterval(self, value):
         self.__chargerConfigModel.setAndSave('modbus_interval', value)
+        self.restartRequired = True
 
     """
         autoSessionEnabled --> autosession_enabled
@@ -289,7 +301,8 @@ class OppleoConfig(object, metaclass=Singleton):
     @pulseLedMin.setter
     def pulseLedMin(self, value):
         self.__chargerConfigModel.setAndSave('pulseled_min', value)
- 
+        self.restartRequired = True
+
     """
         pulseLedMax --> pulseled_max
     """
@@ -300,6 +313,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @pulseLedMax.setter
     def pulseLedMax(self, value):
         self.__chargerConfigModel.setAndSave('pulseled_max', value)
+        self.restartRequired = True
 
     """
         gpioMode --> gpio_mode
@@ -311,6 +325,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @gpioMode.setter
     def gpioMode(self, value):
         self.__chargerConfigModel.setAndSave('gpio_mode', value, ['BCM', 'BOARD'])
+        self.restartRequired = True
 
     """
         pinLedRed --> pin_led_red
@@ -322,7 +337,8 @@ class OppleoConfig(object, metaclass=Singleton):
     @pinLedRed.setter
     def pinLedRed(self, value):
         self.__chargerConfigModel.setAndSave('pin_led_red', value)
- 
+        self.restartRequired = True
+
     """
         pinLedGreen --> pin_led_green
     """
@@ -333,6 +349,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @pinLedGreen.setter
     def pinLedGreen(self, value):
         self.__chargerConfigModel.setAndSave('pin_led_green', value)
+        self.restartRequired = True
 
     """
         pinLedBlue --> pin_led_blue
@@ -344,6 +361,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @pinLedBlue.setter
     def pinLedBlue(self, value):
         self.__chargerConfigModel.setAndSave('pin_led_blue', value)
+        self.restartRequired = True
 
     """
         pinBuzzer --> pin_buzzer
@@ -355,6 +373,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @pinBuzzer.setter
     def pinBuzzer(self, value):
         self.__chargerConfigModel.setAndSave('pin_buzzer', value)
+        self.restartRequired = True
 
 
     """
@@ -367,6 +386,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @pinEvseSwitch.setter
     def pinEvseSwitch(self, value):
         self.__chargerConfigModel.setAndSave('pin_evse_switch', value)
+        self.restartRequired = True
 
     """
         pinEvseLed --> pin_evse_led
@@ -378,13 +398,7 @@ class OppleoConfig(object, metaclass=Singleton):
     @pinEvseLed.setter
     def pinEvseLed(self, value):
         self.__chargerConfigModel.setAndSave('pin_evse_led', value)
-
-
-
-    # Raspberry PINs - Buzzer - PIN 29/ GPIO5
-    pinEvseSwitch = 5
-    # Raspberry PINs - Buzzer - PIN 31/ GPIO6
-    pinEvseLed = 6
+        self.restartRequired = True
 
 
     """
@@ -441,6 +455,57 @@ class OppleoConfig(object, metaclass=Singleton):
     @logFile.setter
     def logFile(self, value):
         self.__chargerConfigModel.setAndSave('log_file', value)
+        self.restartRequired = True
+
+
+    """
+        restartRequired (no database persistence)
+    """
+    @property
+    def restartRequired(self):
+        return self.__restartRequired
+
+    @restartRequired.setter
+    def restartRequired(self, value):
+        try: 
+            self.__restartRequired = bool(value)
+            if (bool(value)):
+                # Announce
+                WebSocketUtil.emit(
+                        wsEmitQueue=self.wsEmitQueue,
+                        event='update', 
+                        id=self.chargerName,
+                        data={
+                            "restartRequired"   : self.__restartRequired,
+                            "upSince"           : self.upSinceDatetimeStr,
+                            "clientsConnected"  : len(self.connectedClients)
+                        },
+                        namespace='/system_status',
+                        public=False
+                    )
+
+        except ValueError:
+            self.___logger.warning("Value {} could not be interpreted as bool".format(value), exc_info=True)
+
+    """
+        upSinceDatetime (set on startup, no setter)
+    """
+    @property
+    def upSinceDatetime(self):
+        return self.__upSinceDatetime
+
+    @upSinceDatetime.setter
+    def upSinceDatetime(self, value):
+        raise NotImplementedError('upSinceDatetime set at boot.')
+
+    @property
+    def upSinceDatetimeStr(self):
+        return self.__upSinceDatetime.strftime("%d/%m/%Y, %H:%M:%S")
+
+    @upSinceDatetimeStr.setter
+    def upSinceDatetimeStr(self, value):
+        raise NotImplementedError('upSinceDatetime set at boot.')
+
 
 
 

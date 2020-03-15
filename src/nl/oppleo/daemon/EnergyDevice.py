@@ -1,10 +1,12 @@
 import time
 import logging
 
+from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.utils.GenericUtil import GenericUtil
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+oppleoConfig = OppleoConfig()
 
 SECONDS_IN_HOUR = 60 * 60
 
@@ -75,6 +77,7 @@ class EnergyDevice():
                 self.logger.debug(f'Queue msg {self.counter} to be send via websocket ...{device_measurement.to_str()}')
                 # Info heeft actuele kWh meter gegevens, geen laadpas info, dus public
                 WebSocketUtil.emit(
+                        wsEmitQueue=oppleoConfig.wsEmitQueue,
                         event='status_update', 
                         data=device_measurement.to_str(), 
                         namespace='/usage',

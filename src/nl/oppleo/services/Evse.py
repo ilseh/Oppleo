@@ -104,6 +104,7 @@ class Evse(object, metaclass=Singleton):
                         )
             self.evse.switch_on()
             WebSocketUtil.emit(
+                    wsEmitQueue=oppleoConfig.wsEmitQueue,
                     event='evse_enabled', 
                     id=oppleoConfig.chargerName,
                     namespace='/evse_status',
@@ -118,6 +119,7 @@ class Evse(object, metaclass=Singleton):
 
         self.evse.switch_off()
         WebSocketUtil.emit(
+                wsEmitQueue=oppleoConfig.wsEmitQueue,
                 event='evse_disabled', 
                 id=oppleoConfig.chargerName,
                 namespace='/evse_status',
