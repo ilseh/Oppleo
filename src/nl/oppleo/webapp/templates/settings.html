@@ -9,11 +9,6 @@
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
-  <!-- Bootstrap switch button -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
-  <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
-
-
   <!-- Datepicker -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
@@ -271,6 +266,14 @@
       $('input#autoSessionCondenseSameOdometer').bootstrapToggle()
       $('input#autoSessionCondenseSameOdometer').change(function() {
         updateSettings( 'autoSessionCondenseSameOdometer', $(this).prop('checked') )
+      })
+      // Add 'bootstrapToggle_' to the id field, and use the parameter name after
+      $('input[id^=bootstrapToggle]').bootstrapToggle()
+      $('input[id^=bootstrapToggle]').change(function() {
+        updateSettings( 
+          $(this).attr("id").replace('bootstrapToggle_', ''), 
+          $(this).prop('checked')
+        )
       })
       $('td[id^=offPeak] > div:nth-child(2)').each(function( index ) {
         var id = $(this).parent().attr("id")
@@ -763,6 +766,90 @@
                               <td class="text-dark">SQLAlchemy Pool Status:</td>
                               <td class="text-primary">{{ oppleosystemconfig.sqlAlchemyPoolStatus() }}</td>
                             </tr>
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> On Database Failure</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Herstart toestaan:<br />(via webapp)</td>
+                              <td class="text-primary">
+                                <form id="on-db-failure-allow-restart">
+                                  <input type="checkbox" 
+                                    {% if oppleosystemconfig.onDbFailureAllowRestart %}checked{% endif %}
+                                    id="bootstrapToggle_onDbFailureAllowRestart"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Magic Password:<br />(herstart autorisatie)</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="onDbFailureMagicPassword"
+                                prefix=""
+                                value=""
+                                hide="[hashed]"
+                                validation="^[a-zA-Z0-9]{8,}$"
+                                info="Wanneer de database niet beschikbaar is zijn alle instellingen onbekend en is inloggen niet mogelijk. Dit wachtwoord geeft alleen dan autorisatie om de applicatie te herstarten, en eventueel de database URL opnieuw in te stellen."
+                                />
+                            </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Database URL wijzigen:</td>
+                              <td class="text-primary">
+                                <form id="on-db-failure-allow-url-change">
+                                  <input type="checkbox" 
+                                    {% if oppleosystemconfig.onDbFailureAllowUrlChange %}checked{% endif %}
+                                    name="bootstrapToggle_onDbFailureAllowUrlChange"
+                                    id="bootstrapToggle_onDbFailureAllowUrlChange"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Toon Database URL:<br />(DB wachtwoord!)</td>
+                              <td class="text-primary">
+                                <form id="on-db-failure-show-current-url">
+                                  <input type="checkbox" 
+                                    {% if oppleosystemconfig.onDbFailureShowCurrentUrl %}checked{% endif %}
+                                    name="bootstrapToggle_onDbFailureShowCurrentUrl"
+                                    id="bootstrapToggle_onDbFailureShowCurrentUrl"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                        
                           </tbody>
                         </table>
                         <img src="{{ url_for('static', filename='images/postgresql.png') }}" width="100px">

@@ -1065,6 +1065,26 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.PYTHONPATH = value
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
+    # onDbFailureAllowRestart
+    if (param == 'onDbFailureAllowRestart') and isinstance(value, str):
+        oppleoSystemConfig.onDbFailureAllowRestart = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # onDbFailureMagicPassword
+    if (param == 'onDbFailureMagicPassword') and isinstance(value, str):
+        oppleoSystemConfig.onDbFailureMagicPassword = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # onDbFailureAllowUrlChange
+    if (param == 'onDbFailureAllowUrlChange') and isinstance(value, str):
+        oppleoSystemConfig.onDbFailureAllowUrlChange = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # onDbFailureShowCurrentUrl
+    if (param == 'onDbFailureShowCurrentUrl') and isinstance(value, str):
+        oppleoSystemConfig.onDbFailureShowCurrentUrl = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
 
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

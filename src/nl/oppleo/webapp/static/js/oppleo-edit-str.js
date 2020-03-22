@@ -124,7 +124,11 @@ class OppleoEditStr extends HTMLElement {
     })
 
     this.$cancelButton.addEventListener('click', () => {
-      this.$input.value = this.prefix + this.$input.getAttribute('placeholder') + this.suffix
+      if (this.hide != undefined) {
+        this.$input.value = this.hide
+      } else {
+        this.$input.value = this.prefix + this.$input.getAttribute('placeholder') + this.suffix        
+      }
       this.$input.setAttribute('readonly', 'readonly')
       this.$info.style.display = "none"
       this.$cancelButton.style.display = "none"
@@ -137,6 +141,9 @@ class OppleoEditStr extends HTMLElement {
     this.$editApplyButton.addEventListener('click', () => {
       if (this.$editApplyButton.innerHTML.indexOf("fa-lock") >= 0) {
         // Unlock
+        if (this.hide != undefined) {
+          this.$input.value = this.value
+        }
         this.$input.value =
           this.$input.value.replace(this.prefix, '').replace(this.suffix, '')
         this.$input.setAttribute('placeholder', this.$input.value)
@@ -155,7 +162,11 @@ class OppleoEditStr extends HTMLElement {
         // Only if valid
         if (this.validate(newValue)) {
           this.$input.setAttribute('placeholder', newValue)
-          this.$input.value = this.prefix + newValue + this.suffix
+          if (this.hide != undefined) {
+            this.$input.value = this.hide
+          } else {
+            this.$input.value = this.prefix + newValue + this.suffix        
+          }
           this.$input.setAttribute('readonly', 'readonly')
           this.$info.style.display = "none"
           this.$cancelButton.style.display = "none"
@@ -220,6 +231,12 @@ class OppleoEditStr extends HTMLElement {
   set info(value) {
     this.setAttribute('info', value)
   }
+  get hide() {
+    return this.getAttribute('hide')
+  }
+  set hide(value) {
+    this.setAttribute('hide', value)
+  }
   static get observedAttributes() {
     return ['prefix', 'value', 'suffix', 'info']
   }
@@ -227,7 +244,13 @@ class OppleoEditStr extends HTMLElement {
     this.render()
   }
   connectedCallback() {
-    this.$input.value = this.prefix + this.value + this.suffix
+    if (this.hide != undefined) {
+      // Hide the value in regualr view
+      this.$input.value = this.hide
+    } else {
+      // Show the value
+      this.$input.value = this.prefix + this.value + this.suffix
+    }
     $(this.$info).tooltip({ boundary: 'window' })
     $(this.$cancelButton).tooltip({ boundary: 'window' })
     $(this.$editApplyButton).tooltip({ boundary: 'window' })

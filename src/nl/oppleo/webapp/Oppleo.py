@@ -341,7 +341,6 @@ except DbException as dbe:
 
         from flask import Flask, render_template, jsonify, redirect, request, url_for, session, current_app
         from werkzeug.serving import run_simple
-        from werkzeug.security import check_password_hash
         limpApp = Flask(__name__)
 
         limpApp.config['EXPLAIN_TEMPLATE_LOADING'] = True
@@ -405,10 +404,14 @@ except DbException as dbe:
 
             # For POST requests, process the form.
             if form.validate_on_submit() and \
-                check_password_hash(oppleoSystemConfig.onDbFailureMagicPassword, form.password.data):
+                oppleoSystemConfig.onDbFailureMagicPasswordCheck(form.password.data):
                 oppleoLogger.debug('Restart requested and authorized.')
-                if oppleoSystemConfig.onDbFailureAllowUrlChange and \
-                    form.extra_field.data != oppleoSystemConfig.DATABASE_URL:
+                if oppleoSystemConfig.onDbFailureAllowUrlChange and               \
+                    ( (oppleoSystemConfig.onDbFailureShowCurrentUrl and           \
+                      form.extra_field.data != oppleoSystemConfig.DATABASE_URL)   \
+                    or ( not oppleoSystemConfig.onDbFailureShowCurrentUrl and     \
+                      form.extra_field.data != '')                                \
+                    ):
                     # New database URL, try that
                     oppleoLogger.debug('Changing DATABASE_URL')
                     oppleoSystemConfig.DATABASE_URL = form.extra_field.data

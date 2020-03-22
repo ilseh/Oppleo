@@ -2,6 +2,7 @@
 from configparser import ConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
 import os
+from werkzeug.security import generate_password_hash, check_password_hash
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
@@ -45,10 +46,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_MAGIC_PASSWORD = 'MAGIC_PASSWORD'
     __INI_MAGIC_PASSWORD = 'MAGIC_PASSWORD'
 
-    __INI_ON_DB_FAILURE_ALLOW_URL_CHANGE = 'on_db_failure_allow_url_change'
-    __INI_ON_DB_FAILURE_SHOW_CURRENT_URL = 'on_db_failure_show_current_url'
     __INI_ON_DB_FAILURE_ALLOW_RESTART = 'on_db_failure_allow_restart'
     __INI_ON_DB_FAILURE_MAGIC_PASSWORD = 'on_db_failure_magic_password'
+    __INI_ON_DB_FAILURE_ALLOW_URL_CHANGE = 'on_db_failure_allow_url_change'
+    __INI_ON_DB_FAILURE_SHOW_CURRENT_URL = 'on_db_failure_show_current_url'
 
 
     """
@@ -68,10 +69,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     __MAGIC_PASSWORD = 'admin'
 
-    __ON_DB_FAILURE_ALLOW_URL_CHANGE = False
-    __ON_DB_FAILURE_SHOW_CURRENT_URL = False
     __ON_DB_FAILURE_ALLOW_RESTART = False
     __ON_DB_FAILURE_MAGIC_PASSWORD = 'pbkdf2:sha256:150000$vK2k1sfM$e2a41cdd7546cd514304611d018a79753011d4db8b13a6292a7e6bce50cba992'
+    __ON_DB_FAILURE_ALLOW_URL_CHANGE = False
+    __ON_DB_FAILURE_SHOW_CURRENT_URL = False
 
     __dbAvailable = False
 
@@ -129,12 +130,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__TESTING = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_TESTING)
 
         self.__PYTHONPATH = self.__getOption__(self.__INI_MAIN, self.__INI_PYTHONPATH)
-        self.__EXPLAIN_TEMPLATE_LOADING = self.__getOption__(self.__INI_MAIN, self.__INI_EXPLAIN_TEMPLATE_LOADING)
+        self.__EXPLAIN_TEMPLATE_LOADING = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_EXPLAIN_TEMPLATE_LOADING)
 
-        self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = self.__getOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE)
-        self.__ON_DB_FAILURE_SHOW_CURRENT_URL = self.__getOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL)
-        self.__ON_DB_FAILURE_ALLOW_RESTART = self.__getOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_ALLOW_RESTART)
+        self.__ON_DB_FAILURE_ALLOW_RESTART = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_ALLOW_RESTART)
         self.__ON_DB_FAILURE_MAGIC_PASSWORD = self.__getOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_MAGIC_PASSWORD)
+        self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE)
+        self.__ON_DB_FAILURE_SHOW_CURRENT_URL = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL)
 
         self.load_completed = True
 
@@ -167,12 +168,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_TESTING] = 'True' if self.__TESTING else 'False'
 
             self.__ini_settings[self.__INI_MAIN][self.__INI_PYTHONPATH] = self.__PYTHONPATH
-            self.__ini_settings[self.__INI_MAIN][self.__INI_EXPLAIN_TEMPLATE_LOADING] = self.__EXPLAIN_TEMPLATE_LOADING
+            self.__ini_settings[self.__INI_MAIN][self.__INI_EXPLAIN_TEMPLATE_LOADING] = 'True' if self.__EXPLAIN_TEMPLATE_LOADING else 'False'
 
-            self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE] = self.__ON_DB_FAILURE_ALLOW_URL_CHANGE
-            self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL] = self.__ON_DB_FAILURE_SHOW_CURRENT_URL
-            self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_ALLOW_RESTART] = self.__ON_DB_FAILURE_ALLOW_RESTART
+            self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_ALLOW_RESTART] = 'True' if self.__ON_DB_FAILURE_ALLOW_RESTART else 'False'
             self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_MAGIC_PASSWORD] = self.__ON_DB_FAILURE_MAGIC_PASSWORD
+            self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE] = 'True' if self.__ON_DB_FAILURE_ALLOW_URL_CHANGE else 'False'
+            self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL] = 'True' if self.__ON_DB_FAILURE_SHOW_CURRENT_URL else 'False'
 
             # Write actial file
             with open(self.__getConfigFile__(), 'w') as configfile:
@@ -260,7 +261,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     """
     @property
     def SQLALCHEMY_TRACK_MODIFICATIONS(self):
-        return self.__SQLALCHEMY_TRACK_MODIFICATIONS
+        return bool(self.__SQLALCHEMY_TRACK_MODIFICATIONS)
 
     @SQLALCHEMY_TRACK_MODIFICATIONS.setter
     def SQLALCHEMY_TRACK_MODIFICATIONS(self, value):
@@ -410,6 +411,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     @onDbFailureAllowUrlChange.setter
     def onDbFailureAllowUrlChange(self, value):
         self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = value
+        self.__writeConfig__()
 
     """
         onDbFailureShowCurrentUrl -> __ON_DB_FAILURE_SHOW_CURRENT_URL
@@ -421,6 +423,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     @onDbFailureShowCurrentUrl.setter
     def onDbFailureShowCurrentUrl(self, value):
         self.__ON_DB_FAILURE_SHOW_CURRENT_URL = value
+        self.__writeConfig__()
 
     """
         onDbFailureAllowRestart -> __ON_DB_FAILURE_ALLOW_RESTART
@@ -432,6 +435,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     @onDbFailureAllowRestart.setter
     def onDbFailureAllowRestart(self, value):
         self.__ON_DB_FAILURE_ALLOW_RESTART = value
+        self.__writeConfig__()
 
     """
         onDbFailureMagicPassword -> __ON_DB_FAILURE_MAGIC_PASSWORD
@@ -442,4 +446,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     @onDbFailureMagicPassword.setter
     def onDbFailureMagicPassword(self, value):
-        self.__ON_DB_FAILURE_MAGIC_PASSWORD = value
+        self.__ON_DB_FAILURE_MAGIC_PASSWORD = generate_password_hash(value)
+        self.__writeConfig__()
+
+    def onDbFailureMagicPasswordCheck(self, value) -> bool:
+        return check_password_hash(self.onDbFailureMagicPassword, value)
