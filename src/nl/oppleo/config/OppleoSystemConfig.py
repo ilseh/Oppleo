@@ -33,6 +33,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __PROCESS_NAME = __INI_MAIN
 
     # Params are all read as lowercase by ConfigParser (!)
+    __INI_SIGNATURE = 'SIGNATURE'
     __INI_DATABASE_URL = 'DATABASE_URL'
     __INI_SQLALCHEMY_TRACK_MODIFICATIONS = 'SQLALCHEMY_TRACK_MODIFICATIONS'
 
@@ -55,6 +56,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     """
         Variables stored in the INI file 
     """
+    __SIGNATURE = os.urandom(24)
     __DATABASE_URL = 'postgresql://username:password@localhost:5432/database'
     __SQLALCHEMY_TRACK_MODIFICATIONS = True
 
@@ -121,6 +123,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__logger.debug('System configuration file has no ' + self.__INI_MAIN + ' section.')
             return
 
+        self.__SIGNATURE = self.__getOption__(self.__INI_MAIN, self.__INI_SIGNATURE)
+
         self.__DATABASE_URL = self.__getOption__(self.__INI_MAIN, self.__INI_DATABASE_URL)
         self.__SQLALCHEMY_TRACK_MODIFICATIONS = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS)
 
@@ -161,6 +165,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             pass
         try:
             # Set the parameters
+            self.__ini_settings[self.__INI_MAIN][self.__INI_SIGNATURE] = self.__SIGNATURE
+
             self.__ini_settings[self.__INI_MAIN][self.__INI_DATABASE_URL] = self.__DATABASE_URL
             self.__ini_settings[self.__INI_MAIN][self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS] = 'True' if self.__SQLALCHEMY_TRACK_MODIFICATIONS else 'False'
 
@@ -242,6 +248,18 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             pool_status = self.sqlalchemy_engine.pool.status()
             self.__logger.info('sqlAlchemyPoolStatus() - %s' % pool_status)
             return pool_status
+
+
+    """
+        SIGNATURE
+    """
+    @property
+    def SIGNATURE(self):
+        return self.__SIGNATURE
+
+    @SIGNATURE.setter
+    def SIGNATURE(self, value):
+        raise ValueError('SIGNATURE cannot be set')
 
 
     """

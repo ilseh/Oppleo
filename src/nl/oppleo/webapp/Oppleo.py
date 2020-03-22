@@ -1,6 +1,5 @@
-import datetime
-import json
 import logging
+from datetime import datetime
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 oppleoSystemConfig = OppleoSystemConfig()
 
@@ -12,7 +11,7 @@ print('Reporting sys.version %s : ' % sys.version)
 oppleoLogger.debug('sys.version %s : ' % sys.version)
 
 from nl.oppleo.exceptions.Exceptions import DbException
-dbErr = False
+
 
 try:
     from nl.oppleo.models.Base import Base
@@ -21,6 +20,8 @@ try:
     from nl.oppleo.config.OppleoConfig import OppleoConfig
     oppleoConfig = OppleoConfig()
     oppleoSystemConfig.chargerName = oppleoConfig.chargerName
+
+    from nl.oppleo.services.PushMessage import PushMessage
 
     from nl.oppleo.utils.GenericUtil import GenericUtil
     try:
@@ -324,6 +325,15 @@ try:
                 public=False
             )
 
+        PushMessage.sendMessage(
+            "Starting", 
+            "Starting Oppleo {} at {}."
+            .format(
+                oppleoConfig.chargerName,
+                datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+                )
+            )
+
         appSocketIO.run(app, 
 #            port=oppleoConfig.httpPort, 
             port=5000, 
@@ -331,6 +341,16 @@ try:
             use_reloader=oppleoConfig.useReloader, 
             host=oppleoConfig.httpHost
             )
+
+        PushMessage.sendMessage(
+            "Terminating", 
+            "Terminating Oppleo {} at {}."
+            .format(
+                oppleoConfig.chargerName,
+                datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+                )
+            )
+
 
 except DbException as dbe:
     # Database could not be loaded - run error page app
@@ -341,15 +361,17 @@ except DbException as dbe:
 
         from flask import Flask, render_template, jsonify, redirect, request, url_for, session, current_app
         from werkzeug.serving import run_simple
+        from nl.oppleo.services.PushMessageProwl import PushMessageProwl
+        import os
+        from flask_wtf.csrf import CSRFProtect
+
         limpApp = Flask(__name__)
 
         limpApp.config['EXPLAIN_TEMPLATE_LOADING'] = True
-        import os
         secret = os.urandom(24)
         limpApp.config['SECRET_KEY'] = secret
         limpApp.config['WTF_CSRF_SECRET_KEY'] = secret
 
-        from flask_wtf.csrf import CSRFProtect
         # https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
         CSRFProtect(limpApp)
 
@@ -436,6 +458,19 @@ except DbException as dbe:
                         errormsg="Het MAGIC wachtwoord is onjuist"
                         )
 
+        # Hardcoded Oppleo Limp mode Prowl apiKey and no ChargerName
+        PushMessageProwl.sendMessage(
+            title="Limp mode", 
+            message="Database exception caused limp mode at {}. [signature: {}]"
+                .format(
+                    datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                    oppleoSystemConfig.SIGNATURE
+                ),
+            priority=PushMessageProwl.priorityHigh,
+            apiKey='325da9b81240111bec9770c9b8bb97dd60373077',   
+            chargerName='Unknown'
+            )
+
         run_simple(
             'localhost', 
             5000, 
@@ -446,3 +481,34 @@ except DbException as dbe:
             )
 
 
+except Exception as e:
+    # Any exception raised - restart app
+    oppleoLogger.error('Exception stopped Oppleo!')
+
+    if __name__ == '__main__':
+        oppleoLogger.error('Restarting Oppleo...')
+
+        import os
+        from nl.oppleo.services.PushMessageProwl import PushMessageProwl
+        restartFailed=False
+
+        # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
+        oppleoLogger.debug('Restarting in 2 seconds...')
+        try:
+            os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
+        except Exception:
+            restartFailed=True
+
+        # Hardcoded Oppleo Limp mode Prowl apiKey and no ChargerName
+        PushMessageProwl.sendMessage(
+            title="Crashed" if restartFailed else "Restarting", 
+            message="An exception caused a restart at {}. (signature: {} Exception details: {})"
+                .format(
+                    datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                    oppleoSystemConfig.SIGNATURE,
+                    str(e)
+                ),
+            priority=PushMessageProwl.priorityHigh,
+            apiKey='325da9b81240111bec9770c9b8bb97dd60373077',   
+            chargerName='Unknown'
+            )

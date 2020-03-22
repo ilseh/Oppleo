@@ -20,5 +20,11 @@ class PushMessage(object):
 
         PushMessage.logger.debug("sendMessage()")
         if oppleoConfig.prowlEnabled:
-            PushMessageProwl.sendMessage(title, message, priority)
+            PushMessageProwl.sendMessage(
+                    title=title, 
+                    message=message, 
+                    priority=priority, 
+                    apiKey=oppleoConfig.prowlApiKey, 
+                    chargerName=oppleoConfig.chargerName
+                    )
 
