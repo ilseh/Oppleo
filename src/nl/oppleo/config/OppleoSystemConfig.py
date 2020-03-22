@@ -55,7 +55,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     """
         Variables stored in the INI file 
     """
-    __DATABASE_URL = None
+    __DATABASE_URL = 'postgresql://username:password@localhost:5432/database'
     __SQLALCHEMY_TRACK_MODIFICATIONS = True
 
     __LOG_FILE = '/tmp/%s.log' % __PROCESS_NAME
@@ -91,7 +91,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     def __init__(self):
         self.__initLogger__()
-        self.__loadConfig__()
+        try:
+            self.__loadConfig__()
+        except FileNotFoundError as fnfe:
+            self.__logger.debug('System configuration file not found! (Creating with defaults)')
+            self.__writeConfig__()
+
 
     """
         returns the absolute path to oppleo.ini
@@ -99,23 +104,17 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     def __getConfigFile__(self):
         return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'oppleo.ini')
 
+
     def __loadConfig__(self):
         self.__logger.debug('Initializing Oppleo System...')
         # Load the ini file
         if (self.__ini_settings is None):
             self.__ini_settings = ConfigParser()
-        try:
-            # The absolute dir the script is in
-            configFile = self.__getConfigFile__()
-            self.__logger.debug('Looking for system configuration file ' + configFile)
-            print('Looking for system configuration file ' + configFile)
-            self.__ini_settings.read_file(open(configFile, "r"))
-        except FileNotFoundError:
-            self.__logger.debug('System configuration file not found!!!')
-            print('System configuration file not found!!!')
-            os._exit(-1)
-            return
-        print('System configuration loaded')
+
+        # The absolute dir the script is in
+        configFile = self.__getConfigFile__()
+        self.__logger.debug('Looking for system configuration file ' + configFile)
+        self.__ini_settings.read_file(open(configFile, "r"))
 
         # Read the ini file
         if not self.__ini_settings.has_section(self.__INI_MAIN):
@@ -138,10 +137,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__ON_DB_FAILURE_SHOW_CURRENT_URL = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL)
 
         self.load_completed = True
+        print('System configuration loaded')
 
 
     def reload(self):
         self.__logger.debug("Reloading...")
+        # File should exist, on init it is created if it didn't exist
         self.__loadConfig__()
 
 
