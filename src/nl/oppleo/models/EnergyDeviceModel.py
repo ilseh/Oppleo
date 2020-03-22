@@ -1,6 +1,8 @@
 from marshmallow import fields, Schema
 
 from nl.oppleo.models.Base import Base, DbSession
+from nl.oppleo.exceptions.Exceptions import DbException
+
 from sqlalchemy import orm, func, Column, String, Integer, Boolean
 
 class EnergyDeviceModel(Base):
@@ -42,6 +44,7 @@ class EnergyDeviceModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
 
     # no delete, only update
@@ -68,6 +71,7 @@ class EnergyDeviceModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
         return edm
 
     def __repr(self):
@@ -81,6 +85,7 @@ class EnergyDeviceModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return count
 
 class EnergyDeviceSchema(Schema):

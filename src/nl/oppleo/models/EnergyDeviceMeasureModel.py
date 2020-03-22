@@ -5,6 +5,7 @@ from marshmallow import fields, Schema
 
 from sqlalchemy import orm, Column, Integer, String, DateTime, Float
 from nl.oppleo.models.Base import Base, DbSession
+from nl.oppleo.exceptions.Exceptions import DbException
 import json
 
 
@@ -59,6 +60,7 @@ class EnergyDeviceMeasureModel(Base):
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
 
     def get_last_saved(self, energy_device_id):
@@ -78,6 +80,7 @@ class EnergyDeviceMeasureModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not save to {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ))
         return edmm
 
     def get_last_n_saved_since(self, energy_device_id, since_ts, n=-1):
@@ -100,6 +103,7 @@ class EnergyDeviceMeasureModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return edmm
 
 
@@ -116,6 +120,7 @@ class EnergyDeviceMeasureModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         energy_now = self.get_last_saved(energy_device_id)
         if energy_now is None or energy_at_ts is None:
             self.__logger.warn('get_usage_since() - could not get data from database')
@@ -144,6 +149,7 @@ class EnergyDeviceMeasureModel(Base):
         except Exception as e:
             # Nothing to roll back
             EnergyDeviceMeasureModel.__logger.error("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ))
         return edmm.created_at if edmm is not None else None 
 
 

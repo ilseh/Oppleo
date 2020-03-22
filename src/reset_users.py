@@ -10,7 +10,7 @@ from nl.oppleo.models.User import User
 #from nl.oppleo.webapp.WebApp import app, User
 from werkzeug.security import generate_password_hash, check_password_hash
 
-OppleoSystemConfig.loadConfig()
+oppleoSystemConfig = OppleoSystemConfig()
 
 def main():
     

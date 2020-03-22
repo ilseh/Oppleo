@@ -12,7 +12,7 @@
         <link rel="shortcut icon" href="{{ url_for('static', filename='images/carcharger32.ico') }}">
 
         <!-- App css -->
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/bootstrap/4.4.1/css/bootstrap.min.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 
@@ -20,8 +20,8 @@
 
         <!-- jQuery  -->
         <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script><!-- Popper for Bootstrap --><!-- Tether for Bootstrap -->
-        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='plugins/bootstrap/4.4.1/js/bootstrap.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
@@ -69,10 +69,11 @@ Query(document).ready(function ($) {
                     <div class="col-lg-6">
                         <div class="message-box">
                             <h1 class="m-b-0">404</h1>
-                            <h6>Page not found</h6>
+                            <h6>Dat betekent "Not Found"</h6>
+                            <h5>Oops, die pagina hebben we dus niet (meer)...</h5>
                             <div class="buttons-con">
                                 <div class="action-link-wrap">
-                                    <a href="/" class="btn btn-custom btn-primary waves-effect waves-light m-t-20">Naar de bewoonde wereld...</a>
+                                    <a href="/" class="btn btn-custom btn-primary waves-effect waves-light m-t-20">Terug naar de bewoonde wereld...</a>
                                 </div>
                             </div>
                         </div>

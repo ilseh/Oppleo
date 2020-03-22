@@ -7,4 +7,5 @@ from wtforms.validators import DataRequired
 class AuthorizeForm(FlaskForm):
     password = StringField('password', validators=[DataRequired()])
     submit = SubmitField('Sign In')
-    # recaptcha = RecaptchaField()
+    extra_field = StringField('extra_field')
+

@@ -366,48 +366,6 @@
         // Submit
         updateSettings( e.target.id, e.detail.newValue )
       })
-
-      // Edit/ Save buttons
-      $('button[id^=editbutton_]').on('click', function(e) {
-        // editbutton_charger_name_editsave
-        // editbutton_charger_name_cancel
-        var id = $(this).attr("id").replace("editbutton_", "").replace("_editsave", "").replace("_cancel", "")
-        if ($(this).attr("id").endsWith("_cancel")) {
-          // Cancel
-          $('#' + id + '_input').attr('readonly', 'readonly')
-          $('#' + id + '_input').val($('#' + id + '_input').attr('placeholder'))
-          $('#editbutton_' + id + '_cancel').hide()
-          $('#editbutton_' + id + '_editsave').attr('data-original-title', 'Wijzigen')
-          $('#editbutton_' + id + '_editsave').tooltip('hide')
-          $('#editbutton_' + id + '_editsave').html('<i class="fas fa-lock"></i>')
-          $('#editbutton_' + id + '_editsave').toggleClass('btn-low-key-warning', true)
-          $('#editbutton_' + id + '_editsave').toggleClass('btn-primary', false)
-          
-        } else {
-          if ($(this).html().indexOf("fa-lock") >= 0) {
-            // Unlock
-            $('#' + id + '_input').removeAttr('readonly')
-            $('#editbutton_' + id + '_cancel').show()
-            $('#editbutton_' + id + '_editsave').attr('data-original-title', 'Opslaan')
-            $('#editbutton_' + id + '_editsave').tooltip('hide')
-            $('#editbutton_' + id + '_editsave').html('<i class="far fa-save"></i>')
-            $('#editbutton_' + id + '_editsave').toggleClass('btn-low-key-warning', false)
-            $('#editbutton_' + id + '_editsave').toggleClass('btn-primary', true)
-          } else {
-            // Save
-            // TODO - save it
-            $('#' + id + '_input').attr('placeholder', $('#' + id + '_input').val())
-            $('#' + id + '_input').attr('readonly', 'readonly')
-            $('#editbutton_' + id + '_cancel').hide()
-            $('#editbutton_' + id + '_editsave').attr('data-original-title', 'Wijzigen')
-            $('#editbutton_' + id + '_editsave').tooltip('hide')
-            $('#editbutton_' + id + '_editsave').html('<i class="fas fa-lock"></i>')
-            $('#editbutton_' + id + '_editsave').toggleClass('btn-low-key-warning', true)
-            $('#editbutton_' + id + '_editsave').toggleClass('btn-primary', false)
-          }
-        }
-      })
-
        // Remove spinner
       $('.spinner').hide()
     })
@@ -428,7 +386,6 @@
         </div>
     </div>
     <!-- end page title end breadcrumb -->
-
 
     <div class="row">
       <div class="col-md-12">
@@ -793,13 +750,13 @@
                             <tr>
                               <td class="text-dark">SQLAlchemy URL:</td>
                               <td class="text-primary">
-                                <oppleo-edit-str 
-                                id="DATABASE_URL"
-                                prefix="" 
-                                value="{{ oppleosystemconfig.DATABASE_URL }}"
-                                validation="^(postgresql://)[a-zA-Z0-9]+(:)[a-zA-Z0-9]+(@)[a-zA-Z0-9.:/]+$"
-                                info="Alleen PostgresSQL ondersteund. Formaat: postgresql://charger:charger@10.0.1.160:5432/charger"
-                                />
+                                  <oppleo-edit-str 
+                                  id="DATABASE_URL"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.DATABASE_URL }}"
+                                  validation="^(postgresql://)[a-zA-Z0-9]+(:)[a-zA-Z0-9]+(@)[a-zA-Z0-9.:/]+$"
+                                  info="Alleen PostgresSQL ondersteund. Formaat: postgresql://charger:charger@10.0.1.160:5432/charger"
+                                  />
                               </td>
                             </tr>
                             <tr>
@@ -1039,7 +996,7 @@
                                 id="autoSessionEnergy"
                                 suffix="%" 
                                 value="{{ oppleoconfig.autoSessionEnergy }}"
-                                validation="^([1-9]+)$"
+                                validation="^[0-9]*[.]*[0-9]+$"
                                 info="Tesla Model 3 settings are 0.1kWh in 90 minutes"
                                 />
                               </td>

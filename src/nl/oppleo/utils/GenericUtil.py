@@ -6,14 +6,13 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 
 PROD = 'Production'
 
+oppleoSystemConfig = OppleoSystemConfig()
 
 class GenericUtil(object):
 
     @staticmethod
     def isProd():
-        if not OppleoSystemConfig.load_completed:
-            OppleoSystemConfig.loadConfig()
-        return OppleoSystemConfig.ENV == PROD
+        return oppleoSystemConfig.ENV == PROD
         # env_name = os.getenv('oppleo_ENV')
         # return env_name.lower() == PROD
 

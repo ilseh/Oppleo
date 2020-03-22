@@ -15,7 +15,8 @@ class WebSocketUtil(object):
              status=None,           \
              id=None,               \
              namespace=None,        \
-             public=False):
+             public=False,          \
+             room=None):
 
         if wsEmitQueue is not None:
             msg = {}
@@ -31,6 +32,8 @@ class WebSocketUtil(object):
                 msg['status'] = status
             if id is not None:
                 msg['id'] = id
+            if room is not None:
+                msg['room'] = room
             msg['namespace'] = namespace
             msg['public'] = public
             WebSocketUtil.logger.debug(f'Submit msg to websocket emit queue ... {msg}')

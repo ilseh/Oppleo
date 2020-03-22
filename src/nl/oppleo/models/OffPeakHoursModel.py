@@ -8,6 +8,7 @@ from marshmallow.fields import Boolean
 
 from sqlalchemy import Column, Integer, Boolean, String, Time, orm, and_, or_, cast, Time, func
 from nl.oppleo.models.Base import Base, DbSession
+from nl.oppleo.exceptions.Exceptions import DbException
 
 # enum.Enum is not jsonify serializable, IntEnum can be dumped using json.dumps()
 class Weekday(IntEnum):
@@ -61,6 +62,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
 
     def delete(self):
@@ -71,6 +73,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
     @staticmethod
     def deleteId(id):
@@ -83,6 +86,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             db_session.rollback()
             OffPeakHoursModel.logger.error("Could not delete {} from {} table in database".format(id, OffPeakHoursModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not delete {} from {} table in database".format(id, OffPeakHoursModel.__tablename__ ))
 
     @staticmethod
     def weekdayToEnStr(weekday) -> str:
@@ -122,6 +126,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         if r is not None and self.get_count(r) > 0:
             self.logger.debug('is_off_peak(): DayOfWeek {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
             return True
@@ -149,6 +154,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         if r is not None and self.get_count(r) > 0:
             self.logger.debug('is_off_peak(): Holiday {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
             return True
@@ -194,6 +200,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             # Nothing to roll back
             OffPeakHoursModel.logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ))
         return r
 
     
@@ -209,6 +216,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             # Nothing to roll back
             OffPeakHoursModel.logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ))
         return r
         
     @staticmethod
@@ -320,6 +328,7 @@ class OffPeakHoursModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return count
 
 

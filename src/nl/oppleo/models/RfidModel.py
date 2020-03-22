@@ -5,6 +5,7 @@ import json
 from marshmallow import fields, Schema
 
 from nl.oppleo.models.Base import Base, DbSession
+from nl.oppleo.exceptions.Exceptions import DbException
 from sqlalchemy import orm, Column, String, Boolean, DateTime
 
 """
@@ -22,7 +23,8 @@ def RfidModel_refresh(target, context, attrs):
 
 class RfidModel(Base):
     __tablename__ = 'rfid'
-
+    __logger = None
+    
     rfid = Column(String(100), primary_key=True)
     enabled = Column(Boolean)
     created_at = Column(DateTime)
@@ -46,7 +48,7 @@ class RfidModel(Base):
     vehicle_vin = Column(String(100))
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.models.RfidModel')
+        self.__logger = logging.getLogger('nl.oppleo.models.RfidModel')
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
@@ -65,14 +67,14 @@ class RfidModel(Base):
 
 
     def cleanupOldOAuthToken(self):
-        #self.logger.debug("cleanupOldOAuthToken()")
+        #self.__logger.debug("cleanupOldOAuthToken()")
         if (self.api_access_token is None):
-            self.logger.debug("Token is None")
+            self.__logger.debug("Token is None")
             return
         date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
         today = date.today()
         if (date < today):
-            self.logger.debug("Token is expired. Deleting.")
+            self.__logger.debug("Token is expired. Deleting.")
             self.api_access_token = None
             self.api_created_at = None
             self.api_expires_in = None
@@ -88,7 +90,8 @@ class RfidModel(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
 
     def update(self):
@@ -97,7 +100,8 @@ class RfidModel(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not commit (update) to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not commit (update) to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not commit (update) to {} table in database".format(self.__tablename__ ))
 
 
     def delete(self):
@@ -107,20 +111,21 @@ class RfidModel(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
 
     def hasValidToken(self):
-        self.logger.debug("hasValidToken()")
+        self.__logger.debug("hasValidToken()")
         if (self.api_access_token is None):
-            self.logger.debug("Token is None")
+            self.__logger.debug("Token is None")
             return False
         date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
         today = date.today()
         if (date > today):
-            self.logger.debug("Token is still valid")
+            self.__logger.debug("Token is still valid")
             return True
-        self.logger.debug("Token has expired")
+        self.__logger.debug("Token has expired")
         self.cleanupOldOAuthToken()
         return False
 
@@ -134,7 +139,8 @@ class RfidModel(Base):
                               .all()
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            RfidModel.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(RfidModel.__tablename__ ))
         return rfidm
 
     @staticmethod
@@ -147,7 +153,8 @@ class RfidModel(Base):
                               .first()
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(RfidModel.__tablename__ ))
         return rfidm
 
     def __repr(self):

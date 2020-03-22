@@ -8,6 +8,7 @@ import logging
 
 from sqlalchemy import orm, func, Column, Integer, String, Float, DateTime
 from nl.oppleo.models.Base import Base, DbSession
+from nl.oppleo.exceptions.Exceptions import DbException
 import json
 
 
@@ -63,6 +64,7 @@ class ChargeSessionModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
 
     def update(self, data) -> None:
@@ -75,7 +77,8 @@ class ChargeSessionModel(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.logger.error("Could not update to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not update to {} table in database".format(self.__tablename__ ))
 
 
     def delete(self) -> None:
@@ -86,6 +89,7 @@ class ChargeSessionModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
 
     @staticmethod
@@ -98,6 +102,7 @@ class ChargeSessionModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return csm
 
 
@@ -170,6 +175,7 @@ class ChargeSessionModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return latest_charge_session
 
 
@@ -188,6 +194,7 @@ class ChargeSessionModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return open_charge_session_for_device
 
     @staticmethod
@@ -205,6 +212,7 @@ class ChargeSessionModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return open_charge_session_for_device != None
 
 
@@ -269,6 +277,7 @@ class ChargeSessionModel(Base):
         except Exception as e:
             # Nothing to roll back
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return csm
 
 

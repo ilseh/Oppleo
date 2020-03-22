@@ -24,7 +24,7 @@
             "args": [],
             "env": {
                 "FLASK_APP": "Oppleo.py",
-                "FLASK_ENV": "development",
+                "FLASK_ENV": "Development",
                 "PYTHONPATH": "./src",
                 "FLASK_DEBUG": "0",
                 "DATABASE_URL": "postgresql://charger:charger@10.0.1.160:5432/charger",

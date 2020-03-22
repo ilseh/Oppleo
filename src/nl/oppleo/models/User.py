@@ -41,6 +41,7 @@ class User(Base):
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query {} table in database".format(self.__tablename__ ))
         return user
 
 
@@ -52,6 +53,7 @@ class User(Base):
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not commit to {} table in database".format(self.__tablename__ ))
 
     def is_active(self):
         """True, as all users are active."""
@@ -81,7 +83,7 @@ class User(Base):
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
-
+            raise DbException("Could not commit to {} table in database".format(self.__tablename__ ))
 
     # Delete all users
     @staticmethod
@@ -94,6 +96,7 @@ class User(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            User.__logger.error("Could not commit to {} table in database".format(User.__tablename__ ), exc_info=True)
+            raise DbException("Could not commit to {} table in database".format(User.__tablename__ ))
 
 

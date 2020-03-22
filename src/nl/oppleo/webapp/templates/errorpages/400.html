@@ -3,7 +3,7 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>CarCharger - RESTART</title>
+        <title>CarCharger - 404</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description" />
         <meta content="Coderthemes" name="author" />
@@ -19,47 +19,25 @@
         <script src="{{ url_for('static', filename='js/modernizr.min.js') }}"></script>
 
         <!-- jQuery  -->
-        <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
         <script src="{{ url_for('static', filename='plugins/bootstrap/4.4.1/js/bootstrap.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.scrollTo.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.scrollTo.js') }}"></script>
 
         <!-- Notification js -->
         <script src="{{ url_for('static', filename='plugins/notifyjs/dist/notify.min.js') }}"></script>
         <script src="{{ url_for('static', filename='plugins/notifications/notify-metro.js') }}"></script>
 
 <script>
-    counter = 10
-    jQuery(document).ready(function () {
-        setInterval(function(){
-            switch (counter) {
-                case 1:
-                    // Almost there
-                    $("#countdown").text("")
-                    $("#serverstatus").text("Verbinding herstellen...")
-                    counter--
-                    break
-                case 0:
-                    // Server up already?
-                    var xhr = new XMLHttpRequest()
-                    xhr.open("GET","/",false)
-                    xhr.send(null)
-                    // 200 Ok - can go back to normal, or 503 Database error - show that
-                    if (xhr.status == 200 || xhr.status == 503) {
-                        // is online
-                        return window.location.href = '/'
-                    }   
-                    break
-                default:
-                    // Wait for it...
-                    $("#countdown").text((counter--)-1)
-                    break
-            }
-        }, 1000)
-    })
+Query(document).ready(function ($) {
+	// Handler for .ready() called.
+	if ( document.referrer !== 'undefined' ) {
+		$.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Referrer ' + document.referrer);
+	}
+});
 </script>
 
     </head>
@@ -90,14 +68,33 @@
 
                     <div class="col-lg-6">
                         <div class="message-box">
-                            <h2 class="m-b-0 text-dark">HERSTARTEN</h2>
-                            <h6>De applicatie wordt herstart</h6>
-                            <h1 class="m-b-0 text-dark" id="countdown">10</h1>
-                            <h3 class="m-b-0 text-dark" id="serverstatus"></h3>
+                            <h1 class="m-b-0">400</h1>
+                            <h6>Date betekend "Bad Request"</h6>
+                            <h5>Er gaat iets mis. Misschien ligt het aan de volgorde van de pagina's, is er een timeout afgelopen en zijn geheimpjes voor de beveiliging niet meer geldig ofzo. Probeer het eens van voren af aan...</h5>
+                            <div class="buttons-con">
+                                <div class="action-link-wrap">
+                                    <a href="/" class="btn btn-custom btn-primary waves-effect waves-light m-t-20">Opnieuw proberen...</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+
+
+        <!-- jQuery  -->
+        <script src="assets/js/jquery.min.js"></script>
+        <script src="assets/js/popper.min.js"></script><!-- Popper for Bootstrap --><!-- Tether for Bootstrap -->
+        <script src="assets/js/bootstrap.min.js"></script>
+        <script src="assets/js/waves.js"></script>
+        <script src="assets/js/jquery.slimscroll.js"></script>
+        <script src="assets/js/jquery.scrollTo.min.js"></script>
+
+        <!-- App js -->
+        <script src="assets/js/jquery.core.js"></script>
+        <script src="assets/js/jquery.app.js"></script>
+
     </body>
 </html>

@@ -132,7 +132,7 @@ class OppleoConfig(object, metaclass=Singleton):
 
     @chargerName.setter
     def chargerName(self, value):
- #       self.__chargerConfigModel.setAndSave('charger_name', value)
+        self.__chargerConfigModel.setAndSave('charger_name', value)
         self.restartRequired = True
 
     """

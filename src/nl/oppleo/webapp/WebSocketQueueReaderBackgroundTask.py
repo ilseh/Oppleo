@@ -59,22 +59,33 @@ class WebSocketQueueReaderBackgroundTask(object):
                         )
                 else:
                     """
-                        Private messages
-                        - Emit only to authenticated clients
+                        Private message
+                        - Emit only to recipient or to all authenticated clients
                         - room is the request.sid of the specific client
                     """
-                    for sid, connectedClient in oppleoConfig.connectedClients.items():
-                        if 'auth' in connectedClient and connectedClient['auth']:
-                            # Authenticated client, emit data
-                            self.logger.debug('Sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
-                            self.appSocketIO.emit(
-                                    event=msg['event'],
-                                    data=m_body,
-                                    namespace=msg['namespace'],
-                                    room=connectedClient['sid']
-                                    )
-                        else:
-                            self.logger.debug('NOT sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
+                    if ('room' in msg and msg['room'] is not None):
+                        # Emit only to a specific room, or recipient (sid)
+                        self.appSocketIO.emit(
+                                event=msg['event'],
+                                data=m_body,
+                                namespace=msg['namespace'],
+                                room=msg['room']
+                                )
+                    else:
+                        # Emit to authenticated clients
+                        # room is the request.sid of the specific client
+                        for sid, connectedClient in oppleoConfig.connectedClients.items():
+                            if 'auth' in connectedClient and connectedClient['auth']:
+                                # Authenticated client, emit data
+                                self.logger.debug('Sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
+                                self.appSocketIO.emit(
+                                        event=msg['event'],
+                                        data=m_body,
+                                        namespace=msg['namespace'],
+                                        room=connectedClient['sid']
+                                        )
+                            else:
+                                self.logger.debug('NOT sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
 
 
                 self.wsEmitQueue.task_done()

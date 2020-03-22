@@ -36,6 +36,7 @@ from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReaderProd import EvseState
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 """ 
@@ -72,12 +73,26 @@ def home():
     return redirect('/')
 
 
-@flaskRoutes.errorhandler(404)
+@flaskRoutes.errorhandler(400)
 def page_not_found(e):
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('400 bad request error handler')
+    # No need for oppleoconfig=oppleoConfig
+    return render_template('errorpages/400.html'), 400
+
+@flaskRoutes.errorhandler(404)
+def bad_request(e):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('404 page not found error handler')
     # No need for oppleoconfig=oppleoConfig
     return render_template('errorpages/404.html'), 404
+
+@flaskRoutes.errorhandler(500)
+def internal_server_error(e):
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('500 internal_server_error error handler')
+    # No need for oppleoconfig=oppleoConfig
+    return render_template('errorpages/500.html'), 500
 
 
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
@@ -153,6 +168,7 @@ def authenticated_resource(function):
             session['login_next'] = request.full_path
             return redirect(url_for('flaskRoutes.login'))
     return decorated
+
 
 @flaskRoutes.route("/logout", methods=["GET"])
 @authenticated_resource
@@ -544,7 +560,7 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-    global flaskRoutesLogger, oppleoConfig, OppleoSystemConfig
+    global flaskRoutesLogger, oppleoConfig, oppleoSystemConfig
     flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
     r = Raspberry()
     diag = r.get_all()
@@ -572,7 +588,7 @@ def settings(active=1):
                 diag_json=diag_json,
                 charger_config=charger_config_str,
                 energydevicemodel=EnergyDeviceModel.get(),
-                oppleosystemconfig=OppleoSystemConfig,
+                oppleosystemconfig=oppleoSystemConfig,
                 oppleoconfig=oppleoConfig
             )
 
@@ -972,6 +988,83 @@ def update_settings(param=None, value=None):
         oppleoConfig.chargerTariff = float(value)
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
+    # gpioMode
+    if (param == 'gpioMode') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.gpioMode = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pinLedRed
+    if (param == 'pinLedRed') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pinLedRed = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pinLedGreen
+    if (param == 'pinLedGreen') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pinLedGreen = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pinLedBlue
+    if (param == 'pinLedBlue') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pinLedBlue = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pinBuzzer
+    if (param == 'pinBuzzer') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pinBuzzer = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pinEvseSwitch
+    if (param == 'pinEvseSwitch') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pinEvseSwitch = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pinEvseLed
+    if (param == 'pinEvseLed') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pinEvseLed = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # ENV
+    if (param == 'ENV') and isinstance(value, str) and value in ['Development', 'Production']:
+        oppleoSystemConfig.ENV = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # DATABASE_URL
+    import re
+    validation="^(postgresql://)[a-zA-Z0-9]+(:)[a-zA-Z0-9]+(@)[a-zA-Z0-9.:/]+$"
+    if (param == 'DATABASE_URL') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.DATABASE_URL = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pulseLedMin
+    if (param == 'pulseLedMin') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pulseLedMin = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # pulseLedMax
+    if (param == 'pulseLedMax') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.pulseLedMax = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # autoSessionMinutes
+    if (param == 'autoSessionMinutes') and (isinstance(value, int) or RepresentsInt(value)):
+        oppleoConfig.autoSessionMinutes = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # autoSessionEnergy
+    if (param == 'autoSessionEnergy') and (isinstance(value, float) or RepresentsFloat(value)):
+        oppleoConfig.autoSessionEnergy = int(value)
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # logFile
+    if (param == 'logFile') and isinstance(value, str) and len(value) > 0:
+        oppleoConfig.logFile = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # logFile
+    if (param == 'PYTHONPATH') and isinstance(value, str):
+        oppleoSystemConfig.PYTHONPATH = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
 
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
@@ -986,7 +1079,7 @@ def systemStatus():
 
     return jsonify({
         'status': 200, 
-        'restartRequired': oppleoConfig.restartRequired, 
+        'restartRequired': (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired), 
         'startTime': oppleoConfig.upSinceDatetimeStr
         })
 

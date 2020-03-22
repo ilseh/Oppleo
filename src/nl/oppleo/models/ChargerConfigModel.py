@@ -6,7 +6,7 @@ from marshmallow.fields import Boolean, Integer
 
 from sqlalchemy import orm, Column, String, Float, DateTime, Integer, Boolean
 from nl.oppleo.models.Base import Base, DbSession
-
+from nl.oppleo.exceptions.Exceptions import DbException
 
 class ChargerConfigModel(Base):
     logger = logging.getLogger('nl.oppleo.models.ChargerConfigModel')
@@ -87,6 +87,7 @@ class ChargerConfigModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not commit to {} table in database".format(self.__tablename__ ))
 
 
     def delete(self):
@@ -97,6 +98,7 @@ class ChargerConfigModel(Base):
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
 
     @staticmethod
@@ -111,6 +113,7 @@ class ChargerConfigModel(Base):
         except Exception as e:
             # Nothing to roll back
             ChargerConfigModel.logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ))
         return ccm
 
 
