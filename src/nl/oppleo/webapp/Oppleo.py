@@ -335,8 +335,7 @@ try:
             )
 
         appSocketIO.run(app, 
-#            port=oppleoConfig.httpPort, 
-            port=5000, 
+            port=oppleoConfig.httpPort, 
             debug=oppleoSystemConfig.DEBUG, 
             use_reloader=oppleoConfig.useReloader, 
             host=oppleoConfig.httpHost
