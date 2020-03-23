@@ -1,7 +1,8 @@
 
 from configparser import ConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
-import os
+from os import path, urandom
+from base64 import b64encode
 from werkzeug.security import generate_password_hash, check_password_hash
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
@@ -56,7 +57,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     """
         Variables stored in the INI file 
     """
-    __SIGNATURE = os.urandom(24)
+    __SIGNATURE = b64encode(urandom(24)).decode('utf-8')
+
     __DATABASE_URL = 'postgresql://username:password@localhost:5432/database'
     __SQLALCHEMY_TRACK_MODIFICATIONS = True
 
@@ -97,6 +99,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__loadConfig__()
         except FileNotFoundError as fnfe:
             self.__logger.debug('System configuration file not found! (Creating with defaults)')
+            # Only in this situation, set these params
+            self.__ON_DB_FAILURE_ALLOW_RESTART = True
+            self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = True
+            self.__ON_DB_FAILURE_SHOW_CURRENT_URL = True
             self.__writeConfig__()
 
 
@@ -104,7 +110,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         returns the absolute path to oppleo.ini
     """
     def __getConfigFile__(self):
-        return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'oppleo.ini')
+        return path.join(path.dirname(path.realpath(__file__)), 'oppleo.ini')
 
 
     def __loadConfig__(self):
