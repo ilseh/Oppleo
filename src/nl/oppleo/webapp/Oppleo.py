@@ -2,6 +2,9 @@ import logging
 from datetime import datetime
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 oppleoSystemConfig = OppleoSystemConfig()
+oppleoConfig = None
+
+developmentHttpPort = 5000
 
 oppleoLogger = logging.getLogger('nl.oppleo.webapp.Oppleo')
 oppleoLogger.debug('Initializing Oppleo...')
@@ -182,83 +185,6 @@ try:
 
     if __name__ == "__main__":
 
-        """
-        from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
-        ohm = OffPeakHoursModel()
-        ohm.test()
-        """
-        """
-        from datetime import datetime, timedelta
-
-        if oppleoConfig.autoSessionEnabled: 
-            edmm = EnergyDeviceMeasureModel()
-            kwh_used = edmm.get_usage_since(
-                    oppleoConfig.chargerName,
-                    (datetime.today() - timedelta(minutes=oppleoConfig.autoSessionMinutes))
-                    )
-            if kwh_used > oppleoConfig.autoSessionEnergy:
-                oppleoLogger.debug('More energy used than {}kWh in {} minutes'.format(e, t))
-                oppleoLogger.debug("Keep the current session")
-            else:
-                oppleoLogger.debug('Less energy used than {}kWh in {} minutes'.format(e, t))
-                oppleoLogger.debug("Start a new session")
-        """
-
-        """
-            TESTING DETECTION OF THE END_TIME ON AUTO SESSION
-        from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-        end_time = EnergyDeviceMeasureModel.get_time_of_kwh(
-                            'laadpaal_noord',
-                            '1501.6'
-                            )
-        end_time_str = str(end_time.strftime("%d/%m/%Y, %H:%M:%S"))
-        from datetime import datetime
-        now = datetime.now()
-        now_str = str(now.strftime("%d/%m/%Y, %H:%M:%S"))
-        """
-
-        """
-            TESTING OffPeak segments
-        
-        from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel, Weekday
-        segm1 = OffPeakHoursModel.get_representation(Weekday.MONDAY)
-        segm2 = OffPeakHoursModel.get_representation(Weekday.SATURDAY)
-        segm4 = OffPeakHoursModel.get_representation(Weekday.WEDNESDAY)
-
-        segm3 = OffPeakHoursModel.get_all_representations_nl()
-        for key, value in segm3.items(): 
-            print(key, value) 
-        """
-
-        """
-        from nl.oppleo.config.oppleoConfigNEW import oppleoConfigNEW
-        oppleoConf = oppleoConfigNEW()
-        oppleoConf2 = oppleoConfigNEW()
-
-        t1 = oppleoConf.gpioMode
-        oppleoConf.gpioMode = 'BOARD'
-        t2 = oppleoConf.gpioMode
-        oppleoConf.gpioMode = 'BCM'
-        t3 = oppleoConf.gpioMode
-        try:
-            oppleoConf.gpioMode = 'TEST'
-        except TypeError as e:
-            pass
-        except ValueError as e:
-            pass
-
-
-        t1 = oppleoConf.pinLedRed
-        try:
-            oppleoConf.pinLedRed = 'TEST'
-        except TypeError as e:
-            pass
-        t2 = oppleoConf.pinLedRed
-        oppleoConf.pinLedRed = 2
-        t2 = oppleoConf.pinLedRed
-        """
-
-
         # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
         meuThread = MeasureElectricityUsageThread(appSocketIO)
         chThread = ChargerHandlerThread(
@@ -298,7 +224,7 @@ try:
         print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
             .format(
                 oppleoConfig.httpHost, 
-                oppleoConfig.httpPort,
+                oppleoConfig.httpPort if GenericUtil.isProd() else developmentHttpPort,
                 oppleoSystemConfig.DEBUG,
                 oppleoConfig.useReloader
                 )
@@ -306,7 +232,7 @@ try:
         oppleoLogger.debug('Starting web server on {}:{} (debug:{}, use_reloader={})...'
             .format(
                 oppleoConfig.httpHost, 
-                oppleoConfig.httpPort,
+                oppleoConfig.httpPort if GenericUtil.isProd() else developmentHttpPort,
                 oppleoSystemConfig.DEBUG,
                 oppleoConfig.useReloader
                 )
@@ -335,7 +261,7 @@ try:
             )
 
         appSocketIO.run(app, 
-            port=oppleoConfig.httpPort, 
+            port=oppleoConfig.httpPort if GenericUtil.isProd() else developmentHttpPort, 
             debug=oppleoSystemConfig.DEBUG, 
             use_reloader=oppleoConfig.useReloader, 
             host=oppleoConfig.httpHost
@@ -482,32 +408,35 @@ except DbException as dbe:
 
 except Exception as e:
     # Any exception raised - restart app
-    oppleoLogger.error('Exception stopped Oppleo!')
+    oppleoLogger.error('Exception stopped Oppleo! Details:{}'.format(str(e)))
+    from os import system
+    from nl.oppleo.services.PushMessageProwl import PushMessageProwl
 
-    if __name__ == '__main__':
+    restartFailed = True
+    if __name__ == '__main__' and e.errno != 48:
         oppleoLogger.error('Restarting Oppleo...')
-
-        import os
-        from nl.oppleo.services.PushMessageProwl import PushMessageProwl
-        restartFailed=False
+        restartFailed = False
 
         # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
-        oppleoLogger.debug('Restarting in 2 seconds...')
+        oppleoLogger.debug('Restarting in 30 seconds...')
         try:
-            os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart Oppleo.service' &>/dev/null")
+            system("nohup sudo -b bash -c 'sleep 30; systemctl restart Oppleo.service' &>/dev/null")
         except Exception:
-            restartFailed=True
+            restartFailed = True
+    else:
+        oppleoLogger.error('Cannot recover Oppleo...')
 
-        # Hardcoded Oppleo Limp mode Prowl apiKey and no ChargerName
-        PushMessageProwl.sendMessage(
-            title="Crashed" if restartFailed else "Restarting", 
-            message="An exception caused a restart at {}. (signature: {} Exception details: {})"
-                .format(
-                    datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
-                    oppleoSystemConfig.SIGNATURE,
-                    str(e)
-                ),
-            priority=PushMessageProwl.priorityHigh,
-            apiKey='325da9b81240111bec9770c9b8bb97dd60373077',   
-            chargerName='Unknown'
-            )
+    # Hardcoded Oppleo Limp mode Prowl apiKey and no ChargerName
+    PushMessageProwl.sendMessage(
+        title="Crashed" if restartFailed else "Restarting", 
+        message="An exception caused a restart at {}. (signature: {} Exception details: {}{})"
+            .format(
+                datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                oppleoSystemConfig.SIGNATURE,
+                str(e),
+                '' if oppleoConfig is None and not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
+            ),
+        priority=PushMessageProwl.priorityHigh,
+        apiKey='325da9b81240111bec9770c9b8bb97dd60373077',   
+        chargerName='Unknown' if oppleoConfig is None and not isinstance(oppleoConfig.chargerName, str) else oppleoConfig.chargerName
+        )

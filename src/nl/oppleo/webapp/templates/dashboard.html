@@ -266,7 +266,7 @@
               updateTotalIndicator( undefined, undefined, result.chargeSession, on)
             }
             updateAuthIndicator( result.auth, error, on )
-            updateGaugeTitle('gauger_1', gaugeOneStatus + ' ' + gaugeOnePower, gaugeOneSession)
+            updateGaugeTitle('gauger_1', gaugeOneStatus + (gaugeOnePower != '0W' ? ' ' + gaugeOnePower : ''), gaugeOneSession)
             break
           case 404:                   // No charge session found (green)
             error = false
