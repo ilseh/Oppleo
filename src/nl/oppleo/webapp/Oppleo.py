@@ -441,7 +441,7 @@ except DbException as dbe:
                 try:
                     os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
                 except Exception as e:
-                    pass
+                    oppleoLogger.warning('Restart failed: {}'.format(str(e)))
                 return render_template("restarting.html")
             else:
                 return render_template("authorize.html", 
