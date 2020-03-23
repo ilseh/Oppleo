@@ -293,9 +293,9 @@ def reboot():
     if (request.method == 'GET'):
         return render_template("authorize.html", 
             form=AuthorizeForm(),
-            requesttitle="Herstarten",
-            requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
-            buttontitle="Herstart!",
+            requesttitle="Reboot",
+            requestdescription="Reboot het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. <br />Dit zal ongeveer 40 seconden duren.",
+            buttontitle="Reboot!",
             oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
@@ -311,9 +311,9 @@ def reboot():
     else:
         return render_template("authorize.html", 
                 form=form, 
-                requesttitle="Herstarten",
-                requestdescription="Herstart het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. Dit zal ongeveer 40 seconden duren.",
-                buttontitle="Herstart!",
+                requesttitle="Reboot",
+                requestdescription="Reboot het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. <br />Dit zal ongeveer 40 seconden duren.",
+                buttontitle="Reboot!",
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig
                 )
