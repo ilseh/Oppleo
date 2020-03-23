@@ -339,9 +339,9 @@ def restart():
     if form.validate_on_submit() and \
        check_password_hash(current_user.password, form.password.data):
         flaskRoutesLogger.debug('Restart requested and authorized. Restarting in 2 seconds...')
-        # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
+        # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
         try:
-            os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
+            os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart Oppleo.service' &>/dev/null")
         except Exception as e:
             pass
         return render_template("restarting.html", 

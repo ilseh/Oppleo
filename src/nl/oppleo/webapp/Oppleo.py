@@ -436,10 +436,10 @@ except DbException as dbe:
                     # New database URL, try that
                     oppleoLogger.debug('Changing DATABASE_URL')
                     oppleoSystemConfig.DATABASE_URL = form.extra_field.data
-                # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
+                # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
                 oppleoLogger.debug('Restarting in 2 seconds...')
                 try:
-                    os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
+                    os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart Oppleo.service' &>/dev/null")
                 except Exception as e:
                     oppleoLogger.warning('Restart failed: {}'.format(str(e)))
                 return render_template("restarting.html")
@@ -491,10 +491,10 @@ except Exception as e:
         from nl.oppleo.services.PushMessageProwl import PushMessageProwl
         restartFailed=False
 
-        # Simple os.system('sudo systemctl restart CarChargerWebApp.service') initiates restart before a webpage can be returned
+        # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
         oppleoLogger.debug('Restarting in 2 seconds...')
         try:
-            os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart CarChargerWebApp.service' &>/dev/null")
+            os.system("nohup sudo -b bash -c 'sleep 2; systemctl restart Oppleo.service' &>/dev/null")
         except Exception:
             restartFailed=True
 
