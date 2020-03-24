@@ -84,7 +84,7 @@
                 5: 'Vrijdag',
                 6: 'Zaterdag'
             }
-                // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
+            // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
             function parseDate(dateStr) {
                 var p1 = dateStr.split(',')
                 var date = p1[0].split('/')
@@ -144,8 +144,38 @@
                 })
             }
 
+            function addReports() {
+                // settings
+                monthsHistory = 8
+                startMonth = 0
+                startYear = 2020
+                //
+                let now = new Date()
+                thisYear = now.getFullYear()
+                thisMonth = now.getMonth()
+                drawDate = new Date()
+                drawDate.setMonth(now.getMonth() -monthsHistory)
+                while (drawDate.getFullYear() < now.getFullYear() ||
+                       (drawDate.getFullYear() == now.getFullYear() && drawDate.getMonth() < now.getMonth())) {
+
+                    if (drawDate.getFullYear() > startYear ||
+                       (drawDate.getFullYear() == startYear && drawDate.getMonth() >= startMonth)) {
+                        // Filter anything prior to charger start date
+                        let el = `<li>
+                                    <a href="/charge_report/` + drawDate.getFullYear() + `/` + (drawDate.getMonth() +1) + `" class="stay">
+                                        <i class="fas fa-file-invoice"></i> ` + months[drawDate.getMonth()] + ` ` + drawDate.getFullYear() + `
+                                    </a>
+                                </li>`
+                        $('ul#reports').prepend(el)
+                    }
+                    drawDate.setMonth(drawDate.getMonth() +1)
+                }
+            }
+
+
             jQuery(document).ready(function () {
                 console.log(timestamp() + " file load completed")
+                addReports()
                 $('input#enabled').bootstrapToggle()
                 $('[data-toggle=tooltip]').tooltip({ 
                     boundary: 'window', 
@@ -404,6 +434,21 @@
                             </a>
                         </li>
 
+                        <li class="has-submenu">
+                            <a href="#"><i class="fas fa-file-invoice-dollar"></i> Laadsessies</a>
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('flaskRoutes.charge_sessions') }}" class="stay">
+                                        <i class="fas fa-file-invoice-dollar"></i> Transacties
+                                    </a>
+                                </li>
+                                <li class="has-submenu">
+                                    <a href="#"><i class="fas fa-file-invoice"></i> Rapporten</a>
+                                    <ul class="submenu" id="reports">
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
                         <li>
                             <a href="{{ url_for('flaskRoutes.rfid_tokens') }}" class="stay">
                                 <i class="fas fa-credit-card"></i> Laadpassen
@@ -424,6 +469,11 @@
                                         <li>
                                             <a href="{{ url_for('flaskRoutes.usage_graph', period=6) }}" class="stay">
                                                 <i class="fas fa-chart-line"></i> Afgelopen 6 uur
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url_for('flaskRoutes.usage_graph', period=12) }}" class="stay">
+                                                <i class="fas fa-chart-line"></i> Afgelopen 12u
                                             </a>
                                         </li>
                                         <li>

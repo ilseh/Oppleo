@@ -680,31 +680,58 @@ def active_charge_session():
 @authenticated_resource
 def charge_sessions(since_timestamp=None):
     global flaskRoutesLogger, oppleoConfig
-    flaskRoutesLogger.debug('/charge_sessions {} {}'.format(since_timestamp, request.method))
+    flaskRoutesLogger.debug('/charge_sessions {}'.format(request.method))
     jsonRequested = ('CONTENT_TYPE' in request.environ and 
                      request.environ['CONTENT_TYPE'].lower() == 'application/json')
     if (not jsonRequested):
         return render_template("charge_sessions.html",
                     oppleoconfig=oppleoConfig
                     )
-    # Request parameters
-    # TODO - format request params and hand to model
-    req_from  = request.args['from'] if 'from' in request.args else None
-    req_to    = request.args['to'] if 'to' in request.args else None
-    req_limit = request.args['limit'] if 'limit' in request.args else None
+    # Request parameters - format and hand to model (format 01-02-2020, 00:00:00)
+    try:
+        req_from  = request.args['from'] if 'from' in request.args else None
+        req_to    = request.args['to'] if 'to' in request.args else None
+        req_limit = int(request.args['limit']) if 'limit' in request.args else -1
+    except Exception as e:
+        flaskRoutesLogger.warning('/charge_sessions exception {}'.format(str(e)))
+        pass
+    flaskRoutesLogger.debug('/charge_sessions req_from:{} req_to:{} req_limit:{}'.format(req_from, req_to, req_limit))
 
     charge_sessions = ChargeSessionModel()
     charge_sessions.energy_device_id = oppleoConfig.chargerName
+
+    qr = charge_sessions.get_max_n_sessions_between(
+        energy_device_id=oppleoConfig.chargerName, 
+        from_ts=req_from, 
+        to_ts=req_to,
+        n=req_limit
+        )
+
+
+    """
     qr = charge_sessions.get_last_n_sessions_since(
         energy_device_id=oppleoConfig.chargerName,
         since_ts=None,
         n=-1
         )
+    """
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())
     return jsonify(qr_l)
 
+
+@flaskRoutes.route("/charge_report/<int:year>/<int:month>")
+@authenticated_resource
+def charge_report(year=-1, month=-1):
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/charge_report {} {} {}'.format(year, month, request.method))
+    return render_template("charge_report.html",
+                year=year,
+                month=month,
+                oppleoconfig=oppleoConfig
+                )
+ 
 
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/rfid_tokens", methods=["GET"])

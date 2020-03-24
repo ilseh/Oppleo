@@ -220,6 +220,131 @@ class ChargeSessionModel(Base):
         return '<id {}>'.format(self.id)
 
 
+    """
+        Filtered by end time
+    """
+    def get_max_n_sessions_between(self, energy_device_id=None, from_ts=None, to_ts=None, n=-1) -> typing.List[ChargeSessionModel]:
+        db_session = DbSession()
+        csm = None
+        try:
+            if (n == -1):               # No limit
+                if (from_ts == None):   # No from timestamp
+                    if (to_ts == None): # No to timestamp
+                        if (energy_device_id == None):   # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+                        else:           # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+                    else:               # filter to timestamp
+                        if (energy_device_id == None):   # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+                        else:           # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+                else:                   # filter from timestamp
+                    if (to_ts == None): # No to timestamp
+                        if (energy_device_id == None):      # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+                        else:               # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+                    else:                   # filter to timestamp
+                        if (energy_device_id == None):      # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+                        else:               # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .all()
+
+            else:  # limit n
+                if (from_ts == None):   # No from timestamp
+                    if (to_ts == None): # No to timestamp
+                        if (energy_device_id == None):   # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+                        else:           # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+                    else:               # filter to timestamp
+                        if (energy_device_id == None):   # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+                        else:           # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+                else:                   # filter from timestamp
+                    if (to_ts == None): # No to timestamp
+                        if (energy_device_id == None):      # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+                        else:               # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+                    else:                   # filter to timestamp
+                        if (energy_device_id == None):      # All devices
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+                        else:               # filter energy_device_id
+                            csm = db_session.query(ChargeSessionModel) \
+                                            .filter(ChargeSessionModel.energy_device_id == energy_device_id) \
+                                            .filter(ChargeSessionModel.end_time >= self.date_str_to_datetime(from_ts)) \
+                                            .filter(ChargeSessionModel.end_time < self.date_str_to_datetime(to_ts)) \
+                                            .order_by(ChargeSessionModel.start_time.desc()) \
+                                            .limit(n) \
+                                            .all()
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
+        return csm
+
+
     def get_last_n_sessions_since(self, energy_device_id=None, since_ts=None, n=-1) -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
         csm = None

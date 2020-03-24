@@ -106,6 +106,7 @@
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
+        $.Notification.notify('error','top left', 'Probleem', 'RFID Token data niet beschikbaar.');
       })
       .always(function() {
       })
@@ -117,8 +118,8 @@
       return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
     }
     var dt = undefined
-    function getChargeSessions() {
-      console.log(timestamp() + ' getChargeSessions()')
+    function getChargeReport( year, month ) {
+      console.log(timestamp() + ' getChargeReport( '+year+', '+month+')')
             
       $.ajax({
         type		    : 'GET',
@@ -128,16 +129,16 @@
         headers     : { 'ignore-login-next': 'true' },
         encode		  : true,
         data        : {
-          // from  - [optional] earliest startTime
-          // to    - [optional] latest startTime
-          // limit - [optional] max number of entries
+          // format %d/%m/%Y, %H:%M:%S
+          from: '01/'+month+'/'+year+', 00:00:00',
+          to  : '01/'+((month+1)%12)+'/'+(month==12?year+1:year)+', 00:00:00'
         },
       }) // using the done promise callback
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
         dt = $('table#charge_sessions').DataTable( {
-          "pageLength": 25,
+          paging: false,
           "order": [[ 0, "desc" ]], // id (was start_time, has a bug in string time format)
           dom: 'Blfrtip',
           buttons: [
@@ -189,8 +190,8 @@
             })
           },
           "columnDefs": [{
-            // RFID token [2]
-            "targets": 1,
+            // RFID tag [3]
+            "targets": 2,
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -230,8 +231,8 @@
               }
             }
           }, {
-            // start_time [3] and end_time [7]
-            "targets": [2, 6],
+            // Time and date (end time) [4]
+            "targets": 3,
             "sorting": true,
             "orderable": true,
             "render": function (data, type, row) {
@@ -267,8 +268,8 @@
               }
             }
           }, {
-            // odometer [6]
-            "targets": 5,
+            // odometer [5]
+            "targets": 4,
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
@@ -285,8 +286,8 @@
               }
             }
           }, {
-            // start energy [5], end energy [8], total energy used [11]
-            "targets": [4, 7, 10],
+            // Total energy [7]
+            "targets": 6,
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
@@ -306,8 +307,8 @@
               }
             }
           }, {
-            // Tariff [10] and price [12]
-            "targets": [9, 11],
+            // Tariff [6], and Price [8]
+            "targets": [5, 7],
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -324,52 +325,6 @@
                         '<span style="text-align: right;">&euro; ' + (Math.round(data * 100) /100).toFixed(2) + '</span>'
               }
             }
-          }, {
-            // Buttons [13]
-            "targets": 12,
-            "render": function (data, type, row) {
-              // Render for screen: type = 'display'
-              // Render for Excel export: type = { display: 'Plain'}
-              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
-                // Excel export, skip this column
-                return data
-              } else {
-                // Default - type = 'display' - on screen or other exports
-                // Empty and closed charge session?
-                if (row[11] == 0 && row[6] != "-") {
-                  // Show delete button
-                  return '<button' +
-                         '   type="button"' +
-                         '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
-                         '   data-toggle="tooltip" ' +
-                         '   data-placement="bottom" ' +
-                         '   data-html="true" ' +
-                         '   title="<em>Verwijder lege laadsessie (' + row[0] + ').</em>"' +
-                         '   onclick="window.location.href=\'/delete_charge_session/' + row[0] + '\'"' +
-                         '   >' +
-                         '   <i class="fas fa-trash-alt"></i>' +
-                         '</button>'
-                }
-                // Open charge session?
-                if (row[6] == "-") {
-                  // Show close button
-                  return '<button' +
-                         '   type="button"' +
-                         '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
-                         '   data-toggle="tooltip" ' +
-                         '   data-placement="bottom" ' +
-                         '   data-html="true" ' +
-                         '   title="<em>Be&euml;indig open laadsessie.</em>"' +
-                         '   onclick="window.location.href=\'/stop_charge_session/' + row[0] + '\'"' +
-                         '   >' +
-                         '   <i class="far fa-hand-paper"></i>' +
-                         '</button>'
-                }
-
-                // Else just return nothing
-                return data
-              }
-            }
           }],
           "searching": false
         });
@@ -378,32 +333,16 @@
 
           dt.row.add([
             element.id,
+            element.energy_device_id,
             element.rfid,
-            ( (typeof element.start_time === 'string' || element.start_time instanceof String) ?
-              element.start_time :
-              '-'
-            ),
-            ( ((typeof element.trigger === 'string' || element.trigger instanceof String) && element.trigger != "None") ?
-              element.trigger :
-              '-'
-            ),
-            ( (typeof element.start_value === 'string' || element.start_value instanceof String) ?
-              element.start_value :
+            ( (typeof element.end_time === 'string' || element.end_time instanceof String) ?
+              element.end_time :
               '-'
             ),
             ( (typeof element.km === 'string' || element.km instanceof String) ?
               element.km :
               '-'
             ),
-            ( (typeof element.end_time === 'string' || element.end_time instanceof String) ?
-              element.end_time :
-              '-'
-            ),
-            ( (typeof element.end_value === 'string' || element.end_value instanceof String) ?
-              element.end_value :
-              '-'
-            ),
-            element.energy_device_id,
             ( (typeof element.tariff === 'string' || element.tariff instanceof String) ?
               element.tariff :
               '-'
@@ -434,10 +373,10 @@
       })
     }
 
-
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
-      getChargeSessions()
+      getChargeReport( {{ year }}, {{ month }} )
+      $('h4#page_title').html('Laad rapport ' + months[{{ month }} -1] + ' {{ year }}')
       getRfidTokens()
     })
 
@@ -453,7 +392,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box">
-                <h4 class="page-title">Laad transacties</h4>
+                <h4 id="page_title" class="page-title">Laad rapport</h4>
             </div>
         </div>
     </div>
@@ -466,19 +405,14 @@
           <table id="charge_sessions" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
               <tr>
-                <th style="text-align: center;">id</th>
-                <th style="text-align: center;">Laadpas</th>
-                <th style="text-align: center;">Starttijd</th>
-                <th style="text-align: center;">Trigger</th>
-                <th style="text-align: center;">Startmeting</th>
-                <th style="text-align: center;">km stand</th>
-                <th style="text-align: center;">Eindtijd</th>
-                <th style="text-align: center;">Eindmeting</th>
+                <th style="text-align: center;">Transactie</th>
                 <th style="text-align: center;">Laadpunt</th>
+                <th style="text-align: center;">Laadpas</th> <!-- naam -->
+                <th style="text-align: center;">Datum</th>  <!-- eindtijd -->
+                <th style="text-align: center;">km stand</th>
                 <th style="text-align: center;">Tarief</th>
                 <th style="text-align: center;">Verbruik</th>
                 <th style="text-align: center;">Prijs</th>
-                <th style="text-align: center;">&nbsp;</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>

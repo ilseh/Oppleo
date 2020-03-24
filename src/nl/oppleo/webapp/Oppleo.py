@@ -413,7 +413,7 @@ except Exception as e:
     from nl.oppleo.services.PushMessageProwl import PushMessageProwl
 
     restartFailed = True
-    if __name__ == '__main__' and e.errno != 48:
+    if __name__ == '__main__' and hasattr(e, 'errno') and e.errno != 48:
         oppleoLogger.error('Restarting Oppleo...')
         restartFailed = False
 
