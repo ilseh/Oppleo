@@ -86,7 +86,8 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    var rfidTokens = {}
+    let rfidTokens = {}
+    let dt = undefined
     function getRfidTokens() {
       console.log(timestamp() + ' getRfidTokens()')            
       $.ajax({
@@ -103,6 +104,8 @@
         $.each(data, function(i,val) {
           rfidTokens[val.rfid] = val
         })
+        // Force redraw
+        dt.rows().invalidate().draw()
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
@@ -116,7 +119,6 @@
     function addOnNewline(str, addition, newline) {
       return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
     }
-    var dt = undefined
     function getChargeSessions() {
       console.log(timestamp() + ' getChargeSessions()')
             
@@ -136,53 +138,79 @@
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
+        d = new Date()
+        dStr = ( (weekday[d.getDay() %7]).substring(0, 2) + ' ' + 
+                  d.getDate() + ' ' + (months[d.getMonth() %12]) + ' ' + d.getFullYear() + ' ' +
+                  d.getHours() + ':' +
+                 (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
+                )
         dt = $('table#charge_sessions').DataTable( {
           "pageLength": 25,
           "order": [[ 0, "desc" ]], // id (was start_time, has a bug in string time format)
           dom: 'Blfrtip',
-          buttons: [
-            {
-              extend: 'copy',
-              text: "<i class='far fa-copy'></i> Copy",
-              className: 'btn btn-low-key btn-sm'
-            }, {
-              extend: 'csv',
-              text: "<i class='fas fa-file-csv'></i> CSV",
-              className: 'btn btn-low-key btn-sm',
-              exportOptions: {
-                      orthogonal: {
-                          display: 'Plain'
-                      }      
+          buttons: [{
+            extend: 'excelHtml5',
+            text: "<i class='far fa-file-excel'></i> Excel",
+            className: 'btn btn-low-key btn-sm',
+            title: 'Oppleo laadsessies',
+            messageTop: dStr,
+            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            filename: ('Oppleo laadsessies - ' + dStr.replace(':', '.')),
+            footer: false,
+            exportOptions: {
+              orthogonal: {
+                display: 'Plain'
+              },
+              columns: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ],
+              format: {
+                body: function(data, row, column, node) {
+                  data = $('<p>' + data + '</p>').text();
+                  return $.isNumeric(data.replace(',', '.')) ? data.replace(',', '.') : data;
+                }
               }
-            }, {
-              extend: 'excel',
-              text: "<i class='far fa-file-excel'></i> Excel",
-              className: 'btn btn-low-key btn-sm',
-              bFooter: false,
-              exportOptions: {
-                      orthogonal: {
-                          display: 'Plain'
-                      },
-                      columns: ':visible',
-                      format: {
-                          body: function(data, row, column, node) {
-                              data = $('<p>' + data + '</p>').text();
-                              return $.isNumeric(data.replace(',', '.')) ? data.replace(',', '.') : data;
-                          }
-                      }
-              }
-            }, {
-                extend: 'pdfHtml5',
-                text: "<i class='far fa-file-pdf'></i> PDF",
-                className: 'btn btn-low-key btn-sm',
-                orientation: 'landscape',
-                pageSize: 'A4'
-            }, {
-              extend: 'print',
-              text: "<i class='fas fa-print'></i> Print",
-              className: 'btn btn-low-key btn-sm'
             }
-          ],
+          }, {
+            extend: 'pdfHtml5',
+            text: "<i class='far fa-file-pdf'></i> PDF",
+            className: 'btn btn-low-key btn-sm',
+            orientation: 'landscape',
+            pageSize: 'A4',
+            title: 'Oppleo laadsessies',
+            messageTop: dStr,
+            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            filename: ('Oppleo laadsessies - ' + dStr.replace(':', '.')),
+            footer: true,
+            exportOptions: {
+              orthogonal: {
+                display: 'Print'
+              },
+              columns: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
+            }
+          }, {
+            extend: 'print',
+            text: "<i class='fas fa-print'></i> Print",
+            className: 'btn btn-low-key btn-sm',
+            orientation: 'landscape',
+            pageSize: 'A4',
+            title: 'Oppleo laadsessies',
+            messageTop: dStr,
+            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            filename: ('Oppleo laadsessies - ' + dStr.replace(':', '.')),
+            footer: true,
+            exportOptions: {
+              orthogonal: {
+                display: 'Print'
+              },
+              columns: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
+            },
+            customize: function ( win ) {
+              $(win.document.body)
+                .css( 'font-size', '10pt' ) 
+              $(win.document.body).find( 'table' )
+                .addClass( 'compact' )
+                .css( 'font-size', 'inherit' )
+            }
+          }],
           "createdRow": function(row, data, dataIndex) {
             $(row).toggleClass("text-info").fadeOut(800, function() {              
               $(this).toggleClass("text-info").fadeIn(50)
@@ -194,8 +222,8 @@
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
-              if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
-                // Excel export, skip the 'km'
+              if (type.hasOwnProperty('display') && (type.display == 'Plain' || type.display == 'Print')) {
+                // Excel export, skip the markup
                 return data == undefined || data === "None" ? "" : data
               } else {
                 // Default - type = 'display' - on screen or other exports

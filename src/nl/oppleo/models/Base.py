@@ -28,6 +28,8 @@ oppleoSystemConfig.sqlalchemy_engine = engine
 oppleoSystemConfig.sqlalchemy_session_factory = session_factory
 oppleoSystemConfig.sqlalchemy_session = DbSession
 
+
+
 def init_db():
     logger = logging.getLogger('nl.oppleo.models.Base init_db()')
 

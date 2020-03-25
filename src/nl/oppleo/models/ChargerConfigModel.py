@@ -5,6 +5,8 @@ from marshmallow import fields, Schema
 from marshmallow.fields import Boolean, Integer
 
 from sqlalchemy import orm, Column, String, Float, DateTime, Integer, Boolean
+from sqlalchemy.exc import InvalidRequestError
+
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
@@ -84,6 +86,8 @@ class ChargerConfigModel(Base):
         try:
             db_session.add(self)
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -95,6 +99,8 @@ class ChargerConfigModel(Base):
         try:
             db_session.delete(self)
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -110,6 +116,8 @@ class ChargerConfigModel(Base):
             ccm = db_session.query(ChargerConfigModel) \
                             .order_by(ChargerConfigModel.modified_at.desc()) \
                             .first()
+        except InvalidRequestError as e:
+            ChargerConfigModel.__cleanupDbSession(db_session, ChargerConfigModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
             ChargerConfigModel.logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
@@ -128,6 +136,22 @@ class ChargerConfigModel(Base):
                 "modified_at": (str(self.modified_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.modified_at is not None else None)
             }
         )
+
+    """
+        Try to fix any database errors including
+            - sqlalchemy.exc.InvalidRequestError: Can't reconnect until invalid transaction is rolled back
+    """
+    @staticmethod
+    def __cleanupDbSession(db_session=None, cn=None):
+        logger = logging.getLogger('nl.oppleo.models.Base cleanupSession()')
+        logger.debug("Trying to cleanup database session, called from {}".format(cn))
+        try:
+            db_session.remove()
+            if db_session.is_active:
+                db_session.rollback()
+        except Exception as e:
+            logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
+
 
 class ChargerConfigSchema(Schema):
     """

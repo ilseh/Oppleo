@@ -6,7 +6,10 @@ from marshmallow import fields, Schema
 
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
+
 from sqlalchemy import orm, Column, String, Boolean, DateTime
+from sqlalchemy.exc import InvalidRequestError
+
 
 """
 # Alternatively, catch reload events
@@ -88,6 +91,8 @@ class RfidModel(Base):
         try:
             db_session.add(self)
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -98,6 +103,8 @@ class RfidModel(Base):
         db_session = DbSession()
         try:
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit (update) to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -109,6 +116,8 @@ class RfidModel(Base):
         try:
             db_session.delete(self)
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -137,6 +146,8 @@ class RfidModel(Base):
         try:
             rfidm = db_session.query(RfidModel) \
                               .all()
+        except InvalidRequestError as e:
+            RfidModel.__cleanupDbSession(db_session, RfidModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
             RfidModel.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
@@ -151,9 +162,11 @@ class RfidModel(Base):
             rfidm = db_session.query(RfidModel) \
                               .filter(RfidModel.rfid == str(rfid)) \
                               .first()
+        except InvalidRequestError as e:
+            RfidModel.__cleanupDbSession(db_session, RfidModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            self.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
+            RfidModel.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(RfidModel.__tablename__ ))
         return rfidm
 
@@ -182,6 +195,21 @@ class RfidModel(Base):
                 "vehicle_id": str(self.vehicle_id),
                 "vehicle_vin": str(self.vehicle_vin)
             })
+
+    """
+        Try to fix any database errors including
+            - sqlalchemy.exc.InvalidRequestError: Can't reconnect until invalid transaction is rolled back
+    """
+    @staticmethod
+    def __cleanupDbSession(db_session=None, cn=None):
+        logger = logging.getLogger('nl.oppleo.models.Base cleanupSession()')
+        logger.debug("Trying to cleanup database session, called from {}".format(cn))
+        try:
+            db_session.remove()
+            if db_session.is_active:
+                db_session.rollback()
+        except Exception as e:
+            logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
 
 
 class RfidSchema(Schema):

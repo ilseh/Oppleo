@@ -4,6 +4,8 @@ import logging
 from marshmallow import fields, Schema
 
 from sqlalchemy import orm, Column, Integer, String, DateTime, Float
+from sqlalchemy.exc import InvalidRequestError
+
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 import json
@@ -57,6 +59,8 @@ class EnergyDeviceMeasureModel(Base):
         try:
             db_session.add(self)
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -77,6 +81,8 @@ class EnergyDeviceMeasureModel(Base):
                              .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
                              .limit(n) \
                              .all()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -100,6 +106,8 @@ class EnergyDeviceMeasureModel(Base):
                                  .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
                                  .limit(n) \
                                  .all()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -117,6 +125,8 @@ class EnergyDeviceMeasureModel(Base):
                                     .filter(EnergyDeviceMeasureModel.created_at <= since_ts) \
                                     .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
                                     .first()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -146,6 +156,8 @@ class EnergyDeviceMeasureModel(Base):
                              .filter(EnergyDeviceMeasureModel.a_l3 == 0) \
                              .order_by(EnergyDeviceMeasureModel.created_at.asc()) \
                              .first()
+        except InvalidRequestError as e:
+            EnergyDeviceMeasureModel.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
             EnergyDeviceMeasureModel.__logger.error("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ), exc_info=True)
@@ -230,6 +242,22 @@ class EnergyDeviceMeasureModel(Base):
             "kw_total": str(self.kw_total),
             "hz": str(self.hz)
         })
+
+
+    """
+        Try to fix any database errors including
+            - sqlalchemy.exc.InvalidRequestError: Can't reconnect until invalid transaction is rolled back
+    """
+    @staticmethod
+    def __cleanupDbSession(db_session=None, cn=None):
+        logger = logging.getLogger('nl.oppleo.models.Base cleanupSession()')
+        logger.debug("Trying to cleanup database session, called from {}".format(cn))
+        try:
+            db_session.remove()
+            if db_session.is_active:
+                db_session.rollback()
+        except Exception as e:
+            logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
 
 
 class EnergyDeviceMeasureSchema(Schema):

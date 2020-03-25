@@ -18,7 +18,6 @@ from nl.oppleo.exceptions.Exceptions import DbException
 
 try:
     from nl.oppleo.models.Base import Base
-    from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel, Weekday
     from nl.oppleo.webapp.WebSocketQueueReaderBackgroundTask import WebSocketQueueReaderBackgroundTask
     from nl.oppleo.config.OppleoConfig import OppleoConfig
     oppleoConfig = OppleoConfig()
@@ -49,6 +48,7 @@ try:
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = oppleoSystemConfig.SQLALCHEMY_TRACK_MODIFICATIONS
     app.config['SQLALCHEMY_DATABASE_URI'] = oppleoSystemConfig.DATABASE_URL
     app.config['EXPLAIN_TEMPLATE_LOADING'] = oppleoSystemConfig.EXPLAIN_TEMPLATE_LOADING
+    app.config['SQLALCHEMY_POOL_RECYCLE'] = 3600
     # import os; os.urandom(24)
     app.config['SECRET_KEY'] = oppleoConfig.secretKey
     app.config['WTF_CSRF_SECRET_KEY'] = oppleoConfig.csrfSecretKey
@@ -434,9 +434,9 @@ except Exception as e:
                 datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                 oppleoSystemConfig.SIGNATURE,
                 str(e),
-                '' if oppleoConfig is None and not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
+                '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
             ),
         priority=PushMessageProwl.priorityHigh,
         apiKey='325da9b81240111bec9770c9b8bb97dd60373077',   
-        chargerName='Unknown' if oppleoConfig is None and not isinstance(oppleoConfig.chargerName, str) else oppleoConfig.chargerName
+        chargerName='Unknown' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else oppleoConfig.chargerName
         )

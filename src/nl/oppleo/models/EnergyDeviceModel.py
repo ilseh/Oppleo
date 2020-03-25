@@ -4,6 +4,8 @@ from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
 from sqlalchemy import orm, func, Column, String, Integer, Boolean
+from sqlalchemy.exc import InvalidRequestError
+
 
 class EnergyDeviceModel(Base):
     """
@@ -41,6 +43,8 @@ class EnergyDeviceModel(Base):
         try:
             db_session.add(self)
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -68,10 +72,12 @@ class EnergyDeviceModel(Base):
             edm =  db_session.query(EnergyDeviceModel) \
                              .order_by(EnergyDeviceModel.energy_device_id.desc()) \
                              .first()
+        except InvalidRequestError as e:
+            EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
-            raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
+            EnergyDeviceModel.logger.error("Could not delete from {} table in database".format(EnergyDeviceModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not delete from {} table in database".format(EnergyDeviceModel.__tablename__ ))
         return edm
 
     def __repr(self):
@@ -83,10 +89,27 @@ class EnergyDeviceModel(Base):
             count_q = q.statement.with_only_columns([func.count()]).order_by(None)
             count = q.session.execute(count_q).scalar()
         except Exception as e:
-            db_session.rollback()
             self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return count
+
+
+    """
+        Try to fix any database errors including
+            - sqlalchemy.exc.InvalidRequestError: Can't reconnect until invalid transaction is rolled back
+    """
+    @staticmethod
+    def __cleanupDbSession(db_session=None, cn=None):
+        logger = logging.getLogger('nl.oppleo.models.Base cleanupSession()')
+        logger.debug("Trying to cleanup database session, called from {}".format(cn))
+        try:
+            db_session.remove()
+            if db_session.is_active:
+                db_session.rollback()
+        except Exception as e:
+            logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
+
+
 
 class EnergyDeviceSchema(Schema):
     """

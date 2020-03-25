@@ -1,9 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import orm, Column, String, Boolean
+from sqlalchemy.exc import InvalidRequestError
 
 import logging
 
 from nl.oppleo.models.Base import Base, DbSession
+from nl.oppleo.exceptions.Exceptions import DbException
 
 # generate_password_hash(password, method='sha256')
 
@@ -38,10 +40,12 @@ class User(Base):
             user = db_session.query(User) \
                             .filter(User.username == username) \
                             .first()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, User.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            self.__logger.error("Could not query {} table in database".format(self.__tablename__ ), exc_info=True)
-            raise DbException("Could not query {} table in database".format(self.__tablename__ ))
+            User.__logger.error("Could not query {} table in database".format(User.__tablename__ ), exc_info=True)
+            raise DbException("Could not query {} table in database".format(User.__tablename__ ))
         return user
 
 
@@ -50,6 +54,8 @@ class User(Base):
         try:
             db_session.add(self)
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -80,6 +86,8 @@ class User(Base):
                                          .filter(User.username == self.username) \
                                          .delete()
             db_session.commit()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -94,9 +102,25 @@ class User(Base):
             num_rows_deleted = db_session.query(User) \
                                          .delete()
             db_session.commit()
+        except InvalidRequestError as e:
+            User.__cleanupDbSession(db_session, User.__class__.__name__)
         except Exception as e:
             db_session.rollback()
             User.__logger.error("Could not commit to {} table in database".format(User.__tablename__ ), exc_info=True)
             raise DbException("Could not commit to {} table in database".format(User.__tablename__ ))
 
 
+    """
+        Try to fix any database errors including
+            - sqlalchemy.exc.InvalidRequestError: Can't reconnect until invalid transaction is rolled back
+    """
+    @staticmethod
+    def __cleanupDbSession(db_session=None, cn=None):
+        logger = logging.getLogger('nl.oppleo.models.Base cleanupSession()')
+        logger.debug("Trying to cleanup database session, called from {}".format(cn))
+        try:
+            db_session.remove()
+            if db_session.is_active:
+                db_session.rollback()
+        except Exception as e:
+            logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
