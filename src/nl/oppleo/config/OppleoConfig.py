@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 import os
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
+from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
@@ -133,6 +134,9 @@ class OppleoConfig(object, metaclass=Singleton):
     @chargerName.setter
     def chargerName(self, value):
         self.__chargerConfigModel.setAndSave('charger_name', value)
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.energy_device_id = value
+        energyDeviceModel.save()
         self.restartRequired = True
 
     """

@@ -191,18 +191,28 @@
                             id="offPeakDelete_` + data.value + `"
                             style="float: right;"
                             class="btn btn-xs btn-low-key-danger waves-effect waves-light" 
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="<em class='text-danger font-weight-bold'>Let op!<br /><span class='text-white font-weight-normal'>Wordt direct verwijderd!</span></em>"
                             > 
-                            <i class="fas fa-trash-alt"></i> Verwijder 
+                              <i class="fas fa-trash-alt"></i> Verwijder 
                           </button>
                         </td>
                       </tr>`
                 $(el).insertBefore('tr#offPeakNewHolidayDate')
                 // Add delete buttons
                 $('#offPeakDelete_' + data.value).on('click', function(e) {
+                  $(this).tooltip('hide') // Make sure tooltips don't remain          
                   var id = $(this).attr("id").replace("offPeakDelete_", "")
                   updateSettings( 'offPeakDeleteEntry', id )
                   // Remove from view
                   $('tr#offPeakHoliday_' + id).remove()
+                })
+                // Activate tooltips
+                $('[data-toggle=tooltip]').tooltip({ 
+                  boundary: 'window', 
+                  trigger : 'hover'   // Allow button clicks
                 })
                 $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag opgeslagen [' + data.value + '].')
                 break
@@ -351,12 +361,16 @@
       })
       // Add delete buttons
       $('button[id^=offPeakDelete]').on('click', function(e) {
+        $(this).tooltip('hide') // Make sure tooltips don't remain 
         var id = $(this).attr("id").replace("offPeakDelete_", "")
         updateSettings( 'offPeakDeleteEntry', id )
         // Remove from view
         $('tr#offPeakHoliday_' + id).remove()
       })
-      $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+      $('button[data-toggle=tooltip]').tooltip({ 
+        boundary: 'window',
+        trigger : 'hover'   // Allow button clicks
+      })
       // Oppleo web component applied change
       $('oppleo-edit-str').on('apply', (e) => {
         console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
@@ -551,8 +565,12 @@
                                   id="offPeakDelete_{{ offPeak.id }}"
                                   style="float: right;"
                                   class="btn btn-xs btn-low-key-danger waves-effect waves-light" 
+                                  data-toggle="tooltip" 
+                                  data-placement="bottom" 
+                                  data-html="true"
+                                  title="<em class='text-danger font-weight-bold'>Let op!<br /><span class='text-white font-weight-normal'>Wordt direct verwijderd!</span></em>"
                                   > 
-                                  <i class="fas fa-trash-alt"></i> Verwijder 
+                                    <i class="fas fa-trash-alt"></i> Verwijder 
                                 </button>
                               </td>
                             </tr>
@@ -567,13 +585,17 @@
                               <td class="text-primary">
 
                                   <div class="input-daterange input-group">
-                                    <span class="input-group-addon bg-primary b-0 text-white">
-                                      <i class="far fa-calendar-alt"></i>
-                                    </span>
+                                    <div class="input-group-prepend">
+                                      <span class="input-group-text bg-primary b-0 text-white">
+                                        <i class="far fa-calendar-alt"></i>
+                                      </span>
+                                    </div>
                                     <input type="text" id="holidayDate" class="form-control" name="holidayDate" placeholder="Datum" value=""/>
-                                    <span class="input-group-addon bg-primary b-0 text-white">
-                                      <i class="fas fa-heading"></i>
-                                    </span>
+                                    <div class="input-group-prepend">
+                                      <span class="input-group-text bg-primary b-0 text-white">
+                                        <i class="fas fa-heading"></i>
+                                      </span>
+                                    </div>
                                     <input type="text" id="holidayDescription" class="form-control" name="holidayDescription" style="text-align: left; flex: 40%;" placeholder="Omschrijving" value=""/>
                                     <button
                                       id="offPeakNewRecurring"
@@ -647,7 +669,14 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Slave address:</td>
-                              <td class="text-primary">{{ energydevicemodel.slave_address }}</td>
+                              <td class="text-primary">                                
+                                <oppleo-edit-str 
+                                id="slave_address"
+                                prefix="" 
+                                value="{{ energydevicemodel.slave_address }}"
+                                validation="^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$"
+                                info="Slave adres ingesteld op de kWh meter (modbus slave adres). Standaard waarde 1, waarde tussen 1 en 256."
+                                />
                             </tr>
                             <tr>
                               <td class="text-dark">Mode:</td>
@@ -655,7 +684,20 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Snelheid:</td>
-                              <td class="text-primary">{{ energydevicemodel.baudrate }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                id="baudrate"
+                                options='[ { "text": "2400", "value": "2400" }, 
+                                           { "text": "4800", "value": "4800" },
+                                           { "text": "9600", "value": "9600" },
+                                           { "text": "19200", "value": "19200" },
+                                           { "text": "38400", "value": "38400" },
+                                           { "text": "57600", "value": "57600" },
+                                           { "text": "115200", "value": "115200" }
+                                         ]'
+                                selectedText="{{ energydevicemodel.baudrate }}"
+                                info="Seriele poort snelheid om de kWh meter uit te lezen. Dit moet overeenkomen met de snelheid op de kWh meter! Max van de Eastron SMD630 Modbus is 38400"
+                                />
                             </tr>
                             <tr>
                               <td class="text-dark">Byte size:</td >
@@ -1069,7 +1111,7 @@
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                 id="autoSessionMinutes"
-                                suffix="%" 
+                                suffix="" 
                                 value="{{ oppleoconfig.autoSessionMinutes }}"
                                 validation="^([1-9]+)$"
                                 info="Tesla Model 3 settings are 0.1kWh in 90 minutes"

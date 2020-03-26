@@ -1112,6 +1112,20 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.onDbFailureShowCurrentUrl = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
+    # baudrate
+    if (param == 'baudrate') and isinstance(value, int) and int(value) in [2400, 4800, 9600, 19200, 38400, 57600, 115200]:
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.baudrate = value
+        energyDeviceModel.save()
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # slave_address
+    if (param == 'slave_address') and isinstance(value, int) and (0 < int(value) < 256):
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.slave_address = value
+        energyDeviceModel.save()
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
 
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
