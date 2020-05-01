@@ -118,10 +118,12 @@ class TeslaAPI:
         return self.auth_post(data, self.API_AUTHENTICATION_GRANT_TYPE_PASSWORD)
 
     def getVehicleList(self, update=False):
-        self.logger.debug("getVehicleList: " + self.API_VEHICLES)
+        self.logger.debug("getVehicleList() update={}".format(str(update)))
         if (self.vehicle_list != None and not update):
+            self.logger.debug("getVehicleList() return existing vehicle_list")
             return self.vehicle_list
         # Reset
+        self.logger.debug("getVehicleList() reset vehicle_list")
         self.vehicle_list = None
         # 02 - Vehicles [GET]
         # If >1 then show list and select, otherwise pick the vehicle  
@@ -151,12 +153,13 @@ class TeslaAPI:
         return self.vehicle_list
 
     def getVehicleWithId(self, id=None):
-        self.logger.debug("getVehicleWithId")
+        self.logger.debug("getVehicleWithId() id={}".format(id))
         if id is None:
+            self.logger.debug("getVehicleWithId() id={} return None (1)".format(id))
             return None
         vehicle_list = self.getVehicleList()
         if vehicle_list is None:
-            self.logger.debug("vehicle_list is None")
+            self.logger.debug("getVehicleWithId() id={} return None (2)".format(id))
             return None
         for vehicle in vehicle_list:
             if id == vehicle[self.VEHICLE_LIST_ID_PARAM]:
@@ -228,9 +231,10 @@ class TeslaAPI:
 
 
     def getVehicleDetailsWithId(self, id=None, update=False):
-        self.logger.debug("getVehicleDetailsWithId()")
+        self.logger.debug("getVehicleDetailsWithId() id={} update={}".format(id, str(update)))
         vehicle = self.getVehicleWithId(id)
         if id is None or vehicle is None:
+            self.logger.debug("getVehicleDetailsWithId() id={}  return None (1)".format(id))
             return None
         # Existing?
         if (self.VEHICLE_DETAILS_TOKEN in vehicle) and (vehicle[self.VEHICLE_DETAILS_TOKEN] != None) and (not update):
@@ -238,6 +242,7 @@ class TeslaAPI:
         # Needs to be awake
         if (self.vehicleWithIdIsAsleep(id) and
                 not self.wakeUpVehicleWithId(id)):
+            self.logger.debug("getVehicleDetailsWithId() id={}  return None (2)".format(id))
             return None
         self.logger.debug("getVehicleDetailsWithId() - awake")
         url = self.API_BASE + self.API_VEHICLE_STATE.replace('{id}', id)
@@ -264,13 +269,19 @@ class TeslaAPI:
         return response_dict['response']
 
     def getOdometerWithId(self, id=None):
-        self.logger.debug("getOdometerWithId()")
+        self.logger.debug("getOdometerWithId() id={}".format(id))
         if id is None:
+            self.logger.debug("getOdometerWithId() return None (1)")
             return None
         vehicle_details = self.getVehicleDetailsWithId(id)
         if vehicle_details is None:
+            self.logger.debug("getOdometerWithId() return None (2)")
             return None
-        return round(float(vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM]) * 1.609344)
+        odometer = vehicle_details[self.VEHICLE_DETAILS_ODOMETER_PARAM]
+        self.logger.debug("getOdometerWithId() odometer value = {} (miles)".format(odometer))
+        odometerKm = round(float(odometer) * 1.609344)
+        self.logger.debug("getOdometerWithId() odometer km value = {}".format(odometerKm))
+        return odometerKm
 
     def refreshToken(self):
         self.logger.debug('refreshToken() ' + self.API_AUTHENTICATION)
