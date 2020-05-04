@@ -113,6 +113,9 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
  > `install/install.sh`
 
 
+ * Oppleo logs to `/tmp/Oppleo.log`
+
+
 Any remarks below are relevant if you want to develop Oppleo
 ___
 
