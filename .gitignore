@@ -26,3 +26,4 @@ snapshot/grab_img.sh
 # Don't store the service file, generate a new one at each platform
 webapp/CarChargerWebApp.service
 oppleo/Oppleo.service
+db/backup/*.*.dump

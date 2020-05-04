@@ -90,6 +90,8 @@ if [ "$raspberry" = true ]; then
     sudo systemctl daemon-reload
     echo " - starting Oppleo systemd daemon..."
     sudo systemctl start Oppleo.service
+    echo " - enabling daemon autostart..."
+    sudo systemctl enable Oppleo.service
     sudo systemctl status Oppleo.service
 else
     echo " Not on a raspberry..."
