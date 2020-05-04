@@ -4,7 +4,7 @@ The Oppleo software package aims to provide additional functionality to extend a
 
 Combined with some additional components like a relais, cabling and proper connections, a SmartEVSE can be used to charge an electric vehicle from your one or three phase mains. It can do so while balancing the total power consumption. SmartEVSE allows control through a switch, which is used by Oppleo to control access and off peak charging. SmartEVSE also reports charge status through a PWM pin, which is read by Oppleo to provide LED and online charge status.
 
-Oppleo uses modbus interfacing to connect with a kWh meter logging readings to a database.
+Oppleo uses modbus interfacing to connect with a kWh meter logging readings to a database. Oppleo can use Prowl to send push messages to the owner.
 
 Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need a Raspberry Pi and a SmartEVSE based car charger setup.
 
@@ -94,7 +94,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
  > `cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini`
  * Edit the oppleo ini file to reflect your installation. The example ini file has comments to help. Note that this ini file is overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost.
    * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalize the first letter.
-   * signature = 
+   * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. 
    * `database_url` is `postgresql://USER:PASSWORD@IPADRESS:5432/DATABASE` where USER, PASSWORD, IPADDRESS, and DATABASE are your own values.
    * `sqlalchemy_track_modifications` should be `False` 
    * `env` should be `Production`
