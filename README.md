@@ -1,4 +1,64 @@
-# RestfulCharging
+# Oppleo
+
+Read the Wiki page for a description of Oppleo. You'll need a Raspberry Pi and a SmartEVSE based car charger setup.
+
+
+## Install Oppleo on a Raspberry Pi 4
+
+#### Prereqs
+  * I run Oppleo on a Raspberry Pi 4. I have not tested other versions, I can only assume a 3 would work too. If you need to order one, get a 4, if you have one laying around give it a try.
+  * You'll need a SmartEVSE to control charging. Oppleo pulls a pin down, so any other EVSE with a similar control pin might work.
+  * Make sure apt-get is up to date  
+    > `sudo apt-get update && sudo apt-get upgrade`
+  * RFID reader, LED, buzzer, RTC. Technically not needed, but makes for better experience.
+  * A Raspberry does not come with a Real-Time Clock (RTC). [Read up](https://thepihut.com/blogs/raspberry-pi-tutorials/17209332-adding-a-real-time-clock-to-your-raspberry-pi) to understand if you want one.
+    * Install [RasClock](https://afterthoughtsoftware.com/products/rasclock) (Real Time Clock)
+    * Check it it is installed using `sudo hwclock -r`
+    * Start after boot `sudo nano /boot/config.txt` add
+      > `# RasClock RealTime Clock`  
+      > `dtoverlay=i2c-rtc,pcf2127`
+      * Reboot your Raspberry
+      > `sudo reboot`
+  * `ssh` enabled on the Raspberry. 
+    * Add an empty file named `ssh` (no extension) to the root of the sdcard to enable ssh after boot on the Raspberry. You'll probably need ssh to install Python and Postgress anyway.
+  * Pyhton3 and pip installed
+    > `sudo apt-get install python3-dev python3-pip`
+  * Postgres (Google for [How-to](https://opensource.com/article/17/10/set-postgres-database-your-raspberry-pi)'s) with a database, a user with rights to that database, and a password.
+  * Install SPIdev, a python module for interfacing with SPI devices. This is required to interface with the RFID reader which uses the SPI bus.
+    > `sudo pip3 install spidev`  
+    * Enable SPI and the PCM at boot. Edit /boot/config.txt
+	  > `sudo nano /boot/config.txt`
+    * Add these lines
+      > `dtparam=spi=on` 
+      > `dtoverlay=spi-bcm2708`
+      
+      	lsmod | grep spi
+spidev                 20480  0
+spi_bcm2835            20480  0
+      
+      
+  * Install mfrc522, the interface module for the RFID reader.
+	> `sudo pip3 install mfrc522`
+  * Install RPi.GPIO, a PyPi python module for interfacing with the Raspberry Gneral Purpose IO (GPPIO) pins. This is required to interface with the RTC, LED, the Buzzer, and the SmartEVSE.
+    > `sudo pip install RPi.GPIO`
+  * git installed on your Raspberry
+    > `sudo apt-get install git`
+  
+  
+ #### Installation
+ Oppleo is not a nicely packaged resource. Basically you'll pull the developer code and run that. 
+ Use ssh to login to the Raspberry. You'' end up in `/home/pi`
+ 
+ * Create a folder named __Oppleo__ in the pi home directory
+ > `mkdir oppleo`
+ > `cd oppleo`
+ 
+ * Initialise the folder as git repo
+ 
+ 
+ Install 
+  
+
 
 
 ## Developer specific
