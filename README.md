@@ -72,26 +72,51 @@ Read the Wiki page for a description of Oppleo. You'll need a Raspberry Pi and a
  Oppleo is not a nicely packaged resource. Basically you'll pull the developer code and run that. 
  Use ssh to login to the Raspberry. You'' end up in `/home/pi`
  
- * Create a folder named __Oppleo__ in the pi home directory
- > `mkdir oppleo`
- > `cd oppleo`
+ * Clone the __Oppleo__ repo in the `/home/pi` folder (note: get the URL from the Clone or Download button above!)
+ > `git clone https://github.com/ilseh/Oppleo.git`
+ * Move into the Oppleo directory
+ > `cd Oppleo`
+ * Create a virtual environment for Oppleo
+ > `python3 -m venv venv`
+ * Activate it
+	> `source venv/bin/activate`
+ * Upgrade pip (if required)
+	> `pip install --upgrade pip`
+ * Install all dependencies from the requirements_raspberry.txt file
+	> `pip install -r requirements_raspberry.txt`
+ * Create an Oppleo ini file 
+ > `cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini`
+ * Edit the oppleo ini file to reflect your installation. The example ini file has comments to help. Note that this ini file is overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost.
+   * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalize the first letter.
+   * signature = 
+   * `database_url` is `postgresql://USER:PASSWORD@IPADRESS:5432/DATABASE` where USER, PASSWORD, IPADDRESS, and DATABASE are your own values.
+   * `sqlalchemy_track_modifications` should be `False` 
+   * `env` should be `Production`
+   * `debug` should be `False`
+   * `testing` should be `False`
+   * `pythonpath` is empty
+   * `explain_template_loading` provides a debug information on screen if something goes wrong internally. `False` should be better. 
+   * The `on_db_failure_` variables come into play if the database cannot be reached by Oppleo. It becomes blind to settings, and thus some fallback settings are required.
+     * `on_db_failure_allow_restart` provides a restart button when `True`
+     * `on_db_failure_magic_password` is password to enter when making changes on a database failure. Set it through the web front. Looks like `pbkdf2:sha256:<some long string>`
+     * `on_db_failure_allow_url_change` allows the database URL to be changed after a failure, could be caused by misconfiguration, through the web front if `True`. Set this to `True` untill it is all working and then set it to `False`, or leave at `True` if security is not an issue.  
+     * `on_db_failure_show_current_url` shows the database URL through the web front even if no connection could be made. Shows your database username and password when `True`, so be carefull. 
+   
  
- * Initialise the folder as git repo
- 
- 
- Install 
-  
+ * Install Oppleo as a service (creates a Oppleo.service file in /etc/systemd/system/ and reloads systemctl)
+ > `install/install.sh`
 
+
+Any remarks below are relevant if you want to develop Oppleo
+___
 
 
 ## Developer specific
-sudo apt-get install libpq-dev
-sudo apt install python3.6-dev
-sudo apt-get install build-essential
+> `sudo apt-get install libpq-dev`  
+> `sudo apt install python3.6-dev`  
+> `sudo apt-get install build-essential`  
 
-install docker and docker-compose
-install liquibase
-
+> `install liquibase`
 (You need Java for liquibase.)
 
 Check the liquibase.properties and the docker-compose.yml to make sure it matches your situation.
