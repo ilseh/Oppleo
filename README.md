@@ -1,6 +1,12 @@
 # Oppleo
 
-Read the Wiki page for a description of Oppleo. You'll need a Raspberry Pi and a SmartEVSE based car charger setup.
+The Oppleo software package aims to provide additional functionality to extend a basic SmartEVSE based car charger adding RFID tags, a buzzer and LED, an online web front with basic authentication, kWh meter loggin to a database, off-peak charging, and Excel and PDF charge reports.
+
+Combined with some additional components like a relais, cabling and proper connections, a SmartEVSE can be used to charge an electric vehicle from your one or three phase mains. It can do so while balancing the total power consumption. SmartEVSE allows control through a switch, which is used by Oppleo to control access and off peak charging. SmartEVSE also reports charge status through a PWM pin, which is read by Oppleo to provide LED and online charge status.
+
+Oppleo uses modbus interfacing to connect with a kWh meter logging readings to a database.
+
+Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need a Raspberry Pi and a SmartEVSE based car charger setup.
 
 
 ## Install Oppleo on a Raspberry Pi 4
