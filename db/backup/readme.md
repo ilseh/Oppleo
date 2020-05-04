@@ -33,8 +33,13 @@ Save and exit with `ctrl-x` and selecting `Yes`.
 You should see a dump file appear every day in the backup.sh directory (probably /home/pi/oppleo/db/backup)
 
 
-## 3. Backup off-system
+## 3. Backup raspberry files to another location
 
 To overcome corrupt sd cards it is smart to backup the database to a different system, like a NAS or similar.
+
+One way is to install [Deja Dup backup tool](https://wiki.gnome.org/Apps/DejaDup) and schedule daily backups. 
+
+I used a GUI to install and configure. Connect a monitor or [Enable VNC](https://howtoraspberrypi.com/raspberry-pi-vnc/) and run [VNC](https://www.realvnc.com/en/connect/download/viewer/) to connect to your Raspberry.
+
 
 
