@@ -124,10 +124,22 @@ After installing Oppleo:
   * There are test scripts in `Oppleo/test`, to validate the RFID reader, the LEDs, the Modbus kWh meter readout, the Buzzer, the SmartEVSE control (enable/disable) and reading the PWM led output of the SmartEVSE. Use these to validate your diagram. 
   * Oppleo logs to `/tmp/Oppleo.log`
 
+___
+### BOM
+
+Oppleo works with 
+  * [SmartEVSE](https://www.stegen.com/nl/ev-producten/66-smart-evse-controller.html)
+  * [SDM630 Modbus 3-phase 100A MID KWH meter](https://www.sandervunderink.nl/kwh-meter-3-fase-100a-mid-keur-sdm630-modbus.html)
+  * [Joy-it SBC-RS485](https://www.reichelt.nl/raspberry-pi-usb-rs485-interface-rs485-ch340c-rpi-usb-rs485-p242783.html)
+  * [Joy-it RFID-module, NXP MFRC-522](https://www.reichelt.nl/ontwikkelingsbord-rfid-module-nxp-mfrc-522-debo-rfid-rc522-p192147.html)
+  * [Joy-it KY-016 RGB- 5 mm-LED](https://www.conrad.nl/p/joy-it-rgb-5-mm-led-167-miljoen-kleuren-1656370)
+  * [Joy-it COM-KY012APB active piëzo-buzzermodule](https://www.conrad.nl/p/joy-it-actieve-piezo-buzzermodule-1695383)
+  * [RasClock - Raspberry Pi Real Time Clock Module [KW-1740]](https://www.kiwi-electronics.nl/RasClock-Raspberry-Pi-Real-Time-Clock-Module) with [CR1220 battery [GP-CR1220]](https://www.kiwi-electronics.nl/cr1220-batterij)
+
 
 ___
 
-## Some Developer specific references
+### Some Developer specific references
 > `sudo apt-get install libpq-dev`  
 > `sudo apt install python3.6-dev`  
 > `sudo apt-get install build-essential`  
@@ -143,7 +155,7 @@ oppleo_ENV=development
 
 execute docker-compose up to run your developement postgres db. On my windows it is in a virtual machine, hence the ip, on linux it is on localhost.
 
-## Database schema setup
+### Database schema setup
 In db folder, update the liquibase.properties to match your situation, then run:
 ``` shell script
 $ liquibase update
