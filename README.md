@@ -112,8 +112,16 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
  * Install Oppleo as a service (creates a Oppleo.service file in /etc/systemd/system/ and reloads systemctl)
  > `install/install.sh`
 
+Oppleo should now be running. Check http://localhost/ or the IP address of the raspberry.
 
- * Oppleo logs to `/tmp/Oppleo.log`
+After installing Oppleo:
+  * You should probably go to settings and change them. Not all settings are changeable in the web front, for some you'll have to update the database. Tables:
+    * `charger_config` for general configurations
+    * `energy_device` for the modbus settings
+    * `off_peak_hours` for the recurring weekdays, the holidays can be changed through the webfront 
+  * The default username/password is admin/admin. Through the web front only the password can be changed. There is are no other users implemented, however adding users manually to the database should work. There are no roles.
+  * You can restart Oppleo through the webapp, even restart or shutdown the Pi. Use this when powering the Pi off. I have been looking into a UPS for the Pi, as earlier versions shewed my sdcards on reboot more than once. The Pi 4 however has been nice to the sdcard on power cycles.
+  * Oppleo logs to `/tmp/Oppleo.log`
 
 
 Any remarks below are relevant if you want to develop Oppleo
@@ -142,36 +150,4 @@ In db folder, update the liquibase.properties to match your situation, then run:
 $ liquibase update
 ```
 
-## Setup to run the service
-1. Clone this repo on the machine you want to run it.
-2. Changedir to the main folder of the repo (/somedir/RestfulCharging/).
-3. Make a virtual env: 
-    ```shell script
-    $ python3 -m venv venv
-    ```
-4. Install the python libs in the venv   
-   ```shell script
-   $ source venv/bin/activate
-   $ pip3 install -r requirements.txt
-   ```
-5. Update the DATABASE_URL and oppleo_ENV values in the start.sh to match your situation 
 
-### Let is start a boot time
-In /etc/init.d/ add a file (ie measure_energy_devices.sh) and put in content:
-```shell script
-# /etc/init.d/measure_energy_devices.sh
-### BEGIN INIT INFO
-# Provides:          measure_energy_devices.sh
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: Start measure_energy_device at boot time
-# Description:       Enable measure_energy_devices at boot time to write energy measures to postgres db
-### END INIT INFO
-```
-
-## Operational info
-The log is in  `/tmp/measure_electricity_usage.log` and the pid of the daemon in `/tmp/measure_electricity_usage.pid`
-Locations are currently hardcoded in `MeasureElectricityUsage.py`
-Loglevel (hardcoded) put on debug.
