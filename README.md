@@ -115,7 +115,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 Oppleo should now be running. Check http://localhost/ or the IP address of the raspberry.
 
 After installing Oppleo:
-  * You should probably go to settings and change them. Not all settings are changeable in the web front, for some you'll have to update the database. Tables:
+  * go to settings in the webfront and change them. Not all settings are changeable in the web front, for some you'll have to update the database. Tables:
     * `charger_config` for general configurations
     * `energy_device` for the modbus settings
     * `off_peak_hours` for the recurring weekdays, the holidays can be changed through the webfront 
@@ -124,11 +124,9 @@ After installing Oppleo:
   * Oppleo logs to `/tmp/Oppleo.log`
 
 
-Any remarks below are relevant if you want to develop Oppleo
 ___
 
-
-## Developer specific
+## Some Developer specific references
 > `sudo apt-get install libpq-dev`  
 > `sudo apt install python3.6-dev`  
 > `sudo apt-get install build-essential`  
