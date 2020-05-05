@@ -128,13 +128,14 @@ ___
 ### BOM
 
 Oppleo works with 
+  * [Raspberry Pi 4 Model B - 2GB](https://www.kiwi-electronics.nl/raspberry-pi/raspberry-pi-4/raspberry-pi-4-model-b-2gb)
   * [SmartEVSE](https://www.stegen.com/nl/ev-producten/66-smart-evse-controller.html)
-  * [SDM630 Modbus 3-phase 100A MID KWH meter](https://www.sandervunderink.nl/kwh-meter-3-fase-100a-mid-keur-sdm630-modbus.html)
+  * [SDM630 Modbus 3-phase 100A MID kWh meter](https://www.sandervunderink.nl/kwh-meter-3-fase-100a-mid-keur-sdm630-modbus.html)
   * [Joy-it SBC-RS485](https://www.reichelt.nl/raspberry-pi-usb-rs485-interface-rs485-ch340c-rpi-usb-rs485-p242783.html)
   * [Joy-it RFID-module, NXP MFRC-522](https://www.reichelt.nl/ontwikkelingsbord-rfid-module-nxp-mfrc-522-debo-rfid-rc522-p192147.html)
   * [Joy-it KY-016 RGB- 5 mm-LED](https://www.conrad.nl/p/joy-it-rgb-5-mm-led-167-miljoen-kleuren-1656370)
   * [Joy-it COM-KY012APB active piëzo-buzzermodule](https://www.conrad.nl/p/joy-it-actieve-piezo-buzzermodule-1695383)
-  * [RasClock - Raspberry Pi Real Time Clock Module [KW-1740]](https://www.kiwi-electronics.nl/RasClock-Raspberry-Pi-Real-Time-Clock-Module) with [CR1220 battery [GP-CR1220]](https://www.kiwi-electronics.nl/cr1220-batterij)
+  * [RasClock - Raspberry Pi Real Time Clock Module](https://www.kiwi-electronics.nl/RasClock-Raspberry-Pi-Real-Time-Clock-Module) with [CR1220 battery [GP-CR1220]](https://www.kiwi-electronics.nl/cr1220-batterij)
 
 
 ___
