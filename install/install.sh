@@ -1,6 +1,6 @@
 # Reaspberry config
 echo "Install script for the Oppleo service"
-echo "v0.3 06-03-2020"
+echo "v0.4 05-05-2020"
 
 # Some systemd commands
 # 1. systemd version
@@ -59,8 +59,9 @@ echo " determining the location of the install script..."
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo " install script in dir $DIR..."
 # PRJDIR holds the root directory of rhe project
-PRJDIR=${DIR%"/oppleo"}
+PRJDIR=${DIR%"/install"}
 echo " project root $PRJDIR..."
+
 echo " activate virtual environment..."
 source $PRJDIR/venv/bin/activate
 echo " make sure pip is up to date..."
