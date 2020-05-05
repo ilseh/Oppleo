@@ -37,7 +37,9 @@ You should see a dump file appear every day in the backup.sh directory (probably
 
 To overcome corrupt sd cards it is smart to backup the database to a different system, like a NAS or similar.
 
-One way is to install [Deja Dup backup tool](https://wiki.gnome.org/Apps/DejaDup) and schedule daily backups. 
+One way is to install [Deja Dup backup tool](https://wiki.gnome.org/Apps/DejaDup) and schedule daily backups. Install deja-dup using 
+ > `sudo apt-get install deja-dup`
+
 
 I used a GUI to install and configure. Connect a monitor or [Enable VNC](https://howtoraspberrypi.com/raspberry-pi-vnc/) and run [VNC](https://www.realvnc.com/en/connect/download/viewer/) to connect to your Raspberry.
 
