@@ -162,4 +162,22 @@ In db folder, update the liquibase.properties to match your situation, then run:
 $ liquibase update
 ```
 
+### gcc errors installing requirements_non_raspberry.txt on MacOS
+
+If there are gcc errors when installing the non-raspberry dependencies on MacOS, add 
+  > `export LDFLAGS="-L/usr/local/opt/openssl/lib"`
+before running
+  > `pip install -r requirements_non_raspberry.txt`
+
+
+### pkg-resources==0.0.0
+
+Running `pip freeze > requirements_raspberry.txt` can add a line `pkg-resources==0.0.0` which in term can cause errors installing the dependencies. This line can be removed from the requirements files.
+  > `pip freeze | grep -v "pkg-resources" > requirements_raspberry.txt"`
+excludes pkg-resources from the file when generating it.
+
+
+
+
+
 
