@@ -121,6 +121,7 @@ After installing Oppleo:
     * `off_peak_hours` for the recurring weekdays, the holidays can be changed through the webfront 
   * The default username/password is admin/admin. Through the web front only the password can be changed. There is are no other users implemented, however adding users manually to the database should work. There are no roles.
   * You can restart Oppleo through the webapp, even restart or shutdown the Pi. Use this when powering the Pi off. I have been looking into a UPS for the Pi, as earlier versions shewed my sdcards on reboot more than once. The Pi 4 however has been nice to the sdcard on power cycles.
+  * There are test scripts in `Oppleo/test`, to validate the RFID reader, the LEDs, the Modbus kWh meter readout, the Buzzer, the SmartEVSE control (enable/disable) and reading the PWM led output of the SmartEVSE. Use these to validate your diagram. 
   * Oppleo logs to `/tmp/Oppleo.log`
 
 
