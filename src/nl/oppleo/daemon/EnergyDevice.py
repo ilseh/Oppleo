@@ -87,7 +87,7 @@ class EnergyDevice():
             # Callbacks to notify update
             self.callback(device_measurement)
         else:
-            self.logger.debug('Not saving new measurement, no signbificant change and not older than 1 hour')
+            self.logger.debug('Not saving new measurement, no significant change and not older than 1 hour')
 
 
     def is_a_value_changed(self, old_measurement, new_measurement):
