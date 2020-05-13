@@ -26,7 +26,6 @@ class EnergyUtil:
         if GenericUtil.isProd():
             self.logger.debug('Production environment, calling initInstrument()')
             self.initInstrument()
-            self.readSerialNumber()
         else:
             self.logger.debug('Not production environment, skip initInstrument()')
         self.threadLock = threading.Lock()
@@ -52,8 +51,10 @@ class EnergyUtil:
         self.instrument.mode = device_data.mode
         self.instrument.close_port_after_each_call = device_data.close_port_after_each_call
 
+        self.readSerialNumber(device_data.port_name, device_data.slave_address)
 
-    def readSerialNumber(self):
+
+    def readSerialNumber(self, port_name=None, slave_address=None):
         self.logger.debug('readSerialNumber()')
         # registeraddress, number_of_decimals=0, functioncode=3, signed=False
         # Register                Hi  Lo  byte
@@ -62,8 +63,13 @@ class EnergyUtil:
         # 40045 Serial Number Lo  00  2C  Read the second product serial number.
         serial_Lo = self.instrument.read_register(44, 0, MODBUS_FUNCTION_CODE_HOLDING, False)
         self.logger.debug('readSerialNumber() serial_Hi:{} serial_Lo:{}'.format(serial_Hi, serial_Lo))     
-        self.oppleoConfig.kWhMeter_serial = str((serial_Hi * 65535 ) + serial_Lo)
-        self.logger.debug('readSerialNumber() oppleoConfig.kWhMeter_serial:{}'.format(self.oppleoConfig.kWhMeter_serial))     
+        self.oppleoConfig.kWhMeter_serial = str((serial_Hi * 65536 ) + serial_Lo)
+        self.logger.info('kWh meter serial number: {} (address:{}, port:{})'.format(
+                self.oppleoConfig.kWhMeter_serial,
+                slave_address,
+                port_name
+                )
+            )     
         return self.oppleoConfig.kWhMeter_serial
 
 
