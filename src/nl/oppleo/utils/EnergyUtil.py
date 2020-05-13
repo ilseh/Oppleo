@@ -64,10 +64,10 @@ class EnergyUtil:
         serial_Lo = self.instrument.read_register(44, 0, MODBUS_FUNCTION_CODE_HOLDING, False)
         self.logger.debug('readSerialNumber() serial_Hi:{} serial_Lo:{}'.format(serial_Hi, serial_Lo))     
         self.oppleoConfig.kWhMeter_serial = str((serial_Hi * 65536 ) + serial_Lo)
-        self.logger.info('kWh meter serial number: {} (address:{}, port:{})'.format(
+        self.logger.info('kWh meter serial number: {} (port:{}, address:{})'.format(
                 self.oppleoConfig.kWhMeter_serial,
-                slave_address,
-                port_name
+                port_name,
+                slave_address
                 )
             )     
         return self.oppleoConfig.kWhMeter_serial
