@@ -176,6 +176,77 @@
             messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
             filename: ('Oppleo laadsessie rapport - ' + months[{{ month }} -1] + ' {{ year }}'),
             footer: true,
+            customize: function(doc) {
+              doc.styles['tableBodyOddRight'] = doc.styles.tableBodyOdd
+              doc.styles.tableBodyOddRight['alignment'] = 'right'
+              doc.styles['tableBodyOddCenter'] = doc.styles.tableBodyOdd
+              doc.styles.tableBodyOddCenter['alignment'] = 'center'
+              doc.styles['tableBodyEvenRight'] = doc.styles.tableBodyEven
+              doc.styles.tableBodyEvenRight['alignment'] = 'right'
+              doc.styles['tableBodyEvenCenter'] = doc.styles.tableBodyEven
+              doc.styles.tableBodyEvenCenter['alignment'] = 'center'
+              doc.styles['tableFooterRight'] = doc.styles.tableFooter
+              doc.styles.tableFooterRight['alignment'] = 'right'
+              doc.styles['tableFooterCenter'] = doc.styles.tableFooter
+              doc.content[2].table.body.forEach((row, index) => {
+                if (index < doc.content[2].table.headerRows) return
+                row[0].style += 'Center'
+                row[9].style += 'Right'
+                row[10].style += 'Right'
+              })
+
+              doc.content[0] = {
+                margin: [0, 0, 0, 12],
+                layout: 'noBorders',
+                table: {
+                  headerRows: 0,
+                  body: [
+                    [{
+                      style: {
+                        textAlign: 'center'
+                      },
+                      image: 'data:image/png;base64,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'
+                    },{
+                      style: {
+                        textAlign: 'center',
+                        fontSize: 15,
+                        bold: true,
+                      },
+                      text: doc.content[0].text
+                    }]
+                  ]
+                } 
+              }
+
+              doc.content[1] = {
+                margin: [0, 0, 0, 12],
+                layout: 'noBorders',
+                table: {
+                  headerRows: 0,
+                  body: [
+                    [{
+                      style: {
+                        alignment: 'left',
+                        bold: true
+                      },
+                      text: 'Bonnummer: 1221130100007'
+                    }],[{
+                      style: {
+                        alignment: 'left',
+                        bold: true
+                      },
+                      text: doc.content[1].text
+                    }],[{
+                      style: {
+                        alignment: 'left',
+                        fontSize: 8,
+                      },
+                      text: 'EASTRON SMD630 3-fase 100A MID-keur Modbus kWh meter'
+                    }]
+                  ]
+                } 
+              }
+            },
             exportOptions: {
               orthogonal: {
                 display: 'Print'

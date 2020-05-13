@@ -118,6 +118,12 @@ class OppleoConfig(object, metaclass=Singleton):
 
     wsEmitQueue = None
 
+    """
+        Global location to store kWh meter serial number
+    """
+    kWhMeter_serial = None
+
+
     def __init__(self):
         self.___logger = logging.getLogger('nl.oppleo.config.' + self.__class__.__name__)
         self.___logger.debug('Initializing Oppleo...')
