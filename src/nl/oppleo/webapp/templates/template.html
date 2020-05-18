@@ -23,9 +23,9 @@
         {% block jquery %}
         {% endblock %}
 
-        <!-- Notification js -->
-        <script src="{{ url_for('static', filename='plugins/notifyjs/dist/notify.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='plugins/notifications/notify-metro.js') }}"></script>
+        <!-- Styled Notifications -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/styled-notifications/dist/notifications.css') }}">
+        <script src="{{ url_for('static', filename='plugins/styled-notifications/dist/notifications.js') }}"></script>
 
         <!-- Minton template -->
         <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
@@ -56,7 +56,7 @@
 
         <script>
             var factor_Whkm = {% if oppleoconfig is not none %}{{ oppleoconfig.factorWhkm }}{% else %}162{% endif %}
-            var kWhMeter_serial = {% if oppleoconfig is not none %}{{ oppleoconfig.kWhMeter_serial }}{% else %}Onbekend{% endif %}
+            var kWhMeter_serial = {% if oppleoconfig is not none and oppleoconfig.kWhMeter_serial is not none %}{{ oppleoconfig.kWhMeter_serial }}{% else %}'Onbekend'{% endif %}
             var EVSE_STATE_UNKNOWN    = 0  // Initial
             var EVSE_STATE_INACTIVE   = 1  // SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
             var EVSE_STATE_CONNECTED  = 2  // SmartEVSE State B: LED ON full brightness, Car connected
@@ -98,6 +98,22 @@
                 dObj.setMinutes(time[1]) 
                 dObj.setSeconds(time[2]) 
                 return dObj
+            }
+            function autoHideNotify( theme='success', position='top-left', title, message ) {
+                if (theme=='danger') { theme = 'error' }
+                window.createNotification({
+                        theme: theme,
+                        closeOnClick: true,
+                        // nfc-top-left
+                        // nfc-bottom-right
+                        // nfc-bottom-left
+                        positionClass: 'nfc-' + position,
+                        // timeout in milliseconds
+                        showDuration: 2500,
+                        })({
+                            title: title,
+                            message: message
+                        })
             }
             function getSystemStatus( ) {
                 console.log(timestamp() + ' getSystemStatus()')
@@ -177,7 +193,7 @@
             jQuery(document).ready(function () {
                 console.log(timestamp() + " file load completed")
                 addReports()
-                $('input#enabled').bootstrapToggle()
+//                $('input#enabled').bootstrapToggle()
                 $('[data-toggle=tooltip]').tooltip({ 
                     boundary: 'window', 
                     trigger : 'hover'   // Allow button clicks

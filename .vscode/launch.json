@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "pythonPath": "${config:python.pythonPath}",
+            "pythonPath": "${config:python.interpreterPath}",
             "console": "integratedTerminal"
         },
         {
@@ -17,7 +17,7 @@
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "pythonPath": "${config:python.pythonPath}",
+            "pythonPath": "${config:python.interpreterPath}",
             "program": "./src/nl/oppleo/webapp/Oppleo.py",
             "gevent": true,
             "cwd": "${workspaceFolder}",

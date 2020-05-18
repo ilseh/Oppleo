@@ -7,18 +7,16 @@
   {{ super() }}
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <!-- Datepicker, Date range picker, Bootstrap witch button -->
+  <!-- Datepicker, Date range picker -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.css') }}">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/carcharger.css') }}">
 
   <!-- Moment, required for date range picker -->
   <script src="{{ url_for('static', filename='plugins/moment/moment.js') }}"></script>
 
-  <!-- Bootstrap switch button -->
-  <script src="{{ url_for('static', filename='plugins/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js') }}"></script>
+  <!-- Bootstrap switch button in template -->
 
   <!-- Datepicker, Date range picker -->
   <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
@@ -92,7 +90,7 @@
         console.log(res)
         switch(res.status) {
           case 200: // Ok
-            $.Notification.autoHideNotify('success', 'top left', 'OAuth Token', 'OAuth Token wijziging succesvol uitgevoerd.');
+            autoHideNotify('success', 'top-left', 'OAuth Token', 'OAuth Token wijziging succesvol uitgevoerd.');
             // Example: OAuth token verloopt 20 February 2020, 16:55u
             updateOAuthTokenStatus(new Date((res.created_at *1000) + (res.expires_in *1000))) // Seconds to milliseconds
             // Add vehicle list
@@ -137,7 +135,7 @@
             break
           case 401:
             // Not Authorized - Tesla email/pw not correct
-            $.Notification.autoHideNotify('warning', 'top left', 'Autorisatie fout', 'Geen OAuth Token gegenereerd.');
+            autoHideNotify('warning', 'top-left', 'Autorisatie fout', 'Geen OAuth Token gegenereerd.');
             $('span#error-msg-title').html('Autorisatie fout.')
             $('h5#error-msg-sub').html('Tesla e-mail of wachtwoord niet correct.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -146,7 +144,7 @@
             break
           case 404:
             // RFID Token not found
-            $.Notification.autoHideNotify('error', 'top left', '404', 'RFID token onbekend.');
+            autoHideNotify('error', 'top-left', '404', 'RFID token onbekend.');
             $('span#error-msg-title').html('Fout...')
             $('h5#error-msg-sub').html('RFID token niet bekend.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -155,7 +153,7 @@
             break
           default:
             // ???
-            $.Notification.autoHideNotify('error', 'top left', 'Onbekende fout', 'Er is een onverwachte fout opgetreden.');
+            autoHideNotify('error', 'top-left', 'Onbekende fout', 'Er is een onverwachte fout opgetreden.');
             $('span#error-msg-title').html('Fout [' + res.status + ']')
             $('h5#error-msg-sub').html('Onbekende fout opgetreden.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -168,7 +166,7 @@
         $('h5#error-msg-sub').html('')
         switch(res.status) {
           case 400:
-            $.Notification.autoHideNotify('error', 'top left', 'CSRF token ongeldig', 'CSRF token verlopen. Herlaad deze pagina en probeer het opnieuw.');
+            autoHideNotify('error', 'top-left', 'CSRF token ongeldig', 'CSRF token verlopen. Herlaad deze pagina en probeer het opnieuw.');
             if (res.responseText.toLowerCase().includes('the csrf token is invalid')) {
               $('span#error-msg-title').html('Het CSRF Token is niet geldig.')
               $('h5#error-msg-sub').html('Ververs de pagina en probeer opnieuw.')
@@ -177,7 +175,7 @@
             }
             break
           case 500:
-            $.Notification.autoHideNotify('error', 'top left', '500', 'Internal Server Error');
+            autoHideNotify('error', 'top-left', '500', 'Internal Server Error');
             $('span#error-msg-title').html('Internal Server Error [500]')
             break
           default:
@@ -300,6 +298,9 @@
       })
       $('input#get_odometer').bootstrapToggle()
       $('input#enabled').bootstrapToggle()
+      $('input#enabled').change(function() {
+        // Nothing. Changes are submitted as whole form
+      })
 
       $('input[name="vehicle_make"]').on("change paste keyup", function() {
         setResetGetOdometer()

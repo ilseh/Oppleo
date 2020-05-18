@@ -214,37 +214,37 @@
                   boundary: 'window', 
                   trigger : 'hover'   // Allow button clicks
                 })
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag opgeslagen [' + data.value + '].')
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Daluren zon/feestdag opgeslagen [' + data.value + '].')
                 break
               case 'offPeakDeleteEntry':
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Daluren zon/feestdag verwijderd [' + data.value + '].')
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Daluren zon/feestdag verwijderd [' + data.value + '].')
                 break
               case 'chargerName':
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Laadpunt naam gewijzigd in ' + data.value + '.');
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt naam gewijzigd in ' + data.value + '.');
                 break
               case 'factorWhkm':
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Whkm factor gewijzigd in ' + data.value + '.');
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Whkm factor gewijzigd in ' + data.value + '.');
                 break
               case 'chargerTariff':
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Laadpunt tarief gewijzigd in ' + data.value + '.');
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt tarief gewijzigd in ' + data.value + '.');
                 break
               default:
-                $.Notification.autoHideNotify('success', 'top left', 'Gewijzigd', 'Instelling aangepast.')
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Instelling aangepast.')
                 break
             }
             break
           case 409:
-            $.Notification.autoHideNotify('warning', 'top left', 'Foutmelding', 'Wijziging kon niet doorgevoerd worden. ' + data.reason)
+            autoHideNotify('warning', 'top-left', 'Foutmelding', 'Wijziging kon niet doorgevoerd worden. ' + data.reason)
             break
           case 404:
           default:
-            $.Notification.notify('warning','top left', 'Onbekend', 'Instelling onbekend. Niet gewijzigd.')
+            autoHideNotify('warning','top-left', 'Onbekend', 'Instelling onbekend. Niet gewijzigd.')
             break
         }
 
       })
       .fail(function(data) {
-        $.Notification.notify('error','top left', 'Connectie fout', 'Instelling niet gewijzigd.')
+        notify('error','top-left', 'Connectie fout', 'Instelling niet gewijzigd.')
       })
       .always(function() {
         // Remove spinner
@@ -334,7 +334,7 @@
         hDayDate = $('#holidayDate').val()
         hDaySplit = hDayDate.split(' ')
         if (hDaySplit == undefined || hDaySplit.length < 3) {
-          $.Notification.autoHideNotify('warning', 'top left', 'Waarschuwing', 'Geen of onjuist datumveld ingevoerd. Zon/feestdag niet opgeslagen...')
+          autoHideNotify('warning', 'top-left', 'Waarschuwing', 'Geen of onjuist datumveld ingevoerd. Zon/feestdag niet opgeslagen...')
           return
         }
         hDayMonth = -1
@@ -344,12 +344,12 @@
 					}
 				})
         if (hDayMonth == -1) {
-          $.Notification.autoHideNotify('warning', 'top left', 'Waarschuwing', 'Geen of onjuist datumveld ingevoerd. Zon/feestdag niet opgeslagen...')
+          autoHideNotify('warning', 'top-left', 'Waarschuwing', 'Geen of onjuist datumveld ingevoerd. Zon/feestdag niet opgeslagen...')
           return
         }
         desc = $('#holidayDescription').val()
         if (desc.length == 0) {
-          $.Notification.autoHideNotify('warning', 'top left', 'Waarschuwing', 'Geen omschrijving ingevoerd. Zon/feestdag niet opgeslagen...')
+          autoHideNotify('warning', 'top-left', 'Waarschuwing', 'Geen omschrijving ingevoerd. Zon/feestdag niet opgeslagen...')
           return
         }
         recurring = $('button#offPeakNewRecurring').html().indexOf("fa-redo-alt") >= 0

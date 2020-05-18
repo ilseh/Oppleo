@@ -89,9 +89,6 @@
     var dt = undefined
     function getUsageData( n = undefined ) {
       console.log(timestamp() + ' getUsageData()')
-    
-//      $.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Logging out from Splash!');
-            
       $.ajax({
         type		  : 'GET',
         url			  : (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data'),
@@ -102,8 +99,6 @@
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
-  //        $.Notification.autoHideNotify('success', 'top left', 'Logged out', 'Logged out of Splash. Redirecting to login page.');
-
         dt = $('table#usage').DataTable( {
           "pageLength": 25,
           "order": [[ 0, "desc" ]],
@@ -326,7 +321,7 @@
         })
       })
       .fail(function() {
-  //      $.Notification.notify('error','top left', 'Connection error', 'Could not process logout! Please close your browser to complete logout.');
+
       })
       .always(function() {
         // Remove spinner

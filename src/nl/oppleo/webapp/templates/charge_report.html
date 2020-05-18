@@ -109,7 +109,7 @@
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
-        $.Notification.notify('error','top left', 'Probleem', 'RFID Token data niet beschikbaar.');
+        notify('error','top-left', 'Probleem', 'RFID Token data niet beschikbaar.');
       })
       .always(function() {
       })
@@ -519,7 +519,7 @@
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
-        $.Notification.notify('error','top left', 'Probleem', 'Laadsessiedata niet beschikbaar.');
+        notify('error','top-left', 'Probleem', 'Laadsessiedata niet beschikbaar.');
       })
       .always(function() {
         // Remove spinner

@@ -27,15 +27,15 @@
         <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
         <script src="{{ url_for('static', filename='js/jquery.scrollTo.js') }}"></script>
 
-        <!-- Notification js -->
-        <script src="{{ url_for('static', filename='plugins/notifyjs/dist/notify.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='plugins/notifications/notify-metro.js') }}"></script>
-
+        <!-- Styled Notifications -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/styled-notifications/dist/notifications.css') }}">
+        <script src="{{ url_for('static', filename='plugins/styled-notifications/dist/notifications.js') }}"></script>
+        
 <script>
 Query(document).ready(function ($) {
 	// Handler for .ready() called.
 	if ( document.referrer !== 'undefined' ) {
-		$.Notification.autoHideNotify('warning', 'top left', 'Loggin out', 'Referrer ' + document.referrer);
+		autoHideNotify('warning', 'top-left', 'Loggin out', 'Referrer ' + document.referrer);
 	}
 });
 </script>

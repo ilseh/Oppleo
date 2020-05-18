@@ -239,6 +239,23 @@ class ChargeSessionModel(Base):
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return open_charge_session_for_device != None
 
+    @staticmethod
+    def get_charge_session_count_for_rfid(rfid) -> int:
+        db_session = DbSession()
+
+        charge_session_count = 0
+        try:
+            # Build query to get id of latest chargesession for this device.
+            charge_session_count = db_session.query(ChargeSessionModel) \
+                            .filter(ChargeSessionModel.rfid == rfid) \
+                            .count()    # Count the number of sessions
+        except InvalidRequestError as e:
+            ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__.__name__)
+        except Exception as e:
+            # Nothing to roll back
+            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
+        return charge_session_count
 
     def __repr(self) -> str:
         return '<id {}>'.format(self.id)

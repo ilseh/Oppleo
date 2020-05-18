@@ -34,9 +34,96 @@
   <!-- Responsive -->
   <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
-  
+
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
+  <style>
+
+  .notifyjs-metro-default {
+    color: #ffffff !important;
+    background-color: #3f51b5;
+    border: 1px solid #3f51b5;
+  }
+  .notifyjs-metro-error {
+    color: #ffffff !important;
+    background-color: #ee6e73;
+    border: 1px solid #ee6e73;
+  }
+  .notifyjs-metro-custom {
+    color: #ffffff !important;
+    background-color: #3f51b5;
+    border: 1px solid #3f51b5;
+  }
+  .notifyjs-metro-success {
+    color: #ffffff !important;
+    background-color: #66bb6a;
+    border: 1px solid #66bb6a;
+  }
+  .notifyjs-metro-info {
+    color: #ffffff !important;
+    background-color: #29b6f6;
+    border: 1px solid #29b6f6;
+  }
+  .notifyjs-metro-warning {
+    color: #ffffff !important;
+    background-color: #ffc107;
+    border: 1px solid #ffc107;
+  }
+  .notifyjs-metro-black {
+    color: #ffffff !important;
+    background-color: #4c5667;
+    border: 1px solid #4c5667;
+  }
+  .notifyjs-metro-white {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+  }
+  .notifyjs-corner {
+  position: fixed;
+  margin: 5px;
+  z-index: 1050;
+}
+
+.notifyjs-corner .notifyjs-wrapper,
+.notifyjs-corner .notifyjs-container {
+  position: relative;
+  display: block;
+  height: inherit;
+  width: inherit;
+  margin: 3px;
+}
+
+.notifyjs-wrapper {
+  z-index: 1;
+  position: absolute;
+  display: inline-block;
+  height: 0;
+  width: 0;
+}
+
+.notifyjs-container {
+  display: none;
+  z-index: 1;
+  position: absolute;
+}
+
+.notifyjs-hidable {
+  cursor: pointer;
+}
+
+[data-notify-text],[data-notify-html] {
+  position: relative;
+}
+
+.notifyjs-arrow {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+}
+</style>
+
 
   <script>
     function timestamp() {
@@ -89,11 +176,11 @@
     function getChargeSessionStatus( ) {
       console.log(timestamp() + ' getChargeSessionStatus()')
       $.ajax({
-        type		  : 'GET',
-        url			  : '/active_charge_session',
-        dataType	: 'json',
-        encode		: true,
-        headers   : { 'ignore-login-next': 'true' }
+        type		    : 'GET',
+        url			    : '/active_charge_session',
+        dataType	  : 'json',
+        encode		  : true,
+        headers     : { 'ignore-login-next': 'true' }
       }) // using the done promise callback
       .done(function(result) {
         // log data to the console so we can see
@@ -106,7 +193,7 @@
                 var data = this.data()
                 // No charge session active, can this RFID start one?
                 if (isRfidValid(data[2], data[3], data[4])) {
-                  data[12] = '<button' +
+                  data[13] = '<button' +
                             '   type="button"' +
                             '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
                             '   data-toggle="tooltip" ' +
@@ -118,7 +205,7 @@
                             '   <i class="fas fa-charging-station"></i>' +
                             '</button>'
                 } else {
-                  data[12] = '<button' +
+                  data[13] = '<button' +
                             '   type="button"' +
                             '   class="btn btn-sm waves-effect waves-light btn-outline-secondary disabled" ' +
                             '   data-toggle="tooltip" ' +
@@ -139,7 +226,7 @@
             // Cannot start a charge session
             dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
                 var data = this.data()
-                data[12] = ''
+                data[13] = ''
                 this.invalidate()
             })
             break
@@ -148,6 +235,12 @@
         $('button[id^="edit_"]').click(function() {
           //Do stuff when clicked
           window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
+        })
+        $('button[id^="delete_"]').click(function() {
+          var token = $(this).attr('id').split("_").pop()
+          // Delete the entry
+          // Remove entry from this table
+          deleteRfidToken( token )
         })
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
@@ -194,12 +287,69 @@
       return formatDbDateTimeStr2Date(dS) + ' ' +
              tEls[0].trim() + ':' + tEls[1] + 'u'
     }
+
+    // Can only delete unused RFID Tokens
+    function deleteRfidToken( rfid_token = undefined ) {
+      console.log(timestamp() + ' deleteRfidToken()')
+      // Show spinner
+      $('.spinner').show()
+      $.ajax({
+        type		    : 'DELETE',
+        url			    : '/rfid_tokens/' + rfid_token + '/',
+        contentType : "application/json",
+        dataType	  : 'json',
+        encode		  : true,
+        headers     : { 
+                        'ignore-login-next': 'true',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                      }
+      }) // using the done promise callback
+      .done(function(result) {
+        // log data to the console so we can see
+        console.log(result)
+        switch(parseInt(result.status)) {
+          case 204:   // Ok, deleted
+          case 200:   // Ok, deleted
+            // Delete from table
+            dt.row( $('button#delete_'+result.token).parents('tr') )
+              .remove()
+              .draw()
+            autoHideNotify( 'success', 'top-left', 'Verwijderen gelukt', 'RFID token ' + result.token + ' succesvol verwijderd.' )
+            break
+          default:
+            autoHideNotify( 'danger', 'top-left', 'Verwijderen mislukt', 'Verwijderen niet gelukt door onbekende reden.' )
+            break
+        }
+      })
+      .fail(function(result) {
+        console.log('deleteRfidToken() FAILED')
+        // log data to the console so we can see
+        console.log(result)
+        switch(parseInt(result.status)) {
+          case 404:   // No token found
+            autoHideNotify( 'danger', 'top-left', 'Verwijderen mislukt', 'Token niet gevonden.' )
+            break
+          case 405:   // Delete not allowed (charge session srelated to this token)
+            autoHideNotify( 'danger', 'top-left', 'Verwijderen mislukt', 'Verwijderen niet toegestaan.' + (result.reason !== undefined ? result.status : '') )
+            break
+          default:
+            autoHideNotify( 'danger', 'top-left', 'Verwijderen mislukt', 'Verwijderen niet gelukt door onbekende reden.')
+            break
+        }
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
+
     function getRfidTokens() {
-      console.log(timestamp() + ' getRfidTokens()')            
+      console.log(timestamp() + ' getRfidTokens()')
       $.ajax({
         type		    : 'GET',
         url			    : '/rfid_tokens/',
-        contentType : "application/json",
+        contentType : 'application/json',
         dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
         encode		  : true
@@ -219,15 +369,15 @@
             })
           },
           "columnDefs": [{
-            "targets": [1, 9, 11, 12],
+            "targets": [1, 10, 12, 13],
             "sorting": false,
             "orderable": false
           }, {
-            "targets": [10],
+            "targets": [11],
             "sorting": false,
             "orderable": false,
             "render": function (data, type, row) {
-              if (row[6].toLowerCase() != 'tesla') {
+              if (row[7].toLowerCase() != 'tesla') {
                 return '<span data-toggle="tooltip" \
                               data-placement="bottom" \
                               data-html="true" \
@@ -274,6 +424,19 @@
             formatDbDateTimeStr2Date(element.valid_from),
             formatDbDateTimeStr2Date(element.valid_until),
             formatDbDateTimeStr2DateTime(element.last_used_at),
+            (element.chargeSessions > 0 ? element.chargeSessions :
+              '<button' +
+              '   type="button"' +
+              '   id="delete_' + element.rfid + '"' +
+              '   class="btn btn-sm waves-effect waves-light btn-outline-danger" ' +
+              '   data-toggle="tooltip" ' +
+              '   data-placement="bottom" ' +
+              '   data-html="true" ' +
+              '   title="<em>Geen laadsessie historie.</em>"' +
+              '   >' +
+              '   <i class="far fa-trash-alt"></i>' +
+              '</button>'
+            ),
             ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
             ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
             ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
@@ -304,9 +467,16 @@
         })
 //        dt.columns.adjust().draw() // Redraw the DataTable
         $('button[id^="edit_"]').click(function() {
-          //Do stuff when clicked
           window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
         })
+
+        $('button[id^="delete_"]').click(function() {
+          var token = $(this).attr('id').split("_").pop()
+          // Delete the entry
+          // Remove entry from this table
+          deleteRfidToken( token )
+        })
+
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
         getChargeSessionStatus()
       })
@@ -358,6 +528,7 @@
                 <th style="text-align: center;">Geldig van</th>
                 <th style="text-align: center;">Geldig tot</th>
                 <th style="text-align: center;">Laatst gebruikt</th>
+                <th style="text-align: center;">Sessies</th>
                 <th style="text-align: center;">Merk</th>
                 <th style="text-align: center;">Model</th>
                 <th style="text-align: center;">Kenteken</th>

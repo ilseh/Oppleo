@@ -26,6 +26,7 @@ from nl.oppleo.models.Raspberry import Raspberry
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
+from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.oppleo.webapp.ChangePasswordForm import ChangePasswordForm
@@ -736,8 +737,8 @@ def charge_report(year=-1, month=-1):
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/rfid_tokens", methods=["GET"])
 @flaskRoutes.route("/rfid_tokens/", methods=["GET"])
-@flaskRoutes.route("/rfid_tokens/<path:token>", methods=["GET", "POST"])
-@flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>", methods=["GET", "POST", "DELETE"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/", methods=["GET", "POST", "DELETE"])
 @authenticated_resource
 def rfid_tokens(token=None):
     global flaskRoutesLogger, oppleoConfig
@@ -760,6 +761,10 @@ def rfid_tokens(token=None):
         rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
         rfid_change_form = RfidChangeForm()
         flaskRoutesLogger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
+        if (request.method == 'DELETE'):
+            # Not allowed
+            abort(405)
+
         if (request.method == 'POST'):
             # Update for specific token
             if rfid_change_form.validate_on_submit():
@@ -805,21 +810,49 @@ def rfid_tokens(token=None):
                     rfid_model=rfid_model,
                     form=rfid_change_form,
                     oppleoconfig=oppleoConfig
-                )        
-    # Check if token exist, if not rfid is None
-    if (token == None):
-        rfid_list = []
-        rfid_models = RfidModel().get_all()
-        for rfid_model in rfid_models:
-            rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
-            rfid_list.append(rfid_model.to_str())
-        return jsonify(rfid_list)
-    # Specific token
-    rfid_model = RfidModel().get_one(token)
-    if (rfid_model == None):
-        return jsonify({})
-    rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
-    return jsonify(rfid_model.to_str())
+                )       
+    # JSON 
+    if (request.method == 'DELETE'):
+        if (token == None):
+            # Not found
+            abort(404)
+        # Specific token
+        rfid_model = RfidModel().get_one(token)
+        # Only allow deletion if token has no charge sessions
+        charge_sessions_for_rfid = ChargeSessionModel.get_charge_session_count_for_rfid(rfid_model.rfid)
+        if charge_sessions_for_rfid > 0:
+            # Not allowed - abort(405)
+            return json.dumps({
+                'success': False, 
+                'token': token, 
+                'reason': 'Token has {} charge sessions.'.format(charge_sessions_for_rfid)
+                }), 405, {'ContentType':'application/json'} 
+        rfid_model.delete()
+        # 204 leads to no data in the response
+        return json.dumps({'success': True, 'token': token, 'status': 200}), 200, {'ContentType':'application/json'} 
+
+    # JSON 
+    if (request.method == 'GET'):
+        # Check if token exist, if not rfid is None
+        if (token == None):
+            rfid_list = []
+            rfid_models = RfidModel().get_all()
+            for rfid_model in rfid_models:
+                rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
+                entry = rfid_model.to_str()
+                # Add wether token has charge sessions
+                entry['chargeSessions'] = ChargeSessionModel.get_charge_session_count_for_rfid(rfid_model.rfid)
+                rfid_list.append(entry)
+            return jsonify(rfid_list)
+        # Specific token
+        rfid_model = RfidModel().get_one(token)    
+        if (rfid_model == None):
+            return jsonify({})
+        rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
+        return jsonify(rfid_model.to_str())
+
+    # Not allowed
+    abort(405)
 
 
 # Always returns json
@@ -917,6 +950,7 @@ def TeslaApi_RevokeOAuth(token=None):
             })
     # Revoke succeeded, remove token
     UpdateOdometerTeslaUtil.clean_token_rfid_model(rfid_model)
+    rfid_model.vehicle_vin = None
     rfid_model.save()
 
     return jsonify({
