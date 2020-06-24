@@ -186,8 +186,11 @@ try:
     if __name__ == "__main__":
 
         # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
-        meuThread = MeasureElectricityUsageThread(appSocketIO)
-        chThread = ChargerHandlerThread(
+        meuThread = None
+        chThread = None
+        try:
+            meuThread = MeasureElectricityUsageThread(appSocketIO)
+            chThread = ChargerHandlerThread(
                         device=oppleoConfig.chargerName,
                         energy_util=meuThread.energyDevice.energyUtil, 
                         charger=Charger(), 
@@ -197,11 +200,14 @@ try:
                         evse_reader=EvseReader(), 
                         appSocketIO=appSocketIO
                     )
-        meuThread.addCallback(chThread.energyUpdate)
-        phmThread = PeakHoursMonitorThread(appSocketIO)
+            meuThread.addCallback(chThread.energyUpdate)
+            oppleoConfig.meuThread = meuThread
+            oppleoConfig.chThread = chThread
+        except Exception as e:
+            oppleoLogger.error("MeasureElectricityUsageThread failed - no energy measurements. Details:{}".format(str(e)))
 
-        oppleoConfig.meuThread = meuThread
-        oppleoConfig.chThread = chThread
+        phmThread = None
+        phmThread = PeakHoursMonitorThread(appSocketIO)
         oppleoConfig.phmThread = phmThread
 
         # Starting the web socket queue reader background task
@@ -213,9 +219,15 @@ try:
 
         if GenericUtil.isProd():
             # Start the Energy Device Monitor
-            meuThread.start()
+            if meuThread is not None:
+                meuThread.start()
+            else:
+                oppleoLogger.warning("MeasureElectricityUsageThread not started.")
             # Start the RFID Monitor
-            chThread.start()
+            if chThread is not None:
+                chThread.start()
+            else:
+                oppleoLogger.warning("ChargerHandlerThread not started.")
 
         # Start the Peak Hours Monitor
         phmThread.start()

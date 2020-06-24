@@ -50,9 +50,14 @@ class EvseProd(object):
 
     # Read the state
     def is_enabled(self):
-        global oppleoConfig
+        global oppleoConfig, GPIO
 
         with self.threadLock:
+            if GPIO is None:
+                # Assume dev env
+                self.logger.debug("Evse.is_enabled() - false as GPIO is None (on dev)")
+                return False
+
             # Note: LOW is ON, and HIGH is OFF
             state = GPIO.input(oppleoConfig.pinEvseSwitch)
             self.logger.debug("Product Evse read state {} (return {})".format(state, (not state)))

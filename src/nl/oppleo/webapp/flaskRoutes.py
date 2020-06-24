@@ -645,7 +645,7 @@ def active_charge_session():
             'id'                : oppleoConfig.chargerName, 
             'chargeSession'     : False,
             'evseEnabled'       : True if evse.is_enabled() else False,
-            'charging'          : True if oppleoConfig.chThread.is_status_charging else False,
+            'charging'          : True if oppleoConfig.chThread is not None and oppleoConfig.chThread.is_status_charging else False,
             'offPeakEnabled'    : oppleoConfig.offpeakEnabled,
             'offPeakAllowedOnce': oppleoConfig.allowPeakOnePeriod,
             'offPeak'           : True if evse.isOffPeak else False,
