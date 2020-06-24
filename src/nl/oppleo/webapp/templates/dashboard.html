@@ -165,8 +165,13 @@
       }) // using the done promise callback
       .done(function(data) {
         // log data to the console so we can see
-        console.log(data)
-        updateGauges( data[0] )
+        console.log('GET usage_data' + data)
+        if (Array.isArray(data) && data.length > 0) {
+          updateGauges( data[0] )
+        } else {
+          o0 = { 'a_l1': '0.0', 'a_l2': '0.0', 'a_l3': '0.0', 'created_at': '01/01/1970, 00:00:00', 'enery_device_id': 'UNKNOWN', 'hz': "0.0", 'kw_total': "0",'kwh_l1': "0", 'kwh_l2': "0", 'kwh_l3': "0", 'p_l1': "0", 'p_l2': "0", 'p_l3': "0",'v_l1': "0", 'v_l2': "0", 'v_l3': "0" }
+          updateGauges( o0 )
+        }
       })
       .fail(function(result) {
         console.log('getUsageData() FAILED')
@@ -320,7 +325,12 @@
       // this is a callback that triggers when the "my response" event is emitted by the server.
       usageSocket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
-        updateGauges( msg.data )
+        if (Array.isArray(msg.data) && msg.data.length > 0) {
+          updateGauges( msg.data )
+        } else {
+          o0 = { 'a_l1': '0.0', 'a_l2': '0.0', 'a_l3': '0.0', 'created_at': '01/01/1970, 00:00:00', 'enery_device_id': 'UNKNOWN', 'hz': "0.0", 'kw_total': "0",'kwh_l1': "0", 'kwh_l2': "0", 'kwh_l3': "0", 'p_l1': "0", 'p_l2': "0", 'p_l3': "0",'v_l1': "0", 'v_l2': "0", 'v_l3': "0" }
+          updateGauges( o0 )
+        }
       })
       // start up the SocketIO connection to the server on namespace /usage
       chargeSessionSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/charge_session')

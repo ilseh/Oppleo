@@ -4,9 +4,6 @@ import time
 import logging
 from datetime import datetime, timedelta
 
-from injector import inject
-from service import Service
-
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
