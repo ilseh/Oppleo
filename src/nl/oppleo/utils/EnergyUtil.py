@@ -188,6 +188,8 @@ class EnergyUtil:
 
 
     def try_read_float_from_config(self, name, el):
+        self.logger.debug("try_read_float_from_config name:{} el:{}".format(name, str(el)))
+
         if not el['enabled']:
             self.logger.debug("Modbus element {} not enabled".format(name))
             return 0
@@ -198,8 +200,11 @@ class EnergyUtil:
         
 
     def getProdMeasurementValue(self):
+        self.logger.debug("getProdMeasurementValue()")
 
+        self.logger.debug("getProdMeasurementValue() l1_p {}".format(str(self.modbusConfig['L1']['P'])))
         L1_P = self.try_read_float_from_config( 'l1_p', self.modbusConfig['L1']['P'] )
+        self.logger.debug("getProdMeasurementValue() l1_v {}".format(str(self.modbusConfig['L1']['V'])))
         L1_V = self.try_read_float_from_config( 'l1_v', self.modbusConfig['L1']['V'] )
         L1_A = self.try_read_float_from_config( 'l1_a', self.modbusConfig['L1']['A'] )
         L1_kWh = self.try_read_float_from_config( 'l1_kWh', self.modbusConfig['L1']['kWh'] )
