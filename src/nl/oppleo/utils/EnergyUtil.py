@@ -136,14 +136,7 @@ class EnergyUtil:
 
         if GenericUtil.isProd():
             self.logger.debug('Production environment, getting real data')
-#                return self.getProdMeasurementValue()
-            self.logger.debug('Still here...')
-            t = 0
-            try:
-                 t = self.getProdMeasurementValue()
-            except Exception as e:
-                self.logger.debug('Exception X {}'.format(str(e)))
-            return t
+            return self.getProdMeasurementValue()
         else:
             self.logger.debug('Not production environment, getting fake data')
             return self.getDevMeasurementValue()
@@ -207,11 +200,8 @@ class EnergyUtil:
         
 
     def getProdMeasurementValue(self):
-        self.logger.debug("getProdMeasurementValue()")
 
-        self.logger.debug("getProdMeasurementValue() l1_p {}".format(str(self.modbusConfig['L1']['P'])))
         L1_P = self.try_read_float_from_config( 'l1_p', self.modbusConfig['L1']['P'] )
-        self.logger.debug("getProdMeasurementValue() l1_v {}".format(str(self.modbusConfig['L1']['V'])))
         L1_V = self.try_read_float_from_config( 'l1_v', self.modbusConfig['L1']['V'] )
         L1_A = self.try_read_float_from_config( 'l1_a', self.modbusConfig['L1']['A'] )
         L1_kWh = self.try_read_float_from_config( 'l1_kWh', self.modbusConfig['L1']['kWh'] )
