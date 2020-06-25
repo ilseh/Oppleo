@@ -188,7 +188,7 @@ class EnergyUtil:
 
 
     def try_read_float_from_config(self, name, el):
-        self.logger.debug("try_read_float_from_config name:{} el:{}".format(name, str(el)))
+        # self.logger.debug("try_read_float_from_config name:{} el:{}".format(name, str(el)))
 
         if not el['enabled']:
             self.logger.debug("Modbus element {} not enabled".format(name))
