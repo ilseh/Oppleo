@@ -136,7 +136,14 @@ class EnergyUtil:
 
         if GenericUtil.isProd():
             self.logger.debug('Production environment, getting real data')
-            return self.getProdMeasurementValue()
+#                return self.getProdMeasurementValue()
+            self.logger.debug('Still here...')
+            t = 0
+            try:
+                 t = self.getProdMeasurementValue()
+            except Exception as e:
+                self.logger.debug('Exception X {}'.format(str(e)))
+            return t
         else:
             self.logger.debug('Not production environment, getting fake data')
             return self.getDevMeasurementValue()
