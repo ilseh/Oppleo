@@ -64,7 +64,7 @@ class EnergyUtil:
 
         self.modbusConfig = SDM630v2
         for i in range(len(modbusConfigOptions)): 
-            if device_data.modbusConfig == modbusConfigOptions[i].name:
+            if device_data.modbus_config == modbusConfigOptions[i].name:
                 self.modbusConfig = modbusConfigOptions[i]
         self.logger.debug("Modbus config {} selected (default: {}).".format(self.modbusConfig.name, SDM630v2.name))
 
