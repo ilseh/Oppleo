@@ -26,7 +26,7 @@ class ChargerConfigModel(Base):
     use_reloader = Column(Boolean) 
 
     factor_whkm = Column(Integer) 
-    modbus_interval = Column(Integer) 
+    modbus_interval = Column(Integer)
 
     autosession_enabled = Column(Boolean) 
     autosession_minutes = Column(Integer) 
@@ -169,7 +169,7 @@ class ChargerConfigSchema(Schema):
     use_reloader = fields.Bool(dump_only=True)
 
     factor_whkm = fields.Float(dump_only=True)
-    modbus_interval = fields.Integer(dump_only=True) 
+    modbus_interval = fields.Integer(dump_only=True)
 
     autosession_enabled = fields.Bool(dump_only=True)
     autosession_minutes = fields.Int(dump_only=True)

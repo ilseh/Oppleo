@@ -188,8 +188,8 @@ class OppleoEditSelect extends HTMLElement {
             new CustomEvent('apply', {
                 bubbles: true, 
                 detail: { 
-                  newText : newValue,
-                  newValue: newText,
+                  newText : newText,
+                  newValue: newValue,
                   oldText : oldText,
                   oldValue: oldValue
                 }

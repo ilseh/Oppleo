@@ -27,6 +27,7 @@ class EnergyDeviceModel(Base):
     mode = Column(String(10))
     close_port_after_each_call = Column(Boolean)
     modbus_timeout = Column(Integer)
+    modbus_config = Column(String(100))
 
     def __init__(self, data):
         pass
@@ -127,4 +128,5 @@ class EnergyDeviceSchema(Schema):
     mode = fields.Str(dump_only=True)
     close_port_after_each_call = fields.Bool(dump_only=True)
     modbus_timeout = fields.Int(dump_only=True)
+    modbus_config = fields.Str(dump_only=True)
 

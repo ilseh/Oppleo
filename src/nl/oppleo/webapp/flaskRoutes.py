@@ -37,6 +37,8 @@ from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReaderProd import EvseState
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+from nl.oppleo.utils.EnergyUtil import modbusConfigOptions
+
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
@@ -561,7 +563,7 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings/<int:active>")
 @authenticated_resource
 def settings(active=1):
-    global flaskRoutesLogger, oppleoConfig, oppleoSystemConfig
+    global flaskRoutesLogger, oppleoConfig, oppleoSystemConfig, modbusConfigOptions
     flaskRoutesLogger.debug('/settings {} {}'.format(active, request.method))
     r = Raspberry()
     diag = r.get_all()
@@ -582,6 +584,9 @@ def settings(active=1):
     diag['offPeak']['friday'] = OffPeakHoursModel.get_friday()
     diag['offPeak']['saturday'] = OffPeakHoursModel.get_saturday()
     diag['offPeak']['sunday'] = OffPeakHoursModel.get_sunday()
+
+    diag['modbusConfigOptions'] = modbusConfigOptions
+
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
                 active=active, 
@@ -966,6 +971,44 @@ def TeslaApi_RevokeOAuth(token=None):
 @flaskRoutes.route("/update_settings/<path:param>/<path:value>", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
 def update_settings(param=None, value=None):
+
+    # cannot submit / in value in the URI, verify with body
+    if request.method == 'POST':
+        if param != request.form.get('param'):
+            param = request.form.get('param')
+        if value != request.form.get('value'):
+            value = request.form.get('value')
+
+    # The USB port for the modbus interface
+    if param == 'port_name':
+        edm = EnergyDeviceModel.get()
+        if value != edm.port_name:
+            edm.port_name = value
+            edm.save()
+            oppleoConfig.restartRequired = True
+            return jsonify({ 'status': 200, 'param': param, 'value': edm.port_name })
+        return jsonify({ 'status': 200, 'param': param, 'reason': 'No change.' })
+
+    # The kWhh meter modbus register parameters
+    if param == 'modbusConfig':
+        edm = EnergyDeviceModel.get()
+        if value != edm.modbus_config:
+            edm.modbus_config = value
+            edm.save()
+            oppleoConfig.restartRequired = True
+            return jsonify({ 'status': 200, 'param': param, 'value': edm.modbus_config })
+        return jsonify({ 'status': 200, 'param': param, 'reason': 'No change.' })
+
+
+    # The USB port for the modbus interface
+    if param == 'port_name':
+        edm = EnergyDeviceModel.get()
+        if value != edm.port_name:
+            edm.port_name = value
+            edm.save()
+            oppleoConfig.restartRequired = True
+            return jsonify({ 'status': 200, 'param': param, 'value': edm.port_name })
+        return jsonify({ 'status': 200, 'param': param, 'reason': 'No change.' })
 
     # With an open charge session, there params are not allowed to change
     if param in ['chargerName', 'chargerTariff'] and \
