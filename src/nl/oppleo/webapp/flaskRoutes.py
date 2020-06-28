@@ -737,7 +737,28 @@ def charge_report(year=-1, month=-1):
                 month=month,
                 oppleoconfig=oppleoConfig
                 )
- 
+
+
+@flaskRoutes.route("/rfid_tokens/<path:token>/create", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/create/", methods=["POST"])
+@authenticated_resource
+def rfid_token_create(token=None):
+    flaskRoutesLogger.debug('{} /rfid_tokens/{}/create'.format(request.method, token))
+
+    # does this rfid exits?
+    rfid_data = RfidModel.get_one(token)
+    if rfid_data is not None:
+        # 403 Forbidden
+        return json.dumps({'success': False, 'token': token, 'status': 403, 'description': 'Existing token'}), 403, {'ContentType':'application/json'} 
+
+    # does not exist, new id
+    new_rfid_entry = RfidModel()
+    new_rfid_entry.set({"rfid": token})
+    new_rfid_entry.save()
+    # 201 created
+    return json.dumps({'success': True, 'token': token, 'status': 201}), 201, {'ContentType':'application/json'} 
+
+
 
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/rfid_tokens", methods=["GET"])
@@ -1203,6 +1224,15 @@ def update_settings(param=None, value=None):
         energyDeviceModel.save()
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
+    # prowlEnabled
+    if (param == 'prowlEnabled'):
+        oppleoConfig.prowlEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.prowlEnabled })
+
+    # prowlApiKey
+    if (param == 'prowlApiKey') and isinstance(value, str):
+        oppleoConfig.prowlApiKey = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
 
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

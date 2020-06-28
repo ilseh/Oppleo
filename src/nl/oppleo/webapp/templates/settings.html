@@ -270,6 +270,9 @@
       $('input#offpeakEnabled').change(function() {
         updateSettings( 'offpeakEnabled', $(this).prop('checked') )
       })
+      $('input#prowlEnabled').change(function() {
+        updateSettings( 'prowlEnabled', $(this).prop('checked') )
+      })
 
       $('input#autoSessionEnabled').bootstrapToggle()
       $('input#autoSessionEnabled').change(function() {
@@ -580,8 +583,6 @@
                             {% endfor %}
                             {% endif %}
 
-
-                            
                             <tr id="offPeakNewHolidayDate" style="display: none;">
                               <td class="text-primary" style="text-align: right;">Nieuwe zon/feestdag:</td>
                               <td class="text-primary">
@@ -644,6 +645,52 @@
                                 </button>
                               </td>
                             </tr>
+
+
+
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Prowl (iOS Push messages)</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Prowl enabled:</td>
+                              <td class="text-primary">
+                                <form id="prowl-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.prowlEnabled %}checked{% endif %}
+                                    name="prowlEnabled"
+                                    id="prowlEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Prowl API key:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="prowlApiKey"
+                                  prefix="" 
+                                  value="{{ oppleoconfig.prowlApiKey }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="API key voor je <a href='https://www.prowlapp.com/'>Prowl</a> push message app."
+                                  />
+                            </tr>
+
+
+
                           </tbody>
                         </table>
                       </div>

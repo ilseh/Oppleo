@@ -343,21 +343,8 @@
       })
     }
 
-
-    function getRfidTokens() {
-      console.log(timestamp() + ' getRfidTokens()')
-      $.ajax({
-        type		    : 'GET',
-        url			    : '/rfid_tokens/',
-        contentType : 'application/json',
-        dataType	  : 'json',
-        headers     : { 'ignore-login-next': 'true' },
-        encode		  : true
-      }) // using the done promise callback
-      .done(function(data) {
-        // log data to the console so we can see
-        console.log(data)
-        dt = $('table#usage').DataTable( {
+    function createTokenTable() {
+      dt = $('table#usage').DataTable( {
           "pageLength": 25,
           "order": [[ 5, "desc" ]], // Last used
           dom: 'frt',
@@ -409,62 +396,87 @@
           }],
           "searching": false
         }).draw()
+    }
+
+    function addTokenToTokenTable( element ) {
+
+      if (typeof element.valid_from === 'string' || element.valid_from instanceof String) {
+          d = new Date(element.valid_from)
+      }
+      var dateToStr = ''
+      dt.row.add([
+        (element.name == 'None' ? '-' : element.name),
+        element.rfid,
+        (element.enabled ? "Ja" : "Nee"),
+        formatDbDateTimeStr2Date(element.valid_from),
+        formatDbDateTimeStr2Date(element.valid_until),
+        formatDbDateTimeStr2DateTime(element.last_used_at),
+        (element.chargeSessions > 0 ? element.chargeSessions :
+          '<button' +
+          '   type="button"' +
+          '   id="delete_' + element.rfid + '"' +
+          '   class="btn btn-sm waves-effect waves-light btn-outline-danger" ' +
+          '   data-toggle="tooltip" ' +
+          '   data-placement="bottom" ' +
+          '   data-html="true" ' +
+          '   title="<em>Geen laadsessie historie.</em>"' +
+          '   >' +
+          '   <i class="far fa-trash-alt"></i>' +
+          '</button>'
+        ),
+        ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
+        ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
+        ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
+        (element.get_odometer === "True" ? 'Ja' : 'Nee'),
+        (element.api_access_token + '|' + element.api_created_at + '|' + element.api_expires_in),
+        '<button' +
+        '   type="button"' +
+        '   id="edit_' + element.rfid + '"' +
+        '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+        '   data-toggle="tooltip" ' +
+        '   data-placement="bottom" ' +
+        '   data-html="true" ' +
+        '   title="<em>Edit ' + ((element.name == undefined || element.name == 'None') ? element.rfid : element.name) + '.</em>"' +
+        '   >' +
+        '   <i class="fas fa-edit"></i>' +
+        '</button>',
+        '<button' +
+        '   type="button"' +
+        '   class="btn btn-sm waves-effect waves-light btn-outline-secondary disabled" ' +
+        '   data-toggle="tooltip" ' +
+        '   data-placement="bottom" ' +
+        '   data-html="true" ' +
+        '   title="<em>Niet actief.</em>"' +
+        '   >' +
+        '   <i class="fas fa-charging-station"></i>' +
+        '</button>'
+      ]).draw()
+
+    }
+
+    function getRfidTokens() {
+      console.log(timestamp() + ' getRfidTokens()')
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/rfid_tokens/',
+        contentType : 'application/json',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+
+        createTokenTable()
+
         //dt.clear().draw()
         dt.draw('full-reset')
-        data.forEach(element => {
 
-          if (typeof element.valid_from === 'string' || element.valid_from instanceof String) {
-            d = new Date(element.valid_from)
-          }
-          var dateToStr = ''
-          dt.row.add([
-            (element.name == 'None' ? '-' : element.name),
-            element.rfid,
-            (element.enabled ? "Ja" : "Nee"),
-            formatDbDateTimeStr2Date(element.valid_from),
-            formatDbDateTimeStr2Date(element.valid_until),
-            formatDbDateTimeStr2DateTime(element.last_used_at),
-            (element.chargeSessions > 0 ? element.chargeSessions :
-              '<button' +
-              '   type="button"' +
-              '   id="delete_' + element.rfid + '"' +
-              '   class="btn btn-sm waves-effect waves-light btn-outline-danger" ' +
-              '   data-toggle="tooltip" ' +
-              '   data-placement="bottom" ' +
-              '   data-html="true" ' +
-              '   title="<em>Geen laadsessie historie.</em>"' +
-              '   >' +
-              '   <i class="far fa-trash-alt"></i>' +
-              '</button>'
-            ),
-            ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
-            ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
-            ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
-            (element.get_odometer === "True" ? 'Ja' : 'Nee'),
-            (element.api_access_token + '|' + element.api_created_at + '|' + element.api_expires_in),
-            '<button' +
-            '   type="button"' +
-            '   id="edit_' + element.rfid + '"' +
-            '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
-            '   data-toggle="tooltip" ' +
-            '   data-placement="bottom" ' +
-            '   data-html="true" ' +
-            '   title="<em>Edit ' + element.name + '.</em>"' +
-            '   >' +
-            '   <i class="fas fa-edit"></i>' +
-            '</button>',
-            '<button' +
-            '   type="button"' +
-            '   class="btn btn-sm waves-effect waves-light btn-outline-secondary disabled" ' +
-            '   data-toggle="tooltip" ' +
-            '   data-placement="bottom" ' +
-            '   data-html="true" ' +
-            '   title="<em>Niet actief.</em>"' +
-            '   >' +
-            '   <i class="fas fa-charging-station"></i>' +
-            '</button>'
-          ]).draw()
+        data.forEach(element => {
+          addTokenToTokenTable( element )
         })
+
 //        dt.columns.adjust().draw() // Redraw the DataTable
         $('button[id^="edit_"]').click(function() {
           window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
@@ -472,8 +484,7 @@
 
         $('button[id^="delete_"]').click(function() {
           var token = $(this).attr('id').split("_").pop()
-          // Delete the entry
-          // Remove entry from this table
+          // Delete the entry & remove entry from this table
           deleteRfidToken( token )
         })
 
@@ -494,6 +505,106 @@
     var dialog;
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
+
+      $('#newToken').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Clean data field
+        $('input#newRfid').val('')
+        // Show input
+        $('#newTokenInputForm').show()
+        $('#enableNewTokenInputFormButton').hide()
+      })
+      $('button#cancelNewToken').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Clean data field
+        $('input#newRfid').val('')
+        // Show newTokenInputFormButton
+        $('#enableNewTokenInputFormButton').show()
+        $('#newTokenInputForm').hide()
+      })
+      $('button#generateRandomToken').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Generate random token in data field
+        var rnd = Math.round(Math.random() * 1000000000000)
+        rnd = (""+rnd)
+        while ( rnd.length < 12 ) {
+          rnd = '0' + rnd
+        }
+        $('input#newRfid').val(rnd.substring(0, 12))
+      })
+      
+      $('button#createNewToken').on('click', function(e) {
+        // Show spinner
+        $('.spinner').hide()
+
+        e.preventDefault()
+        console.log(this.id)
+        data = {
+            csrf_token    : '{{ csrf_token() }}',
+            param         : 'CREATE',
+            value         : $('input#newRfid').val()
+          }
+        $.ajax({
+          type		    : 'POST',
+          url			    : ('/rfid_tokens/' + $('input#newRfid').val() + '/create/'),
+          dataType	  : 'json',
+          headers     : { 'ignore-login-next': 'true' },
+          encode		  : true,
+          data        : data
+        }) // using the done promise callback
+        .done(function(data) {
+          // log data to the console so we can see
+          console.log(data)
+
+          el = { name: 'None', rfid: data.token, enabled: null, created_at: '28/06/2020, 18:04:22', valid_from: null, valid_until: null, 
+                last_used_at: null, chargeSessions: 0, vehicle_id: 'None', vehickle_name: 'None', vehicle_make: 'None', vehicle_model: 'None', 
+                vehickle_vin: 'None',  license_plate: 'None', get_odometer: 'None', api_access_token: 'None', api_created_at: 'None', 
+                api_expires_in: 'None', api_refresh_token: 'None', api_token_type: 'None' }
+          addTokenToTokenTable( el )
+
+          $('button[id^="edit_'+data.token+'"]').click(function() {
+            window.location = '/rfid_tokens/' + $(this).attr('id').split("_").pop();
+          })
+
+          $('button[id^="delete_'+data.token+'"]').click(function() {
+            var token = $(this).attr('id').split("_").pop()
+            // Delete the entry & remove entry from this table
+            deleteRfidToken( token )
+          })
+
+          $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+        })
+        .fail(function(data) {
+          console.log(data)
+        })
+        .always(function() {
+          // Show newTokenInputFormButton
+          $('#enableNewTokenInputFormButton').show()
+          $('#newTokenInputForm').hide()
+          // Remove spinner
+          $('.spinner').hide()
+        })
+      })
+
+      $('i.fa-info-circle').parent().hover( function() { 
+        // mouseenter
+        $(this).removeClass("bg-secondary")
+        $(this).addClass("bg-success")
+        $(this).removeClass("text-muted")
+        $(this).addClass("text-light")
+        cursor: pointer;
+      }, function() { 
+        // mouseleave
+        $(this).removeClass("bg-success")
+        $(this).addClass("bg-secondary")
+        $(this).removeClass("text-light")
+        $(this).addClass("text-muted")
+      })
+    
+
       getRfidTokens()
     })
     </script>
@@ -541,6 +652,49 @@
             <tbody>
             </tbody>
           </table>
+
+
+          <div class="form-group row mt-2 mr-5" id="enableNewTokenInputFormButton">
+            <button type="button" id="newToken" class="btn btn-outline-primary waves-effect waves-light ml-auto mr-5"> 
+              <i class="fas fa-edit"></i> Nieuw token 
+            </button>
+          </div>
+
+
+          <div class="form-group row mt-2 mr-5" style="display: none;" id="newTokenInputForm">
+            <div class="input-group-prepend col-xs-3 text-white ml-auto">
+              Nieuw token:    
+            </div>
+
+            <div class="input-group-append">
+              <div class="input-group-prepend cursor-help">
+                <span class="input-group-text border-secondary bg-dark b-1 text-secondary bg-secondary text-muted" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="RFID tags zijn meestal twaalf cijfers. Handmatig kan elke unieke tekenreeks ingevoerd worden. Genereer eveentueel een random nummer met de knop rechts. Tokens kunnen niet meer gewijzigd worden om de relatie met laadsessies te behouden.">
+                  <i class="fas fa-info-circle"></i>
+                </span>
+              </div>
+              <div class="input-group-append">
+                <input type="text" maxlength="16" id="newRfid" class="form-control" name="newRfid" placeholder="Pasnummer" value=""/>    
+              </div>
+              <div class="input-group-append">
+                <button class="pr-3 btn btn-primary text-white" id="generateRandomToken" type="button" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="<em>Klik om een willekeurig nummer te genereren.</em>">
+                  <i class="fas fa-random"></i>
+                </button>                    
+              </div>
+            </div>
+
+            <div class="input-group-append">
+              <button type="button" id="cancelNewToken" style="float: right;" class="btn btn-secondary waves-effect waves-light ml-3"> 
+                <i class="fas fa-times"></i> Annuleren 
+              </button>
+            </div>
+            <div class="input-group-append">
+              <button type="button" id="createNewToken" class="btn btn-primary waves-effect waves-light ml-1 mr-5"> 
+                <i class="far fa-thumbs-up"></i> Opslaan 
+              </button>
+            </div>
+          </div>
+
+
         </div>
       </div>
     </div> <!-- end row -->
