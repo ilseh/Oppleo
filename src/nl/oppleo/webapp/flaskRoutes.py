@@ -1211,7 +1211,7 @@ def update_settings(param=None, value=None):
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
     # baudrate
-    if (param == 'baudrate') and isinstance(value, int) and int(value) in [2400, 4800, 9600, 19200, 38400, 57600, 115200]:
+    if (param == 'baudrate') and int(value) in [2400, 4800, 9600, 19200, 38400, 57600, 115200]:
         energyDeviceModel = EnergyDeviceModel.get()
         energyDeviceModel.baudrate = value
         energyDeviceModel.save()
