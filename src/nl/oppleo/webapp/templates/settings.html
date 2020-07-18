@@ -273,6 +273,12 @@
       $('input#prowlEnabled').change(function() {
         updateSettings( 'prowlEnabled', $(this).prop('checked') )
       })
+      $('input#webChargeOnDashboard').change(function() {
+        updateSettings( 'webChargeOnDashboard', $(this).prop('checked') )
+      })
+      $('input#authWebCharge').change(function() {
+        updateSettings( 'authWebCharge', $(this).prop('checked') )
+      })
 
       $('input#autoSessionEnabled').bootstrapToggle()
       $('input#autoSessionEnabled').change(function() {
@@ -690,6 +696,56 @@
                             </tr>
 
 
+
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-credit-card"></i> WebCharge</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> WebCharge on Dashboard:</td>
+                              <td class="text-primary">
+                                <form id="webcharge-on-dashboard-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.webChargeOnDashboard %}checked{% endif %}
+                                    name="webChargeOnDashboard"
+                                    id="webChargeOnDashboard"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Require Authorization:</td>
+                              <td class="text-primary">
+                                <form id="auth-webcharge-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.authWebCharge %}checked{% endif %}
+                                    name="authWebCharge"
+                                    id="authWebCharge"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>                            
 
                           </tbody>
                         </table>

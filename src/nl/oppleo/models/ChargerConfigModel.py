@@ -51,6 +51,9 @@ class ChargerConfigModel(Base):
 
     log_file = Column(String(256)) 
 
+    webcharge_on_dashboard = Column(Boolean) 
+    auth_webcharge = Column(Boolean) 
+
 
     def __init__(self):
         pass
@@ -195,3 +198,6 @@ class ChargerConfigSchema(Schema):
     prowl_apikey = fields.Str(dump_only=True)
 
     log_file = fields.Str(dump_only=True)
+
+    webcharge_on_dashboard = fields.Bool(dump_only=True)
+    auth_webcharge = fields.Bool(dump_only=True)

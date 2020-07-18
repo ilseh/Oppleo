@@ -81,6 +81,7 @@
 
             <form id="authorize-form" class="" method="POST">
               {{ form.csrf_token }}
+              {{ form.next_page }}
 
               <div class="text-center">
                   <span class="logo-lg"><i class="fas fa-lock"></i></i> <span>{{ requesttitle }}</span> </span>
@@ -90,7 +91,7 @@
               <div class="text-center">
                 &nbsp;
               </div>
-              <div class="text-center" style="color: #3bafda;">
+              <div class="text-center text-danger" >
                 <span>{{ requestdescription|safe }}</span>
               </div>
               <div class="text-center">
@@ -128,8 +129,8 @@
               </div>            
               {% endif %}
 
-              <div class="text-center" style="color: #3bafda;">
-                <span style="font-weight: bold;">{% if password_field_description %}{{ password_field_description }}{% else %}Voer het wachtwoord in{% endif %}</span>
+              <div class="text-center text-primary">
+                <span class="font-weight-bold">{% if password_field_description %}{{ password_field_description }}{% else %}Voer het wachtwoord in{% endif %}</span>
               </div>
             
               <div class="text-center">
@@ -137,14 +138,16 @@
               </div>
             
               {% if errormsg %}
-              <div class="text-center" style="color: #ef5350;">
-                <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ errormsg }}</span></span>
-              </div>
+              <div class="text-center text-danger">
+                <h3>
+                  <span class="mdi mdi-alert-outline"> <span class="font-weight-bold">{{ errormsg }}</span></span>
+                </h3>
+            </div>
               {% endif %}
             
               {% if form.errors %}
-              <div class="text-center" style="color: #ef5350;">
-                <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ form.errors }}</span></span>
+              <div class="text-center text-danger">
+                <span class="mdi mdi-alert-outline"><span class="font-weight-bold"> {{ form.errors }}</span></span>
               </div>
               {% endif %}
 

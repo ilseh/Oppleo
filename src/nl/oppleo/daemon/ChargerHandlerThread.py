@@ -4,6 +4,10 @@ import time
 import logging
 from datetime import datetime, timedelta
 
+from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException, 
+                                             OtherRfidHasOpenSessionException, 
+                                             ExpiredException)
+
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
@@ -28,18 +32,6 @@ GenericUtil.importMfrc522()
 
 
 SECONDS_IN_HOUR = 60 * 60
-
-
-class NotAuthorizedException(Exception):
-    pass
-
-
-class OtherRfidHasOpenSessionException(Exception):
-    pass
-
-
-class ExpiredException(Exception):
-    pass
 
 
 class ChargerHandlerThread(object):

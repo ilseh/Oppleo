@@ -18,6 +18,9 @@ from flask_socketio import SocketIO, emit
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 
+from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException, 
+                                             ExpiredException)
+
 from nl.oppleo.models.User import User
 from nl.oppleo.webapp.LoginForm import LoginForm
 from nl.oppleo.webapp.AuthorizeForm import AuthorizeForm
@@ -399,76 +402,87 @@ def delete_charge_session(id=None):
                 )
 
 
-@flaskRoutes.route("/start_charge_session/<int:rfid>", methods=["GET", "POST"])
+@flaskRoutes.route("/start_charge_session/<path:token>", methods=["GET", "POST"])
 @authenticated_resource
-def start_charge_session(rfid=None):
+def start_charge_session(token=None):
     global flaskRoutesLogger, oppleoConfig, threadLock
-    if rfid is None:
+
+    # Page to forward to after succesful authorization
+    # None | dashboard | charge_sessions
+    next_page = request.args.get('next_page')
+
+    if token is None:
         return jsonify({
             'status': 404, 
             'id': oppleoConfig.chargerName, 
-            'reason': 'RFID niet gevonden'
+            'reason': 'RFID token niet gevonden'
             })
+
     # For GET requests, display the authorize form. 
     flaskRoutesLogger.debug('/start_charge_session {}'.format(request.method))
-    if (request.method == 'GET'):
+    # Authorization required?
+    if (oppleoConfig.authWebCharge and request.method == 'GET'):
         return render_template("authorize.html", 
-            form=AuthorizeForm(),
+            form=AuthorizeForm(next_page=next_page),
             requesttitle=str("Start laadsessie"),
             buttontitle="Start laadsessie",
             oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
-    form = AuthorizeForm()
-    if form.validate_on_submit() and \
-       check_password_hash(current_user.password, form.password.data):
-        flaskRoutesLogger.debug('start_charge_session requested and authorized.')
-        with threadLock:
+    form = AuthorizeForm(next_page=next_page)
+    if (not oppleoConfig.authWebCharge) or (                                  \
+            form.validate_on_submit() and                                  \
+            check_password_hash(current_user.password, form.password.data) \
+            ):
+        flaskRoutesLogger.debug('start_charge_session requested. authorized with authWebCharge={}.'.format(oppleoConfig.authWebCharge))
 
+        with threadLock:
             charge_session = ChargeSessionModel.get_open_charge_session_for_device(oppleoConfig.chargerName)
             if charge_session is None:
                 try:
-                    oppleoConfig.chThread.authorize(rfid)
+                    oppleoConfig.chThread.authorize(token)
                     oppleoConfig.chThread.start_charge_session(
-                                    rfid=rfid,
+                                    rfid=token,
                                     trigger=ChargeSessionModel.TRIGGER_WEB,
                                     condense=False
                                 )
                     oppleoConfig.chThread.buzz_ok()
                     oppleoConfig.chThread.update_charger_and_led(True)
                 except NotAuthorizedException as e:
-                    flaskRoutesLogger.warn('Could not start charge session for rfid {}, NotAuthorized!'.format(id))
-                    return render_template("authorize.html", 
-                            form=form, 
-                            requesttitle=str("Start laadsessie " + str(id)),
-                            buttontitle="Start laadsessie",
-                            errormsg="Deze RFID is niet geautoriseerd.",
-                            oppleoconfig=oppleoConfig
+                    rfidToken = RfidModel.get_one(token)
+                    flaskRoutesLogger.warn('Could not start charge session for rfid {} [{}], NotAuthorized!'.format(rfidToken.name, token))
+                    return render_template("errorpages/405-NotAuthorizedException.html",
+                            requesttitle=str("RFID token niet actief!"),
+                            buttontitle="Terug",
+                            errormsg="RFID token \"" + str(rfidToken.name) + "\" [" + str(token) + "] is niet geautoriseerd om een laadsessie te starten."
                             )
                 except ExpiredException as e:
-                    flaskRoutesLogger.warn('Could not start charge session for rfid {}, Expired!'.format(id))
-                    return render_template("authorize.html", 
-                            form=form, 
-                            requesttitle=str("Start laadsessie " + str(id)),
+                    rfidToken = RfidModel.get_one(token)
+                    flaskRoutesLogger.warn('Could not start charge session for rfid {}. Expired!'.format(token))
+                    return render_template("errorpages/401-ExpiredException.html", 
+                            requesttitle=str("RFID token niet geldig!"),
                             buttontitle="Start laadsessie",
-                            errormsg="De geldigheid van deze RFID is verlopen.",
-                            oppleoconfig=oppleoConfig
+                            errormsg="De geldigheid van RFID token \"" + str(rfidToken.name) + "\" [" + str(token) + "] is verlopen."
                             )
             else:
                 # A charge session was started elsewhere, fail
-                flaskRoutesLogger.warn('Could not start charge session for rfid {}, already session active!'.format(id))
+                flaskRoutesLogger.warn('Could not start charge session for rfid {}, already session active!'.format(token))
                 return render_template("authorize.html", 
                         form=form, 
-                        requesttitle=str("Start laadsessie " + str(id)),
+                        requesttitle=str("Start laadsessie " + str(token)),
                         buttontitle="Start laadsessie",
                         errormsg="Er is al een laadsessie actief. Stop deze eerst.",
                         oppleoconfig=oppleoConfig
                         )
+        if isinstance(next_page, str) and next_page.lower() == 'charge_sessions':
+            return redirect(url_for('flaskRoutes.charge_sessions'))
+        if isinstance(next_page, str) and next_page.lower() == 'dashboard':
+            return redirect(url_for('flaskRoutes.home'))
         return redirect(url_for('flaskRoutes.charge_sessions'))
     else:
         return render_template("authorize.html", 
                 form=form, 
-                requesttitle=str("Start laadsessie " + str(id)),
+                requesttitle=str("Start laadsessie " + str(token)),
                 buttontitle="Start laadsessie",
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig
@@ -479,6 +493,11 @@ def start_charge_session(rfid=None):
 @authenticated_resource
 def stop_charge_session(charge_session_id=None):
     global flaskRoutesLogger, oppleoConfig, threadLock
+
+    # Page to forward to after succesful authorization
+    # None | dashboard | charge_sessions
+    next_page = request.args.get('next_page')
+
     if charge_session_id is None:
         return jsonify({
             'status': 404, 
@@ -487,18 +506,23 @@ def stop_charge_session(charge_session_id=None):
             })
     # For GET requests, display the authorize form. 
     flaskRoutesLogger.debug('/stop_charge_session {}'.format(request.method))
-    if (request.method == 'GET'):
+    # Authorization required?
+    if (oppleoConfig.authWebCharge and request.method == 'GET'):
         return render_template("authorize.html", 
-            form=AuthorizeForm(),
+            form=AuthorizeForm(next_page=next_page),
             requesttitle=str("Stop laadsessie " + str(charge_session_id)),
             buttontitle="Stop laadsessie",
             oppleoconfig=oppleoConfig
             )
     # For POST requests, login the current user by processing the form.
-    form = AuthorizeForm()
-    if form.validate_on_submit() and \
-       check_password_hash(current_user.password, form.password.data):
-        flaskRoutesLogger.debug('stop_charge_session requested and authorized.')
+    form = AuthorizeForm(next_page=next_page)
+
+    if (not oppleoConfig.authWebCharge) or (                                  \
+            form.validate_on_submit() and                                  \
+            check_password_hash(current_user.password, form.password.data) \
+            ):
+        flaskRoutesLogger.debug('stop_charge_session requested. authorized with authWebCharge={}.'.format(oppleoConfig.authWebCharge))
+
         with threadLock:
             charge_session = ChargeSessionModel.get_one_charge_session(charge_session_id)
             if charge_session is not None:
@@ -508,6 +532,10 @@ def stop_charge_session(charge_session_id=None):
                 oppleoConfig.chThread.update_charger_and_led(False)
             else:
                 flaskRoutesLogger.warn('Could not stop charge session {}, session not found!'.format(charge_session_id))
+        if isinstance(next_page, str) and next_page.lower() == 'charge_sessions':
+            return redirect(url_for('flaskRoutes.charge_sessions'))
+        if isinstance(next_page, str) and next_page.lower() == 'dashboard':
+            return redirect(url_for('flaskRoutes.home'))
         return redirect(url_for('flaskRoutes.charge_sessions'))
     else:
         return render_template("authorize.html", 
@@ -658,6 +686,7 @@ def active_charge_session():
             'reason'            : 'No active charge session'
             })
     try:
+        rfid_data = RfidModel.get_one(open_charge_session_for_device.rfid)
         return jsonify({ 
             'status'            : 200,
             'id'                : oppleoConfig.chargerName, 
@@ -668,7 +697,8 @@ def active_charge_session():
             'offPeakAllowedOnce': oppleoConfig.allowPeakOnePeriod,
             'offPeak'           : True if evse.isOffPeak else False,
             'auth'              : True if (current_user.is_authenticated) else False,
-            'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated) else None
+            'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated) else None,
+            'rfid'              : rfid_data.to_str() if (current_user.is_authenticated) else None
             })
     except Exception as e:
         flaskRoutesLogger.error("active_charge_session - could not return information", exc_info=True)
@@ -826,11 +856,12 @@ def rfid_tokens(token=None):
                 rfid_model.save()
                 # Return to the rfid tokens page
                 return redirect(url_for('flaskRoutes.rfid_tokens', req_format='html', token=None))
-            # TODO - what went wrong? message!
+            # What went wrong? message!
             return render_template("token.html",
                     rfid_model=rfid_model,
                     form=rfid_change_form,
-                    oppleoconfig=oppleoConfig
+                    oppleoconfig=oppleoConfig,
+                    errorlist=rfid_change_form.translateErrors(RfidChangeForm.DUTCH)
                 )        
         return render_template("token.html",
                     rfid_model=rfid_model,
@@ -1233,6 +1264,16 @@ def update_settings(param=None, value=None):
     if (param == 'prowlApiKey') and isinstance(value, str):
         oppleoConfig.prowlApiKey = value
         return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # webChargeOnDashboard
+    if (param == 'webChargeOnDashboard'):
+        oppleoConfig.webChargeOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.webChargeOnDashboard })
+
+    # authWebCharge
+    if (param == 'authWebCharge'):
+        oppleoConfig.authWebCharge = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.authWebCharge })
 
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

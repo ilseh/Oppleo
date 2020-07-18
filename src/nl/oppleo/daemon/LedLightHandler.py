@@ -6,6 +6,10 @@ from datetime import datetime
 from injector import inject
 from service import Service
 
+from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException, 
+                                             OtherRfidHasOpenSessionException, 
+                                             ExpiredException)
+
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.services.Buzzer import Buzzer
@@ -28,18 +32,6 @@ PROCESS_NAME = 'rfid_reader'
 # TODO: make pid_dir configurable
 PID_DIR = '/tmp/'
 SECONDS_IN_HOUR = 60 * 60
-
-
-class NotAuthorizedException(Exception):
-    pass
-
-
-class OtherRfidHasOpenSessionException(Exception):
-    pass
-
-
-class ExpiredException(Exception):
-    pass
 
 
 class LedLightHandler(Service):

@@ -138,41 +138,6 @@
       )
     }
     var dt = undefined
-    function indexIn(ar, el) {
-      i = -1
-      $.each(ar, function( index, value ) {
-        if (el == value) {
-          i = index
-          return false
-        }
-      })
-      return i
-    }
-    function isRfidValid(enabled, validFrom, validUntil) {
-      // enabled = 'Ja'
-      active = ((typeof enabled === 'string' || enabled instanceof String) && "JA" == enabled.toUpperCase())
-      // validFrom = '-'
-      // validUntil = '31 December 2020'
-      if (validFrom != '-') {
-        s = validFrom.split(' ')
-        fromDate = new Date()
-        fromDate.setYear(s[2])
-        fromDate.setMonth(indexIn(months, s[1]))
-        fromDate.setDate(s[0])
-      }
-      if (validUntil != '-') {
-        s = validUntil.split(' ')
-        untilDate = new Date()
-        untilDate.setYear(s[2])
-        untilDate.setMonth(indexIn(months, s[1]))
-        untilDate.setDate(s[0])
-      }
-      now = new Date()
-      return (active && 
-              (validFrom == '-' || fromDate < now ) &&
-              (validUntil == '-' || untilDate >= now ) 
-             )
-    }
     function getChargeSessionStatus( ) {
       console.log(timestamp() + ' getChargeSessionStatus()')
       $.ajax({
@@ -200,7 +165,7 @@
                             '   data-placement="bottom" ' +
                             '   data-html="true" ' +
                             '   title="<em>Start laadsessie met ' + data[0] + '.</em>"' +
-                            '   onclick="window.location.href=\'/start_charge_session/' + data[1] + '\'"' +
+                            '   onclick="window.location.href=\'/start_charge_session/' + data[1] + '?next=charge_sessions\'"' +
                             '   >' +
                             '   <i class="fas fa-charging-station"></i>' +
                             '</button>'

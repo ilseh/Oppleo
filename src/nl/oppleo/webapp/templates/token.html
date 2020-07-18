@@ -135,7 +135,7 @@
             break
           case 401:
             // Not Authorized - Tesla email/pw not correct
-            autoHideNotify('warning', 'top-left', 'Autorisatie fout', 'Geen OAuth Token gegenereerd.');
+            autoHideNotify('warning', 'top-left', 'Autorisatie fout', 'Geen OAuth Token gegenereerd.')
             $('span#error-msg-title').html('Autorisatie fout.')
             $('h5#error-msg-sub').html('Tesla e-mail of wachtwoord niet correct.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -144,7 +144,7 @@
             break
           case 404:
             // RFID Token not found
-            autoHideNotify('error', 'top-left', '404', 'RFID token onbekend.');
+            autoHideNotify('error', 'top-left', '404', 'RFID token onbekend.')
             $('span#error-msg-title').html('Fout...')
             $('h5#error-msg-sub').html('RFID token niet bekend.')
             $('tr#error-msg-row').show().delay(5000).queue(function(n) {
@@ -271,6 +271,20 @@
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       $('tr#error-msg-row').hide()
+      // Change English valid_from and valid_untill months to Dutch
+      valid_from = $('input[name="valid_from"]').val()
+      Object.entries(months_en).forEach(entry => {
+        const [key, value] = entry
+        valid_from = valid_from.replace(value, months[key])
+      })
+      $('input[name="valid_from"]').val(valid_from)
+      // Change Dutch months in valid_until into English values for interpretation
+      valid_until = $('input[name="valid_until"]').val()
+      Object.entries(months_en).forEach(entry => {
+        const [key, value] = entry
+        valid_until = valid_until.replace(value, months[key])
+      })
+      $('input[name="valid_until"]').val(valid_until)
 
       $('#valid-range').datepicker({
           todayHighlight: true,
@@ -301,7 +315,6 @@
       $('input#enabled').change(function() {
         // Nothing. Changes are submitted as whole form
       })
-
       $('input[name="vehicle_make"]').on("change paste keyup", function() {
         setResetGetOdometer()
       })
@@ -331,29 +344,35 @@
           }
         })
       })
+      // Change date language just before submitting it 
+      $( "form#rfid-change-form" ).submit(function( event ) {
+        // Change Dutch months in valid_from into English values for interpretation
+        valid_from = $('input[name="valid_from"]').val()
+        Object.entries(months).forEach(entry => {
+          const [key, value] = entry
+          valid_from = valid_from.replace(value, months_en[key])
+        })
+        $('input[name="valid_from"]').val(valid_from)
+
+        // Change Dutch months in valid_until into English values for interpretation
+        valid_until = $('input[name="valid_until"]').val()
+        Object.entries(months).forEach(entry => {
+          const [key, value] = entry
+          valid_until = valid_until.replace(value, months_en[key])
+        })
+        $('input[name="valid_until"]').val(valid_until)
+
+      })
+
       showHideCredentials()
       setResetGetOdometer()
       setResetVehicleToken()
       {% if rfid_model['api_created_at'] is not none and rfid_model['api_expires_in'] is not none %}
       updateOAuthTokenStatus(new Date(({{ rfid_model['api_created_at'] }} *1000) + ({{ rfid_model['api_expires_in'] }} *1000))) // Seconds to milliseconds
       {% endif %}
-      $('.info-button-style').hover(
-        function() { // mouseenter
-          $(this).find('span').removeClass('bg-secondary')
-          $(this).find('span').addClass('bg-success')
-          $(this).find('span').removeClass('text-muted')
-          $(this).find('span').addClass('text-light')
-        },
-        function(){  // mouseleave
-          $(this).find('span').removeClass('bg-success')
-          $(this).find('span').addClass('bg-secondary') 
-          $(this).find('span').removeClass('text-light')
-          $(this).find('span').addClass('text-muted')
-        }
-      )
+
       $('.spinner').hide()
     })
-
 
     </script>
 
@@ -380,6 +399,28 @@
       <div class="col-12">
         <div class="card-box table-responsive">
           <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+
+            {% if errorlist is defined %}
+            <tr id="error-msg-row-x">
+              <th colspan="2">
+                <div class="text-center bg-danger text-white pt-2 pb-1" style="border-radius: 5px;">
+                  {% for error_field in errorlist %}
+                  {% for error_text in errorlist[error_field] %}
+                    <span>
+                      <h4 style="font-weight: bold;">
+                        <i class="mdi mdi-alert-outline"></i>
+                        <span id="error-msg-title">{{ error_text }} voor {{ error_field }}</span>
+                      </h4>
+                      <h5 id="error-msg-sub"></h5>
+                    </span>
+                  {%- endfor -%}
+                  {%- endfor -%}
+                </div>
+              </th>
+            </tr>
+            {%- endif -%}
+
+
             <tr id="error-msg-row">
               <th colspan="2">
                 <div class="text-center" style="color: white; background-color: #ef5350; border-radius: 5px;">

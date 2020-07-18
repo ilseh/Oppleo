@@ -517,5 +517,24 @@ class OppleoConfig(object, metaclass=Singleton):
         raise NotImplementedError('upSinceDatetime set at boot.')
 
 
+    """
+        webChargeOnDashboard --> webcharge_on_dashboard
+    """
+    @property
+    def webChargeOnDashboard(self):
+        return self.__chargerConfigModel.webcharge_on_dashboard
 
+    @webChargeOnDashboard.setter
+    def webChargeOnDashboard(self, value):
+        self.__chargerConfigModel.setAndSave('webcharge_on_dashboard', value)
 
+    """
+        authWebCharge --> auth_webcharge
+    """
+    @property
+    def authWebCharge(self):
+        return self.__chargerConfigModel.auth_webcharge
+
+    @authWebCharge.setter
+    def authWebCharge(self, value):
+        self.__chargerConfigModel.setAndSave('auth_webcharge', value)

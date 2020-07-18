@@ -245,6 +245,33 @@
       )
     }
 
+    var activeChargeSession = undefined
+
+    function setActiveChargeSession( session ) {
+      activeChargeSession = session
+      if ( session != undefined && 
+           session.hasOwnProperty("chargeSession") && 
+           session.chargeSession &&
+           session.hasOwnProperty("rfid") && 
+           session.rfid.name ) {
+        // Active charge session - show stop button, hide start button
+        // TODO
+        $('span#activeTokenText').text( session.rfid.name )
+        $('span#activeTokenSpan').toggleClass( 'd-none', false )
+        $('button#startChargeSession').toggleClass( 'd-none', true )
+        $('select#rfidToken').toggleClass( 'd-none', true )
+        $('button#stopChargeSession').toggleClass( 'd-none', false )
+      } else {
+        // No active charge session - show start button, hide stop button
+        // TODO
+        $('span#activeTokenText').text( '' )
+        $('span#activeTokenSpan').toggleClass( 'd-none', true )
+        $('button#startChargeSession').toggleClass( 'd-none', false )
+        $('select#rfidToken').toggleClass( 'd-none', false )
+        $('button#stopChargeSession').toggleClass( 'd-none', true )
+      }
+    }
+
     function getChargeSessionStatus( ) {
       console.log(timestamp() + ' getChargeSessionStatus()')
       $.ajax({
@@ -257,6 +284,7 @@
       .done(function(result) {
         // log data to the console so we can see
         console.log(result)
+        setActiveChargeSession( result )
         switch(parseInt(result.status)) {
           case 200:                   // Active charge session
             error = false
@@ -316,6 +344,85 @@
       })
     }
 
+    function enableQuickStartButton( enable ) {
+      // Enable quickstart button when token selected, disable otherwise
+      $('button#startChargeSession').prop('disabled', !enable)
+    }
+
+    function getRfidTokens() {
+      console.log(timestamp() + ' getRfidTokens()')
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/rfid_tokens/',
+        contentType : 'application/json',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+
+        // Delete the current options
+        $("#rfidToken").find('option').remove().end()
+
+        if (data.length == 0) {
+          var o = new Option('Geen tokens...', '-')
+          // jquerify the DOM object 'o' so we can use the html method
+          $(o).html('Geen tokens...')
+          $("#rfidToken").append(o)
+        }
+
+        if (data.length > 1) {
+          var o = new Option('Selecteer token...', '-')
+          // jquerify the DOM object 'o' so we can use the html method
+          $(o).html('<i>Selecteer token...</i>')
+          $("#rfidToken").append(o)
+        }
+
+        data.forEach(element => {
+          name = ((element.name != undefined && element.name.length > 0) ? 
+                  element.name : 
+                  '... [' + element.rfid + ']'
+                 )
+          namePrefix = ''
+          rfid = element.rfid
+          if (!isRfidValid(element.enabled, element.valid_from, element.valid_until)) {
+            // Not valid, tag
+            namePrefix = '[X] '
+            rfid = '-'
+          }
+          var o = new Option(namePrefix + name, rfid)
+          /// jquerify the DOM object 'o' so we can use the html method
+          $(o).html(namePrefix + name)
+          // Auto select this option if only one exists
+          if ( data.length == 1 )  {
+            $(o).prop('selected', true)
+            // If only one auto selected, enable quickstart button 
+            enableQuickStartButton( true )
+          }
+          $("#rfidToken").append(o)
+
+        })
+
+        // Enable quickstart
+        $('div#quickStart').toggleClass("d-none", false)
+
+        // Enable quickstart button when token selected, disable otherwise
+        $('select[id="rfidToken"]').on('change', function() {
+          enableQuickStartButton( (this.value != '-') )
+        })
+
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+      })
+      .fail(function(data) {
+        console.log(data)
+        // Probably not logged in - disable quickstart
+        $('div#quickStart').toggleClass("d-none", true)
+      })
+      .always(function() {
+      })
+    }    
 
     var socket = undefined
     function startWebSocket() {
@@ -481,6 +588,31 @@
       getChargeSessionStatus()
       getUsageData(1)
       startWebSocket()
+      if ({% if oppleoconfig.webChargeOnDashboard %}true{% else %}false{% endif %}) {
+        getRfidTokens()
+        // Quick start button action
+        $('button#startChargeSession').click(function() {
+          var rfidTokenName = $( "select#rfidToken option:selected" ).text()
+          var rfidTokenID = $( "select#rfidToken" ).val()
+          window.location.href = '/start_charge_session/' + rfidTokenID + '?next_page=dashboard'
+        })
+        $('button#stopChargeSession').click(function() {
+          // Find charge session id to stop
+          if ( activeChargeSession == undefined || 
+              !activeChargeSession.hasOwnProperty("chargeSession") || 
+              !activeChargeSession.chargeSession ||
+              !activeChargeSession.hasOwnProperty("data") && 
+              !activeChargeSession.data.hasOwnProperty("id")) {
+            // No active charge session!
+            alert("No active charge session!")
+            // TODO
+            // - nette melding
+            // - activeer startSession knop als ingelogd
+          }
+          // Active charge session
+          window.location.href = '/stop_charge_session/' + activeChargeSession.data.id + '?next_page=dashboard'
+        })
+      }
     })
 
     </script>
@@ -642,9 +774,56 @@
           </div>
         </div>
 
-
-
       </div> <!-- end row -->
+
+      <div id="quickStart" class="row d-none">
+        <div class="col-12">
+          <div class="card-box table-responsive">
+
+            <div class="form-group row mt-2 mr-5" id="newTokenInputForm">
+
+              <div class="input-group-prepend mr-1 ml-auto">
+                <span id="activeTokenSpan" class="input-group-text b-0 bg-transparent text-muted b-none" >
+                  <i class="fas fa-charging-station mr-1"></i> 
+                  <span id="activeTokenText">Actief token</span>
+                </span>
+              </div>
+             
+              <div class="input-group-append">
+                <div class="input-group-append">
+                  <select class="form-control" id="rfidToken" name="rfidToken">
+                    <option value="-" style="font-style: italic;">Geen tokens...</option>
+                  </select>
+                </div>
+              </div>
+  
+              <div class="input-group-append">
+                <button type="button" id="startChargeSession" style="float: right;" class="btn btn-outline-primary waves-effect waves-light ml-3" disabled> 
+                  <i class="fas fa-charging-station"></i> Start laadsessie
+                </button>
+              </div>
+
+              <div class="input-group-append">
+                <button type="button" id="stopChargeSession" style="float: right;" class="btn btn-outline-primary waves-effect waves-light ml-3 d-none"> 
+                  <i class="far fa-hand-paper"></i> Stop laadsessie
+                </button>
+              </div>
+
+              <div class="input-group-append info-button-style col-xs-3 ml-1 text-white cursor-help">
+                <span class="input-group-text border-secondary bg-dark b-1 text-secondary bg-secondary text-muted" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="Selecteer een RFID token en klik <b>Start laadsessie</b> om direct een laadsessie te starten. Klik op <b>Stop laadsessie</b> om de huidige sessie te beëindigen.">
+                  <i class="fas fa-info-circle"></i>
+                </span>
+            </div>
+
+          </div>
+
+ 
+          </div>
+        </div>
+      </div> <!-- end row -->
+  
+
+
   </div>
 </div>
 {% endblock %}
