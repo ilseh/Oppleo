@@ -142,7 +142,7 @@
       console.log(timestamp() + ' getChargeSessionStatus()')
       $.ajax({
         type		    : 'GET',
-        url			    : '/active_charge_session',
+        url			    : '/active_charge_session/',
         dataType	  : 'json',
         encode		  : true,
         headers     : { 'ignore-login-next': 'true' }
