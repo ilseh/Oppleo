@@ -252,8 +252,8 @@
       if ( session != undefined && 
            session.hasOwnProperty("chargeSession") && 
            session.chargeSession &&
-           session.hasOwnProperty("rfid") && 
-           session.rfid.name ) {
+           session.hasOwnProperty("rfid") && (session.rfid != null && session.rfid != undefined ) && 
+           session.rfid.name ) { 
         // Active charge session - show stop button, hide start button
         // TODO
         $('span#activeTokenText').text( session.rfid.name )
