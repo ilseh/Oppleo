@@ -366,6 +366,7 @@ def restart():
 
 
 @flaskRoutes.route("/delete_charge_session/<int:id>", methods=["GET", "POST"])
+@flaskRoutes.route("/delete_charge_session/<int:id>/", methods=["GET", "POST"])
 @authenticated_resource
 def delete_charge_session(id=None):
     global flaskRoutesLogger, oppleoConfig
@@ -403,6 +404,7 @@ def delete_charge_session(id=None):
 
 
 @flaskRoutes.route("/start_charge_session/<path:token>", methods=["GET", "POST"])
+@flaskRoutes.route("/start_charge_session/<path:token>/", methods=["GET", "POST"])
 @authenticated_resource
 def start_charge_session(token=None):
     global flaskRoutesLogger, oppleoConfig, threadLock
@@ -490,6 +492,7 @@ def start_charge_session(token=None):
 
 
 @flaskRoutes.route("/stop_charge_session/<int:charge_session_id>", methods=["GET", "POST"])
+@flaskRoutes.route("/stop_charge_session/<int:charge_session_id>/", methods=["GET", "POST"])
 @authenticated_resource
 def stop_charge_session(charge_session_id=None):
     global flaskRoutesLogger, oppleoConfig, threadLock
@@ -550,6 +553,7 @@ def stop_charge_session(charge_session_id=None):
 @flaskRoutes.route("/usage")
 @flaskRoutes.route("/usage/")
 @flaskRoutes.route("/usage/<int:cnt>")
+@flaskRoutes.route("/usage/<int:cnt>/")
 def usage(cnt="undefined"):
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/usage ' + request.method)
@@ -562,6 +566,7 @@ def usage(cnt="undefined"):
 @flaskRoutes.route("/usage_table")
 @flaskRoutes.route("/usage_table/")
 @flaskRoutes.route("/usage_table/<int:cnt>")
+@flaskRoutes.route("/usage_table/<int:cnt>/")
 def usage_table(cnt="undefined"):
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/usage_table {} {}'.format(cnt, request.method))
@@ -574,6 +579,7 @@ def usage_table(cnt="undefined"):
 @flaskRoutes.route("/usage_graph")
 @flaskRoutes.route("/usage_graph/")
 @flaskRoutes.route("/usage_graph/<int:cnt>")
+@flaskRoutes.route("/usage_graph/<int:cnt>/")
 @authenticated_resource
 def usage_graph(cnt="undefined"):
     global flaskRoutesLogger, oppleoConfig
@@ -589,6 +595,7 @@ def usage_graph(cnt="undefined"):
 @flaskRoutes.route("/settings")
 @flaskRoutes.route("/settings/")
 @flaskRoutes.route("/settings/<int:active>")
+@flaskRoutes.route("/settings/<int:active>/")
 @authenticated_resource
 def settings(active=1):
     global flaskRoutesLogger, oppleoConfig, oppleoSystemConfig, modbusConfigOptions
@@ -630,6 +637,7 @@ def settings(active=1):
 @flaskRoutes.route("/usage_data")
 @flaskRoutes.route("/usage_data/")
 @flaskRoutes.route("/usage_data/<int:cnt>")
+@flaskRoutes.route("/usage_data/<int:cnt>/")
 def usage_data(cnt=100):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data {} {}'.format(cnt, request.method))
@@ -645,6 +653,7 @@ def usage_data(cnt=100):
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>")
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
+@flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>/")
 def usage_data_since(since_timestamp, cnt=-1):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
@@ -758,6 +767,7 @@ def charge_sessions(since_timestamp=None):
 
 
 @flaskRoutes.route("/charge_report/<int:year>/<int:month>")
+@flaskRoutes.route("/charge_report/<int:year>/<int:month>/")
 @authenticated_resource
 def charge_report(year=-1, month=-1):
     global flaskRoutesLogger, oppleoConfig
@@ -1024,6 +1034,7 @@ def TeslaApi_RevokeOAuth(token=None):
 
 # Always returns json
 @flaskRoutes.route("/update_settings/<path:param>/<path:value>", methods=["POST"])
+@flaskRoutes.route("/update_settings/<path:param>/<path:value>/", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
 def update_settings(param=None, value=None):
 
