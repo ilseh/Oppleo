@@ -157,7 +157,7 @@
             }    
             function startSystemStatusWebSocket() {
                 // start up the SocketIO connection to the server on namespace /usage
-                let systemStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/system_status/')
+                let systemStatusSocket = io.connect((window.location.protocol=='https:'?'wss:':'ws:')+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/system_status/')
                 // this is a callback that triggers when the "my response" event is emitted by the server.
                 systemStatusSocket.on('update', function(msg) {
                     console.log('Received: ' + JSON.stringify(msg))
