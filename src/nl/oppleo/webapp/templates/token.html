@@ -51,7 +51,7 @@
       var data
       switch(cnf) {
         case GENERATE:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth'
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/'
           data = {
             csrf_token    : '{{ csrf_token() }}',
             oauth_email   : $('input#oauth_email').val(), 
@@ -59,13 +59,13 @@
           }
           break
         case REFRESH:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth'
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth/'
           data = {
             csrf_token    : '{{ csrf_token() }}' 
           }
           break
         case REVOKE:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RevokeOAuth'
+          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RevokeOAuth/'
           data = {
             csrf_token    : '{{ csrf_token() }}' 
           }

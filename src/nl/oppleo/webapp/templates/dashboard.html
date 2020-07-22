@@ -158,7 +158,7 @@
       console.log(timestamp() + ' getUsageData()')
       $.ajax({
         type		  : 'GET',
-        url			  : (n == undefined ? '/usage_data' : '/usage_data/' + n),
+        url			  : (n == undefined ? '/usage_data' : '/usage_data/' + n + '/'),
         dataType	: 'json',
         encode		: true,
         headers   : { 'ignore-login-next': 'true' } // prevent this call to be used in login-next
@@ -276,7 +276,7 @@
       console.log(timestamp() + ' getChargeSessionStatus()')
       $.ajax({
         type		  : 'GET',
-        url			  : '/active_charge_session',
+        url			  : '/active_charge_session/',
         dataType	: 'json',
         encode		: true,
         headers   : { 'ignore-login-next': 'true' }

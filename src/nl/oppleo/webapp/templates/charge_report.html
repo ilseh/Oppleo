@@ -92,7 +92,7 @@
       console.log(timestamp() + ' getRfidTokens()')            
       $.ajax({
         type		    : 'GET',
-        url			    : '/rfid_tokens',
+        url			    : '/rfid_tokens/',
         contentType : "application/json",
         dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
@@ -126,7 +126,7 @@
             
       $.ajax({
         type		    : 'GET',
-        url			    : '/charge_sessions',
+        url			    : '/charge_sessions/',
         contentType : "application/json",
         dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },

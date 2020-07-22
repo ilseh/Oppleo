@@ -914,6 +914,7 @@ def rfid_tokens(token=None):
 
 # Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
 def TeslaApi_GenerateOAuth(token=None):
     global flaskRoutesLogger
@@ -951,6 +952,7 @@ def TeslaApi_GenerateOAuth(token=None):
 
 # Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth/", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RefreshOAuth(token=None):
     global flaskRoutesLogger
@@ -985,6 +987,7 @@ def TeslaApi_RefreshOAuth(token=None):
 
 # Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth/", methods=["POST"])
 @authenticated_resource
 def TeslaApi_RevokeOAuth(token=None):
     global flaskRoutesLogger

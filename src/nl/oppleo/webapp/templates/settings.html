@@ -168,7 +168,7 @@
           }
       $.ajax({
         type		    : 'POST',
-        url			    : ('/update_settings/' + encodeURIComponent(param) +'/' + encodeURIComponent(value)),
+        url			    : ('/update_settings/' + encodeURIComponent(param) +'/' + encodeURIComponent(value) + '/'),
         dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
         encode		  : true,

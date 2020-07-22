@@ -91,7 +91,7 @@
       console.log(timestamp() + ' getUsageData()')
       $.ajax({
         type		  : 'GET',
-        url			  : (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data'),
+        url			  : (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data/'),
         dataType	: 'json',
         headers   : { 'ignore-login-next': 'true' },
         encode		: true
