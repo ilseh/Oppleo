@@ -652,6 +652,7 @@ def usage_data(cnt=100):
 
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>")
+@flaskRoutes.route("/usage_data_since/<path:since_timestamp>/")
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>/")
 def usage_data_since(since_timestamp, cnt=-1):
