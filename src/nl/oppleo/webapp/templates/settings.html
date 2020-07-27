@@ -747,6 +747,28 @@
                               </td>
                             </tr>                            
 
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-credit-card"></i> Software versie</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> Github:</td>
+                              <td class="text-primary">{% if diag['github']['gitUpdateAvailable'] %}<span class="text-danger font-weight-bold">Update beschikbaar</span>{% else %}Geen update{% endif %}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> Locale versie:</td>
+                              <td class="text-primary">{{ diag['github']['lastGitUpdate']}}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> Github versie:</td>
+                              <td class="text-primary">{{ diag['github']['remoteGitDate'] }}</td>
+                            </tr>
+
                           </tbody>
                         </table>
                       </div>

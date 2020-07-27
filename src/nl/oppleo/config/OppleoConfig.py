@@ -538,3 +538,5 @@ class OppleoConfig(object, metaclass=Singleton):
     @authWebCharge.setter
     def authWebCharge(self, value):
         self.__chargerConfigModel.setAndSave('auth_webcharge', value)
+
+

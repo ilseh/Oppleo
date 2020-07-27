@@ -39,6 +39,7 @@ from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReaderProd import EvseState
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.GitUtil import GitUtil
 
 from nl.oppleo.utils.EnergyUtil import modbusConfigOptions
 
@@ -621,6 +622,11 @@ def settings(active=1):
     diag['offPeak']['sunday'] = OffPeakHoursModel.get_sunday()
 
     diag['modbusConfigOptions'] = modbusConfigOptions
+
+    diag['github'] = {}
+    diag['github']['gitUpdateAvailable'] = GitUtil.gitUpdateAvailable()
+    diag['github']['lastGitUpdate'] = GitUtil.lastBranchGitDateStr()
+    diag['github']['remoteGitDate'] = GitUtil.lastRemoteMasterGitDateStr()
 
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
