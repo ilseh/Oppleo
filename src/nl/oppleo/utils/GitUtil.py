@@ -37,7 +37,7 @@ class GitUtil(object):
     @staticmethod
     def gitRemoteUpdate() -> None:
         try:
-            os.popen('git remote update')
+            outcome = os.system('git remote update')
         except (RuntimeError, TypeError, ValueError, NameError) as e:
             pass
 
