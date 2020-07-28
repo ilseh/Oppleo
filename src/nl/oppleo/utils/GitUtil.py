@@ -32,3 +32,12 @@ class GitUtil(object):
         remoteGitDate = GitUtil.lastRemoteMasterGitDate()
         return (localGitDate is not None and remoteGitDate is not None and \
                 localGitDate < remoteGitDate)
+
+    # Updates the git status with the remote server
+    @staticmethod
+    def gitRemoteUpdate() -> None:
+        try:
+            os.popen('git remote update')
+        except (RuntimeError, TypeError, ValueError, NameError) as e:
+            pass
+

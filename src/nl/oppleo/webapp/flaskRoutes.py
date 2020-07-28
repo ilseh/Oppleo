@@ -593,6 +593,7 @@ def usage_graph(cnt="undefined"):
                 )
 
 
+
 @flaskRoutes.route("/settings")
 @flaskRoutes.route("/settings/")
 @flaskRoutes.route("/settings/<int:active>")
@@ -623,10 +624,7 @@ def settings(active=1):
 
     diag['modbusConfigOptions'] = modbusConfigOptions
 
-    diag['github'] = {}
-    diag['github']['gitUpdateAvailable'] = GitUtil.gitUpdateAvailable()
-    diag['github']['lastGitUpdate'] = GitUtil.lastBranchGitDateStr()
-    diag['github']['remoteGitDate'] = GitUtil.lastRemoteMasterGitDateStr()
+    diag['lastSoftwareUpdate'] = GitUtil.lastBranchGitDateStr()
 
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
@@ -1309,8 +1307,25 @@ def systemStatus():
 
     return jsonify({
         'status': 200, 
-        'restartRequired': (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired), 
+        'restartRequired': (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
         'startTime': oppleoConfig.upSinceDatetimeStr
+        })
+
+
+# Always returns json
+@flaskRoutes.route("/software_status/", methods=["GET"])
+@authenticated_resource
+def softwareStatus():
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/software_status/')
+
+    # Update status from github
+    GitUtil.gitRemoteUpdate()
+
+    return jsonify({
+        'status': 200, 
+        'softwareUpdateAvailable': GitUtil.gitUpdateAvailable(),
+        'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr()
         })
 
 

@@ -157,6 +157,64 @@
       )
     }
 
+    function getSoftwareStatus( ) {
+      console.log(timestamp() + ' getSoftwareStatus()')
+      // Show spinner
+      $('.spinner').show()
+      $.ajax({
+        type		  : 'GET',
+        url			  : '/software_status/',
+        dataType	: 'json',
+        encode		: true,
+        headers   : { 'ignore-login-next': 'true' }
+      }) // using the done promise callback
+      .done(function(result) {
+        // log data to the console so we can see
+        console.log(result)
+        switch(parseInt(result.status)) {
+          case 200:
+            if (result.softwareUpdateAvailable) {
+
+              $('<tr id="softwateUpdateAvailableVersionRow">' +
+                   '<td class="text-dark"> Update beschikbaar:</td>' +
+                   '<td class="text-success font-weight-bold"> <i class="fas fa-gift"></i> ' + result.availableSoftwareDate + '</td>' +
+                '</tr>')
+                .insertAfter("tr#softwateUpdateCurrentVersionRow")
+              $('tr#softwateUpdateCheckRow').hide()
+
+            } else {
+              // No update available
+              if ( $("tr#noSoftwateUpdateAvailableRow").length == 0 ) {
+                $('<tr id="noSoftwateUpdateAvailableRow">' +
+                    '<td class="text-dark"></td>' +
+                    '<td class="text-secondary">Geen update beschikbaar</td>' +
+                  '</tr>')
+                  .insertAfter("tr#softwateUpdateCurrentVersionRow")
+              }
+
+              $('button#softwateUpdateCheck').html(
+                '<i class="fas fa-redo-alt"></i> Check nogmaals '
+              )
+              /// XXXX
+              $('button#softwateUpdateCheck').toggleClass('btn-outline-warning', false)
+              $('button#softwateUpdateCheck').toggleClass('btn-outline-secondary', true)
+            }
+            break
+          default:
+            break
+        }
+      })
+      .fail(function(result) {
+        console.log('getSoftwareStatus() FAILED')
+        // log data to the console so we can see
+        console.log(result)
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
     function updateSettings( param, value ) {
       console.log(timestamp() + ' updateSettings()')            
       // Show spinner
@@ -394,6 +452,9 @@
         // Submit
         updateSettings( e.target.id, e.detail.newValue )
       })
+
+      $('button#softwateUpdateCheck').on('click', getSoftwareStatus)
+
        // Remove spinner
       $('.spinner').hide()
     })
@@ -747,7 +808,6 @@
                               </td>
                             </tr>                            
 
-
                             <tr>
                               <th colspan="2">&nbsp;</th>
                             </tr>
@@ -756,17 +816,21 @@
                                 <h4 class="m-t-0 header-title"><i class="fas fa-credit-card"></i> Software versie</h4>
                               </th>
                             </tr>
-                            <tr>
-                              <td class="text-dark"> Github:</td>
-                              <td class="text-primary">{% if diag['github']['gitUpdateAvailable'] %}<span class="text-danger font-weight-bold">Update beschikbaar</span>{% else %}Geen update{% endif %}</td>
+                            <tr id="softwateUpdateCurrentVersionRow">
+                              <td class="text-dark"> Huidige versie:</td>
+                              <td class="text-primary">{{ diag['lastSoftwareUpdate'] }}</td>
                             </tr>
-                            <tr>
-                              <td class="text-dark"> Locale versie:</td>
-                              <td class="text-primary">{{ diag['github']['lastGitUpdate']}}</td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark"> Github versie:</td>
-                              <td class="text-primary">{{ diag['github']['remoteGitDate'] }}</td>
+                            <tr id="softwateUpdateCheckRow">
+                              <td class="text-dark"></td>
+                              <td class="text-primary">
+                                <button 
+                                  type="button" 
+                                  id="softwateUpdateCheck" 
+                                  class="btn btn-outline-warning btn-sm waves-effect waves-light"
+                                  > 
+                                  <i class='far fa-question-circle'></i> Controleer op updates 
+                                </button>                                
+                              </td>
                             </tr>
 
                           </tbody>
