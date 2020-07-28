@@ -7,7 +7,7 @@ Combined with some additional components like a relais, cabling and proper conne
 Oppleo uses modbus interfacing to connect with a kWh meter logging readings to a database. Oppleo can use Prowl to send push messages to the owner.
 
 Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need a Raspberry Pi and a SmartEVSE based car charger setup.
-
+ 
 
 ## Install Oppleo on a Raspberry Pi 4
 
