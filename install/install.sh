@@ -1,6 +1,6 @@
 # Reaspberry config
 echo "Install script for the Oppleo service"
-echo "v0.5 28-07-2020"
+echo "v0.5.1 29-07-2020"
 
 # Some systemd commands
 # 1. systemd version
@@ -63,7 +63,7 @@ function init() {
 
     # systemctl is-active --quiet service
   # will exit with status zero if service is active, non-zero otherwise
-  if [ "$SYSTEMCTL_PRESENT" = true ] || [ "$SYSTEMCTL_PRESENT" -eq 0 ]; then
+  if [ "$SYSTEMCTL_PRESENT" == true ] || [ "$SYSTEMCTL_PRESENT" == 0 ]; then
     systemctl is-active --quiet Oppleo.service
     if [ "$?" -eq 0 ]; then
       # Oppleo running 
@@ -84,13 +84,13 @@ function stopService( ) {
   echo " stopService - Start"
   
   # Are we on a raspberry? 
-  if [ "$1" = false ] || [ "$1" -eq 1 ]; then
+  if [ "$1" == false ] || [ "$1" == 1 ]; then
     echo "  Not on Raspberry, no Oppleo.service to stop."
     echo " stopService - Done (-1)"
     return -1
   fi
   # Is systemctl available? 
-  if [ "$2" = false ] || [ "$2" -eq 1 ]; then
+  if [ "$2" == false ] || [ "$2" == 1 ]; then
     echo "  No systemctl available, no Oppleo.service to stop."
     echo " stopService - Done (-2)"
     return -2
@@ -98,7 +98,7 @@ function stopService( ) {
 
   echo "  On a raspberry :)"
 
-  if [ OPPLEO_RUNNING = true ]; then
+  if [ OPPLEO_RUNNING == true ]; then
     # Oppleo running 
     echo "  Stopping Oppleo (was running)..."
     sudo systemctl stop Oppleo.service
@@ -114,13 +114,13 @@ function checkPiGPIO( ) {
   echo " checkPiGPIO - Start"
   
   # Are we on a raspberry? 
-  if [ "$1" = false ] || [ "$1" -eq 1 ]; then
+  if [ "$1" == false ] || [ "$1" == 1 ]; then
     echo "  Not on Raspberry, no Pi GPIO Daemon (pigpiod) to check."
     echo " checkPiGPIO - Done (-1)"
     return -1
   fi
   # Is systemctl available? 
-  if [ "$2" = false ] || [ "$2" -eq 1 ]; then
+  if [ "$2" == false ] || [ "$2" == 1 ]; then
     echo "  No systemctl available, no Pi GPIO Daemon (pigpiod) to check."
     echo " checkPiGPIO - Done (-2)"
     return -2
@@ -204,7 +204,7 @@ function installPsycopg2( ) {
   echo " installPsycopg2 - Start"
   
   # Are we on a raspberry? 
-  if [ "$1" = false ] || [ "$1" -eq 1 ]; then
+  if [ "$1" == false ] || [ "$1" == 1 ]; then
     echo "  Not on Raspberry, no psycopg2 to check."
     echo " installPsycopg2 - Done (-1)"
     return -1
@@ -222,13 +222,13 @@ function installSystemdService( ) {
   echo " installSystemdService - Start"
   
   # Are we on a raspberry? 
-  if [ "$1" = false ] || [ "$1" -eq 1 ]; then
+  if [ "$1" == false ] || [ "$1" == 1 ]; then
     echo "  Not on Raspberry, skipping Oppleo systemd service file installation."
     echo " installSystemdService - Done (-1)"
     return -1
   fi
   # Is systemctl available? 
-  if [ "$2" = false ] || [ "$2" -eq 1 ]; then
+  if [ "$2" == false ] || [ "$2" == 1 ]; then
     echo "  No systemctl available, skipping Oppleo systemd service file installation."
     echo " installSystemdService - Done (-2)"
     return -2
@@ -266,22 +266,20 @@ function startSystemdService( ) {
   echo " startSystemdService - Start"
   
   # Are we on a raspberry? 
-  if [ "$1" = false ] || [ "$1" -eq 1 ]; then
+  if [ "$1" == false ] || [ "$1" == 1 ]; then
     echo "  Not on Raspberry, not starting Oppleo systemd service."
     echo " startSystemdService - Done (-1)"
     return -1
   fi
   # Is systemctl available? 
-  if [ "$2" = false ] || [ "$2" -eq 1 ]; then
+  if [ "$2" == false ] || [ "$2" == 1 ]; then
     echo "  No systemctl available, not starting Oppleo systemd service."
     echo " startSystemdService - Done (-2)"
     return -2
   fi
 
-  echo "  On a raspberry :)"
-
   # Check if service file exists
-  if [ START_OPPLEO_SERVICE = true ]; then
+  if [ "$START_OPPLEO_SERVICE" == true ]; then
     echo "  Start the Oppleo systemd service..."
     sudo systemctl start Oppleo.service
   fi
@@ -300,7 +298,7 @@ function installPipDependencies( ) {
   pip install --upgrade pip > /dev/null 2>&1
 
   # Are we on a raspberry? 
-  if [ "$1" = false ] || [ "$1" -eq 1 ]; then
+  if [ "$1" == false ] || [ "$1" == 1 ]; then
     echo "  installing non-raspberry dependencies excl. mfrc522, RPi.GPIO, and spidev..."
     pip install -r $OPPLEO_ROOT_DIR/requirements_non_raspberry.txt > /dev/null 2>&1
   else
@@ -318,7 +316,7 @@ function updateDatabase( ) {
   echo "  Release liquibase locks..."
   (cd $OPPLEO_ROOT_DIR/db && liquibase releaseLocks &> /dev/null)
   EXITCODE=$?
-  if [ "$EXITCODE" -eq 0 ]; then
+  if [ "$EXITCODE" == 0 ]; then
     echo "  Success ($EXITCODE)"
   else
     echo "  FAILED! (exitcode $EXITCODE)"
@@ -327,7 +325,7 @@ function updateDatabase( ) {
   # make sure the workling dir is changed. The parentheses spawn a subshell)
   (cd $OPPLEO_ROOT_DIR/db && liquibase update &> /dev/null)
   EXITCODE=$?
-  if [ "$EXITCODE" -eq 0 ]; then
+  if [ "$EXITCODE" == 0 ]; then
     echo "  Success ($EXITCODE)"
   else
     echo "  FAILED! (exitcode $EXITCODE)"
