@@ -282,6 +282,9 @@ function startSystemdService( ) {
   if [ "$START_OPPLEO_SERVICE" == true ]; then
     echo "  Start the Oppleo systemd service..."
     sudo systemctl start Oppleo.service
+  else
+    echo "  Oppleo systemd service was not running, not starting it now."
+    echo "   [MANUAL] sudo systemctl start Oppleo.service"
   fi
 
   echo " startSystemdService - Done"
