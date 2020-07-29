@@ -96,8 +96,6 @@ function stopService( ) {
     return -2
   fi
 
-  echo "  On a raspberry :)"
-
   if [ OPPLEO_RUNNING == true ]; then
     # Oppleo running 
     echo "  Stopping Oppleo (was running)..."
@@ -233,8 +231,6 @@ function installSystemdService( ) {
     echo " installSystemdService - Done (-2)"
     return -2
   fi
-
-  echo "  On a raspberry :)"
 
   # Check if service file exists
   if [ -f /etc/systemd/system/Oppleo.service ]; then
