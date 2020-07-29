@@ -134,9 +134,9 @@
                 $.ajax({
                     type		  : 'GET',
                     url			  : '/system_status/',
-                    dataType	: 'json',
-                    encode		: true,
-                    headers   : { 'ignore-login-next': 'true' }
+                    dataType      : 'json',
+                    encode		  : true,
+                    headers       : { 'ignore-login-next': 'true' }
                 }) // using the done promise callback
                 .done(function(result) {
                     // log data to the console so we can see
@@ -149,7 +149,11 @@
                     // On reload no need to make it blue, thats default
                 })
                 .fail(function(result) {
-                    console.log('getSystemStatus() FAILED')
+                    if (result.status == 401) {
+                        console.log('getSystemStatus() 401 Unauthorized - ' + result.responseText)
+                    } else {
+                        console.log('getSystemStatus() failed (' + result.status + ') ' + result.responseText)
+                    }
                 })
                 .always(function() {
                     // Remove spinner?

@@ -174,6 +174,7 @@ def authenticated_resource(function):
             # Redirect to login but rememmber the original request 
             session['login_next'] = request.full_path
             return redirect(url_for('flaskRoutes.login'))
+        return ('Niet ingelogd', 401)
     return decorated
 
 
@@ -1344,19 +1345,3 @@ def RepresentsFloat(s):
         return False
 
 
-
-@flaskRoutes.route("/test/")
-def test():
-    global flaskRoutesLogger, oppleoConfig
-
-    return render_template("test.html",
-            oppleoconfig=oppleoConfig
-            )
-
-@flaskRoutes.route("/test2/")
-def test2():
-    global flaskRoutesLogger, oppleoConfig
-
-    return render_template("test2.html",
-            oppleoconfig=oppleoConfig
-            )
