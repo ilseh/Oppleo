@@ -96,10 +96,13 @@ function stopService( ) {
     return -2
   fi
 
-  if [ OPPLEO_RUNNING == true ]; then
+  if [ "$OPPLEO_RUNNING" == true ]; then
     # Oppleo running 
     echo "  Stopping Oppleo (was running)..."
     sudo systemctl stop Oppleo.service
+  else
+    # Oppleo not running 
+    echo "  Oppleo is not running)..."
   fi
 
   echo " stopService - Done"
