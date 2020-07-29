@@ -57,7 +57,59 @@ flaskRoutesLogger.debug('Initializing routes')
 threadLock = threading.Lock()
 
 
+# Resource is only served for logged in user
+def authenticated_resource(function):
+    @wraps(function)
+    def decorated(*args, **kwargs):
+        if (current_user.is_authenticated):
+            return function(*args, **kwargs)
+        # return abort(403) # unauthenticated
+        # Not allowed.
+        # delete old - never used - cookie
+        if 'login_next' in session:
+            del session['login_next']
+        # if somehow ended up at logout, don't forward to login
+        if (request.endpoint == "flaskRoutes.logout"):
+            return redirect(url_for('flaskRoutes.home'))
+        ignore_login_next = bool(request.headers.get('ignore-login-next'))
+        if not ignore_login_next:
+            # Redirect to login but rememmber the original request 
+            session['login_next'] = request.full_path
+            return redirect(url_for('flaskRoutes.login'))
+        return ('Niet ingelogd', 401)
+    return decorated
+
+# Resource is only served for logged in user if allowed in preferences
+def config_dashboard_access_restriction(function):
+    @wraps(function)
+    def decorated(*args, **kwargs):
+        # Allow dashboard and Usage table access if unrestructed in config
+        # request.remote_addr - returns remote address, or IP of reverse proxy
+        # request.headers.get('X-Forwarded-For') - returns router address (router is behind the reverse proxy)
+
+        if (not oppleoConfig.restrictDashboardAccess or \
+            ( oppleoConfig.allowLocalDashboardAccess and request.remote_addr != oppleoConfig.routerIPAddress ) or \
+            current_user.is_authenticated):
+            return function(*args, **kwargs)
+        # return abort(403) # unauthenticated
+        # Not allowed.
+        # delete old - never used - cookie
+        if 'login_next' in session:
+            del session['login_next']
+        # if somehow ended up at logout, don't forward to login
+        if (request.endpoint == "flaskRoutes.logout"):
+            return redirect(url_for('flaskRoutes.home'))
+        ignore_login_next = bool(request.headers.get('ignore-login-next'))
+        if not ignore_login_next:
+            # Redirect to login but rememmber the original request 
+            session['login_next'] = request.full_path
+            return redirect(url_for('flaskRoutes.login'))
+        return ('Niet ingelogd', 401)
+    return decorated
+
+
 @flaskRoutes.route('/', methods=['GET'])
+@config_dashboard_access_restriction
 def index():
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/ {}'.format(request.method))
@@ -74,12 +126,13 @@ def index():
 
 @flaskRoutes.route("/home")
 #@authenticated_resource
+@config_dashboard_access_restriction
 def home():
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/home {}'.format(request.method))
     return redirect('/')
 
-
+# 400 Bad Request
 @flaskRoutes.errorhandler(400)
 def page_not_found(e):
     global flaskRoutesLogger
@@ -87,6 +140,7 @@ def page_not_found(e):
     # No need for oppleoconfig=oppleoConfig
     return render_template('errorpages/400.html'), 400
 
+# 404 Not Found
 @flaskRoutes.errorhandler(404)
 def bad_request(e):
     global flaskRoutesLogger
@@ -94,6 +148,7 @@ def bad_request(e):
     # No need for oppleoconfig=oppleoConfig
     return render_template('errorpages/404.html'), 404
 
+# 500 Internal Server
 @flaskRoutes.errorhandler(500)
 def internal_server_error(e):
     global flaskRoutesLogger
@@ -156,26 +211,6 @@ def login():
                 oppleoconfig=oppleoConfig
                 )
 
-def authenticated_resource(function):
-    @wraps(function)
-    def decorated(*args, **kwargs):
-        if (current_user.is_authenticated):
-            return function(*args, **kwargs)
-        # return abort(403) # unauthenticated
-        # Not allowed.
-        # delete old - never used - cookie
-        if 'login_next' in session:
-            del session['login_next']
-        # if somehow ended up at logout, don't forward to login
-        if (request.endpoint == "flaskRoutes.logout"):
-            return redirect(url_for('flaskRoutes.home'))
-        ignore_login_next = bool(request.headers.get('ignore-login-next'))
-        if not ignore_login_next:
-            # Redirect to login but rememmber the original request 
-            session['login_next'] = request.full_path
-            return redirect(url_for('flaskRoutes.login'))
-        return ('Niet ingelogd', 401)
-    return decorated
 
 
 @flaskRoutes.route("/logout", methods=["GET"])
@@ -247,6 +282,7 @@ def change_password():
 
 
 @flaskRoutes.route("/about")
+@config_dashboard_access_restriction
 def about():
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/about {}'.format(request.method))
@@ -556,6 +592,7 @@ def stop_charge_session(charge_session_id=None):
 @flaskRoutes.route("/usage/")
 @flaskRoutes.route("/usage/<int:cnt>")
 @flaskRoutes.route("/usage/<int:cnt>/")
+@config_dashboard_access_restriction
 def usage(cnt="undefined"):
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/usage ' + request.method)
@@ -569,6 +606,7 @@ def usage(cnt="undefined"):
 @flaskRoutes.route("/usage_table/")
 @flaskRoutes.route("/usage_table/<int:cnt>")
 @flaskRoutes.route("/usage_table/<int:cnt>/")
+@config_dashboard_access_restriction
 def usage_table(cnt="undefined"):
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/usage_table {} {}'.format(cnt, request.method))
@@ -643,6 +681,7 @@ def settings(active=1):
 @flaskRoutes.route("/usage_data/")
 @flaskRoutes.route("/usage_data/<int:cnt>")
 @flaskRoutes.route("/usage_data/<int:cnt>/")
+@config_dashboard_access_restriction
 def usage_data(cnt=100):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data {} {}'.format(cnt, request.method))
@@ -660,6 +699,7 @@ def usage_data(cnt=100):
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/")
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>")
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>/<int:cnt>/")
+@config_dashboard_access_restriction
 def usage_data_since(since_timestamp, cnt=-1):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
@@ -676,6 +716,7 @@ def usage_data_since(since_timestamp, cnt=-1):
 @flaskRoutes.route("/active_charge_session", methods=["GET"])
 @flaskRoutes.route("/active_charge_session/", methods=["GET"])
 # @authenticated_resource
+@config_dashboard_access_restriction
 def active_charge_session():
     global oppleoConfig
 
@@ -1294,6 +1335,27 @@ def update_settings(param=None, value=None):
     if (param == 'authWebCharge'):
         oppleoConfig.authWebCharge = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.authWebCharge })
+
+    # restrictDashboardAccess
+    if (param == 'restrictDashboardAccess'):
+        oppleoConfig.restrictDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.restrictDashboardAccess })
+
+    # restrictMenu
+    if (param == 'restrictMenu'):
+        oppleoConfig.restrictMenu = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.restrictMenu })
+
+    # allowLocalDashboardAccess
+    if (param == 'allowLocalDashboardAccess'):
+        oppleoConfig.allowLocalDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.allowLocalDashboardAccess })
+
+    # routerIPAddress
+    validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
+    if (param == 'routerIPAddress') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.routerIPAddress = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
 
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

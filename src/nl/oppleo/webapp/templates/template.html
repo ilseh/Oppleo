@@ -559,7 +559,7 @@
                         <li>
                             <a href="{{ url_for('flaskRoutes.index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                         </li>
-
+                        {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
                         <li class="has-submenu">
                             <a href="#"><i class="fas fa-file-invoice-dollar"></i> Laadsessies</a>
                             <ul class="submenu">
@@ -580,6 +580,7 @@
                                 <i class="fas fa-credit-card"></i> Laadpassen
                             </a>
                         </li>
+                        {% endif %}
 
                         <li class="has-submenu">
                             <a href="#"><i class="fas fa-table"></i> Verbruik</a>
@@ -589,6 +590,7 @@
                                         <i class="fas fa-table"></i> Tabel
                                     </a>
                                 </li>
+                                {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
                                 <li class="has-submenu">
                                     <a href="#"><i class="fas fa-chart-line"></i> Grafieken</a>
                                     <ul class="submenu">
@@ -619,9 +621,11 @@
                                         </li>
                                     </ul>
                                 </li>
+                                {% endif %}
                             </ul>
                         </li>
 
+                        {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
                         <li class="has-submenu">
                             <a href="#"><i class="fas fa-sliders-h"></i> Instellingen</a>
                             <ul class="submenu">
@@ -657,6 +661,7 @@
                                 </li>
                             </ul>
                         </li>
+                        {% endif %}
 
                         <li class="has-submenu">
                             <a href="#">

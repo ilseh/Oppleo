@@ -54,6 +54,12 @@ class ChargerConfigModel(Base):
     webcharge_on_dashboard = Column(Boolean) 
     auth_webcharge = Column(Boolean) 
 
+    restrict_dashboard_access = Column(Boolean) 
+    restrict_menu = Column(Boolean) 
+
+    allow_local_dashboard_access = Column(Boolean) 
+    router_ip_address = Column(String(20)) 
+
 
     def __init__(self):
         pass
@@ -201,3 +207,9 @@ class ChargerConfigSchema(Schema):
 
     webcharge_on_dashboard = fields.Bool(dump_only=True)
     auth_webcharge = fields.Bool(dump_only=True)
+
+    restrict_dashboard_access = fields.Bool(dump_only=True)
+    restrict_menu = fields.Bool(dump_only=True)
+
+    allow_local_dashboard_access = fields.Bool(dump_only=True)
+    router_ip_address = fields.Str(dump_only=True)

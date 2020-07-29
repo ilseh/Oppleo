@@ -539,4 +539,46 @@ class OppleoConfig(object, metaclass=Singleton):
     def authWebCharge(self, value):
         self.__chargerConfigModel.setAndSave('auth_webcharge', value)
 
+    """
+        restrictDashboardAccess --> restrict_dashboard_access
+    """
+    @property
+    def restrictDashboardAccess(self):
+        return self.__chargerConfigModel.restrict_dashboard_access
 
+    @restrictDashboardAccess.setter
+    def restrictDashboardAccess(self, value):
+        self.__chargerConfigModel.setAndSave('restrict_dashboard_access', value)
+
+    """
+        restrictMenu --> restrict_menu
+    """
+    @property
+    def restrictMenu(self):
+        return self.__chargerConfigModel.restrict_menu
+
+    @restrictMenu.setter
+    def restrictMenu(self, value):
+        self.__chargerConfigModel.setAndSave('restrict_menu', value)
+
+    """
+        allowLocalDashboardAccess --> allow_local_dashboard_access
+    """
+    @property
+    def allowLocalDashboardAccess(self):
+        return self.__chargerConfigModel.allow_local_dashboard_access
+
+    @allowLocalDashboardAccess.setter
+    def allowLocalDashboardAccess(self, value):
+        self.__chargerConfigModel.setAndSave('allow_local_dashboard_access', value)
+
+    """
+        routerIPAddress --> router_ip_address
+    """
+    @property
+    def routerIPAddress(self):
+        return self.__chargerConfigModel.router_ip_address
+
+    @routerIPAddress.setter
+    def routerIPAddress(self, value):
+        self.__chargerConfigModel.setAndSave('router_ip_address', value)

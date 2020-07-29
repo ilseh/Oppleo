@@ -15,6 +15,7 @@ oppleoLogger.debug('sys.version %s : ' % sys.version)
 
 from nl.oppleo.exceptions.Exceptions import DbException
 
+from functools import wraps
 
 try:
     from nl.oppleo.models.Base import Base
@@ -109,6 +110,33 @@ try:
 
     wsClientCnt = 0
 
+    # Resource is only served for logged in user if allowed in preferences
+    def config_dashboard_access_restriction(function):
+        @wraps(function)
+        def decorated(*args, **kwargs):
+            # Allow dashboard and Usage table access if unrestructed in config
+            # request.remote_addr - returns remote address, or IP of reverse proxy
+            # request.headers.get('X-Forwarded-For') - returns router address (router is behind the reverse proxy)
+
+            if (not oppleoConfig.restrictDashboardAccess or \
+                ( oppleoConfig.allowLocalDashboardAccess and request.remote_addr != oppleoConfig.routerIPAddress ) or \
+                current_user.is_authenticated):
+                return function(*args, **kwargs)
+            # return abort(403) # unauthenticated
+            # Not allowed.
+            # delete old - never used - cookie
+            if 'login_next' in session:
+                del session['login_next']
+            # if somehow ended up at logout, don't forward to login
+            if (request.endpoint == "flaskRoutes.logout"):
+                return redirect(url_for('flaskRoutes.home'))
+            ignore_login_next = bool(request.headers.get('ignore-login-next'))
+            if not ignore_login_next:
+                # Redirect to login but rememmber the original request 
+                session['login_next'] = request.full_path
+                return redirect(url_for('flaskRoutes.login'))
+            return ('Niet ingelogd', 401)
+        return decorated
 
     @oppleoConfig.login_manager.user_loader
     def load_user(username):
@@ -116,6 +144,7 @@ try:
 
 
     @appSocketIO.on("connect", namespace="/")
+    @config_dashboard_access_restriction
     def connect():
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
         with threadLock:
@@ -150,6 +179,7 @@ try:
 
 
     @appSocketIO.on("disconnect", namespace="/")
+    @config_dashboard_access_restriction
     def disconnect():
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
         with threadLock:

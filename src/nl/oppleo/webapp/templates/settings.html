@@ -338,6 +338,16 @@
         updateSettings( 'authWebCharge', $(this).prop('checked') )
       })
 
+      $('input#restrictMenu').change(function() {
+        updateSettings( 'restrictMenu', $(this).prop('checked') )
+      })
+      $('input#restrictDashboardAccess').change(function() {
+        updateSettings( 'restrictDashboardAccess', $(this).prop('checked') )
+      })
+      $('input#allowLocalDashboardAccess').change(function() {
+        updateSettings( 'allowLocalDashboardAccess', $(this).prop('checked') )
+      })
+      
       $('input#autoSessionEnabled').bootstrapToggle()
       $('input#autoSessionEnabled').change(function() {
         updateSettings( 'autoSessionEnabled', $(this).prop('checked') )
@@ -757,8 +767,6 @@
                             </tr>
 
 
-
-
                             <tr>
                               <th colspan="2">&nbsp;</th>
                             </tr>
@@ -807,6 +815,91 @@
                                 </form>
                               </td>
                             </tr>                            
+
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-credit-card"></i> Afschermen</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> Menuopties afschermen:</td>
+                              <td class="text-primary">
+                                <form id="restrict-menu-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.restrictMenu %}checked{% endif %}
+                                    name="restrictMenu"
+                                    id="restrictMenu"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Dashboard afschermen:</td>
+                              <td class="text-primary">
+                                <form id="restrict-dashboard-access-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.restrictDashboardAccess %}checked{% endif %}
+                                    name="restrictDashboardAccess"
+                                    id="restrictDashboardAccess"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>                               
+
+                            <tr>
+                              <td class="text-dark">Dashboard lokaal onafgeschermd:</td>
+                              <td class="text-primary">
+                                <form id="allow-local-dashboard-access-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.allowLocalDashboardAccess %}checked{% endif %}
+                                    name="allowLocalDashboardAccess"
+                                    id="allowLocalDashboardAccess"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>                                      
+                            <tr>
+                              <td class="text-dark">Reverse Proxy:</td>
+                              <td class="text-primary">
+                                <form id="router-ip-address-form">
+                                  <oppleo-edit-str 
+                                  id="routerIPAddress"
+                                  prefix="" 
+                                  value="{{ oppleoconfig.routerIPAddress }}"
+                                  validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
+                                  info="IPv4 adres van de Reverse Proxy. Verkeer van de Reverse Proxy wordt gezien als Extern verkeer, overige IPv4 adressen worden gezien als lokaal verkeer."
+                                  />
+                                </form>
+                              </td>
+                            </tr>          
 
                             <tr>
                               <th colspan="2">&nbsp;</th>
