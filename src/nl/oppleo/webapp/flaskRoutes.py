@@ -282,7 +282,7 @@ def change_password():
 
 
 @flaskRoutes.route("/about")
-@config_dashboard_access_restriction
+@flaskRoutes.route("/about/")
 def about():
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/about {}'.format(request.method))

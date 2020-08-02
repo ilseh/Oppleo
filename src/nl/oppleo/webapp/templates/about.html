@@ -1,5 +1,392 @@
 <!DOCTYPE html>
-<html>
-    <head></head>
-    <body>About...</body>
+<html lang="en" dir="ltr">
+    <head>
+
+        <meta charset="utf-8" />
+        <title>Info over - Oppleo 2020</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta content="Python gebaseerde laadpunt-administratiesoftware draaiend op een Raspberry Pi. Modbus energiemeter (kWh) uitlezing, SmartEVSE aansturing, RFID lezer, status LED en buzzer aansturing." name="description" />
+        <meta content="Frans Laemen" name="author" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/carcharger32.ico') }}">
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+		<meta name="theme-color" content="#3BAFDA">
+
+        <!-- App css -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/bootstrap/4.4.1/css/bootstrap.min.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+        
+        <!-- jQuery  -->
+        <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='plugins/bootstrap/4.4.1/js/bootstrap.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/jquery.scrollTo.min.js') }}"></script>
+
+        <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
+
+        <!-- Fontawesome -->
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
+        <!-- Awesome Cursor -->
+        <script src="{{ url_for('static', filename='plugins/awesome-cursor/0.3.1/jquery.awesome-cursor.min.js') }}"></script>
+
+		<!-- Add webpage to the iOS Home screen. -->
+        <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
+		<!-- iOS Launch Screen Image -->
+		<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash512.png') }}">
+		<!-- Adding a Launch Icon Title -->
+		<meta name="apple-mobile-web-app-title" content="Splash">
+		<!-- Hide Safari User Interface Components -->
+		<!-- Set the apple-mobile-web-app-capable meta tag to yes to turn on standalone mode. -->
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<!-- You can determine whether a webpage is displaying in standalone mode using the window.navigator.standalone read-only Boolean JavaScript property. -->
+		<!-- Changing the Status Bar Appearance -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="msapplication-starturl" content="/">
+
+        <style>
+        button {
+            cursor: pointer;
+        }
+        .spinner {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height:100%;
+            width:100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 99999;
+        }
+        .spinner-img {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            height:60px;
+            width:60px;
+            margin:0px auto;
+            z-index: 100000;
+            -webkit-animation: rotation .6s infinite linear;
+            -moz-animation: rotation .6s infinite linear;
+            -o-animation: rotation .6s infinite linear;
+            animation: rotation .6s infinite linear;
+            border-left:6px solid rgba(0,174,239,.15);
+            border-right:6px solid rgba(0,174,239,.15);
+            border-bottom:6px solid rgba(0,174,239,.15);
+            border-top:6px solid rgba(0,174,239,.8);
+            border-radius:100%;
+        }
+        @-webkit-keyframes rotation {
+            from {-webkit-transform: rotate(0deg);}
+            to {-webkit-transform: rotate(359deg);}
+        }
+        @-moz-keyframes rotation {
+            from {-moz-transform: rotate(0deg);}
+            to {-moz-transform: rotate(359deg);}
+        }
+        @-o-keyframes rotation {
+            from {-o-transform: rotate(0deg);}
+            to {-o-transform: rotate(359deg);}
+        }
+        @keyframes rotation {
+            from {transform: rotate(0deg);}
+            to {transform: rotate(359deg);}
+        }
+        a, a:hover, a:active {
+            color: #ffaa00 !important;
+        }
+        </style>
+        <script>
+            jQuery(document).ready(function () {
+                $('a').awesomeCursor('external-link', {
+                    color: '#00b19d'
+                })
+                // Remove spinner
+                $('.spinner').delay(500).fadeOut(300)
+            })
+        </script>   
+    </head>
+    <body style="padding-bottom: 0;">
+        <div class="spinner">
+            <div class="spinner-img"></div>
+        </div>
+    
+        <div style="background-image: url('{{ url_for('static', filename='images/oppleo_lightning.png') }}'); background-repeat: repeat-y; background-size: 80%; background-position: center;">
+
+            <div style="background-color: #323b44; opacity: 0.8;">
+
+                <div style="height: 60px;">
+                </div>
+
+                <div class="text-center">
+                    <div class="text-primary" style="font-size: 70px; text-transform: uppercase; font-weight: bold;">
+                        <i class="fas fa-charging-station"></i>
+                        <span>OPPLEO</span>
+                    </div>
+                    <div class="text-warning" 
+                        style="position: absolute; font-size: 40px; text-transform: uppercase; font-weight: bold; right: 50%; margin-right: -10px; top: 40px;">
+                        Over
+                    </div>
+                    <div class="" 
+                        style="position: absolute; font-size: 40px; text-transform: uppercase; font-weight: bold; right: 50%; margin-right: 330px; top: 80px;">
+                        <button 
+                            type="button"
+                            class="btn btn-lg waves-effect waves-light btn-outline-warning"
+                            onclick="window.location.href='/'"
+                            >
+                            <i class="far fa-hand-point-left"></i>
+                            Terug
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 60px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 24px;">
+                        <span class="text-dark font-weight-bold">Oppleo</span> maakt van je zelfbouw elektrische autolader een 
+                        <span class="text-dark font-weight-bold">full feature laadpunt!</span>
+                    </div>
+                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                        Download <span class="text-dark">Oppleo</span> via <a href="https://github.com/ilseh/Oppleo" target="_new_"><i class="fab fa-github"></i> Github</a> en 
+                        <a href="https://oppleo.nl/about/" target="_new_"><i class="fas fa-charging-station"></i> oppleo.nl</a>.
+                    </div>
+                </div>
+
+                <div class="text-center mt-5">
+                    <img src="{{ url_for('static', filename='images/about_dashboard.png') }}" 
+                        class="border border-secondary" alt="Voorbeeld Dashboard" />
+                </div>
+
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 20px;">
+                        <span class="text-dark font-weight-bold">Oppleo</span> geeft gedetailleert inzicht in het energieverbruik van 
+                        elektrische auto-laadstations. Door de continue uitlezing van de meterstanden van een aangesloten modbus energiemeter 
+                        te koppelen aan gebruiksregsitraties is er <span class="text-dark font-italic">toegangscontrole</span> voor het 
+                        laadpunt en <span class="text-dark font-italic">verbruiksrapportages per voertuig</span>.
+                    </div>
+                </div>
+
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 20px;">
+                        <span class="text-dark font-weight-bold">Oppleo</span> is <i class="fab fa-python"></i> Python Flask software en is beschikbaar via 
+                        <a href="https://github.com/ilseh/Oppleo" target="_new_"><i class="fab fa-github"></i> Github</a>. Oppleo maakt gebruik van de GPIO en beschikbare
+                        RFID, Modbus, RGB LED en Buzzer modules van de <a href="https://www.raspberrypi.org/" target="_new" style="color: #C51A4A !important;">
+                        <i class="fab fa-raspberry-pi"></i> Raspberry Pi</a>.
+                    </div>
+                </div>
+                
+
+                <div class="text-center mt-5">
+                    <img src="{{ url_for('static', filename='images/about_energyreadings.png') }}" 
+                        class="border border-secondary" alt="Voorbeeld Energieuitlezing" />
+                </div>
+
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
+                        <div class="mb-3" >
+                            <span class="text-dark font-weight-bold">Oppleo</span>
+                            heeft de volgende features:
+                        </div>
+                        <ul>
+                            <li><span class="text-dark font-italic">Real-time dashboard</span><br/>Real-time weergave van de laadstroom per fase (1 of 3 fase), 
+                                de sessie status, het totaalverbruik en de kosten. Een ondersteunde modbus kWh meter is nodig. Op dit moment ondersteund 
+                                Oppleo de modbus versies van de Eastron SDM630v2 en SDM120.
+                                De interval van uitlezingen van de kWh meters is instelbaar en is ongeveer 1x per seconde. De snelheid hangt af van de maximale modbus snelheid die Door
+                                de energiemeters wordt ondersteund (SDM630 38.4kbps, SDM120 9600bps). Alleen wijzigingen in metingen worden in de database weggeschreven, met een 
+                                minimum van 1x per uur. 
+                            </li>
+                            <li><span class="text-dark font-italic">Toegangscontrole</span><br/>Via een externe RFID lezer kan elke willekeurig RFID tag gebruikt worden voor
+                                registratie en toegangscontrole.</li>
+                            <li><span class="text-dark font-italic">RFID Autorisatie</span><br/>Via een externe RFID lezer kan elke willekeurig RFID tag gebruikt worden voor
+                                registratie en toegangscontrole. Door dit token eenmaal te lezen wordt het token ingevoerd. Na autorisatie in de web portal kan de RFID tag gebruik worden
+                                om de SmartEVSE te enablen en te disablen. Wanneer een sessie eenmaal gestart is kan alleen het RFID token wat gebruikt is om de sessie te 
+                                starten de sessie beindigen via de RFID lezer. Via de Web portal kan elke sessie gestopt worden.</li>
+                            <li><span class="text-dark font-italic">Trariefinstelling</span><br/>Er kan een tarief worden ingesteld om kosten te rapporteren.</li>
+                            <li><span class="text-dark font-italic">Daluren</span>Oppleo ondersteund laden in dal-uren. Weekdagen to 6u en na 23u, en zon- en feestdagen. 
+                                Eenmalige en jaarlkijks terugkomende feestdagen kunnen worden geconfigureerd. Laden binnen daluren kan eenmalig en altijd worden uitgeschakeld.</li>
+                            <li><span class="text-dark font-italic">Auto-sessie</span><br/>Wanneer na een tijd ineens weer verbruik geconstateerd wordt kan Oppleo automatisch een nieuwe 
+                                laadsessie aanmaken. Hierdoor kan de autorisatie ingeschakeld blijven, terwijl er toch laadsessies geregistreerd worden. Auto-sessie werkt met het
+                                instellen van het maximale energieverbruik in een interval.
+                            </li>
+                            <li><span class="text-dark font-italic">Kilometerstandregistratie</span><br/>Bij het starten van een laadsessie kan de meterstand worden opgehaald van voertuigen met 
+                                internet verbinding en een SDK. Op dit moment wordt alleen Tesla ondersteund.</li>
+                            <li><span class="text-dark font-italic">Condens sessie</span><br/>Wanneer auto-sessie een nieuwe sessie genereerd en Kilometerstand voor de nieuwe sessie 
+                                dezelfde meterstand registreerd zal Condens de sessies samenvoegen. Dit voorkomt dat auto-sessie bij het begin van daluren nieuwe sessies aanmaakt.</li>
+                            <li><span class="text-dark font-italic">Web portal</span><br/>De web portal is het gezicht van Oppleo. Hierin kunnen RFID tokens geautoriseerd worden, 
+                                instellingen worden gewijzigd en rapportages worden gemaakt. Web toegang is niet noodzakelijk voor het starten en stoppen van laadsessies dmv RFID tokens.
+                                De Web Portal is afgeschermd dmv een admin account. De web portal kan worden opgengesteld voor zicht op het huidig verbruik en de huidige laadstatus.
+                            </li>
+                            <li><span class="text-dark font-italic">Rapportages</span><br/>Oppleo heeft een online log van de 100 meest recente energiemetingen, een grafische weergave
+                                van het gebruik in de laatste 6/12/24 uur, de laatste week en maand, en PDF en Excel maandrappoortages.</li>
+                            <li><span class="text-dark font-italic">Systeembeheer</span><br/>Software update status, restart, reboot en shutdown.</li>
+                            <li><span class="text-dark font-italic">Push notificaties</span><br/>Oppleo ondersteund Prowl voor iOS real-time push notificaties bij errors en (re-)starts. 
+                                Android push notificaties worden op dit moment niet ondersteund.
+                            </li>
+                        </ul> 
+
+                    </div>
+                </div>
+
+                <div class="text-center mt-5">
+                    <img src="{{ url_for('static', filename='images/about_offpeaksettings.png') }}" 
+                        class="border border-secondary" alt="Voorbeeld daluren instelling" />
+                </div>
+            
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
+                        <div class="mb-3" >
+                            <span class="text-dark font-weight-bold">Oppleo</span>
+                            werkt specifiek de onderstaande hardware:
+                        </div>
+                        <ul>
+                            <li><span class="text-dark font-italic">Raspberry Pi</span><br/>Oppleo is ontwikkeld voor de Raspberry Pi en maakt gebruik van de
+                                GPIO voor communicatie met de overige hardware modules. Oppleo is getest op een 
+                                <a href="https://www.kiwi-electronics.nl/raspberry-pi-4-model-b-2gb" target="_new"></a>Raspberry Pi 4 Model B - 2GB (€39,95)</a>.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Energiemeter (kWh meter)</span><br/>Oppleo is getest met de 
+                                <a href="https://www.sandervunderink.nl/kwh-meter-3-fase-100a-mid-keur-sdm630-modbus.html" target="_new">
+                                Eastron SDM630v2 3-fase 100A MID modbus (€132,46)</a> en de 
+                                <a href="https://webshop.cedel.nl/1-Fase-kWh-meter-met-Modbus" target="_new">Eastron SDM120-Modbus MID 1 Fase kWh meter (€49,95)</a>.
+                            </li>
+
+                            <li><span class="text-dark font-italic">SmartEVSE (EVSE)</span><br/>Een EVSE (Electric Vehicle Supply Equipment) is het onderdeel in de 
+                                laadinfrastructuur dat de elektrische energie voor het laden van plug-in hybrides en volledig electrische voertuigen controleerd. 
+                                De EVSE regelt de communicatie met het voertuig en activeert de Contactor (Relais). De  <a href="https://www.stegen.com/nl/ev-producten/66-smart-evse-controller.html" target="_new"></a>
+                                Stegen SmartEVSE controller v2.2 (€139)</a> heeft naast deze functionaliteit ook een autorisatieingang en een statusuitgang. 
+                                Oppleo heeft functionaliteit om de autorisatie-pin aan te sturen en de status-pin uit te lezen. De Stegen SmartEVSE is de enige EVSE waar
+                                Oppleo mee getest is.
+                            </li>
+                                
+                            <li><span class="text-dark font-italic">RFID lezer</span><br/>Oppleo gebruikt de SPI interface van de Raspberry Pi. Via SPI communiceert Oppleo 
+                                met de op Miface gebaseerde 
+                                <a href="https://secure.reichelt.nl/ontwikkelingsbord-rfid-module-nxp-mfrc-522-debo-rfid-rc522-p192147.html" target="_new">
+                                    Joy-it RFID RC522 RFID-module, NXP MFRC-522 (€10,58)</a>. Alle tokens op de 13,56 MHz frequentie kunnen worden uitgelezen. Oppleo schrijft
+                                    niet naar de RFID tokens.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Modbus/RS485 interface</span><br/>Om de Raspberry met een modbus kWh meter te interfacen kan gebruik 
+                                wortden gemaakt van de  
+                                <a href="https://www.conrad.nl/p/joy-it-omvormer-usbrs485-raspberry-pi-arduino-1x-usb-a-20-stekker-1x-2-dradenkabel-000-m-zwart-2149078" target="_new">
+                                    Joy-it (USB/RS485) Omvormer voor Raspberry Pi en Arduino (€4,06)</a> Deze omvormer wordt in de USB aansluiting van de Raspberry Pi
+                                    gestoken en binnen Oppleo wordt die USB poort geconfigureerd.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Buzzer</span><br/>Voor feedback bij autorisaties wordt een buzzer aangestuurt. Dit is een simpele output
+                                pin van de GPIO. Hierop kan een <a href="https://www.conrad.nl/p/joy-it-com-ky012apb-1-stuks-1695383" target="_new">Joy-it COM-KY012APB 
+                                (€2,63)</a> worden aangesloten. De pin kan in Oppleo worden geconfigureerd.
+                            </li>
+
+                            <li><span class="text-dark font-italic">RGB LED module</span><br/>Voor feedback van laadstatus en autorisatiestatus wordt een RGB LED aangestuurt. 
+                                Dit zijn simpele output pinnen van de GPIO (3 kleuren). Hierop kan een <a href="https://www.conrad.nl/p/joy-it-ky-016-rgb-led-module-1-stuks-1656370" target="_new">Joy-it KY-016 RGB LED-module
+                                (€3,04)</a> worden aangesloten. De pinnen kunnen in Oppleo worden geconfigureerd.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Realtime Clock</span><br/>De Raspberry Pi heeft geen on board realtime clock. Dit betekend dat na een complete power-off 
+                                de datum en tijd niet beschikbaar zijn. Wanneer de Raspberry aan internet hangt wordt de datum en tijd vanzelf ingesteld, echter er is een mogelijkheid dat 
+                                Oppleo dan al een uitlezing heeft gedaan. Mocht het echt noodzakelijk zaijn kan aan de Raspberry Pi een real-time clock module zoals de 
+                                <a href="https://www.kiwi-electronics.nl/RasClock-Raspberry-Pi-Real-Time-Clock-Module" target="_new">RasClock - Raspberry Pi Real Time Clock Module
+                                (€11,95)</a> met <a href="https://www.kiwi-electronics.nl/cr1220-batterij" target="_new">CR1220 batterij (€2,95)</a> worden toegevoegd. 
+                                Hiermee wordt de kans op verkeerde uilezingen in de database aanzienlijk verkleind.                           
+                            </li>
+
+                        </ul> 
+                    </div>
+                </div>
+
+                <div class="text-center mt-5">
+                    <img src="{{ url_for('static', filename='images/about_graph.png') }}" 
+                        class="border border-secondary" alt="Voorbeeld Grafische weergave energieuitlezing" />
+                </div>
+
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
+                        <div class="mb-3" >
+                            Handige links voor zelfbouw laadpaal hardware:
+                        </div>
+                            
+                        <ul>
+
+                            <li><span class="text-dark font-italic">Contactor/ Relais</span><br/>De Stegen SmartEVSE integreert met bijvoorbeeld een  
+                                <a href="https://www.stegen.com/nl/ev-producten/120-iskra-contactor-32a-4polen-230v.html" target="_new">
+                                ISKRA 32A 4 polen 230V contactor(€24,80)</a>. Oppleo heeft geen directe interface met de contactor, de contactor wordt door de SmartEVSE
+                                geactiveert. Oppleo kan daardoor gebruik maken van alle door SmartEVSE ondersteunde contactors.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Sensorbox</span><br/>Voor Smart Charging of loadbalancing heeft de SmartEVSE informatie nodig 
+                                over de totaal geconsumeerde energie. Dit kan via een <a href="https://www.stegen.com/nl/ev-producten/129-smart-evse-sensorbox-v2.html" target="_new"></a>
+                                SmartEVSE Sensorbox V2 (€59)</a>. De v2 sensorbox kan worden aangesloten op de P1 poort van ondersteunde energiemeters of via 
+                                Current Transformers.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Current Transformer</span><br/>De SmartEVSE leest het huidige energieverbruik via de Sensorbox. die voor het uitlezen
+                                <a href="https://www.stegen.com/nl/ev-producten/92-current-transformer.html" target="_new"></a>Current Transformers (€9,95)</a> (1 per fase) of
+                                de P1 poort van een ondersteunde energiemeter gebruikt.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Meterkast Zekering</span><br/>Voor een 3-fase aansluiting kan een 3P+N Krachtgroep zoals de
+                                <a href="https://www.elektramat.nl/abb-krachtgroep-3p-n-16a-c-karakteristiek/" target="_new">ABB Krachtgroep 3P+N 16A C-karakteristiek (€62,76)</a>. 
+                                worden gebruikt.
+                            </li>
+
+                            <li><span class="text-dark font-italic">Aardlekschakelaar Type B</span><br/>Niet noodzakelijk voor een goede werking van Oppleo. Om DC lekstromen in 
+                                een laadpunt te detecteren en te beveiligen kan een aardlekschakelaar type B ingezet worden. Bijvoorbeeld de 
+                                <a href="https://www.laadpaal24.nl/aardlekschakelaar-chint-type-b-40a-4pol-30ma" target="_new">Chint Type B 63A 4pol 30mA (€ 143,99)</a>. 
+                                Als alternatief kan een normale aardlekschakelaar worden gebruikt en de <a href="https://www.stegen.com/nl/ev-producten/126-residual-current-sensor.html" target="_new">
+                                DC/AC Residual Current Sensor (€59)</a> aan de Stegen SmartEVSE worden aangesloten.                          
+                            </li>
+
+                            <li><span class="text-dark font-italic">180&deg; USB-A Extender</span><br/>Om de Modbus/RS485 USB interface hierboven te monteren in een smalle behuizing kan een
+                                <a href="https://nl.aliexpress.com/item/32722399215.html" target="_new">180&deg; USB-A extender (€ 2,71)</a> handig zijn. Hiermee woprdt de RS485 interface bovenop 
+                                de Raspberry Pi gemonteerd i.p.v. ernaast. 
+                            </li>
+
+                            <li><span class="text-dark font-italic">Tweakers Forum</span><br/>Veel kennis voor het zelf bouwen van een laadpunt is te vinden op het Tweakers Forum in het
+                                <a href="https://gathering.tweakers.net/forum/list_messages/1648387" target="_new">Zelfbouw Laadpaal ervaringen</a> topic. 
+                            </li>
+                            
+                        </ul> 
+
+                    </div>
+                </div>
+
+                <div class="text-center mt-5">
+                    <img src="{{ url_for('static', filename='images/about_raspberrysettings.png') }}" 
+                        class="border border-secondary" alt="Voorbeeld Raspberry Pi" />
+                </div>
+
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 120px; padding-bottom: 40px;">
+                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                        <span class="text-dark font-italic">&copy; 2019-2020 Frans Laemen & Ilse Haanstra</span> 
+                    </div>
+                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                        Download <span class="text-dark">Oppleo</span> via <a href="https://github.com/ilseh/Oppleo" target="_new_"><i class="fab fa-github"></i> Github</a> en 
+                        <a href="https://oppleo.nl/about/" target="_new_"><i class="fas fa-charging-station"></i> oppleo.nl</a>.
+                    </div>
+                </div>
+
+                <div class="text-center" style="text-align: center; width: 100%; margin-top: 20px; padding-bottom: 40px;">
+                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                        <button 
+                            type="button"
+                            class="btn btn-lg btn-block waves-effect waves-light btn-outline-warning"
+                            onclick="window.location.href='/'"
+                            >
+                            <i class="far fa-hand-point-left"></i>
+                            Terug
+                        </button>'
+                    </div>
+                </div>
+
+                <div style="height: 60px;">
+                </div>
+
+            </div>
+        </div>
+
+    </body>
+    
 </html>
