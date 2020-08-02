@@ -98,7 +98,7 @@ try:
     oppleoSystemConfig.wsEmitQueue = wsEmitQueue
 
 
-    # The CarCharger root flaskRoutes
+    # The Oppleo root flaskRoutes
     app.register_blueprint(flaskRoutes) # no url_prefix
 
     # flask-login

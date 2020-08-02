@@ -187,8 +187,7 @@
                 <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
                     <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
                         <div class="mb-3" >
-                            <span class="text-dark font-weight-bold">Oppleo</span>
-                            heeft de volgende features:
+                            <span class="text-dark font-weight-bold">Oppleo</span> features:
                         </div>
                         <ul>
                             <li><span class="text-dark font-italic">Real-time dashboard</span><br/>Real-time weergave van de laadstroom per fase (1 of 3 fase), 
@@ -198,20 +197,21 @@
                                 de energiemeters wordt ondersteund (SDM630 38.4kbps, SDM120 9600bps). Alleen wijzigingen in metingen worden in de database weggeschreven, met een 
                                 minimum van 1x per uur. 
                             </li>
-                            <li><span class="text-dark font-italic">Toegangscontrole</span><br/>Via een externe RFID lezer kan elke willekeurig RFID tag gebruikt worden voor
-                                registratie en toegangscontrole.</li>
-                            <li><span class="text-dark font-italic">RFID Autorisatie</span><br/>Via een externe RFID lezer kan elke willekeurig RFID tag gebruikt worden voor
-                                registratie en toegangscontrole. Door dit token eenmaal te lezen wordt het token ingevoerd. Na autorisatie in de web portal kan de RFID tag gebruik worden
-                                om de SmartEVSE te enablen en te disablen. Wanneer een sessie eenmaal gestart is kan alleen het RFID token wat gebruikt is om de sessie te 
+                            <li><span class="text-dark font-italic">Autorisatie</span><br/>Aan geregistreerde tokens kan autorisaties worden toegekend met o.a. geldigheidsperiode. Aan tokens kunnen
+                                merk type en kenteken van een voertuig worden toegevoegd voor rapportages.
+                            </li>
+                            <li><span class="text-dark font-italic">RFID</span><br/>Via een externe RFID lezer kan elke willekeurig RFID token geregistreerd worden voor
+                                autorisatie. RFID tokens kunnen ingelezen worden en via de web portal kan autorisatie worden toegevoegd. Elk willekeurig Mifare gebaseerd RFID token 
+                                kan gebruikt worden waaronder bankpassen, ledenpasjes, alles met Mifare RFID. Wanneer een sessie eenmaal gestart is kan alleen het RFID token wat gebruikt is om de sessie te 
                                 starten de sessie beindigen via de RFID lezer. Via de Web portal kan elke sessie gestopt worden.</li>
-                            <li><span class="text-dark font-italic">Trariefinstelling</span><br/>Er kan een tarief worden ingesteld om kosten te rapporteren.</li>
-                            <li><span class="text-dark font-italic">Daluren</span>Oppleo ondersteund laden in dal-uren. Weekdagen to 6u en na 23u, en zon- en feestdagen. 
+                            <li><span class="text-dark font-italic">Tarief</span><br/>Tarief in &euro; per kWh voor kosten in rapportage.</li>
+                            <li><span class="text-dark font-italic">Daluren</span><br/>Oppleo ondersteund laden in dal-uren. Weekdagen to 6u en na 23u, en zon- en feestdagen. 
                                 Eenmalige en jaarlkijks terugkomende feestdagen kunnen worden geconfigureerd. Laden binnen daluren kan eenmalig en altijd worden uitgeschakeld.</li>
                             <li><span class="text-dark font-italic">Auto-sessie</span><br/>Wanneer na een tijd ineens weer verbruik geconstateerd wordt kan Oppleo automatisch een nieuwe 
                                 laadsessie aanmaken. Hierdoor kan de autorisatie ingeschakeld blijven, terwijl er toch laadsessies geregistreerd worden. Auto-sessie werkt met het
                                 instellen van het maximale energieverbruik in een interval.
                             </li>
-                            <li><span class="text-dark font-italic">Kilometerstandregistratie</span><br/>Bij het starten van een laadsessie kan de meterstand worden opgehaald van voertuigen met 
+                            <li><span class="text-dark font-italic">Kilometerstand</span><br/>Bij het starten van een laadsessie kan de meterstand worden opgehaald van voertuigen met 
                                 internet verbinding en een SDK. Op dit moment wordt alleen Tesla ondersteund.</li>
                             <li><span class="text-dark font-italic">Condens sessie</span><br/>Wanneer auto-sessie een nieuwe sessie genereerd en Kilometerstand voor de nieuwe sessie 
                                 dezelfde meterstand registreerd zal Condens de sessies samenvoegen. Dit voorkomt dat auto-sessie bij het begin van daluren nieuwe sessies aanmaakt.</li>
@@ -239,26 +239,26 @@
                     <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
                         <div class="mb-3" >
                             <span class="text-dark font-weight-bold">Oppleo</span>
-                            werkt specifiek de onderstaande hardware:
+                            werkt specifiek de volgende hardware:
                         </div>
                         <ul>
                             <li><span class="text-dark font-italic">Raspberry Pi</span><br/>Oppleo is ontwikkeld voor de Raspberry Pi en maakt gebruik van de
-                                GPIO voor communicatie met de overige hardware modules. Oppleo is getest op een 
+                                GPIO voor communicatie met de onderstaande hardware modules. Oppleo is getest op een 
                                 <a href="https://www.kiwi-electronics.nl/raspberry-pi-4-model-b-2gb" target="_new"></a>Raspberry Pi 4 Model B - 2GB (€39,95)</a>.
                             </li>
 
                             <li><span class="text-dark font-italic">Energiemeter (kWh meter)</span><br/>Oppleo is getest met de 
                                 <a href="https://www.sandervunderink.nl/kwh-meter-3-fase-100a-mid-keur-sdm630-modbus.html" target="_new">
-                                Eastron SDM630v2 3-fase 100A MID modbus (€132,46)</a> en de 
-                                <a href="https://webshop.cedel.nl/1-Fase-kWh-meter-met-Modbus" target="_new">Eastron SDM120-Modbus MID 1 Fase kWh meter (€49,95)</a>.
+                                Eastron SDM630v2 3-fase 100A MID modbus kWh meter (€132,46)</a> en de 
+                                <a href="https://webshop.cedel.nl/1-Fase-kWh-meter-met-Modbus" target="_new">Eastron SDM120-Modbus MID 1-fase kWh meter (€49,95)</a>.
                             </li>
 
-                            <li><span class="text-dark font-italic">SmartEVSE (EVSE)</span><br/>Een EVSE (Electric Vehicle Supply Equipment) is het onderdeel in de 
-                                laadinfrastructuur dat de elektrische energie voor het laden van plug-in hybrides en volledig electrische voertuigen controleerd. 
-                                De EVSE regelt de communicatie met het voertuig en activeert de Contactor (Relais). De  <a href="https://www.stegen.com/nl/ev-producten/66-smart-evse-controller.html" target="_new"></a>
-                                Stegen SmartEVSE controller v2.2 (€139)</a> heeft naast deze functionaliteit ook een autorisatieingang en een statusuitgang. 
-                                Oppleo heeft functionaliteit om de autorisatie-pin aan te sturen en de status-pin uit te lezen. De Stegen SmartEVSE is de enige EVSE waar
-                                Oppleo mee getest is.
+                            <li><span class="text-dark font-italic">SmartEVSE (Electric Vehicle Supply Equipment)</span><br/>Een EVSE is het onderdeel in de 
+                                laadinfrastructuur dat de elektrische energie voor het laden van plug-in hybrides en elektrische voertuigen controleert. 
+                                De EVSE regelt de communicatie met het voertuig en activeert de Contactor (Relais), waarna het laden begint. De 
+                                <a href="https://www.stegen.com/nl/ev-producten/66-smart-evse-controller.html" target="_new">Stegen SmartEVSE 
+                                controller v2.2 (€139)</a> heeft een autorisatieingang (pin) die door Oppleo wordt gebruikt en een statusuitgang (pwm pin) 
+                                die door Oppleo wordt uitgelezen. De Stegen SmartEVSE is de enige EVSE waar Oppleo mee is getest.
                             </li>
                                 
                             <li><span class="text-dark font-italic">RFID lezer</span><br/>Oppleo gebruikt de SPI interface van de Raspberry Pi. Via SPI communiceert Oppleo 
@@ -285,12 +285,12 @@
                                 (€3,04)</a> worden aangesloten. De pinnen kunnen in Oppleo worden geconfigureerd.
                             </li>
 
-                            <li><span class="text-dark font-italic">Realtime Clock</span><br/>De Raspberry Pi heeft geen on board realtime clock. Dit betekend dat na een complete power-off 
-                                de datum en tijd niet beschikbaar zijn. Wanneer de Raspberry aan internet hangt wordt de datum en tijd vanzelf ingesteld, echter er is een mogelijkheid dat 
-                                Oppleo dan al een uitlezing heeft gedaan. Mocht het echt noodzakelijk zaijn kan aan de Raspberry Pi een real-time clock module zoals de 
+                            <li><span class="text-dark font-italic">Realtime Clock</span><br/>De Raspberry Pi heeft standaard geen realtime clock. Dit betekent dat na een (re-)boot
+                                met complete power-off de datum en tijd niet beschikbaar zal zijn. Wanneer de Raspberry aan internet verbinding heeft wordt via het Netwerktijdprotocol (NTP)
+                                de datum en tijd ingesteld, echter dit kan even duren en er is een mogelijkheid dat Oppleo dan al een uitlezing heeft gedaan met een verkeerde timestamp. 
+                                Mocht dit niet wenselijk zijn kan een real-time clock module zoals de 
                                 <a href="https://www.kiwi-electronics.nl/RasClock-Raspberry-Pi-Real-Time-Clock-Module" target="_new">RasClock - Raspberry Pi Real Time Clock Module
-                                (€11,95)</a> met <a href="https://www.kiwi-electronics.nl/cr1220-batterij" target="_new">CR1220 batterij (€2,95)</a> worden toegevoegd. 
-                                Hiermee wordt de kans op verkeerde uilezingen in de database aanzienlijk verkleind.                           
+                                (€11,95)</a> met <a href="https://www.kiwi-electronics.nl/cr1220-batterij" target="_new">CR1220 batterij (€2,95)</a> aan de Raspberry Pi worden toegevoegd.                          
                             </li>
 
                         </ul> 
@@ -305,7 +305,7 @@
                 <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
                     <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
                         <div class="mb-3" >
-                            Handige links voor zelfbouw laadpaal hardware:
+                            Handige links voor het zelf bouwen van een laadpaal:
                         </div>
                             
                         <ul>
@@ -333,7 +333,7 @@
                             </li>
 
                             <li><span class="text-dark font-italic">Aardlekschakelaar Type B</span><br/>Niet noodzakelijk voor een goede werking van Oppleo. Om DC lekstromen in 
-                                een laadpunt te detecteren en te beveiligen kan een aardlekschakelaar type B ingezet worden. Bijvoorbeeld de 
+                                een laadpunt te detecteren en te beveiligen kan een Type B aardlekschakelaar worden gebruikt. Bijvoorbeeld de 
                                 <a href="https://www.laadpaal24.nl/aardlekschakelaar-chint-type-b-40a-4pol-30ma" target="_new">Chint Type B 63A 4pol 30mA (€ 143,99)</a>. 
                                 Als alternatief kan een normale aardlekschakelaar worden gebruikt en de <a href="https://www.stegen.com/nl/ev-producten/126-residual-current-sensor.html" target="_new">
                                 DC/AC Residual Current Sensor (€59)</a> aan de Stegen SmartEVSE worden aangesloten.                          
