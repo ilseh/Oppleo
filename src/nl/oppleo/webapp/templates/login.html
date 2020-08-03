@@ -1,161 +1,193 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-    <head>
 
-        <meta charset="utf-8" />
-        <title>Login - Oppleo 2020</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <meta content="Python gebaseerde laadpunt-administratiesoftware draaiend op een Raspberry Pi. Modbus energiemeter (kWh) uitlezing, SmartEVSE aansturing, RFID lezer, status LED en buzzer aansturing." name="description" />
-        <meta content="Frans Laemen" name="author" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<head>
 
-        <link rel="shortcut icon" href="{{ url_for('static', filename='images/carcharger32.ico') }}">
-        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta charset="utf-8" />
+  <title>Login - Oppleo 2020</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta
+    content="Python gebaseerde laadpunt-administratiesoftware draaiend op een Raspberry Pi. Modbus energiemeter (kWh) uitlezing, SmartEVSE aansturing, RFID lezer, status LED en buzzer aansturing."
+    name="description" />
+  <meta content="Frans Laemen" name="author" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-		<meta name="theme-color" content="#3BAFDA">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/carcharger32.ico') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
-        <!-- App css -->
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/bootstrap/4.4.1/css/bootstrap.min.css') }}">
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-        
-        <!-- jQuery  -->
-        <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='plugins/bootstrap/4.4.1/js/bootstrap.min.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/jquery.scrollTo.min.js') }}"></script>
+  <meta name="theme-color" content="#3BAFDA">
 
-        <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
+  <!-- App css -->
+  <link rel="stylesheet" type="text/css"
+    href="{{ url_for('static', filename='plugins/bootstrap/4.4.1/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/icons.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 
-        <!-- Fontawesome -->
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
+  <!-- jQuery  -->
+  <script src="{{ url_for('static', filename='js/jquery-3.3.1.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/bootstrap/4.4.1/js/bootstrap.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/waves.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery.slimscroll.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery.nicescroll.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery.scrollTo.min.js') }}"></script>
 
-		<!-- Add webpage to the iOS Home screen. -->
-        <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
-		<!-- iOS Launch Screen Image -->
-		<link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash512.png') }}">
-		<!-- Adding a Launch Icon Title -->
-		<meta name="apple-mobile-web-app-title" content="Splash">
-		<!-- Hide Safari User Interface Components -->
-		<!-- Set the apple-mobile-web-app-capable meta tag to yes to turn on standalone mode. -->
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<!-- You can determine whether a webpage is displaying in standalone mode using the window.navigator.standalone read-only Boolean JavaScript property. -->
-		<!-- Changing the Status Bar Appearance -->
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-		<meta name="msapplication-starturl" content="/">
+  <script src="{{ url_for('static', filename='js/jquery.core.js') }}"></script>
 
-        <style>
-        button {
-            cursor: pointer;
-        }
-        </style>
-        <script>
-            jQuery(document).ready(function () {
-                $("button[id^=show_]").click(function() {
-                    id = $(this).attr('id').split("show_").pop()
-                    $('input[id='+id).attr(
-                        'type', 
-                        ( $('input[id='+id).attr('type') === "password" ? 'text' : 'password')
-                    )
-                    $(this).find('i').toggleClass('fa-eye')     // far fa-eye
-                    $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
-                })
-                $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
-                $('button#cancel').click(function(){
-                    window.history.back()
-                })
-                // Remove spinner
-                $('.spinner').hide()
-            })
-        </script>   
-    </head>
-    <body>
+  <!-- Fontawesome -->
+  <link rel="stylesheet" type="text/css"
+    href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
 
-<div class="wrapper-page">
+  <!-- Add webpage to the iOS Home screen. -->
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
+  <!-- iOS Launch Screen Image -->
+  <link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/splash512.png') }}">
+  <!-- Adding a Launch Icon Title -->
+  <meta name="apple-mobile-web-app-title" content="Splash">
+  <!-- Hide Safari User Interface Components -->
+  <!-- Set the apple-mobile-web-app-capable meta tag to yes to turn on standalone mode. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- You can determine whether a webpage is displaying in standalone mode using the window.navigator.standalone read-only Boolean JavaScript property. -->
+  <!-- Changing the Status Bar Appearance -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="msapplication-starturl" content="/">
 
-  <div class="text-center">
-      <span class="logo-lg"><i class="fas fa-charging-station"></i></i> <span>Laadpunt</span> </span>
+  <style>
+    button {
+      cursor: pointer;
+    }
+
+    .lightning-background {
+      background-image: url('{{ url_for('static', filename='images/oppleo_lightning.png') }}');
+      background-repeat: repeat-y;
+      background-size: 80%;
+      background-position: center;
+    }
+  </style>
+  <script>
+    jQuery(document).ready(function () {
+      $("button[id^=show_]").click(function () {
+        id = $(this).attr('id').split("show_").pop()
+        $('input[id=' + id).attr(
+          'type',
+          ($('input[id=' + id).attr('type') === "password" ? 'text' : 'password')
+        )
+        $(this).find('i').toggleClass('fa-eye')     // far fa-eye
+        $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
+      })
+      $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+      $('button#cancel').click(function () {
+        window.history.back()
+      })
+      // Remove spinner
+      $('.spinner').hide()
+    })
+  </script>
+</head>
+
+<body>
+
+  <div class="wrapper-page pl-3 pr-3 mb-1">
+    <div class="text-center">
+      <span class="logo-lg">
+        <i class="fas fa-charging-station"></i> 
+        Oppleo login
+      </span>
+    </div>
   </div>
 
-  {% if msg %}
-  <div class="text-center" style="color: #ef5350;">
-    <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ msg }}</span></span>
-  </div>
-  {% endif %}
+  <div class="wrapper-page pl-3 pr-3 mt-4 mb-4 border border-secondary bg-dark rounded">
 
-  {% if form.errors %}
-  <div class="text-center" style="color: #ef5350;">
-    <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ form.errors }}</span></span>
-  </div>
-  {% endif %}
+    <div class="text-center mt-3">
+      <h3 class="text-info">{{ oppleoconfig.chargerName }}</h3>
+    </div>
 
-<form id="login-form" class="form-horizontal m-t-20" method="POST" action="/login">
-    {{ form.csrf_token }}
+    {% if msg %}
+    <div class="text-center" style="color: #ef5350;">
+      <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ msg }}</span></span>
+    </div>
+    {% endif %}
 
-    <div class="form-group row">
-          <div class="col-12">
-              <div class="input-group">
-                <span class="input-group-prepend">
-                    <span class="input-group-text bg-secondary border border-secondary text-muted">
-                        <i class="mdi mdi-account"></i>
-                    </span>
-                </span>
-                <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username" value="{% if form.username.data is not none %}{{ form.username.data }}{% endif %}">
-              </div>
+    {% if form.errors %}
+    <div class="text-center" style="color: #ef5350;">
+      <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ form.errors }}</span></span>
+    </div>
+    {% endif %}
+
+    <form id="login-form" class="form-horizontal m-t-20" method="POST" action="/login">
+      {{ form.csrf_token }}
+
+      <div class="form-group row">
+        <div class="col-12">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <span class="input-group-text bg-secondary border border-secondary text-muted">
+                <i class="mdi mdi-account"></i>
+              </span>
+            </span>
+            <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username"
+              value="{% if form.username.data is not none %}{{ form.username.data }}{% endif %}">
           </div>
+        </div>
       </div>
 
       <div class="form-group row">
-          <div class="col-12">
-              <div class="input-group">
-                <span class="input-group-prepend">
-                    <span class="input-group-text bg-secondary border border-secondary text-muted">
-                        <i class="mdi mdi-radar"></i>
-                    </span>
-                </span>
-                <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password" value="{% if form.password.data is not none %}{{ form.password.data }}{% endif %}">
-                <span class="input-group-append">
-                    <button 
-                        id="show_password"
-                        type="button" 
-                        class="btn waves-effect waves-light btn-primary" 
-                        data-toggle="tooltip" 
-                        data-placement="bottom" 
-                        data-html="true" 
-                        title="<em>Klik om de tekst zichtbaar te maken</em>"
-                        >
-                        <i class="far fa-eye"></i>
-                    </button>
-                </span>
-              </div>
+        <div class="col-12">
+          <div class="input-group">
+            <span class="input-group-prepend">
+              <span class="input-group-text bg-secondary border border-secondary text-muted">
+                <i class="mdi mdi-radar"></i>
+              </span>
+            </span>
+            <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password"
+              value="{% if form.password.data is not none %}{{ form.password.data }}{% endif %}">
+            <span class="input-group-append">
+              <button id="show_password" type="button" class="btn waves-effect waves-light btn-primary"
+                data-toggle="tooltip" data-placement="bottom" data-html="true"
+                title="<em>Klik om de tekst zichtbaar te maken</em>">
+                <i class="far fa-eye"></i>
+              </button>
+            </span>
           </div>
+        </div>
       </div>
 
       <div class="form-group row">
-          <div class="col-12">
-              <div class="checkbox checkbox-primary">
-                  <input id="remember_me" name="remember_me" type="checkbox" value="y">
-                  <label for="remember_me">
-                      Remember me
-                  </label>
-              </div>
-
+        <div class="col-12">
+          <div class="checkbox checkbox-primary">
+            <input id="remember_me" name="remember_me" type="checkbox" value="y">
+            <label for="remember_me">
+              Onthouden
+            </label>
           </div>
+
+        </div>
       </div>
 
       <div class="form-group text-right m-t-20">
-          <div class="col-xs-12">
-            <button id="cancel" class="btn btn-secondary btn-custom w-md waves-effect waves-light" type="button">Annuleren</button>
-            <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Log In</button>
-          </div>
+        <div class="col-xs-12">
+          <button id="cancel" class="btn btn-secondary btn-custom w-md waves-effect waves-light"
+            type="button">Annuleren</button>
+          <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Log In</button>
+        </div>
       </div>
 
-  </form>
-</div>
+    </form>
+  </div>
+
+
+  <div class="wrapper-page mt-0 mb-1">
+    <div class="text-center responsive-about-text" style="text-align: center; padding-bottom: 40px;">
+      <div class="text-center" style="font-size: 18px;">
+        <button type="button" class="btn btn-block waves-effect waves-light btn-outline-primary lightning-background pl-5 pr-5 pt-4 pb-4"
+          onclick="window.location.href='/about'">
+          <i class="fas fa-info-circle"></i>
+          Informatie over Oppleo
+        </button>
+      </div>
+    </div>
+  </div>
 
 </body>
-    
+
 </html>

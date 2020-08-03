@@ -174,7 +174,7 @@
                         } else {
                             // Blue
                             $('#topnav .topbar-main').css('background-color', '#3bafda')
-                            $('span.logo-large').html('<i class="fas fa-charging-station"></i> Oppleo')
+                            $('span.logo-large').html('<i class="fas fa-charging-station"></i> {{ oppleoconfig.chargerName }}')
                         }
                     }
                 })
@@ -527,7 +527,7 @@
                 <div class="logo">
                     <a href="{{ url_for('flaskRoutes.index') }}" class="logo">
                         <span class="logo-small"><i class="fas fa-charging-station"></i> </span>
-                        <span class="logo-large"><i class="fas fa-charging-station"></i> Oppleo</span>
+                        <span class="logo-large"><i class="fas fa-charging-station"></i> {{ oppleoconfig.chargerName }}</span>
                     </a>
                 </div>
 
@@ -670,16 +670,21 @@
                             <ul class="submenu">
                                 {% if current_user.is_authenticated %}
                                 <li>
-                                    <a href="{{ url_for('flaskRoutes.change_password') }}" class="stay">
-                                        <i class="fa fa-key"></i> Wijzig wachtwoord
+                                    <a href="{{ url_for('flaskRoutes.logout') }}" class="stay">
+                                        <i class="fas fa-sign-out-alt"></i> Afmelden
                                     </a>
                                 </li>
                                 <li class="has-submenu">
                                     <a href="#"><i class="fas fa-exclamation-triangle"></i> Beheer</a>
                                     <ul class="submenu">
                                         <li>
+                                            <a href="{{ url_for('flaskRoutes.change_password') }}" class="stay">
+                                                <i class="fa fa-key"></i> Wijzig wachtwoord
+                                            </a>
+                                        </li>
+                                        <li>
                                             <a href="{{ url_for('flaskRoutes.restart') }}" class="stay">
-                                                <i class="fas fa-redo-alt"></i> Herstart applicatie
+                                                <i class="fas fa-redo-alt"></i> Herstart Oppleo
                                             </a>
                                         </li>
                                         <li>
@@ -689,15 +694,10 @@
                                         </li>
                                         <li>
                                             <a href="{{ url_for('flaskRoutes.shutdown') }}" class="stay">
-                                                <i class="fas fa-power-off"></i> Uitschakelen
+                                                <i class="fas fa-power-off"></i> Systeem uitschakelen
                                             </a>
                                         </li>        
                                     </ul>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.logout') }}" class="stay">
-                                        <i class="fas fa-sign-out-alt"></i> Afmelden
-                                    </a>
                                 </li>
                                 {% endif %}
                                 {% if not current_user.is_authenticated %}
