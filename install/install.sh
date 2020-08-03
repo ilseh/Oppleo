@@ -172,10 +172,6 @@ function checkPiGPIO( ) {
 }
 
 
-
-
-
-
 function checkVirtualEnv() {
   echo " checkVirtualEnv - Start"
 
@@ -312,6 +308,25 @@ function installPipDependencies( ) {
 }
 
 
+function gitUpdate( ) {
+  echo " gitUpdate - Start"
+  
+  echo "  update from git (git pull)..."
+  git pull > /dev/null 2>&1
+
+  EXITCODE=$?
+  if [ "$EXITCODE" == 0 ]; then
+    echo "  Git pull succeeded ($EXITCODE)"
+  else
+    echo "  Git pull FAILED! (exitcode $EXITCODE)"
+  fi
+
+  echo " gitUpdate - Done"
+
+  return $EXITCODE
+}
+
+
 function updateDatabase( ) {
   echo " updateDatabase - Start"
 
@@ -364,25 +379,29 @@ stopService $ON_RASPBERRY $SYSTEMCTL_PRESENT
 checkVirtualEnv
 # 4. Is Pi GPIO Daemon (pigpiod) installed and running? 
 checkPiGPIO $ON_RASPBERRY $SYSTEMCTL_PRESENT
-# 5. Update PIP and install dependencies
+
+# 5. Update from github
+gitUpdate
+
+# 6. Update PIP and install dependencies
 installPipDependencies $ON_RASPBERRY
 
-# 6. Update database
+# 7. Update database
 updateDatabase
 
+# 8. 
 installPsycopg2 $ON_RASPBERRY
 #    Is Pi GPIO Daemon (pigpiod) installed and running? 
 #    Is Pi GPIO Daemon (pigpiod) installed and running? 
 
-# 8. Install the Oppleo service (Oppleo.service & enable)
+# 9. Install the Oppleo service (Oppleo.service & enable)
 installSystemdService $ON_RASPBERRY $SYSTEMCTL_PRESENT
 
-# 9. Start Oppleo service (if already started or non-existend)
+# 10. Start Oppleo service (if already started or non-existend)
 startSystemdService $ON_RASPBERRY $SYSTEMCTL_PRESENT
 
-# 10. Deactivate venv if not active at start, and go back to the working dir
+# 11. Deactivate venv if not active at start, and go back to the working dir
 cleanup
-
 
 
 echo "Done!"
