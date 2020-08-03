@@ -490,7 +490,7 @@ class OppleoConfig(object, metaclass=Singleton):
                             "upSince"           : self.upSinceDatetimeStr,
                             "clientsConnected"  : len(self.connectedClients)
                         },
-                        namespace='/system_status/',
+                        namespace='/system_status',
                         public=False
                     )
 

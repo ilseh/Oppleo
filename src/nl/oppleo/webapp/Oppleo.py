@@ -171,7 +171,7 @@ try:
                     "upSince"           : oppleoConfig.upSinceDatetimeStr,
                     "clientsConnected"  : len(oppleoConfig.connectedClients)
                 },
-                namespace='/system_status/',
+                namespace='/system_status',
                 public=False,
                 room=request.sid
             )
@@ -289,7 +289,7 @@ try:
                     "upSince": oppleoConfig.upSinceDatetimeStr,
                     "clientsConnected"  : len(oppleoConfig.connectedClients)
                 },
-                namespace='/system_status/',
+                namespace='/system_status',
                 public=False
             )
 
