@@ -99,6 +99,36 @@
         a, a:hover, a:active {
             color: #ffaa00 !important;
         }
+        .lightning-background {
+            background-image: url('{{ url_for('static', filename='images/oppleo_lightning.png') }}'); 
+            background-repeat: repeat-y; 
+            background-size: 80%; 
+            background-position: center;
+        }
+        .responsive-about-img {
+            width: 90%;
+            max-width: 900px;
+            height: auto;
+        }
+        .responsive-about-text {
+            width: 90%;
+            margin-left: 5%;
+        }
+        .responsive-about-text div {
+            max-width: 900px;
+            height: auto;
+        }
+        /* If the screen size is 601px wide or more, set the font-size of <div> to 80px */
+        @media screen and (min-width: 940px) {
+            div#back-button-mid-top {
+                display: none;
+            }
+        }
+        @media screen and (max-width: 940px) {
+            div#back-button-left-top {
+                display: none;
+            }
+        }
         </style>
         <script>
             jQuery(document).ready(function () {
@@ -115,7 +145,7 @@
             <div class="spinner-img"></div>
         </div>
     
-        <div style="background-image: url('{{ url_for('static', filename='images/oppleo_lightning.png') }}'); background-repeat: repeat-y; background-size: 80%; background-position: center;">
+        <div class="lightning-background">
 
             <div style="background-color: #323b44; opacity: 0.8;">
 
@@ -131,7 +161,7 @@
                         style="position: absolute; font-size: 40px; text-transform: uppercase; font-weight: bold; right: 50%; margin-right: -10px; top: 40px;">
                         Over
                     </div>
-                    <div class="" 
+                    <div id="back-button-left-top"
                         style="position: absolute; font-size: 40px; text-transform: uppercase; font-weight: bold; right: 50%; margin-right: 330px; top: 80px;">
                         <button 
                             type="button"
@@ -144,12 +174,28 @@
                     </div>
                 </div>
 
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 60px; margin-bottom: 20px;">
-                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 24px;">
+                <div class="text-center responsive-about-text" id="back-button-mid-top" style="text-align: center; margin-top: 20px;">
+                    <div class="text-info" style="display: inline-block; font-size: 18px;">
+                        <button 
+                            type="button"
+                            class="btn btn-lg btn-block waves-effect waves-light btn-outline-warning"
+                            onclick="window.location.href='/'"
+                            >
+                            <i class="far fa-hand-point-left"></i>
+                            Terug
+                        </button>'
+                    </div>
+                </div>
+
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 60px;">
+                    <div class="text-info" style="display: inline-block; font-size: 24px;">
                         <span class="text-dark font-weight-bold">Oppleo</span> maakt van je zelfbouw elektrische autolader een 
                         <span class="text-dark font-weight-bold">full feature laadpunt!</span>
                     </div>
-                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                </div>
+
+                <div class="text-center responsive-about-text" style="text-align: center; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; font-size: 18px;">
                         Download <span class="text-dark">Oppleo</span> via <a href="https://github.com/ilseh/Oppleo" target="_new_"><i class="fab fa-github"></i> Github</a> en 
                         <a href="https://oppleo.nl/about/" target="_new_"><i class="fas fa-charging-station"></i> oppleo.nl</a>.
                     </div>
@@ -157,11 +203,11 @@
 
                 <div class="text-center mt-5">
                     <img src="{{ url_for('static', filename='images/about_dashboard.png') }}" 
-                        class="border border-secondary" alt="Voorbeeld Dashboard" />
+                        class="border border-secondary responsive-about-img" alt="Voorbeeld Dashboard" />
                 </div>
 
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
-                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 20px;">
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; font-size: 20px;">
                         <span class="text-dark font-weight-bold">Oppleo</span> geeft gedetailleert inzicht in het energieverbruik van 
                         elektrische auto-laadstations. Door de continue uitlezing van de meterstanden van een aangesloten modbus energiemeter 
                         te koppelen aan gebruiksregsitraties is er <span class="text-dark font-italic">toegangscontrole</span> voor het 
@@ -169,8 +215,8 @@
                     </div>
                 </div>
 
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
-                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 20px;">
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; font-size: 20px;">
                         <span class="text-dark font-weight-bold">Oppleo</span> is <i class="fab fa-python"></i> Python Flask software en is beschikbaar via 
                         <a href="https://github.com/ilseh/Oppleo" target="_new_"><i class="fab fa-github"></i> Github</a>. Oppleo maakt gebruik van de GPIO en beschikbare
                         RFID, Modbus, RGB LED en Buzzer modules van de <a href="https://www.raspberrypi.org/" target="_new" style="color: #C51A4A !important;">
@@ -181,11 +227,11 @@
 
                 <div class="text-center mt-5">
                     <img src="{{ url_for('static', filename='images/about_energyreadings.png') }}" 
-                        class="border border-secondary" alt="Voorbeeld Energieuitlezing" />
+                        class="border border-secondary responsive-about-img" alt="Voorbeeld Energieuitlezing" />
                 </div>
 
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
-                    <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; text-align: left; font-size: 20px;">
                         <div class="mb-3" >
                             <span class="text-dark font-weight-bold">Oppleo</span> features:
                         </div>
@@ -232,11 +278,11 @@
 
                 <div class="text-center mt-5">
                     <img src="{{ url_for('static', filename='images/about_offpeaksettings.png') }}" 
-                        class="border border-secondary" alt="Voorbeeld daluren instelling" />
+                        class="border border-secondary responsive-about-img" alt="Voorbeeld daluren instelling" />
                 </div>
             
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
-                    <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; text-align: left; font-size: 20px;">
                         <div class="mb-3" >
                             <span class="text-dark font-weight-bold">Oppleo</span>
                             werkt specifiek de volgende hardware:
@@ -299,11 +345,11 @@
 
                 <div class="text-center mt-5">
                     <img src="{{ url_for('static', filename='images/about_graph.png') }}" 
-                        class="border border-secondary" alt="Voorbeeld Grafische weergave energieuitlezing" />
+                        class="border border-secondary responsive-about-img" alt="Voorbeeld Grafische weergave energieuitlezing" />
                 </div>
 
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 40px; margin-bottom: 20px;">
-                    <div class="text-info" style="display: inline-block; text-align: left; width: 900px; font-size: 20px;">
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+                    <div class="text-info" style="display: inline-block; text-align: left; font-size: 20px;">
                         <div class="mb-3" >
                             Handige links voor het zelf bouwen van een laadpaal:
                         </div>
@@ -355,29 +401,29 @@
 
                 <div class="text-center mt-5">
                     <img src="{{ url_for('static', filename='images/about_raspberrysettings.png') }}" 
-                        class="border border-secondary" alt="Voorbeeld Raspberry Pi" />
+                        class="border border-secondary responsive-about-img" alt="Voorbeeld Raspberry Pi" />
                 </div>
 
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 120px; padding-bottom: 40px;">
-                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 120px; padding-bottom: 40px;">
+                    <div class="text-info" style="display: inline-block; width: font-size: 18px;">
                         <span class="text-dark font-italic">&copy; 2019-2020 Frans Laemen & Ilse Haanstra</span> 
                     </div>
-                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                    <div class="text-info" style="display: inline-block; width: font-size: 18px;">
                         Download <span class="text-dark">Oppleo</span> via <a href="https://github.com/ilseh/Oppleo" target="_new_"><i class="fab fa-github"></i> Github</a> en 
                         <a href="https://oppleo.nl/about/" target="_new_"><i class="fas fa-charging-station"></i> oppleo.nl</a>.
                     </div>
                 </div>
 
-                <div class="text-center" style="text-align: center; width: 100%; margin-top: 20px; padding-bottom: 40px;">
-                    <div class="text-info" style="display: inline-block; width: 900px; font-size: 18px;">
+                <div class="text-center responsive-about-text" style="text-align: center; margin-top: 20px; padding-bottom: 40px;">
+                    <div class="text-center" style="font-size: 18px;">
                         <button 
                             type="button"
-                            class="btn btn-lg btn-block waves-effect waves-light btn-outline-warning"
+                            class="btn btn-lg waves-effect waves-light btn-outline-warning"
                             onclick="window.location.href='/'"
                             >
                             <i class="far fa-hand-point-left"></i>
                             Terug
-                        </button>'
+                        </button>
                     </div>
                 </div>
 
