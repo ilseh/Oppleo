@@ -312,8 +312,7 @@ function gitUpdate( ) {
   echo " gitUpdate - Start"
   
   echo "  update from git (git pull)..."
-  git pull > /dev/null 2>&1
-
+  (cd $OPPLEO_ROOT_DIR && git pull &> /dev/null)
   EXITCODE=$?
   if [ "$EXITCODE" == 0 ]; then
     echo "  Git pull succeeded ($EXITCODE)"
