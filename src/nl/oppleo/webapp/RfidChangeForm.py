@@ -5,10 +5,14 @@ from wtforms import StringField, BooleanField, SubmitField, DateField, HiddenFie
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired, Optional, Email
 
+import logging
+
 class RfidChangeForm(FlaskForm):
 
     ENGLISH = 0
     DUTCH = 1
+
+    logger = logging.getLogger('nl.oppleo.webapp.RfidChangeForm')
 
     rfid = HiddenField('rfid')  # - read-only, no editing
     name = StringField('Naam')
@@ -31,7 +35,6 @@ class RfidChangeForm(FlaskForm):
     vehicle_id = StringField('ID')
     vehicle_vin = StringField('VIN')
 
-
     submit = SubmitField('Sign In')
     # recaptcha = RecaptchaField()
 
@@ -51,7 +54,11 @@ class RfidChangeForm(FlaskForm):
                 print("Error field #{} ({}) error #{}: {}".format(field_num, field_name, error_num, error_text))
                 if error_text == 'Not a valid date value':
                     translatedErrors[translated_field_name].append('Geen geldige datum')
+                    "Invalid email address."
+                elif error_text == 'Invalid email address.':
+                    translatedErrors[translated_field_name].append('Ongeldig formaat')
                 else:
-                    translatedErrors
+                    self.logger.warning('No translation for "{}"'.format(error_text))
+                    translatedErrors[translated_field_name].append(error_text)
 
         return translatedErrors
