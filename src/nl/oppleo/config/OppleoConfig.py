@@ -582,3 +582,16 @@ class OppleoConfig(object, metaclass=Singleton):
     @routerIPAddress.setter
     def routerIPAddress(self, value):
         self.__chargerConfigModel.setAndSave('router_ip_address', value)
+
+    """
+        receiptPrefix --> receipt_prefix
+    """
+    @property
+    def receiptPrefix(self):
+        return self.__chargerConfigModel.receipt_prefix
+
+    @receiptPrefix.setter
+    def receiptPrefix(self, value):
+        self.__chargerConfigModel.setAndSave('receipt_prefix', value)
+
+

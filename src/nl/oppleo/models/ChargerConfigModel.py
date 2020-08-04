@@ -60,6 +60,8 @@ class ChargerConfigModel(Base):
     allow_local_dashboard_access = Column(Boolean) 
     router_ip_address = Column(String(20)) 
 
+    receipt_prefix = Column(String(20))
+
 
     def __init__(self):
         pass
@@ -213,3 +215,5 @@ class ChargerConfigSchema(Schema):
 
     allow_local_dashboard_access = fields.Bool(dump_only=True)
     router_ip_address = fields.Str(dump_only=True)
+
+    receipt_prefix = fields.Str(dump_only=True)

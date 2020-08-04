@@ -561,6 +561,33 @@
                               <td class="text-primary">{{ charger_config['modified_at'] }}</td>
                             </tr>
                             {% endif %}
+
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Rapportages</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Bonnummer prefix:</td>
+                              <td class="text-primary">
+                                <form id="receipt-prefix-form">
+                                  <oppleo-edit-str 
+                                  id="receiptPrefix"
+                                  prefix="" 
+                                  value="{{ oppleoconfig.receiptPrefix }}"
+                                  validation="^[A-Za-z0-9.-]{0,20}$"
+                                  info="Prefix voor de bonnummers gegenereert in PDF maandrapporten. Het bonnummersformat is [prefix][jaartal][maand]. De prefix mag cijfers, kleine en hoofdletters, en punt of streep bevatten en niet langer zijn dan 20 karakters."
+                                  />
+                                </form>
+                              </td>
+                            </tr>          
+
+
+
                             <tr>
                               <th colspan="2">&nbsp;</th>
                             </tr>
@@ -885,7 +912,7 @@
                                   />
                                 </form>
                               </td>
-                            </tr>                                      
+                            </tr>
                             <tr>
                               <td class="text-dark">Reverse Proxy:</td>
                               <td class="text-primary">

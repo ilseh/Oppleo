@@ -217,7 +217,6 @@
                   ]
                 } 
               }
-
               doc.content[1] = {
                 margin: [0, 0, 0, 12],
                 layout: 'noBorders',
@@ -229,7 +228,7 @@
                         alignment: 'left',
                         bold: true
                       },
-                      text: 'Bonnummer: 1221130100007'
+                      text: 'Bonnummer: {{ oppleoconfig.receiptPrefix}}{{ year }}' + (month < 10 ? '0' + month : month)
                     }],[{
                       style: {
                         alignment: 'left',

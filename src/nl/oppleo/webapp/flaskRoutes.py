@@ -1357,6 +1357,12 @@ def update_settings(param=None, value=None):
         oppleoConfig.routerIPAddress = value
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
+    # receiptPrefix
+    validation="^[A-Za-z0-9.-]{0,20}$"
+    if (param == 'receiptPrefix') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.receiptPrefix = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
 
