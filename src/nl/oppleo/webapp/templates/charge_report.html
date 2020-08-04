@@ -307,10 +307,10 @@
             $( api.column( 1 ).footer() ).html( '' ) // Make sure default text is empty
             $( api.column( 8 ).footer() ).html( 'Totaal:' )
             $( api.column( 9 ).footer() ).html(
-              '<span style="text-align: right;">' + (Math.round(totalEnergy * 10) /10) + 'kWh</span>'
+              '<nobr><span style="text-align: right;">' + (Math.round(totalEnergy * 10) /10) + 'kWh</span></nobr>'
             )
             $( api.column( 10 ).footer() ).html(
-              '<span style="text-align: right;">&euro; ' + (Math.round(totalPrice * 100) /100).toFixed(2) + '</span>'
+              '<nobr><span style="text-align: right;">&euro;&nbsp;' + (Math.round(totalPrice * 100) /100).toFixed(2) + '</span></nobr>'
             )
           },
           "createdRow": function(row, data, dataIndex) {
