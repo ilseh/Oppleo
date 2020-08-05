@@ -432,7 +432,7 @@ def software_update():
             from pwd import getpwnam
             os.seteuid(getpwnam('pi').pw_uid)
             os.setgid(getpwnam('pi').pw_gid)
-            flaskRoutesLogger.debug("Run software update as 'pi' with uid {} and group {}".format(getpwnam('pi').pw_uid, getpwnam('pi').pw_gid)
+            flaskRoutesLogger.debug("Run software update as 'pi' with uid {} and group {}".format(getpwnam('pi').pw_uid, getpwnam('pi').pw_gid))
 
             flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {}' &> {}".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             os.system("nohup sudo -u pi -b bash -c 'sleep 2; {}' &> {}".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
