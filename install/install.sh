@@ -12,7 +12,7 @@ echo "v0.6 05-08-2020"
 # 4. Analyze time taken by each process at boot
 #   systemd --version
 
- 
+
 # Define all variables
 function init() {
   echo " init - Start"
