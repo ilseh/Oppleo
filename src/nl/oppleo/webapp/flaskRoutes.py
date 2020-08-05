@@ -1,5 +1,6 @@
 import os
 import threading
+from datetime import datetime
 from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session
 
 from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
@@ -423,9 +424,10 @@ def software_update():
        check_password_hash(current_user.password, form.password.data):
         flaskRoutesLogger.debug('Software update requested and authorized. Updating in 2 seconds...')
         # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
-        try:
-            #            os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh' &>/dev/null")
-            os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh' &> /home/pi/update.txt")
+        try: 
+            installCmd = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/install.sh')
+            # os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh' &>/dev/null")
+            os.system("nohup sudo -b bash -c 'sleep 2; {}' &> /home/pi/Oppleo/install/log/update{}.log".format(installCmd, datetime.now().strftime("%Y%m%d%H%M%S")))
         except Exception as e:
             pass
         return render_template("softwareupdate.html", 
