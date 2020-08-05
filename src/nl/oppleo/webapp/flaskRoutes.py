@@ -424,10 +424,10 @@ def software_update():
         flaskRoutesLogger.debug('Software update requested and authorized. Updating in 2 seconds...')
         # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
         try:
-            os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/update.sh' &>/dev/null")
+            os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh' &>/dev/null")
         except Exception as e:
             pass
-        return render_template("updating.html", 
+        return render_template("softwareupdate.html", 
                     oppleoconfig=oppleoConfig
                     )
     else:
