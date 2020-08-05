@@ -330,7 +330,8 @@ function updateDatabase( ) {
   echo " updateDatabase - Start"
 
   echo "  Release liquibase locks..."
-  (cd $OPPLEO_ROOT_DIR/db && liquibase releaseLocks &> /dev/null)
+  # (cd $OPPLEO_ROOT_DIR/db && liquibase releaseLocks &> /dev/null)
+  (cd $OPPLEO_ROOT_DIR/db && liquibase releaseLocks)
   EXITCODE=$?
   if [ "$EXITCODE" == 0 ]; then
     echo "  Success ($EXITCODE)"
@@ -339,7 +340,8 @@ function updateDatabase( ) {
   fi
   echo "  Run liquibase update..."
   # make sure the workling dir is changed. The parentheses spawn a subshell)
-  (cd $OPPLEO_ROOT_DIR/db && liquibase update &> /dev/null)
+  # (cd $OPPLEO_ROOT_DIR/db && liquibase update &> /dev/null)
+  (cd $OPPLEO_ROOT_DIR/db && liquibase update)
   EXITCODE=$?
   if [ "$EXITCODE" == 0 ]; then
     echo "  Success ($EXITCODE)"

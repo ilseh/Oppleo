@@ -307,6 +307,9 @@
                             $('button#updateSoftwateButton').on('click', () => {
                                 window.location = "{{ url_for('flaskRoutes.software_update') }}"
                             })
+                            if ( $("tr#noSoftwateUpdateAvailableRow").length != 0 ) {
+                                $("tr#noSoftwateUpdateAvailableRow").remove()
+                            }
                             $('a#updateSoftwareMenuItem').parent().show()
                             $('a#checkSoftwareStatusMenuItem').parent().hide()
 
