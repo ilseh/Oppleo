@@ -329,9 +329,13 @@ function gitUpdate( ) {
 function updateDatabase( ) {
   echo " updateDatabase - Start"
 
+  echo "  get liquibase location..."
+  lbpath=$(cat ~/.bashrc | grep liquibase | cut -d':' -f2)
+  echo "  liquibase at $lbpath"
+
   echo "  Release liquibase locks..."
   # (cd $OPPLEO_ROOT_DIR/db && liquibase releaseLocks &> /dev/null)
-  (cd $OPPLEO_ROOT_DIR/db && liquibase releaseLocks)
+  (cd $OPPLEO_ROOT_DIR/db && $lbpath/liquibase releaseLocks)
   EXITCODE=$?
   if [ "$EXITCODE" == 0 ]; then
     echo "  Success ($EXITCODE)"
@@ -341,7 +345,7 @@ function updateDatabase( ) {
   echo "  Run liquibase update..."
   # make sure the workling dir is changed. The parentheses spawn a subshell)
   # (cd $OPPLEO_ROOT_DIR/db && liquibase update &> /dev/null)
-  (cd $OPPLEO_ROOT_DIR/db && liquibase update)
+  (cd $OPPLEO_ROOT_DIR/db && $lbpath/liquibase update)
   EXITCODE=$?
   if [ "$EXITCODE" == 0 ]; then
     echo "  Success ($EXITCODE)"
