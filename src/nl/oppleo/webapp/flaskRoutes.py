@@ -437,7 +437,7 @@ def software_update():
             flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {}' &> {}".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             os.system("nohup sudo -u pi -b bash -c 'sleep 2; {}' &> {}".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
         except Exception as e:
-            pass
+            flaskRoutesLogger.error("Exception running software update! {}".format(e))
         return render_template("softwareupdate.html", 
                     oppleoconfig=oppleoConfig
                     )
