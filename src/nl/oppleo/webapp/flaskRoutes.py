@@ -402,6 +402,44 @@ def restart():
                 )
 
 
+@flaskRoutes.route("/software-update", methods=["GET", "POST"])
+@flaskRoutes.route("/software-update/", methods=["GET", "POST"])
+@authenticated_resource
+def software_update():
+    global flaskRoutesLogger, oppleoConfig
+    # For GET requests, display the authorize form. 
+    flaskRoutesLogger.debug('/software-update {}'.format(request.method))
+    if (request.method == 'GET'):
+        return render_template("authorize.html", 
+            form=AuthorizeForm(),
+            requesttitle="Software Update",
+            requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie duurt ongeveer 30 seconden.",
+            buttontitle="Update!",
+            oppleoconfig=oppleoConfig
+            )
+    # For POST requests, login the current user by processing the form.
+    form = AuthorizeForm()
+    if form.validate_on_submit() and \
+       check_password_hash(current_user.password, form.password.data):
+        flaskRoutesLogger.debug('Software update requested and authorized. Updating in 2 seconds...')
+        # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
+        try:
+            os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/update.sh' &>/dev/null")
+        except Exception as e:
+            pass
+        return render_template("updating.html", 
+                    oppleoconfig=oppleoConfig
+                    )
+    else:
+        return render_template("authorize.html", 
+                form=form, 
+                requesttitle="Software Update",
+                requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie duurt ongeveer 30 seconden.",
+                buttontitle="Herstart!",
+                errormsg="Het wachtwoord is onjuist",
+                oppleoconfig=oppleoConfig
+                )
+
 
 @flaskRoutes.route("/delete_charge_session/<int:id>", methods=["GET", "POST"])
 @flaskRoutes.route("/delete_charge_session/<int:id>/", methods=["GET", "POST"])
