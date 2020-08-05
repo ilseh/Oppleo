@@ -352,7 +352,7 @@ function updateDatabase( ) {
   else
     echo "  FAILED! (exitcode $EXITCODE)"
   fi
-
+ 
   echo " updateDatabase - Done"
 }
 
