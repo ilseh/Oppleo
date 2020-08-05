@@ -413,7 +413,7 @@ def software_update():
         return render_template("authorize.html", 
             form=AuthorizeForm(),
             requesttitle="Software Update",
-            requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie duurt ongeveer 30 seconden.",
+            requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie kan 30 seconden tot 1 minuut duren.",
             buttontitle="Update!",
             oppleoconfig=oppleoConfig
             )
@@ -434,7 +434,7 @@ def software_update():
         return render_template("authorize.html", 
                 form=form, 
                 requesttitle="Software Update",
-                requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie duurt ongeveer 30 seconden.",
+                requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie kan 30 seconden tot 1 minuut duren.",
                 buttontitle="Herstart!",
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig
