@@ -428,12 +428,6 @@ def software_update():
             updateSoftwareInstallCmd = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/install.sh')
             updateSoftwareLogFile = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/log/update_{}.log'.format(datetime.now().strftime("%Y%m%d%H%M%S")))
             # os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh' &>/dev/null")
-
-            from pwd import getpwnam
-            os.seteuid(getpwnam('pi').pw_uid)
-            os.setgid(getpwnam('pi').pw_gid)
-            flaskRoutesLogger.debug("Run software update as 'pi' with uid {} and group {}".format(getpwnam('pi').pw_uid, getpwnam('pi').pw_gid))
-
             flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {}' &> {}".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             os.system("nohup sudo -u pi -b bash -c 'sleep 2; {}' &> {}".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
         except Exception as e:
