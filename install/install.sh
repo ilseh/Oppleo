@@ -325,7 +325,7 @@ function gitUpdate( ) {
 
   return $EXITCODE
 }
- 
+
 
 function updateDatabase( ) {
   echo " updateDatabase - Start"
