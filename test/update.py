@@ -20,7 +20,7 @@ print("updateSoftwareLogFile: {}".format(updateSoftwareLogFile))
 print("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
 # update script kills Oppleo, and also os.system or os.popen processes. Spawn new process that will survive the Oppleo kill
 
-
+ 
 import os
 pid=os.fork()
 if pid==0: # new process
