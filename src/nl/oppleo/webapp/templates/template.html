@@ -175,7 +175,7 @@
                             // Red
                             $('#topnav .topbar-main').css('background-color', '#ef5350')
                             $('span.logo-large').html('<i class="fas fa-charging-station"></i> Herstart vereist')
-                        } else if (result.softwareUpdateInProgress) {
+                        } else if (msg.data.softwareUpdateInProgress) {
                             // Orange
                             $('#topnav .topbar-main').css('background-color', '#ffaa00')
                             $('span.logo-large').html('<i class="fas fa-charging-station"></i> Updating...')
