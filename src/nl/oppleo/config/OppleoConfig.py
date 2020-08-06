@@ -97,6 +97,7 @@ class OppleoConfig(object, metaclass=Singleton):
     __chargerConfigModel = None
     __restartRequired = False
     __upSinceDatetime = datetime.now()
+    __softwareUpdateInProgress = False
 
 
     """
@@ -117,8 +118,6 @@ class OppleoConfig(object, metaclass=Singleton):
     phmThread = None
 
     wsEmitQueue = None
-
-    softwareUpdateInProgress = False
 
     """
         Global location to store kWh meter serial number
@@ -488,16 +487,50 @@ class OppleoConfig(object, metaclass=Singleton):
                         event='update', 
                         id=self.chargerName,
                         data={
-                            "restartRequired"   : self.__restartRequired,
-                            "upSince"           : self.upSinceDatetimeStr,
-                            "clientsConnected"  : len(self.connectedClients)
+                            "restartRequired"           : self.__restartRequired,
+                            'softwareUpdateInProgress'  : self.__softwareUpdateInProgress,
+                            "upSince"                   : self.upSinceDatetimeStr,
+                            "clientsConnected"          : len(self.connectedClients)
                         },
                         namespace='/system_status',
                         public=False
                     )
 
         except ValueError:
-            self.___logger.warning("Value {} could not be interpreted as bool".format(value), exc_info=True)
+            self.___logger.warning("@restartRequired.setter - Value {} could not be interpreted as bool".format(value), exc_info=True)
+
+
+    """
+        softwareUpdateInProgress (no database persistence)
+    """
+    @property
+    def softwareUpdateInProgress(self):
+        return self.__softwareUpdateInProgress
+
+    @softwareUpdateInProgress.setter
+    def softwareUpdateInProgress(self, value):
+        try: 
+            self.__softwareUpdateInProgress = bool(value)
+            if (bool(value)):
+                # Announce
+                WebSocketUtil.emit(
+                        wsEmitQueue=self.wsEmitQueue,
+                        event='update', 
+                        id=self.chargerName,
+                        data={
+                            "restartRequired"           : self.__restartRequired,
+                            'softwareUpdateInProgress'  : self.__softwareUpdateInProgress,
+                            "upSince"                   : self.upSinceDatetimeStr,
+                            "clientsConnected"          : len(self.connectedClients)
+                        },
+                        namespace='/system_status',
+                        public=False
+                    )
+
+        except ValueError:
+            self.___logger.warning("@softwareUpdateInProgress.setter - Value {} could not be interpreted as bool".format(value), exc_info=True)
+
+
 
     """
         upSinceDatetime (set on startup, no setter)
