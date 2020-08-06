@@ -1,6 +1,6 @@
 # Reaspberry config
 echo "Install script for the Oppleo service"
-echo "v0.6 05-08-2020"
+echo "v0.6.1 06-08-2020"
 
 # Some systemd commands
 # 1. systemd version
@@ -312,7 +312,8 @@ function gitUpdate( ) {
   echo " gitUpdate - Start"
   
   echo "  update from git (git pull)..."
-  (cd $OPPLEO_ROOT_DIR && git pull &> /dev/null)
+  # (cd $OPPLEO_ROOT_DIR && git --git-dir=/home/pi/Oppleo/.git --work-tree=/home/pi/Oppleo pull &> /dev/null)
+  (cd $OPPLEO_ROOT_DIR && git --git-dir=$OPPLEO_ROOT_DIR/.git --work-tree=$OPPLEO_ROOT_DIR pull)
   EXITCODE=$?
   if [ "$EXITCODE" == 0 ]; then
     echo "  Git pull succeeded ($EXITCODE)"
