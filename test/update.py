@@ -1,4 +1,5 @@
 import os
+import subprocess
 from datetime import datetime
 
 print("Start")
@@ -19,6 +20,16 @@ print("updateSoftwareLogFile: {}".format(updateSoftwareLogFile))
 print("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
 # update script kills Oppleo, and also os.system or os.popen processes. Spawn new process that will survive the Oppleo kill
 
-os.popen("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
+
+import os
+pid=os.fork()
+if pid==0: # new process
+    os.popen("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
+    exit()
+# parent process continues
+
+
+#subprocess.Popen("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile), \
+#                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
 print("Done!")
