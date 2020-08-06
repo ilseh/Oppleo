@@ -12,7 +12,7 @@ if [ -n "$1" ]; then
   echo " Waiting $1 seconds..."
   sleep $1
 fi
-
+ 
 # Some systemd commands
 # 1. systemd version
 #   systemd --version
