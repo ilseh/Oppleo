@@ -2,6 +2,9 @@
 echo "Install script for the Oppleo service"
 echo "v0.6.1 06-08-2020"
 
+echo "Running install script as $(whoami)"
+echo "PATH=$PATH"
+
 # Some systemd commands
 # 1. systemd version
 #   systemd --version
