@@ -7,7 +7,7 @@ echo "v0.6.5 06-08-2020"
 echo "Running install script as $(whoami)"
 echo "Using background restart at the end."
 echo "PATH=$PATH"
- 
+
 
 # Some systemd commands
 # 1. systemd version
