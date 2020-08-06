@@ -1,9 +1,17 @@
+#!/bin/bash
+
 # Reaspberry config
 echo "Install script for the Oppleo service"
 echo "v0.6.1 06-08-2020"
 
 echo "Running install script as $(whoami)"
 echo "PATH=$PATH"
+
+# If the first parameter is not zero, should be the sleep param for delay
+if [ -n "$1" ]; then
+  echo " Waiting $1 seconds..."
+  sleep $1
+fi
 
 # Some systemd commands
 # 1. systemd version
