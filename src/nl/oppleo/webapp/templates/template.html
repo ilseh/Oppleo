@@ -141,6 +141,11 @@
                 .done(function(result) {
                     // log data to the console so we can see
                     console.log(result)
+                    if (result.softwareUpdateInProgress) {
+                        // Orange
+                        $('#topnav .topbar-main').css('background-color', '#ffaa00')
+                        $('span.logo-large').html('<i class="fas fa-charging-station"></i> Updating...')
+                    } 
                     if (result.restartRequired) {
                         // Red
                         $('#topnav .topbar-main').css('background-color', '#ef5350')

@@ -118,6 +118,8 @@ class OppleoConfig(object, metaclass=Singleton):
 
     wsEmitQueue = None
 
+    softwareUpdateInProgress = False
+
     """
         Global location to store kWh meter serial number
     """

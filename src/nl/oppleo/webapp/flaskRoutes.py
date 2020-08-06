@@ -430,6 +430,7 @@ def software_update():
             flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             os.popen("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             # update script kills Oppleo, and also os.system or os.popen processes. Spawn new process that will survive the Oppleo kill
+            oppleoConfig.softwareUpdateInProgress = True
         except Exception as e:
             flaskRoutesLogger.error("Exception running software update! {}".format(e))
         return render_template("softwareupdate.html", 
@@ -1420,6 +1421,7 @@ def systemStatus():
     return jsonify({
         'status': 200, 
         'restartRequired': (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
+        'softwareUpdateInProgress': oppleoConfig.softwareUpdateInProgress,
         'startTime': oppleoConfig.upSinceDatetimeStr
         })
 
