@@ -91,7 +91,7 @@
               <div class="text-center">
                 &nbsp;
               </div>
-              <div class="text-center text-danger" >
+              <div class="{% if requestdescriptionclass is none %}text-center text-danger{% else %}{{ requestdescriptionclass }}{%endif %}" >
                 <span>{{ requestdescription|safe }}</span>
               </div>
               <div class="text-center">

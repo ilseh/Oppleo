@@ -418,6 +418,7 @@ def software_update():
             form=AuthorizeForm(),
             requesttitle="Software Update",
             requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie kan 30 seconden tot 1 minuut duren.",
+            requestdescriptionclass="text-center text-warning",
             buttontitle="Update!",
             oppleoconfig=oppleoConfig
             )
