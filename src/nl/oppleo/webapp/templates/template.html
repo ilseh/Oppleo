@@ -129,6 +129,7 @@
                             message: message
                         })
             }
+            softwareUpdateInProgress = false
             function getSystemStatus( ) {
                 console.log(timestamp() + ' getSystemStatus()')
                 $.ajax({
@@ -145,11 +146,44 @@
                         // Red
                         $('#topnav .topbar-main').css('background-color', '#ef5350')
                         $('span.logo-large').html('<i class="fas fa-charging-station"></i> Herstart vereist')
-                    } else if (result.softwareUpdateInProgress) {
+                    }
+                    if (result.softwareUpdateInProgress && !result.restartRequired) {
                         // Orange
                         $('#topnav .topbar-main').css('background-color', '#ffaa00')
                         $('span.logo-large').html('<i class="fas fa-charging-station"></i> Updating...')
                     } 
+                    if (result.softwareUpdateInProgress && !softwareUpdateInProgress) {
+                        // Changed to update in progress
+                        // - hide update menu items
+                        $('a#updateSoftwareMenuItem').parent().hide()
+                        $('a#checkSoftwareStatusMenuItem').parent().hide()
+                        // - on settings hide check update button, show updating...
+                        if ( $("tr#noSoftwateUpdateAvailableRow").length == 0 ) {
+                            $('<tr id="noSoftwateUpdateAvailableRow">' +
+                                '<td class="text-dark"></td>' +
+                                '<td class="text-warning">Updating...</td>' +
+                            '</tr>')
+                            .insertAfter("tr#softwateUpdateCurrentVersionRow")
+                        }
+                        $('tr#softwateUpdateCheckRow').hide()
+                    } 
+                    if (!result.softwareUpdateInProgress && softwareUpdateInProgress) {
+                        // Update finished
+                        // - show check update, hide update now in menu
+                        $('a#updateSoftwareMenuItem').parent().hide()
+                        $('a#checkSoftwareStatusMenuItem').parent().show()
+                        // - on settings, show check update button
+                        if ( $("tr#noSoftwateUpdateAvailableRow").length != 0 ) {
+                            $("tr#noSoftwateUpdateAvailableRow").remove()
+                        }
+                        $('tr#softwateUpdateCheckRow').show()
+                        $('button#softwateUpdateCheck').html(
+                                '<i class="far fa-question-circle"></i> Controleer op updates' 
+                            )
+                        $('button#softwateUpdateCheck').toggleClass('btn-outline-success', true)
+                        $('button#softwateUpdateCheck').toggleClass('btn-outline-secondary', false)
+                    }
+                    softwareUpdateInProgress = result.softwareUpdateInProgress
                     // On reload no need to make it blue, thats default
                 })
                 .fail(function(result) {
@@ -184,6 +218,38 @@
                             $('#topnav .topbar-main').css('background-color', '#3bafda')
                             $('span.logo-large').html('<i class="fas fa-charging-station"></i> {{ oppleoconfig.chargerName }}')
                         }
+                        if (msg.data.softwareUpdateInProgress && !softwareUpdateInProgress) {
+                        // Changed to update in progress
+                            // - hide update menu items
+                            $('a#updateSoftwareMenuItem').parent().hide()
+                            $('a#checkSoftwareStatusMenuItem').parent().hide()
+                            // - on settings hide check update button, show updating...
+                            if ( $("tr#noSoftwateUpdateAvailableRow").length == 0 ) {
+                                $('<tr id="noSoftwateUpdateAvailableRow">' +
+                                    '<td class="text-dark"></td>' +
+                                    '<td class="text-warning">Updating...</td>' +
+                                '</tr>')
+                                .insertAfter("tr#softwateUpdateCurrentVersionRow")
+                            }
+                            $('tr#softwateUpdateCheckRow').hide()
+                        } 
+                        if (!msg.data.softwareUpdateInProgress && softwareUpdateInProgress) {
+                            // Update finished
+                            // - show check update, hide update now in menu
+                            $('a#updateSoftwareMenuItem').parent().hide()
+                            $('a#checkSoftwareStatusMenuItem').parent().show()
+                            // - on settings, show check update button
+                            if ( $("tr#noSoftwateUpdateAvailableRow").length != 0 ) {
+                                $("tr#noSoftwateUpdateAvailableRow").remove()
+                            }
+                            $('tr#softwateUpdateCheckRow').show()
+                            $('button#softwateUpdateCheck').html(
+                                    '<i class="far fa-question-circle"></i> Controleer op updates' 
+                                )
+                            $('button#softwateUpdateCheck').toggleClass('btn-outline-success', true)
+                            $('button#softwateUpdateCheck').toggleClass('btn-outline-secondary', false)
+                        }
+                        softwareUpdateInProgress = msg.data.softwareUpdateInProgress
                     }
                 })
             }
@@ -336,7 +402,7 @@
                             $('button#softwateUpdateCheck').html(
                                 '<i class="fas fa-redo-alt"></i> Check nogmaals '
                             )
-                            /// XXXX
+
                             $('button#softwateUpdateCheck').toggleClass('btn-outline-success', false)
                             $('button#softwateUpdateCheck').toggleClass('btn-outline-secondary', true)
 

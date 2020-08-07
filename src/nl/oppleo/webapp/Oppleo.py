@@ -193,11 +193,15 @@ try:
                         )
                     )
 
-
+    # 404 Not Found - The server can not find requested resource.
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template('errorpages/404.html'), 404
 
+    # 409 Conflict - This response is sent when a request conflicts with the current state of the server.
+    @app.errorhandler(409)
+    def page_not_found(e):
+        return render_template('errorpages/409.html'), 409
 
     @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
     @event.listens_for(EnergyDeviceMeasureModel, 'after_insert')

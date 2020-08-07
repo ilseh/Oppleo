@@ -410,6 +410,9 @@ def software_update():
     global flaskRoutesLogger, oppleoConfig
     # For GET requests, display the authorize form. 
     flaskRoutesLogger.debug('/software-update {}'.format(request.method))
+    if (oppleoConfig.softwareUpdateInProgress):
+        # 409 Conflict - Request conflicts with the current state of the server
+        abort(409)
     if (request.method == 'GET'):
         return render_template("authorize.html", 
             form=AuthorizeForm(),
