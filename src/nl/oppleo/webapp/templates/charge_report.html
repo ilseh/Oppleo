@@ -88,6 +88,8 @@
     }
     let rfidTokens = {}
     let dt = undefined
+    let unfilteredData = null
+    let filters = []
     function getRfidTokens() {
       console.log(timestamp() + ' getRfidTokens()')            
       $.ajax({
@@ -107,6 +109,12 @@
         // Force redraw
         dt.rows().invalidate().draw()
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+        // Redraw filter select
+        $("select#filterReport > option").each(function() {
+          if (this.value in rfidTokens && isData(rfidTokens[this.value].name)) {
+            this.text = rfidTokens[this.value].name
+          }
+        })
       })
       .fail(function() {
         notify('error','top-left', 'Probleem', 'RFID Token data niet beschikbaar.');
@@ -121,10 +129,36 @@
       return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
     }
 
-    function getOptionList( heading_text, heading_value ) {
+    function filterTable() {
+      // Start with whole table
+      dt.clear()
+      $.each(unfilteredData, function(index, row) {
+        dt.row.add(row)
+      })
+      dt.draw()
+      // Apply all filters on token and on energy_device_id
+      var filteredData = dt.rows().indexes().filter( function ( value, index ) {
+        return (filters.indexOf(dt.row(value).data()[2]) > -1) ||   // token
+               (filters.indexOf(dt.row(value).data()[1]) > -1)      // energy_device_id
+      })
+      dt.rows( filteredData )
+        .remove()
+        .draw()
+    }
+
+    function getOptionList( heading_text, heading_value, data ) {
+      let uniqueList = []
+      $.each(data, function( index, value ) {
+        uniqueList[value.energy_device_id] = '<option value="' + value.energy_device_id + '" style="font-style: italic;"><span class="filterText">' + value.energy_device_id + '</span></option>'
+        uniqueList[value.rfid] = '<option value="' + value.rfid + '" style="font-style: italic;">' + 
+                                 (value.rfid in rfidTokens && isData(rfidTokens[value.rfid].name) ? 
+                                  '<span class="filterText d-none">' + value.rfid + '</span><span>' + rfidTokens[value.rfid].name + '</span>' :
+                                  '<span class="filterText">' + value.rfid + '</span>'
+                                 ) +
+                                 '</option>'
+      })
       return '<option value="' + heading_value + '" style="font-style: italic;">' + heading_text + '</option>' +
-             '<option value="Athlon Laad & Tankpas" style="font-style: italic;">Athlon Laad & Tankpas</option>' + 
-             '<option value="laadpaal_noord" style="font-style: italic;">laadpaal_noord</option>'
+             Object.values(uniqueList).join('')
     }
 
     function getChargeReport( year, month ) {
@@ -283,7 +317,7 @@
                 .css( 'font-size', 'inherit' )
             }
           },{
-            text: '<select class="form-control" id="filterReport" name="filterReport">' + getOptionList('Uitsluiten:','-') + '</select>',
+            text: '<select class="form-control" id="filterReport" name="filterReport">' + getOptionList('Uitsluiten:', '-', data) + '</select>',
             className: 'mt-0 mb-0 ml-3 pt-0 pb-0 pl-0 pr-0 btn btn-secondary-outline'
           }],
           "footerCallback": function ( row, data, start, end, display ) {
@@ -350,7 +384,7 @@
                     `<span data-toggle='tooltip'
                             data-placement='bottom'
                             data-html='true'
-                            stype='cursor: pointer;'
+                            style='cursor: pointer;'
                             title='<em>` + data + `</em>'
                             >
                             <a href="/rfid_tokens/` + data + `" target="_self">
@@ -488,26 +522,49 @@
           "searching": false
         })
 
-        // Enable quickstart button when token selected, disable otherwise
+        // Filter table when filter selected
         $('select[id="filterReport"]').on('change', function() {
           if (this.value != "-") {
-            ///
+            // RFID?
+            rfid = null
+            tokenRfid = this.value
+            tokenName = (tokenRfid in rfidTokens && isData(rfidTokens[tokenRfid].name) ? rfidTokens[tokenRfid].name : null)
+            // Button
             dt.button().add( 4, {
-              text: $(this).find("option:selected").text() + ' <i class="fas fa-times"></i>',
+              text: (tokenName != null ? "<span data-toggle='tooltip' data-placement='bottom' data-html='true' style='cursor: pointer;' title='<em>" + tokenRfid + "</em>'><span class='filterText d-none'>" + tokenRfid + "</span>" : '') +
+                    '<span' + (tokenName == null ? ' class="filterText"' : '') + '>' + (tokenName != null ? tokenName : tokenRfid) + '</span> <i class="fas fa-times"></i>' +
+                    (tokenName != null ? '</span>' : ''),
               className: 'ml-3 pl-3 pr-3 btn btn-low-key-warning btn-sm',
               action: function ( e, dt, node, config ) {
-                  // TODO: remove filter
+                  // Filter
+                  tokenRfid = node.find('.filterText').text()
+                  // Remove filter from list
+                  filters = filters.filter(function(value, index, arr) { 
+                    return value !== tokenRfid 
+                  })
+                  // Filter table
+                  filterTable()
                   // Add option back to filter
-                  optionText = node.find('span:first-child').text()
-                  $('select[id="filterReport"]').append('<option value="' + optionText + '" style="font-style: italic;">' + optionText + '</option>')
+                  $('select[id="filterReport"]').append('<option value="' + tokenRfid + '" style="font-style: italic;">' + 
+                                                        (tokenRfid in rfidTokens && isData(rfidTokens[tokenRfid].name) ? rfidTokens[tokenRfid].name : tokenRfid) + 
+                                                        '</option>')
                   // Remove button
                   this.remove()
+                  // Remove rtooltips
+                  $(".tooltip").tooltip("hide");
               }
             })
+            // Enable tooltip
+            $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
             // Remove option from selectbox
             $(this).find("option[value='" + this.value + "']").remove()
-            // Reset selectbox
+            // Reset selectbox to first
             $(this).find("option[value='-']").attr('selected','selected')
+
+            // Filter list
+            filters.push(tokenRfid)
+            // Filter table
+            filterTable()
           }
         })
 
@@ -548,6 +605,9 @@
             window.location = location + $(this).attr('id').split("_").pop();
           })
         })
+
+        unfilteredData = dt.rows().data()
+
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
