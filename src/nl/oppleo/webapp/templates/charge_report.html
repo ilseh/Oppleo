@@ -121,6 +121,12 @@
       return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
     }
 
+    function getOptionList( heading_text, heading_value ) {
+      return '<option value="' + heading_value + '" style="font-style: italic;">' + heading_text + '</option>' +
+             '<option value="Athlon Laad & Tankpas" style="font-style: italic;">Athlon Laad & Tankpas</option>' + 
+             '<option value="laadpaal_noord" style="font-style: italic;">laadpaal_noord</option>'
+    }
+
     function getChargeReport( year, month ) {
       console.log(timestamp() + ' getChargeReport( '+year+', '+month+')')
             
@@ -276,6 +282,9 @@
                 .addClass( 'compact' )
                 .css( 'font-size', 'inherit' )
             }
+          },{
+            text: '<select class="form-control" id="filterReport" name="filterReport">' + getOptionList('Uitsluiten:','-') + '</select>',
+            className: 'mt-0 mb-0 ml-3 pt-0 pb-0 pl-0 pr-0 btn btn-secondary-outline'
           }],
           "footerCallback": function ( row, data, start, end, display ) {
             var api = this.api(), data;
@@ -477,7 +486,31 @@
             }
           }],
           "searching": false
-        });
+        })
+
+        // Enable quickstart button when token selected, disable otherwise
+        $('select[id="filterReport"]').on('change', function() {
+          if (this.value != "-") {
+            ///
+            dt.button().add( 4, {
+              text: $(this).find("option:selected").text() + ' <i class="fas fa-times"></i>',
+              className: 'ml-3 pl-3 pr-3 btn btn-low-key-warning btn-sm',
+              action: function ( e, dt, node, config ) {
+                  // TODO: remove filter
+                  // Add option back to filter
+                  optionText = node.find('span:first-child').text()
+                  $('select[id="filterReport"]').append('<option value="' + optionText + '" style="font-style: italic;">' + optionText + '</option>')
+                  // Remove button
+                  this.remove()
+              }
+            })
+            // Remove option from selectbox
+            $(this).find("option[value='" + this.value + "']").remove()
+            // Reset selectbox
+            $(this).find("option[value='-']").attr('selected','selected')
+          }
+        })
+
         dt.draw('full-reset')
         data.forEach(element => {
 
@@ -554,7 +587,9 @@
 
     <div class="row">
       <div class="col-12">
+
         <div class="card-box table-responsive">
+
           <table id="charge_sessions" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
               <tr>
