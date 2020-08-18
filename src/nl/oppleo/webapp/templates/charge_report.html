@@ -144,6 +144,8 @@
       dt.rows( filteredData )
         .remove()
         .draw()
+      // Enable tooltip
+      $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
     }
 
     function getOptionList( heading_text, heading_value, data ) {
@@ -347,12 +349,12 @@
                 }, 0 )
             // Update footer
             $( api.column( 1 ).footer() ).html( '' ) // Make sure default text is empty
-            $( api.column( 8 ).footer() ).html( 'Totaal:' )
+            $( api.column( 8 ).footer() ).html( '<h5 class="text-right font-weight-bold">Totaal:</h5>' )
             $( api.column( 9 ).footer() ).html(
-              '<nobr><span style="text-align: right;">' + (Math.round(totalEnergy * 10) /10) + 'kWh</span></nobr>'
+              '<nobr><h5 class="d-flex justify-content-center font-weight-bold">' + (Math.round(totalEnergy * 10) /10) + 'kWh</h5></nobr>'
             )
             $( api.column( 10 ).footer() ).html(
-              '<nobr><span style="text-align: right;">&euro;&nbsp;' + (Math.round(totalPrice * 100) /100).toFixed(2) + '</span></nobr>'
+              '<nobr><h5 class="d-flex justify-content-center font-weight-bold">&euro;&nbsp;' + (Math.round(totalPrice * 100) /100).toFixed(2) + '</h5></nobr>'
             )
           },
           "createdRow": function(row, data, dataIndex) {
@@ -554,8 +556,6 @@
                   $(".tooltip").tooltip("hide");
               }
             })
-            // Enable tooltip
-            $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
             // Remove option from selectbox
             $(this).find("option[value='" + this.value + "']").remove()
             // Reset selectbox to first
@@ -653,17 +653,17 @@
           <table id="charge_sessions" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
               <tr>
-                <th style="text-align: center;">Transactie</th>
-                <th style="text-align: center;">Laadpunt</th>
-                <th style="text-align: center;">Laadpas</th> <!-- naam -->
-                <th style="text-align: center;">Merk</th>
-                <th style="text-align: center;">Model</th>
-                <th style="text-align: center;">Kenteken</th>
-                <th style="text-align: center;">Datum</th>  <!-- eindtijd -->
-                <th style="text-align: center;">km stand</th>
-                <th style="text-align: center;">Tarief</th>
-                <th style="text-align: center;">Verbruik</th>
-                <th style="text-align: center;">Prijs</th>
+                <th class="pl-0 pr-0 text-center">Transactie</th>
+                <th class="pl-0 pr-0 text-center">Laadpunt</th>
+                <th class="text-center">Laadpas</th> <!-- naam -->
+                <th class="pl-0 pr-0 text-center">Merk</th>
+                <th class="pl-0 pr-0 text-center">Model</th>
+                <th class="pl-0 pr-0 text-center">Kenteken</th>
+                <th class="pl-0 pr-0 text-center">Datum</th>  <!-- eindtijd -->
+                <th class="pl-0 pr-0 text-center">km stand</th>
+                <th class="pl-0 pr-0 text-center">Tarief</th>
+                <th class="pl-0 pr-0 text-center">Verbruik</th>
+                <th class="pl-0 pr-0 text-center">Prijs</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>
@@ -671,10 +671,10 @@
 
             <tfoot>
               <tr>
-                <th colspan="8"></th>
-                <th style="text-align:right">Totaal:</th>
-                <th></th>
-                <th></th>
+                <td colspan="8"></td>
+                <td class="text-right">Totaal:</td>
+                <td class="pl-0 pr-0 ml-0 mr-0"></td>
+                <td class="pl-0 pr-0 ml-0 mr-0"></td>
               </tr>
             </tfoot>
 

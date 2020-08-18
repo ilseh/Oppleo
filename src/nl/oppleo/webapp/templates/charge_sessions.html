@@ -88,6 +88,8 @@
     }
     let rfidTokens = {}
     let dt = undefined
+    let unfilteredData = null
+    let filters = []
     function getRfidTokens() {
       console.log(timestamp() + ' getRfidTokens()')            
       $.ajax({
@@ -107,8 +109,15 @@
         // Force redraw
         dt.rows().invalidate().draw()
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+        // Redraw filter select
+        $("select#filterReport > option").each(function() {
+          if (this.value in rfidTokens && isData(rfidTokens[this.value].name)) {
+            this.text = rfidTokens[this.value].name
+          }
+        })
       })
       .fail(function() {
+        notify('error','top-left', 'Probleem', 'RFID Token data niet beschikbaar.');
       })
       .always(function() {
       })
@@ -119,6 +128,81 @@
     function addOnNewline(str, addition, newline) {
       return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
     }
+    function filterTable() {
+      // Start with whole table
+      dt.clear()
+      $.each(unfilteredData, function(index, row) {
+        dt.row.add(row)
+      })
+      dt.draw()
+      // Apply all filters on token and on energy_device_id
+      var filteredData = dt.rows().indexes().filter( function ( value, index ) {
+        return (filters.indexOf(dt.row(value).data()[1]) > -1) ||   // token
+               (filters.indexOf(dt.row(value).data()[8]) > -1)      // energy_device_id
+      })
+      dt.rows( filteredData )
+        .remove()
+        .draw()
+      // Enable tooltip
+      $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+    }
+
+    function getOptionList( heading_text, heading_value, data ) {
+      let uniqueList = []
+      $.each(data, function( index, value ) {
+        uniqueList[value.energy_device_id] = '<option value="' + value.energy_device_id + '" style="font-style: italic;"><span class="filterText">' + value.energy_device_id + '</span></option>'
+        uniqueList[value.rfid] = '<option value="' + value.rfid + '" style="font-style: italic;">' + 
+                                 (value.rfid in rfidTokens && isData(rfidTokens[value.rfid].name) ? 
+                                  '<span class="filterText d-none">' + value.rfid + '</span><span>' + rfidTokens[value.rfid].name + '</span>' :
+                                  '<span class="filterText">' + value.rfid + '</span>'
+                                 ) +
+                                 '</option>'
+      })
+      return '<option value="' + heading_value + '" style="font-style: italic;">' + heading_text + '</option>' +
+             Object.values(uniqueList).join('')
+    }
+    function parseDateStr( d ) {
+      // <nobr>DD\MM\YYYY, HH:mm:ss</nobr>  -> YYYY-MM-DDTHH:mm:ss.sss -> Date
+      d = d.replace('<nobr>', '').replace('</nobr>', '').trim()
+      d = d.substring(6, 10) + '-' + d.substring(3, 5) + '-' + d.substring(0, 2) + 'T' + d.substring(12, 20) + '.000'
+      return new Date(d)
+    }
+    function getInt( i ) {
+      return parseInt(i.replace(/<[^>]*>?/gm, '').replace(/kwh/ig, '').replace(',', '.').replace('€', '').replace('$', '').replace('&euro;', '').replace(/km/ig, '').trim())
+    }
+    $.fn.dataTableExt.oSort["otimestamp-desc"] = function (x, y) {
+      // YYYY-MM-DDTHH:mm:ss.sss
+      return (parseDateStr(x).getTime() > parseDateStr(y).getTime() ? -1 : 1)
+    }
+    $.fn.dataTableExt.oSort["otimestamp-asc"] = function (x, y) {
+      // YYYY-MM-DDTHH:mm:ss.sss
+      return (parseDateStr(x).getTime() < parseDateStr(y).getTime() ? -1 : 1)
+    }
+    $.fn.dataTableExt.oSort["oenergy-desc"] = function (x, y) {
+      // xxxkWh
+      return (getInt(x) > getInt(y) ? -1 : 1)
+    }
+    $.fn.dataTableExt.oSort["oenergy-asc"] = function (x, y) {
+      // xxxkWh
+      return (getInt(x) < getInt(y) ? -1 : 1)
+    }
+    $.fn.dataTableExt.oSort["oamount-desc"] = function (x, y) {
+      // € xx.xx
+      return (getInt(x) > getInt(y) ? -1 : 1)
+    }
+    $.fn.dataTableExt.oSort["oamount-asc"] = function (x, y) {
+      // € xx.xx
+      return (getInt(x) < getInt(y) ? -1 : 1)
+    }
+    $.fn.dataTableExt.oSort["omilage-desc"] = function (x, y) {
+      // xx.xxkm
+      return (getInt(x) > getInt(y) ? -1 : 1)
+    }
+    $.fn.dataTableExt.oSort["omilage-asc"] = function (x, y) {
+      // xx.xxkm
+      return (getInt(x) < getInt(y) ? -1 : 1)
+    }
+
     function getChargeSessions() {
       console.log(timestamp() + ' getChargeSessions()')
             
@@ -210,6 +294,9 @@
                 .addClass( 'compact' )
                 .css( 'font-size', 'inherit' )
             }
+          },{
+            text: '<select class="form-control" id="filterReport" name="filterReport">' + getOptionList('Uitsluiten:', '-', data) + '</select>',
+            className: 'mt-0 mb-0 ml-3 pt-0 pb-0 pl-0 pr-0 btn btn-secondary-outline'
           }],
           "createdRow": function(row, data, dataIndex) {
             $(row).toggleClass("text-info").fadeOut(800, function() {              
@@ -227,41 +314,40 @@
                 return data == undefined || data === "None" ? "" : data
               } else {
                 // Default - type = 'display' - on screen or other exports
-                txt = (data in rfidTokens && isData(rfidTokens[data].name) ? 
-                          rfidTokens[data].name : 
-                          ''
-                      )
-                txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_make) ? 
-                          addOnNewline(txt, rfidTokens[data].vehicle_make, '<br/>') : 
-                          txt
-                      )
-                txt = (data in rfidTokens && isData(rfidTokens[data].vehicle_model) ? 
-                          txt + ' ' + rfidTokens[data].vehicle_model : 
-                          txt
-                      )
-                txt = (data in rfidTokens && isData(rfidTokens[data].license_plate) ? 
-                          addOnNewline(txt, rfidTokens[data].license_plate, '<br/>') : 
-                          txt
-                      )
-                t = (data in rfidTokens ? '<span data-toggle="tooltip" \
-                                data-placement="bottom" \
-                                data-html="true" \
-                                stype="cursor: pointer;" \
-                                title="<em>' +  txt + '</em>" \
-                                >': 
+                tooltipText = data  // First line is the token id (rfid)
+                tooltipText = (data in rfidTokens && isData(rfidTokens[data].vehicle_make) ? 
+                              addOnNewline(tooltipText, rfidTokens[data].vehicle_make, '<br/>') : 
+                              tooltipText
+                            )
+                tooltipText = (data in rfidTokens && isData(rfidTokens[data].vehicle_model) ? 
+                              tooltipText + ' ' + rfidTokens[data].vehicle_model : 
+                              tooltipText
+                            )
+                tooltipText = (data in rfidTokens && isData(rfidTokens[data].license_plate) ? 
+                              addOnNewline(tooltipText, rfidTokens[data].license_plate, '<br/>') : 
+                              tooltipText
+                            )
+                returnStr = (data in rfidTokens && isData(rfidTokens[data].name) ? 
+                              '<span data-toggle="tooltip" \
+                                     data-placement="bottom" \
+                                     data-html="true" \
+                                     stype="cursor: pointer;" \
+                                     title="<em>' +  tooltipText + '</em>" \
+                                     >' : 
                               '<span>'
                     )
                 return (data == undefined || data === "None" ? 
-                          t + '<i class="fas fa-ban"></i></span>' : 
-                          t + '<a href="/rfid_tokens/' + data + '" target="_self">' + data + '</a></span>'
-                      )
+                        returnStr + '<i class="fas fa-ban"></i></span>' : 
+                        returnStr + '<a href="/rfid_tokens/' + data + '" target="_self">' + (data in rfidTokens && isData(rfidTokens[data].name) ? rfidTokens[data].name : data) + '</a></span>'
+                       )
               }
             }
           }, {
             // start_time [3] and end_time [7]
             "targets": [2, 6],
-            "sorting": true,
+            //"sorting": true,
             "orderable": true,
+            "type": "otimestamp",  // For sorting functione
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -297,8 +383,9 @@
           }, {
             // odometer [6]
             "targets": 5,
-            "sorting": false,
-            "orderable": false,
+            //  "sorting": false,
+            "orderable": true,
+            "type": "omilage",
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -315,8 +402,9 @@
           }, {
             // start energy [5], end energy [8], total energy used [11]
             "targets": [4, 7, 10],
-            "sorting": false,
-            "orderable": false,
+            //"sorting": false,
+            "orderable": true,
+            "type": "oenergy",
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -336,6 +424,7 @@
           }, {
             // Tariff [10] and price [12]
             "targets": [9, 11],
+            "type": "oamount",
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -355,6 +444,8 @@
           }, {
             // Buttons [13]
             "targets": 12,
+            "sorting": false,
+            "orderable": false,
             "render": function (data, type, row) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
@@ -400,7 +491,52 @@
             }
           }],
           "searching": false
-        });
+        })
+
+        // Filter table when filter selected
+        $('select[id="filterReport"]').on('change', function() {
+          if (this.value != "-") {
+            // RFID?
+            rfid = null
+            tokenRfid = this.value
+            tokenName = (tokenRfid in rfidTokens && isData(rfidTokens[tokenRfid].name) ? rfidTokens[tokenRfid].name : null)
+            // Button
+            dt.button().add( 4, {
+              text: (tokenName != null ? "<span data-toggle='tooltip' data-placement='bottom' data-html='true' style='cursor: pointer;' title='<em>" + tokenRfid + "</em>'><span class='filterText d-none'>" + tokenRfid + "</span>" : '') +
+                    '<span' + (tokenName == null ? ' class="filterText"' : '') + '>' + (tokenName != null ? tokenName : tokenRfid) + '</span> <i class="fas fa-times"></i>' +
+                    (tokenName != null ? '</span>' : ''),
+              className: 'ml-3 pl-3 pr-3 btn btn-low-key-warning btn-sm',
+              action: function ( e, dt, node, config ) {
+                  // Filter
+                  tokenRfid = node.find('.filterText').text()
+                  // Remove filter from list
+                  filters = filters.filter(function(value, index, arr) { 
+                    return value !== tokenRfid 
+                  })
+                  // Filter table
+                  filterTable()
+                  // Add option back to filter
+                  $('select[id="filterReport"]').append('<option value="' + tokenRfid + '" style="font-style: italic;">' + 
+                                                        (tokenRfid in rfidTokens && isData(rfidTokens[tokenRfid].name) ? rfidTokens[tokenRfid].name : tokenRfid) + 
+                                                        '</option>')
+                  // Remove button
+                  this.remove()
+                  // Remove rtooltips
+                  $(".tooltip").tooltip("hide");
+              }
+            })
+            // Remove option from selectbox
+            $(this).find("option[value='" + this.value + "']").remove()
+            // Reset selectbox to first
+            $(this).find("option[value='-']").attr('selected','selected')
+
+            // Filter list
+            filters.push(tokenRfid)
+            // Filter table
+            filterTable()
+          }
+        })
+
         dt.draw('full-reset')
         data.forEach(element => {
 
@@ -408,7 +544,7 @@
             element.id,
             element.rfid,
             ( (typeof element.start_time === 'string' || element.start_time instanceof String) ?
-              element.start_time :
+              '<nobr>' + element.start_time + '</nobr>' :
               '-'
             ),
             ( ((typeof element.trigger === 'string' || element.trigger instanceof String) && element.trigger != "None") ?
@@ -424,7 +560,7 @@
               '-'
             ),
             ( (typeof element.end_time === 'string' || element.end_time instanceof String) ?
-              element.end_time :
+              '<nobr>' + element.end_time + '</nobr>' :
               '-'
             ),
             ( (typeof element.end_value === 'string' || element.end_value instanceof String) ?
@@ -451,6 +587,9 @@
             window.location = location + $(this).attr('id').split("_").pop();
           })
         })
+
+        unfilteredData = dt.rows().data()
+
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
@@ -493,20 +632,20 @@
         <div class="card-box table-responsive">
           <table id="charge_sessions" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
-              <tr>
-                <th style="text-align: center;">id</th>
-                <th style="text-align: center;">Laadpas</th>
-                <th style="text-align: center;">Starttijd</th>
-                <th style="text-align: center;">Trigger</th>
-                <th style="text-align: center;">Startmeting</th>
-                <th style="text-align: center;">km stand</th>
-                <th style="text-align: center;">Eindtijd</th>
-                <th style="text-align: center;">Eindmeting</th>
-                <th style="text-align: center;">Laadpunt</th>
-                <th style="text-align: center;">Tarief</th>
-                <th style="text-align: center;">Verbruik</th>
-                <th style="text-align: center;">Prijs</th>
-                <th style="text-align: center;">&nbsp;</th>
+              <tr style="padding-top: 50%;">
+                <th class="pl-0 pr-0 text-center">Transactie</th>
+                <th class="text-center">Laadpas</th>
+                <th class="text-center text-nowrap">Starttijd</th>
+                <th class="pl-0 pr-0 text-center">Trigger</th>
+                <th class="pl-0 pr-0 text-center">Startmeting</th>
+                <th class="pl-0 pr-0 text-center">km stand</th>
+                <th class="text-center text-nowrap">Eindtijd</th>
+                <th class="pl-0 pr-0 text-center">Eindmeting</th>
+                <th class="pl-0 pr-0 text-center">Laadpunt</th>
+                <th class="pl-0 pr-0 text-center">Tarief</th>
+                <th class="pl-0 pr-0 text-center">Verbruik</th>
+                <th class="pl-0 pr-0 text-center">Prijs</th>
+                <th class="pl-2 pr-2 text-center">&nbsp;</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>
