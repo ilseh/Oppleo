@@ -23,14 +23,14 @@ Run the `backup.sh` script to see if it is working before addin to the crontab.
 ## 2. Add `backup.sh` to the crontab
 
 Open the crontab using `crontab -e`. On the first time you need to select an editor, Nano is easy with all hotkey hints 
-on the bottom. To run the script every day at midnight add `0 0 * * *  /home/pi/oppleo/db/backup/backup.sh`
+on the bottom. To run the script every day at midnight add `0 0 * * *  /home/pi/Oppleo/db/backup/backup.sh`
 
 I have off-peak charging which starts at 23:00h, should be done in the morning, so I backup[ after that at 7am using
-`0 7 * * *  /home/pi/oppleo/db/backup/backup.sh`
+`0 7 * * *  /home/pi/Oppleo/db/backup/backup.sh`
 
 Save and exit with `ctrl-x` and selecting `Yes`.
 
-You should see a dump file appear every day in the backup.sh directory (probably /home/pi/oppleo/db/backup)
+You should see a dump file appear every day in the backup.sh directory (probably /home/pi/Oppleo/db/backup)
 
 
 ## 3. Backup raspberry files to another location
