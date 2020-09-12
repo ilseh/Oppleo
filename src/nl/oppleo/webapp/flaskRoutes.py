@@ -657,6 +657,11 @@ def usage(cnt="undefined"):
 @config_dashboard_access_restriction
 def usage_table(cnt="undefined"):
     global flaskRoutesLogger, oppleoConfig
+    try:
+        cnt = int(request.args['cnt']) if 'cnt' in request.args else cnt
+    except ValueError:
+        flaskRoutesLogger.debug('/usage_table could not convert cnt to integer number')
+
     flaskRoutesLogger.debug('/usage_table {} {}'.format(cnt, request.method))
     return render_template("usage_table.html", 
                 cnt=cnt,
