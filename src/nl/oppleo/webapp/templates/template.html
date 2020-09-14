@@ -742,30 +742,10 @@
                         <li class="has-submenu">
                             <a href="#"><i class="fas fa-table"></i> Verbruik</a>
                             <ul class="submenu">
-                                <li class="has-submenu">
-                                    <a href="#"><i class="fas fa-table"></i> Tabel</a>
-                                    <ul class="submenu">
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.usage_table' ) }}" class="stay">
-                                                <i class="fas fa-table"></i> Last 100 records
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.usage_table', cnt=200) }}" class="stay">
-                                                <i class="fas fa-table"></i> Last 200 records
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.usage_table', cnt=500) }}" class="stay">
-                                                <i class="fas fa-table"></i> Last 500 records
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.usage_table', cnt=1000) }}" class="stay">
-                                                <i class="fas fa-table"></i> Last 1000 records
-                                            </a>
-                                        </li>
-                                    </ul>
+                                <li>
+                                    <a href="{{ url_for('flaskRoutes.usage_table' ) }}" class="stay">
+                                        <i class="fas fa-table"></i> Tabel
+                                    </a>
                                 </li>
                                 {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
                                 <li class="has-submenu">

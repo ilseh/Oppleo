@@ -72,6 +72,16 @@
       margin-left: 10px;
       margin-right: 10px;
     }
+    /* no arrow on numeric input field - Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    /* no arrow on numeric input field - Firefox */
+    input[type=number] {
+      -moz-appearance: textfield;
+    }  
   </style>
 
   <script>
@@ -87,11 +97,12 @@
       )
     }
     var dt = undefined
+    var entryCountMemory = undefined
     function getUsageData( n = undefined ) {
       console.log(timestamp() + ' getUsageData()')
       $.ajax({
         type		  : 'GET',
-        url			  : (Number.isInteger(n) ? '/usage_data/' + n : '/usage_data/'),
+        url			  : '/usage_data/' + (isNaN(n) ? '' : n + '/' ),
         dataType	: 'json',
         headers   : { 'ignore-login-next': 'true' },
         encode		: true
@@ -100,6 +111,7 @@
         // log data to the console so we can see
         console.log(data)
         dt = $('table#usage').DataTable( {
+          retrieve: true,
           "pageLength": 25,
           "order": [[ 0, "desc" ]],
           dom: 'Blfrtip',
@@ -131,6 +143,21 @@
               extend: 'print',
               text: "<i class='fas fa-print'></i> Print",
               className: 'btn btn-low-key btn-sm'
+            },{
+              text: '<input class="form-control text-right form-control-sm" style="width: 60px;" id="entryCount" name="entryCount" type="text" value="-" />',
+              className: 'mt-0 mb-0 ml-3 pt-0 pb-0 pl-0 pr-0'
+            },{
+              text: '<i class="fas fa-redo-alt"></i>',
+              className: 'btn-low-key btn-sm mt-0 mb-0 ml-0 pt-0 pb-0 pl-1 pr-1',
+              action: function ( e, dt, node, config ) {
+                  // Show spinner
+                  $('.spinner').show()
+                  // Get rid of the existing table
+                  dt.clear()
+                  getUsageData($(":input[id='entryCount']").val())
+                  // Remove tooltips
+                  $(".tooltip").tooltip("hide")
+              }
             }
           ],
           "createdRow": function(row, data, dataIndex) {
@@ -319,6 +346,31 @@
             element.hz
           ]).draw( false )
         })
+
+        $(":input[id='entryCount']").val(data.length)
+        entryCountMemory = data.length
+
+        // Add tooltip
+        $(":input[id='entryCount']").parent().parent().next().attr('data-toggle', 'tooltip')
+        $(":input[id='entryCount']").parent().parent().next().attr('data-placement', 'bottom')
+        $(":input[id='entryCount']").parent().parent().next().attr('data-html', 'true')
+        $(":input[id='entryCount']").parent().parent().next().attr('title', '<em>Klik om het ingegeven aantal records te laden</em>')
+        $(":input[id='entryCount']").parent().parent().attr('data-toggle', 'tooltip')
+        $(":input[id='entryCount']").parent().parent().attr('data-placement', 'bottom')
+        $(":input[id='entryCount']").parent().parent().attr('data-html', 'true')
+        $(":input[id='entryCount']").parent().parent().attr('title', '<em>0-3999</em>')
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+
+        $(":input[id='entryCount']").bind("keyup change", function(e) {
+          if (isNaN($(this).val()) || parseInt($(this).val()) > 3999 || parseInt($(this).val()) < 0) {
+            $(":input[id='entryCount']").val(entryCountMemory)
+          } else {
+            entryCountMemory = $(":input[id='entryCount']").val()
+          }
+          // Ensure it is a number and remove leading zeros
+          ($(this).val() === "") ? $(this).val(0) : $(this).val(parseInt($(this).val(), 10))
+        })
+
       })
       .fail(function() {
 

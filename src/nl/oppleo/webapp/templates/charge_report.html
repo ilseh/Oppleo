@@ -319,7 +319,7 @@
                 .css( 'font-size', 'inherit' )
             }
           },{
-            text: '<select class="form-control" id="filterReport" name="filterReport">' + getOptionList('Uitsluiten:', '-', data) + '</select>',
+            text: '<select class="form-control form-control-sm" id="filterReport" name="filterReport">' + getOptionList('Uitsluiten:', '-', data) + '</select>',
             className: 'mt-0 mb-0 ml-3 pt-0 pb-0 pl-0 pr-0 btn btn-secondary-outline'
           }],
           "footerCallback": function ( row, data, start, end, display ) {
@@ -552,8 +552,8 @@
                                                         '</option>')
                   // Remove button
                   this.remove()
-                  // Remove rtooltips
-                  $(".tooltip").tooltip("hide");
+                  // Remove tooltips
+                  $(".tooltip").tooltip("hide")
               }
             })
             // Remove option from selectbox
