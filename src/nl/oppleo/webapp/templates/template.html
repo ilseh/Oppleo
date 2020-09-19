@@ -105,8 +105,9 @@
                 var date = p1[0].split('/')
                 var time = p1[1].trim().split(':')
                 var dObj = new Date()
-                dObj.setDate(date[0]) 
+                // Set month prior to date to prevent 31 on a 30 day current month rolling over
                 dObj.setMonth(parseInt(date[1]) -1) 
+                dObj.setDate(date[0]) 
                 dObj.setFullYear(date[2]) 
                 dObj.setHours(time[0]) 
                 dObj.setMinutes(time[1]) 
