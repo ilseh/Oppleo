@@ -1363,7 +1363,13 @@ def update_settings(param=None, value=None):
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
     # slave_address
-    if (param == 'slave_address') and isinstance(value, int) and (0 < int(value) < 256):
+    validation="^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$"
+    if (param == 'slave_address') and isinstance(value, str) and re.match(validation, value):
+        try:
+            value = int(value)
+        except ValueError as e:
+            # Conditions not met
+            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid interget value' })
         energyDeviceModel = EnergyDeviceModel.get()
         energyDeviceModel.slave_address = value
         energyDeviceModel.save()
@@ -1414,6 +1420,17 @@ def update_settings(param=None, value=None):
     validation="^[A-Za-z0-9.-]{0,20}$"
     if (param == 'receiptPrefix') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.receiptPrefix = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # modbusInterval
+    validation="^([1-9]|[1-5][0-9]|60)$"
+    if (param == 'modbusInterval') and isinstance(value, str) and re.match(validation, value):
+        try:
+            value = int(value)
+        except ValueError as e:
+            # Conditions not met
+            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid interget value' })
+        oppleoConfig.modbusInterval = value
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
     # No parameter found or conditions not met

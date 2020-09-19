@@ -997,6 +997,18 @@
                                 />
                               </td>
                             </tr>
+                            <tr>
+                              <td class="text-dark">kWh meter uitleesinterval:</td>
+                              <td class="text-primary">                                
+                                <oppleo-edit-str 
+                                id="modbusInterval"
+                                value="{{ oppleoconfig.modbusInterval }}"
+                                suffix=" seconden"
+                                validation="^([1-9]|[1-5][0-9]|60)$"
+                                info="Interval in seconden tussen achtereenvolgende kWh meter uitlezingen (1-60 seconden). Een kortere periode geeft veranderingen sneller weer op de web interface en maakt een meer ganulaire log bij wijzigingen, maar zorgt ook voor meer log entries."
+                                />
+                                </td>
+                            </tr>
 
                             {% endif %}
                           </tbody>
