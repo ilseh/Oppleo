@@ -249,6 +249,12 @@
 
     function setActiveChargeSession( session ) {
       activeChargeSession = session
+
+      if ({% if oppleoconfig.webChargeOnDashboard %}false{% else %}true{% endif %}) {
+        // No WebCarge on Dashboard
+        return
+      }
+
       if ( session != undefined && 
            session.hasOwnProperty("chargeSession") && 
            session.chargeSession &&
@@ -284,6 +290,7 @@
       .done(function(result) {
         // log data to the console so we can see
         console.log(result)
+
         setActiveChargeSession( result )
         switch(parseInt(result.status)) {
           case 200:                   // Active charge session
@@ -447,6 +454,14 @@
       chargeSessionSocket.on('charge_session_started', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         updateChargingIndicator( true, false, false, true )
+        // Enable the quick charge session button (rfid name from options)
+        setActiveChargeSession( {
+          chargeSession: true, 
+          rfid: {
+            name: $("select#rfidToken option[value="+msg.data.rfid+"]").text(),
+            rfid: msg.data.rfid
+            }
+          })
       })
       chargeSessionSocket.on('charge_session_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
@@ -459,6 +474,9 @@
       chargeSessionSocket.on('charge_session_ended', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         updateChargingIndicator( false, false, false, true )
+        setActiveChargeSession( {
+          chargeSession: false
+          })
       })
       chargeSessionSocket.on('off_peak_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
