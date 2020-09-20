@@ -78,21 +78,6 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
-    function parseDate(dateStr) {
-      var p1 = dateStr.split(',')
-      var date = p1[0].split('/')
-      var time = p1[1].trim().split(':')
-      var dObj = new Date()
-      // Set month prior to date to prevent 31 on a 30 day current month rolling over
-      dObj.setMonth(parseInt(date[1]) -1) 
-      dObj.setDate(date[0]) 
-      dObj.setFullYear(date[2]) 
-      dObj.setHours(time[0]) 
-      dObj.setMinutes(time[1]) 
-      dObj.setSeconds(time[2]) 
-      return dObj
-    }
 
     function getUsageData( from_timestamp, n = undefined ) {
       console.log(timestamp() + ' getUsageData()')
