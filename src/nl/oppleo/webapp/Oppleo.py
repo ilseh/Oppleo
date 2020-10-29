@@ -4,8 +4,6 @@ from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = None
 
-developmentHttpPort = 5000
-
 oppleoLogger = logging.getLogger('nl.oppleo.webapp.Oppleo')
 oppleoLogger.debug('Initializing Oppleo...')
 
@@ -266,11 +264,10 @@ try:
         # Start the Peak Hours Monitor
         phmThread.start()
 
-
         print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
             .format(
                 oppleoConfig.httpHost, 
-                oppleoConfig.httpPort if GenericUtil.isProd() else developmentHttpPort,
+                oppleoConfig.httpPort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT,
                 oppleoSystemConfig.DEBUG,
                 oppleoConfig.useReloader
                 )
@@ -278,7 +275,7 @@ try:
         oppleoLogger.debug('Starting web server on {}:{} (debug:{}, use_reloader={})...'
             .format(
                 oppleoConfig.httpHost, 
-                oppleoConfig.httpPort if GenericUtil.isProd() else developmentHttpPort,
+                oppleoConfig.httpPort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT,
                 oppleoSystemConfig.DEBUG,
                 oppleoConfig.useReloader
                 )
@@ -307,7 +304,7 @@ try:
             )
 
         appSocketIO.run(app, 
-            port=oppleoConfig.httpPort if GenericUtil.isProd() else developmentHttpPort, 
+            port=oppleoConfig.httpPort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT, 
             debug=oppleoSystemConfig.DEBUG, 
             use_reloader=oppleoConfig.useReloader, 
             host=oppleoConfig.httpHost
@@ -429,22 +426,23 @@ except DbException as dbe:
                         errormsg="Het MAGIC wachtwoord is onjuist"
                         )
 
-        # Hardcoded Oppleo Limp mode Prowl apiKey and no ChargerName
-        PushMessageProwl.sendMessage(
-            title="Limp mode", 
-            message="Database exception caused limp mode at {}. [signature: {}]"
-                .format(
-                    datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
-                    oppleoSystemConfig.SIGNATURE
-                ),
-            priority=PushMessageProwl.priorityHigh,
-            apiKey='325da9b81240111bec9770c9b8bb97dd60373077',   
-            chargerName='Unknown'
-            )
+        # Oppleo Limp mode Prowl apiKey and no ChargerName
+        if oppleoSystemConfig.onDbFailureProwlApiKey is not None:   
+            PushMessageProwl.sendMessage(
+                title="Limp mode", 
+                message="Database exception caused limp mode at {}. [signature: {}]"
+                    .format(
+                        datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                        oppleoSystemConfig.SIGNATURE
+                    ),
+                priority=PushMessageProwl.priorityHigh,
+                apiKey=oppleoSystemConfig.onDbFailureProwlApiKey,   
+                chargerName='Unknown'
+                )
 
         run_simple(
             '0.0.0.0', 
-            80, 
+            oppleoSystemConfig.onDbFailurePort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT,           
             limpApp,
             use_reloader=False, 
             use_debugger=True, 
