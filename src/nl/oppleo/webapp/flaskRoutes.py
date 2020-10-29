@@ -1377,20 +1377,12 @@ def update_settings(param=None, value=None):
 
     # prowlEnabled
     if (param == 'prowlEnabled'):
-        prowlWasEnabled = oppleoConfig.prowlEnabled
-        oppleoConfig.prowlEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        if prowlWasEnabled and not oppleoConfig.prowlEnabled:
-            # Switched off
-            oppleoSystemConfig.onDbFailureProwlApiKey = None
-        if not prowlWasEnabled and oppleoConfig.prowlEnabled:
-            # Switched on
-            oppleoSystemConfig.onDbFailureProwlApiKey = oppleoConfig.prowlApiKey
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.prowlEnabled })
+        oppleoSystemConfig.prowlEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoSystemConfig.prowlEnabled })
 
     # prowlApiKey
     if (param == 'prowlApiKey') and isinstance(value, str):
-        oppleoConfig.prowlApiKey = value
-        oppleoSystemConfig.onDbFailureProwlApiKey = oppleoConfig.prowlApiKey
+        oppleoSystemConfig.prowlApiKey = value if len(value) > 0 else None
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
     # webChargeOnDashboard
@@ -1444,9 +1436,8 @@ def update_settings(param=None, value=None):
     # httpPort
     validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
     if (param == 'httpPort') and isinstance(value, str) and re.match(validation, value):
-        oppleoConfig.httpPort = value
-        oppleoSystemConfig.onDbFailurePort = value
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.httpPort })
+        oppleoSystemConfig.httpPort = value
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoSystemConfig.httpPort })
 
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })

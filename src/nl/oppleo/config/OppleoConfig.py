@@ -37,8 +37,6 @@ class OppleoConfig(object, metaclass=Singleton):
     # DEBUG = True
     # TESTING = False
 
-    # httpHost = '0.0.0.0'  
-    # httpPort = 80
     # useReloader = False
     # Factor to calculate km/h equivalent of Wh per km
     # Tesla is using 162, which matches the in-car screen
@@ -197,31 +195,6 @@ class OppleoConfig(object, metaclass=Singleton):
     def csrfSecretKey(self, value):
         self.__chargerConfigModel.setAndSave('wtf_csrf_secret_key', value)
         self.restartRequired = True
-
-    """
-        httpHost --> http_host
-    """
-    @property
-    def httpHost(self):
-        return self.__chargerConfigModel.http_host
-
-    @httpHost.setter
-    def httpHost(self, value):
-        self.__chargerConfigModel.setAndSave('http_host', value)
-        self.restartRequired = True
-
-    """
-        httpPort --> http_port
-    """
-    @property
-    def httpPort(self):
-        return self.__chargerConfigModel.http_port
-
-    @httpPort.setter
-    def httpPort(self, value):
-        self.__chargerConfigModel.setAndSave('http_port', value)
-        self.restartRequired = True
-
 
     """
         useReloader --> use_reloader

@@ -39,7 +39,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_SQLALCHEMY_TRACK_MODIFICATIONS = 'SQLALCHEMY_TRACK_MODIFICATIONS'
 
     __INI_ENV = 'ENV'
-    __INI_DEV_HTTP_PORT = 'DEV_HTTP_PORT'
+    __INI_HTTP_HOST = 'http_host'
+    __INI_HTTP_PORT = 'http_port'
     __INI_DEBUG = 'DEBUG'
     __INI_TESTING = 'TESTING'
 
@@ -54,8 +55,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_ON_DB_FAILURE_ALLOW_URL_CHANGE = 'on_db_failure_allow_url_change'
     __INI_ON_DB_FAILURE_SHOW_CURRENT_URL = 'on_db_failure_show_current_url'
 
-    __INI_ON_DB_FAILURE_PORT = 'on_db_failure_port'
-    __INI_ON_DB_FAILURE_PROWL_API_KEY = 'on_db_failure_prowl_api_key'
+    __INI_PROWL_ENABLED = 'prowl_enabled'
+    __INI_PROWL_API_KEY = 'prowl_api_key'
 
     """
         Variables stored in the INI file 
@@ -68,7 +69,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __LOG_FILE = '/tmp/%s.log' % __PROCESS_NAME
 
     __ENV = 'Development'
-    __DEV_HTTP_PORT = 5000
+    __HTTP_HOST = '0.0.0.0'
+    __HTTP_PORT = 80
     __DEBUG = True
     __TESTING = False
 
@@ -82,8 +84,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __ON_DB_FAILURE_ALLOW_URL_CHANGE = False
     __ON_DB_FAILURE_SHOW_CURRENT_URL = False
 
-    __ON_DB_FAILURE_PORT = 80
-    __ON_DB_FAILURE_PROWL_API_KEY = None
+    __PROWL_ENABLED = False
+    __PROWL_API_KEY = None
 
     __dbAvailable = False
 
@@ -142,7 +144,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__SQLALCHEMY_TRACK_MODIFICATIONS = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS)
 
         self.__ENV = self.__getOption__(self.__INI_MAIN, self.__INI_ENV)
-        self.__DEV_HTTP_PORT = self.__getIntOption__(self.__INI_MAIN, self.__INI_DEV_HTTP_PORT, self.__DEV_HTTP_PORT)
+        self.__HTTP_HOST = self.__getOption__(self.__INI_MAIN, self.__INI_HTTP_HOST, self.__HTTP_HOST)
+        self.__HTTP_PORT = self.__getIntOption__(self.__INI_MAIN, self.__INI_HTTP_PORT, self.__HTTP_PORT)
         self.__DEBUG = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_DEBUG)
         self.__TESTING = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_TESTING)
 
@@ -154,8 +157,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE)
         self.__ON_DB_FAILURE_SHOW_CURRENT_URL = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL)
 
-        self.__ON_DB_FAILURE_PORT = self.__getIntOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_PORT, self.__ON_DB_FAILURE_PORT)
-        self.__ON_DB_FAILURE_PROWL_API_KEY = self.__getOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_PROWL_API_KEY, self.__ON_DB_FAILURE_PROWL_API_KEY)
+        self.__PROWL_ENABLED = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_PROWL_ENABLED, self.__PROWL_ENABLED)
+        self.__PROWL_API_KEY = self.__getOption__(self.__INI_MAIN, self.__INI_PROWL_API_KEY, self.__PROWL_API_KEY)
 
         self.load_completed = True
         print('System configuration loaded')
@@ -188,7 +191,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS] = 'True' if self.__SQLALCHEMY_TRACK_MODIFICATIONS else 'False'
 
             self.__ini_settings[self.__INI_MAIN][self.__INI_ENV] = self.__ENV
-            self.__ini_settings[self.__INI_MAIN][self.__INI_DEV_HTTP_PORT] = str(self.__DEV_HTTP_PORT)
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HTTP_HOST] = self.__HTTP_HOST
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HTTP_PORT] = str(self.__HTTP_PORT)
             self.__ini_settings[self.__INI_MAIN][self.__INI_DEBUG] = 'True' if self.__DEBUG else 'False'
             self.__ini_settings[self.__INI_MAIN][self.__INI_TESTING] = 'True' if self.__TESTING else 'False'
 
@@ -200,10 +204,9 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE] = 'True' if self.__ON_DB_FAILURE_ALLOW_URL_CHANGE else 'False'
             self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL] = 'True' if self.__ON_DB_FAILURE_SHOW_CURRENT_URL else 'False'
 
-            self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_PORT] = str(self.__ON_DB_FAILURE_PORT)
-
-            if self.__ON_DB_FAILURE_PROWL_API_KEY is not None:
-                self.__ini_settings[self.__INI_MAIN][self.__INI_ON_DB_FAILURE_PROWL_API_KEY] = self.__ON_DB_FAILURE_PROWL_API_KEY
+            self.__ini_settings[self.__INI_MAIN][self.__INI_PROWL_ENABLED] = 'True' if self.__PROWL_ENABLED else 'False'
+            if self.__PROWL_API_KEY is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_PROWL_API_KEY] = self.__PROWL_API_KEY
 
             # Write actial file
             with open(self.__getConfigFile__(), 'w') as configfile:
@@ -348,18 +351,33 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__writeConfig__()
         self.restartRequired = True
 
+
     """
-        DEV_HTTP_PORT
+        httpHost -> __HTTP_HOST
     """
     @property
-    def DEV_HTTP_PORT(self):
-        return self.__DEV_HTTP_PORT
+    def httpHost(self):
+        return self.__HTTP_HOST
 
-    @DEV_HTTP_PORT.setter
-    def DEV_HTTP_PORT(self, value:int):
-        self.__DEV_HTTP_PORT = value
+    @httpHost.setter
+    def httpHost(self, value:str):
+        self.__HTTP_HOST = value
         self.__writeConfig__()
         self.restartRequired = True
+
+    """
+        httpPort -> __HTTP_PORT
+    """
+    @property
+    def httpPort(self):
+        return self.__HTTP_PORT
+
+    @httpPort.setter
+    def httpPort(self, value:int):
+        self.__HTTP_PORT = value
+        self.__writeConfig__()
+        self.restartRequired = True
+
 
     """
         DEBUG
@@ -508,25 +526,25 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         return check_password_hash(self.onDbFailureMagicPassword, value)
 
     """
-        onDbFailurePort -> __ON_DB_FAILURE_PORT
+        prowlEnabled -> __PROWL_ENABLED
     """
     @property
-    def onDbFailurePort(self):
-        return self.__ON_DB_FAILURE_PORT
+    def prowlEnabled(self):
+        return self.__PROWL_ENABLED
 
-    @onDbFailurePort.setter
-    def onDbFailurePort(self, value:int):
-        self.__ON_DB_FAILURE_PORT = value
+    @prowlEnabled.setter
+    def prowlEnabled(self, value:bool):
+        self.__PROWL_ENABLED = value
         self.__writeConfig__()
 
     """
-        onDbFailureProwlApiKey -> __ON_DB_FAILURE_PROWL_API_KEY
+        prowlApiKey -> __PROWL_API_KEY
     """
     @property
-    def onDbFailureProwlApiKey(self):
-        return self.__ON_DB_FAILURE_PROWL_API_KEY
+    def prowlApiKey(self):
+        return self.__PROWL_API_KEY
 
-    @onDbFailureProwlApiKey.setter
-    def onDbFailureProwlApiKey(self, value:str):
-        self.__ON_DB_FAILURE_PROWL_API_KEY = value
+    @prowlApiKey.setter
+    def prowlApiKey(self, value:str):
+        self.__PROWL_API_KEY = value
         self.__writeConfig__()

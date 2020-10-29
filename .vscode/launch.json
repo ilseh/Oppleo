@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "pythonPath": "${config:python.interpreterPath}",
+            "pythonPath": "${command:python.interpreterPath}",
             "console": "integratedTerminal"
         },
         {
@@ -17,7 +17,7 @@
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "pythonPath": "${config:python.interpreterPath}",
+            "pythonPath": "${command:python.interpreterPath}",
             "program": "./src/nl/oppleo/webapp/Oppleo.py",
             "gevent": true,
             "cwd": "${workspaceFolder}",
@@ -26,9 +26,6 @@
                 "FLASK_APP": "Oppleo.py",
                 "FLASK_ENV": "Development",
                 "PYTHONPATH": "./src",
-                "FLASK_DEBUG": "0",
-                "DATABASE_URL": "postgresql://charger:charger@10.0.1.160:5432/charger",
-                "oppleo_ENV": "development"
             },
             "jinja": true
         },

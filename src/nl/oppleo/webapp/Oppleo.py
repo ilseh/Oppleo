@@ -266,16 +266,16 @@ try:
 
         print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
             .format(
-                oppleoConfig.httpHost, 
-                oppleoConfig.httpPort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT,
+                oppleoSystemConfig.httpHost, 
+                oppleoSystemConfig.httpPort,
                 oppleoSystemConfig.DEBUG,
                 oppleoConfig.useReloader
                 )
             )
         oppleoLogger.debug('Starting web server on {}:{} (debug:{}, use_reloader={})...'
             .format(
-                oppleoConfig.httpHost, 
-                oppleoConfig.httpPort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT,
+                oppleoSystemConfig.httpHost, 
+                oppleoSystemConfig.httpPort,
                 oppleoSystemConfig.DEBUG,
                 oppleoConfig.useReloader
                 )
@@ -304,10 +304,10 @@ try:
             )
 
         appSocketIO.run(app, 
-            port=oppleoConfig.httpPort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT, 
+            port=oppleoSystemConfig.httpPort, 
             debug=oppleoSystemConfig.DEBUG, 
             use_reloader=oppleoConfig.useReloader, 
-            host=oppleoConfig.httpHost
+            host=oppleoSystemConfig.httpHost
             )
 
         PushMessage.sendMessage(
@@ -388,7 +388,7 @@ except DbException as dbe:
                     extra_field_description="Geef optioneel een nieuwe database URL",
                     extra_field_icon="fas fa-database",
                     password_field_description="Voer het MAGIC wachtwoord in",
-                    requestdescription="Herstel de database of de URL en herstart de applicatie. <br/>Het herstarten duurt ongeveer 10 seconden.",
+                    requestdescription="Herstel eerst de database of pas de database URL aan, en herstart daarna Oppleo hieronder op te proberen de koppeling met de database te herstellen. <br/>Het herstarten van oppleo duurt ongeveer 10 seconden.",
                     buttontitle="Herstart!"
                     )
 
@@ -421,13 +421,13 @@ except DbException as dbe:
                         extra_field_description="Geef optioneel een nieuwe database URL",
                         extra_field_icon="fas fa-database",
                         password_field_description="Voer het MAGIC wachtwoord in",
-                        requestdescription="Herstel de database of de URL en herstart de applicatie. <br/>Het herstarten duurt ongeveer 10 seconden.",
+                        requestdescription="Herstel de database of de URL en herstart de applicatie. Het herstarten van Oppleo duurt ongeveer 10 seconden.",
                         buttontitle="Herstart!",
                         errormsg="Het MAGIC wachtwoord is onjuist"
                         )
 
         # Oppleo Limp mode Prowl apiKey and no ChargerName
-        if oppleoSystemConfig.onDbFailureProwlApiKey is not None:   
+        if oppleoSystemConfig.prowlEnabled:
             PushMessageProwl.sendMessage(
                 title="Limp mode", 
                 message="Database exception caused limp mode at {}. [signature: {}]"
@@ -436,13 +436,13 @@ except DbException as dbe:
                         oppleoSystemConfig.SIGNATURE
                     ),
                 priority=PushMessageProwl.priorityHigh,
-                apiKey=oppleoSystemConfig.onDbFailureProwlApiKey,   
+                apiKey=oppleoSystemConfig.prowlApiKey,
                 chargerName='Unknown'
                 )
 
         run_simple(
-            '0.0.0.0', 
-            oppleoSystemConfig.onDbFailurePort if GenericUtil.isProd() else oppleoSystemConfig.DEV_HTTP_PORT,           
+            oppleoSystemConfig.httpHost,
+            oppleoSystemConfig.httpPort,
             limpApp,
             use_reloader=False, 
             use_debugger=True, 
