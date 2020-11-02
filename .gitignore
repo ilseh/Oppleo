@@ -27,3 +27,6 @@ snapshot/grab_img.sh
 webapp/CarChargerWebApp.service
 install/Oppleo.service
 db/backup/*.*.dump
+# install log files
+install/log/update_*.log
+
