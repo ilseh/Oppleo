@@ -191,18 +191,18 @@ class Raspberry(object):
         return dsk
 
 
-    def getPid(self) -> int:
-        return os.getpid()
+    def getPid(self) -> str:
+        return str(os.getpid())
 
     def getPidStartTime(self, pid) -> str:
         result = subprocess.run("ps -o start= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         # print(result.stderr)
-        return result.stdout
+        return result.stdout.rstrip()
 
     def getPidElapsedTime(self, pid) -> str:
         result = subprocess.run("ps -o etime= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         # print(result.stderr)
-        return result.stdout
+        return result.stdout.rstrip()
 
 
     """
