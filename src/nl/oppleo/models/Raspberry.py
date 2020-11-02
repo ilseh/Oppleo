@@ -260,13 +260,13 @@ class Raspberry(object):
         return self.is_tool_available('systemctl')
 
     def systemCtlOppleoStatus(self):
-        result = subprocess.run("systemctl status Oppleo.service | grep Active: | cut -c12-", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        result = subprocess.run(["systemctl status Oppleo.service", "grep Active:", "cut -c12-"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         return result.stdout.rstrip()
 
     def getSystemCtlPid(self) -> str:
         if not self.hasSystemCtl():
             return "0"
-        result = subprocess.run("systemctl status Oppleo.service | grep 'Main PID:' | awk '{print $3}'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        result = subprocess.run(["systemctl status Oppleo.service", "grep 'Main PID:'", "awk '{print $3}'"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         try:
             return result.stdout.rstrip()
         except:
@@ -275,7 +275,7 @@ class Raspberry(object):
     def getSystemCtlMemory(self) -> str:
         if not self.hasSystemCtl():
             return "-"
-        result = subprocess.run("systemctl status Oppleo.service | grep 'Memory:' | awk '{print $2}'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        result = subprocess.run(["systemctl status Oppleo.service", "grep 'Memory:'", "awk '{print $2}'"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         return result.stdout
 
     def get_all(self):
