@@ -193,6 +193,8 @@ class Raspberry(object):
 
     def getPid(self) -> str:
         self.logger.debug("getPid(): ".format(str(os.getpid())))
+        self.logger.debug("getPPid(): ".format(str(os.getppid())))
+
         return str(os.getpid())
 
     def getPidStartTime(self, pid) -> str:
