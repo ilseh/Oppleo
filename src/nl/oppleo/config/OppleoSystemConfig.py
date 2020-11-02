@@ -1,7 +1,8 @@
 
 from configparser import ConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
-from os import path, urandom
+import os
+
 from base64 import b64encode
 from werkzeug.security import generate_password_hash, check_password_hash
 from nl.oppleo.config import Logger
@@ -61,7 +62,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     """
         Variables stored in the INI file 
     """
-    __SIGNATURE = b64encode(urandom(24)).decode('utf-8')
+    __SIGNATURE = b64encode(os.urandom(24)).decode('utf-8')
 
     __DATABASE_URL = 'postgresql://username:password@localhost:5432/database'
     __SQLALCHEMY_TRACK_MODIFICATIONS = True
@@ -119,7 +120,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         returns the absolute path to oppleo.ini
     """
     def __getConfigFile__(self):
-        return path.join(path.dirname(path.realpath(__file__)), 'oppleo.ini')
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'oppleo.ini')
 
 
     def __loadConfig__(self):
@@ -548,3 +549,6 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     def prowlApiKey(self, value:str):
         self.__PROWL_API_KEY = value
         self.__writeConfig__()
+
+
+

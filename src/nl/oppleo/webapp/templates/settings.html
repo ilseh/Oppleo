@@ -1220,6 +1220,38 @@
                               <td class="text-primary">{{ diag['threading']['active_count'] }}</td>
                             </tr>
                             {% endif %}
+                            <tr>
+                              <td class="text-dark">System type:</td>
+                              <td class="text-primary">{{ diag['os']['sysname'] }} ({{ diag['platform'] }})</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">System uptime:</td>
+                              <td class="text-primary">{{ diag['uptime']['sysuptime'] }} (Start: {{ diag['uptime']['sysstarttime'] }})</td>
+                            </tr>
+                            {% if diag['systemctl'] is mapping %}
+                            <tr>
+                              <td class="text-dark"><i>systemd</i> Status:</td>
+                              <td class="text-primary">{{ diag['systemctl']['status'] }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"><i>systemd</i> pid:</td>
+                              <td class="text-primary">{{ diag['systemctl']['pid'] }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"><i>systemd</i> Memory:</td>
+                              <td class="text-primary">{{ diag['systemctl']['mem'] }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                              <td class="text-dark"><i>systemd</i>:</td>
+                              <td class="text-primary">No</td>
+                            </tr>
+                            {% endif %}
+
+                            <tr>
+                              <td class="text-dark">Oppleo uptime:</td>
+                              <td class="text-primary">{{ diag['uptime']['piduptime'] }} (Start: {{ diag['uptime']['pidstarttime'] }})</td>
+                            </tr>
 
 
                             {% if ('threading' in diag and 'enum' in diag['threading']) %}
@@ -1235,16 +1267,12 @@
                             {% endfor %}
                             {% endif %}
 
-
                             {% for sid, connectedClient in oppleoconfig.connectedClients.items() %}
                             <tr>
                               <td class="text-dark">Connected WebClient:</td>
                               <td class="text-primary">{{ sid }}</td>
                             </tr>
                             {% endfor %}
-
-
-
 
                             <tr>
                               <th colspan="2">&nbsp;</th>

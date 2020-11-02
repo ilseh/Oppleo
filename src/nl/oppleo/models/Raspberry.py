@@ -5,6 +5,7 @@ import platform
 from cpuinfo import get_cpu_info
 import psutil
 import subprocess
+import sys
 
 class Raspberry(object):
     """
@@ -41,7 +42,14 @@ class Raspberry(object):
 
     def get_os(self):
         self.logger.debug("get_os()")
-        return os.uname()
+        un = os.uname()
+        osi = {}
+        osi['nodename'] = un.nodename
+        osi['sysname'] = un.sysname
+        osi['version'] = un.version
+        osi['machine'] = un.machine
+        osi['release'] = un.release
+        return osi
 
     def get_cpuinfo_entry(self, entry_name="Unknown"):
         self.logger.debug("get_cpuinfo_entry() entry_name={}".format(entry_name))
@@ -182,6 +190,85 @@ class Raspberry(object):
             du.percent
         return dsk
 
+
+    def getPid(self) -> int:
+        return os.getpid()
+
+    def getPidStartTime(self, pid) -> str:
+        result = subprocess.run("ps -o start= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        # print(result.stderr)
+        return result.stdout
+
+    def getPidElapsedTime(self, pid) -> str:
+        result = subprocess.run("ps -o etime= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        # print(result.stderr)
+        return result.stdout
+
+
+    """
+        uptime
+        Returns a string describing the uptime of the platform
+        Returns a string describing the uptime of this Oppleo instance
+    """
+    def uptime(self):
+        ut = {}
+        ut['sysstarttime'] = self.getPidStartTime(1)
+        ut['sysuptime'] = self.getPidElapsedTime(1)
+        ut['pidstarttime'] = self.getPidStartTime(self.getPid())
+        ut['piduptime'] = self.getPidElapsedTime(self.getPid())
+        return ut
+
+    """
+        OS info
+        sysname - operating system name
+        nodename - name of machine on network (implementation-defined)
+        release - operating system release
+        version - operating system version
+        machine - hardware identifier
+    """
+
+    def getPlatformType(self):
+        if sys.platform == 'linux':
+            return 'Linux'
+        if sys.platform == 'darwin':
+            return 'macOS'
+        if sys.platform == 'win32':
+            return 'Windows'
+        if sys.platform == 'cygwin':
+            return 'Windows/Cygwin'
+        if sys.platform == 'aix':
+            return 'AIX'
+        return 'Unknown'
+
+
+    # Check whether `name` is on PATH and marked as executable.
+    def is_tool_available(self, name):
+        # from whichcraft import which
+        from shutil import which
+        return which(name) is not None
+
+    def hasSystemCtl(self) -> bool:
+        return self.is_tool_available('systemctl')
+
+    def systemCtlOppleoStatus(self):
+        result = subprocess.run("systemctl status Oppleo.service | grep Active: | cut -c12-", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        return result.stdout
+
+    def getSystemCtlPid(self) -> int:
+        if not self.hasSystemCtl():
+            return 0
+        result = subprocess.run("systemctl status Oppleo.service | grep 'Main PID:' | awk '{print $3}'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        try:
+            return int(result.stdout)
+        except:
+            return 0
+
+    def getSystemCtlMemory(self) -> str:
+        if not self.hasSystemCtl():
+            return "-"
+        result = subprocess.run("systemctl status Oppleo.service | grep 'Memory:' | awk '{print $2}'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+        return result.stdout
+
     def get_all(self):
         try:
             self.logger.debug("get_all()")
@@ -191,10 +278,24 @@ class Raspberry(object):
         data['ip'] = self.get_ip_info()
         data['revision'] = self.get_revision()
         data['os'] = self.get_os()
+        data['platform'] = self.getPlatformType()
         data['proc'] = self.get_processor_info()
         data['cpu'] = self.get_cpuinfo()
         data['model'] = self.get_model()
         data['disk'] = self.get_disk()
         data['vmem'] = self.get_virtual_memory()
         data['pmem'] = self.get_physical_memory()
+
+        data['uptime'] = self.uptime()
+        data['platform'] = self.getPlatformType()
+        data['proc_pid'] = self.getPid()
+
+        if self.hasSystemCtl():
+            data['systemctl'] = {}
+            data['systemctl']['status'] = self.systemCtlOppleoStatus()
+            data['systemctl']['pid'] = self.getSystemCtlPid()
+            data['systemctl']['mem'] = self.getSystemCtlMemory()
+        else:
+            data['systemctl'] = 'No'
+       
         return data
