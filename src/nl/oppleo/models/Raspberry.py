@@ -252,7 +252,7 @@ class Raspberry(object):
 
     def systemCtlOppleoStatus(self):
         result = subprocess.run("systemctl status Oppleo.service | grep Active: | cut -c12-", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
-        return result.stdout
+        return result.stdout.rstrip()
 
     def getSystemCtlPid(self) -> int:
         if not self.hasSystemCtl():
@@ -286,11 +286,7 @@ class Raspberry(object):
         data['vmem'] = self.get_virtual_memory()
         data['pmem'] = self.get_physical_memory()
         
-        self.logger.debug("UPTIME 1")
         data['uptime'] = self.uptime()
-        self.logger.debug("UPTIME 2")
-        self.logger.debug(data['uptime'])
-        self.logger.debug("UPTIME 3")
         data['platform'] = self.getPlatformType()
         data['proc_pid'] = self.getPid()
 
