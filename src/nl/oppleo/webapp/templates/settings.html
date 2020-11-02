@@ -1229,7 +1229,7 @@
                               <td class="text-primary">{{ diag['uptime']['sysuptime'] }} (Start: {{ diag['uptime']['sysstarttime'] }})</td>
                             </tr>
                             <tr>
-                              <td class="text-dark">PID:</td>
+                              <td class="text-dark">Active process pid:</td>
                               <td class="text-primary">{{ diag['proc_pid'] }} (Parent: {{ diag['parent_pid'] }})</td>
                             </tr>
                             {% if diag['systemctl'] is mapping %}
