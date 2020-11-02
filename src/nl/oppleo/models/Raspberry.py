@@ -193,9 +193,11 @@ class Raspberry(object):
 
     def getPid(self) -> str:
         self.logger.debug("getPid(): {}".format(str(os.getpid())))
-        self.logger.debug("getPPid(): {}".format(str(os.getppid())))
-
         return str(os.getpid())
+
+    def getPPid(self) -> str:
+        self.logger.debug("getPPid(): {}".format(str(os.getppid())))
+        return str(os.getppid())
 
     def getPidStartTime(self, pid) -> str:
         self.logger.debug("getPidStartTime()")
@@ -261,14 +263,14 @@ class Raspberry(object):
         result = subprocess.run("systemctl status Oppleo.service | grep Active: | cut -c12-", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         return result.stdout.rstrip()
 
-    def getSystemCtlPid(self) -> int:
+    def getSystemCtlPid(self) -> str:
         if not self.hasSystemCtl():
-            return 0
+            return "0"
         result = subprocess.run("systemctl status Oppleo.service | grep 'Main PID:' | awk '{print $3}'", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         try:
-            return int(result.stdout)
+            return result.stdout.rstrip()
         except:
-            return 0
+            return "0"
 
     def getSystemCtlMemory(self) -> str:
         if not self.hasSystemCtl():
@@ -296,6 +298,7 @@ class Raspberry(object):
         data['uptime'] = self.uptime()
         data['platform'] = self.getPlatformType()
         data['proc_pid'] = self.getPid()
+        data['parent_pid'] = self.getPPid()
 
         if self.hasSystemCtl():
             data['systemctl'] = {}
