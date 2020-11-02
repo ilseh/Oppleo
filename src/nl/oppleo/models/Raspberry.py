@@ -192,14 +192,17 @@ class Raspberry(object):
 
 
     def getPid(self) -> str:
+        self.logger.debug("getPid(): ".format(str(os.getpid())))
         return str(os.getpid())
 
     def getPidStartTime(self, pid) -> str:
+        self.logger.debug("getPidStartTime()")
         result = subprocess.run("ps -o start= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         # print(result.stderr)
         return result.stdout.rstrip()
 
     def getPidElapsedTime(self, pid) -> str:
+        self.logger.debug("getPidElapsedTime()")
         result = subprocess.run("ps -o etime= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         # print(result.stderr)
         return result.stdout.rstrip()
@@ -211,6 +214,7 @@ class Raspberry(object):
         Returns a string describing the uptime of this Oppleo instance
     """
     def uptime(self):
+        self.logger.debug("uptime()")
         ut = {}
         ut['sysstarttime'] = self.getPidStartTime(1)
         ut['sysuptime'] = self.getPidElapsedTime(1)
@@ -228,6 +232,7 @@ class Raspberry(object):
     """
 
     def getPlatformType(self):
+        self.logger.debug("getPlatformType(): ".format(sys.platform))
         if sys.platform == 'linux':
             return 'Linux'
         if sys.platform == 'darwin':
