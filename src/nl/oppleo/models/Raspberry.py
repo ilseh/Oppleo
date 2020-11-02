@@ -285,8 +285,12 @@ class Raspberry(object):
         data['disk'] = self.get_disk()
         data['vmem'] = self.get_virtual_memory()
         data['pmem'] = self.get_physical_memory()
-
+        
+        self.logger.debug("UPTIME 1")
         data['uptime'] = self.uptime()
+        self.logger.debug("UPTIME 2")
+        self.logger.debug(data['uptime'])
+        self.logger.debug("UPTIME 3")
         data['platform'] = self.getPlatformType()
         data['proc_pid'] = self.getPid()
 
