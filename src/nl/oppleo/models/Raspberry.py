@@ -6,6 +6,8 @@ from cpuinfo import get_cpu_info
 import psutil
 import subprocess
 import sys
+import re
+
 
 class Raspberry(object):
     """
@@ -259,24 +261,44 @@ class Raspberry(object):
     def hasSystemCtl(self) -> bool:
         return self.is_tool_available('systemctl')
 
-    def systemCtlOppleoStatus(self):
-        result = subprocess.run(["systemctl status Oppleo.service", "grep Active:", "cut -c12-"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
-        return result.stdout.rstrip()
 
-    def getSystemCtlPid(self) -> str:
-        if not self.hasSystemCtl():
-            return "0"
-        result = subprocess.run(["systemctl status Oppleo.service", "grep 'Main PID:'", "awk '{print $3}'"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+    def systemCtlStatus(self):
+        result = subprocess.run(["systemctl status Oppleo.service"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+
+        ctl = {}
+        ctl['status'] = "-"
+        ctl['pid'] = "-"
+        ctl['mem'] = "-"
+
+        # Get the process status
         try:
-            return result.stdout.rstrip()
+            for line in result.stdout.split('\n'):
+                if re.search('Active:', line):
+                    ctl['status'] = line.split("Active:",1)[1].strip()
+                    break
         except:
-            return "0"
+            pass
 
-    def getSystemCtlMemory(self) -> str:
-        if not self.hasSystemCtl():
-            return "-"
-        result = subprocess.run(["systemctl status Oppleo.service", "grep 'Memory:'", "awk '{print $2}'"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
-        return result.stdout
+        # Get the process pid
+        try:
+            for line in result.stdout.split('\n'):
+                if re.search('Main PID:', line):
+                    ctl['pid'] = line.split("Main PID:",1)[1].split("(",1)[0].strip()
+                    break
+        except:
+            pass
+
+        # Get the memory usage
+        try:
+            for line in result.stdout.split('\n'):
+                if re.search('Memory:', line):
+                    ctl['mem'] = line.split("Memory:",1)[1].strip()
+                    break
+        except:
+            pass
+        
+        return ctl
+
 
     def get_all(self):
         try:
@@ -301,10 +323,7 @@ class Raspberry(object):
         data['parent_pid'] = self.getPPid()
 
         if self.hasSystemCtl():
-            data['systemctl'] = {}
-            data['systemctl']['status'] = self.systemCtlOppleoStatus()
-            data['systemctl']['pid'] = self.getSystemCtlPid()
-            data['systemctl']['mem'] = self.getSystemCtlMemory()
+            data['systemctl'] = self.systemCtlStatus()
         else:
             data['systemctl'] = 'No'
        
