@@ -1,8 +1,10 @@
 import logging
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.PushMessageProwl import PushMessageProwl
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 class PushMessage(object):
@@ -19,12 +21,12 @@ class PushMessage(object):
         global oppleoConfig
 
         PushMessage.logger.debug("sendMessage()")
-        if oppleoConfig.prowlEnabled:
+        if oppleoSystemConfig.prowlEnabled:
             PushMessageProwl.sendMessage(
                     title=title, 
                     message=message, 
                     priority=priority, 
-                    apiKey=oppleoConfig.prowlApiKey, 
+                    apiKey=oppleoSystemConfig.prowlApiKey, 
                     chargerName=oppleoConfig.chargerName
                     )
 

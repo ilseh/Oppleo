@@ -407,27 +407,6 @@ class OppleoConfig(object, metaclass=Singleton):
     def allowPeakOnePeriod(self, value):
         self.__chargerConfigModel.setAndSave('peakhours_allow_peak_one_period', value)
 
-    """
-        prowlEnabled --> prowl_enabled
-    """
-    @property
-    def prowlEnabled(self):
-        return self.__chargerConfigModel.prowl_enabled
-
-    @prowlEnabled.setter
-    def prowlEnabled(self, value):
-        self.__chargerConfigModel.setAndSave('prowl_enabled', value)
-
-    """
-        prowlApiKey --> prowl_apikey
-    """
-    @property
-    def prowlApiKey(self):
-        return self.__chargerConfigModel.prowl_apikey
-
-    @prowlApiKey.setter
-    def prowlApiKey(self, value):
-        self.__chargerConfigModel.setAndSave('prowl_apikey', value)
 
     """
         logFile --> log_file

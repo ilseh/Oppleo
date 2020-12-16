@@ -44,9 +44,6 @@ class ChargerConfigModel(Base):
     peakhours_offpeak_enabled = Column(Boolean)
     peakhours_allow_peak_one_period = Column(Boolean) 
 
-    prowl_enabled = Column(Boolean) 
-    prowl_apikey = Column(String(100)) 
-
     log_file = Column(String(256)) 
 
     webcharge_on_dashboard = Column(Boolean) 
@@ -197,9 +194,6 @@ class ChargerConfigSchema(Schema):
 
     peakhours_offpeak_enabled = fields.Bool(dump_only=True)
     peakhours_allow_peak_one_period = fields.Bool(dump_only=True)
-
-    prowl_enabled = fields.Bool(dump_only=True)
-    prowl_apikey = fields.Str(dump_only=True)
 
     log_file = fields.Str(dump_only=True)
 
