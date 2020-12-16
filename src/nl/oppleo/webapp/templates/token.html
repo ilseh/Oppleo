@@ -395,7 +395,7 @@
     </div>
     <!-- end page title end breadcrumb -->
 
-    <form id="rfid-change-form" class="form-horizontal m-t-20" method="POST" action="/rfid_tokens/{{ rfid_model['rfid'] }}/">
+    <form id="rfid-change-form" class="form-horizontal m-t-20" method="POST" action="/rfid_tokens/{{ rfid_model['rfid'] }}/" autocomplete="on">
         {{ form.csrf_token }}
 
     <div class="row">
@@ -444,7 +444,7 @@
             <tr>
               <th><h5>Naam</h5></th>
               <td>
-                <input class="form-control" id="name" name="name" type="text" placeholder="Naam" 
+                <input class="form-control" id="name" name="name" type="text" placeholder="Naam"
                        value="{% if rfid_model['name'] is not none %}{{ rfid_model['name'] }}{% endif %}">
               </td>
             </tr>

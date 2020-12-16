@@ -114,7 +114,7 @@
     </div>
     {% endif %}
 
-    <form id="login-form" class="form-horizontal m-t-20" method="POST" action="/login">
+    <form id="login-form" class="form-horizontal m-t-20" method="POST" action="/login" autocomplete="on">
       {{ form.csrf_token }}
 
       <div class="form-group row">
@@ -125,7 +125,7 @@
                 <i class="mdi mdi-account"></i>
               </span>
             </span>
-            <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username"
+            <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username" autocomplete="username"
               value="{% if form.username.data is not none %}{{ form.username.data }}{% endif %}">
           </div>
         </div>
@@ -139,8 +139,8 @@
                 <i class="mdi mdi-radar"></i>
               </span>
             </span>
-            <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password"
-              value="{% if form.password.data is not none %}{{ form.password.data }}{% endif %}">
+            <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password" autocomplete="current-password"
+              {% if form.password.data is not none %}value="{{ form.password.data }}"{% endif %}>
             <span class="input-group-append">
               <button id="show_password" type="button" class="btn waves-effect waves-light btn-primary"
                 data-toggle="tooltip" data-placement="bottom" data-html="true"
