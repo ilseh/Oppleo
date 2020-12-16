@@ -21,8 +21,6 @@ class ChargerConfigModel(Base):
     secret_key = Column(String(100))
     wtf_csrf_secret_key = Column(String(100))
 
-    http_host = Column(String(64))
-    http_port = Column(Integer) 
     use_reloader = Column(Boolean) 
 
     factor_whkm = Column(Integer) 
@@ -175,8 +173,6 @@ class ChargerConfigSchema(Schema):
     secret_key = fields.Str(dump_only=True)
     wtf_csrf_secret_key = fields.Str(dump_only=True)
 
-    http_host = fields.Str(dump_only=True)
-    http_port = fields.Int(dump_only=True)
     use_reloader = fields.Bool(dump_only=True)
 
     factor_whkm = fields.Float(dump_only=True)
