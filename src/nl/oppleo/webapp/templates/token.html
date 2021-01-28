@@ -90,7 +90,7 @@
         console.log(res)
         switch(res.status) {
           case 200: // Ok
-            autoHideNotify('success', 'top-left', 'OAuth Token', 'OAuth Token wijziging succesvol uitgevoerd.');
+            autoHideNotify('success', 'top-left', 'OAuth Token', 'OAuth Token wijziging succesvol uitgevoerd.')
             // Example: OAuth token verloopt 20 February 2020, 16:55u
             updateOAuthTokenStatus(new Date((res.created_at *1000) + (res.expires_in *1000))) // Seconds to milliseconds
             // Add vehicle list

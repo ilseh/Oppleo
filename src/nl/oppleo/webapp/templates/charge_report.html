@@ -75,10 +75,11 @@
   </style>
 
   <script>
+    // returns 1-based month (1 = Jan), where Javascript Date defaults to 0-based month
     function timestamp() {
       d = new Date();
       return (d.getFullYear() + "-" + 
-             (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
+             ((d.getMonth()+1)<10?'0':'') + (d.getMonth()+1) + "-" +      // convert to 1-based month
              (d.getDate()<10?'0':'') + d.getDate() + '.' + 
              (d.getHours()<10?'0':'') + d.getHours() + ":" + 
              (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
@@ -117,7 +118,7 @@
         })
       })
       .fail(function() {
-        notify('error','top-left', 'Probleem', 'RFID Token data niet beschikbaar.');
+        autoHideNotify('error', 'top-left', 'Probleem', 'RFID Token data niet beschikbaar.')
       })
       .always(function() {
       })
@@ -163,9 +164,13 @@
              Object.values(uniqueList).join('')
     }
 
+    // month is 1-based
     function getChargeReport( year, month ) {
       console.log(timestamp() + ' getChargeReport( '+year+', '+month+')')
-            
+      /*
+        from and to are date string ('%d/%m/%Y, %H:%M:%S')
+        Date values as zero-padded decimal number (01, 02, ...) and month 1-based (Jan = 1)
+      */
       $.ajax({
         type		    : 'GET',
         url			    : '/charge_sessions/',
@@ -175,8 +180,8 @@
         encode		  : true,
         data        : {
           // format %d/%m/%Y, %H:%M:%S
-          from: '01/'+month+'/'+year+', 00:00:00',
-          to  : '01/'+((month+1)%12)+'/'+(month==12?year+1:year)+', 00:00:00'
+          from: '01/'+(month<10?'0':'')+month+'/'+year+', 00:00:00',                                // month 1-based (1-12)
+          to  : '01/'+(((month %12) +1)<10?'0':'')+((month %12) +1)+'/'+(month==12?year+1:year)+', 00:00:00'   // month 1-based, month+1 2-13)
         },
       }) // using the done promise callback
       .done(function(data) {
@@ -443,7 +448,7 @@
                 d = parseDate(data)
                 // 19-02-2020
                 return (d.getDate() < 10 ? '0' : '') + d.getDate() + '-' +
-                       (d.getMonth() < 9 ? '0' : '') + (d.getMonth() +1) + '-' +
+                       ((d.getMonth() +1) < 10 ? '0' : '') + (d.getMonth() +1) + '-' +    // convert 0-based month to 1-based month
                         d.getFullYear()
               } else {
                 // Default - type = 'display' - on screen or other exports
@@ -455,6 +460,7 @@
                 }
                 d = parseDate(data)
                 // Vr 28 Feb 2020 
+                // Using 0-based js month for lookup in 0-based months array
                 return (weekday[d.getDay() %7]).substring(0, 2) + ' ' + 
                         d.getDate() + ' ' + (months[d.getMonth() %12]).substring(0, 3) + ' ' + d.getFullYear()
               }
@@ -602,7 +608,7 @@
           ]).draw( false )
           $('button#edit_' + element.rfid).click(function() {
             //Do stuff when clicked
-            window.location = location + $(this).attr('id').split("_").pop();
+            window.location = location + $(this).attr('id').split("_").pop()
           })
         })
 
@@ -611,7 +617,7 @@
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       })
       .fail(function() {
-        notify('error','top-left', 'Probleem', 'Laadsessiedata niet beschikbaar.');
+        autoHideNotify('error', 'top-left', 'Probleem', 'Laadsessiedata niet beschikbaar.')
       })
       .always(function() {
         // Remove spinner

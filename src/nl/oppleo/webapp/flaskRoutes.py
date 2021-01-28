@@ -819,7 +819,11 @@ def active_charge_session():
         })
 
 
-# Cnt is a maximum to limit impact of this request
+'''
+    Cnt is a maximum to limit impact of this request
+    req_from and req_to are date string ('%d/%m/%Y, %H:%M:%S')
+    Date values as zero-padded decimal number (01, 02, ...) and month 1-based (Jan = 1)
+'''
 @flaskRoutes.route("/charge_sessions")
 @flaskRoutes.route("/charge_sessions/")
 @authenticated_resource
@@ -833,25 +837,33 @@ def charge_sessions(since_timestamp=None):
                     oppleoconfig=oppleoConfig
                     )
     # Request parameters - format and hand to model (format 01-02-2020, 00:00:00)
+    req_from  = None
+    req_to    = None
+    req_limit = -1
     try:
         req_from  = request.args['from'] if 'from' in request.args else None
         req_to    = request.args['to'] if 'to' in request.args else None
         req_limit = int(request.args['limit']) if 'limit' in request.args else -1
     except Exception as e:
-        flaskRoutesLogger.warning('/charge_sessions exception {}'.format(str(e)))
+        flaskRoutesLogger.warning('/charge_sessions exception formatting arguments {}'.format(str(e)))
         pass
     flaskRoutesLogger.debug('/charge_sessions req_from:{} req_to:{} req_limit:{}'.format(req_from, req_to, req_limit))
 
     charge_sessions = ChargeSessionModel()
     charge_sessions.energy_device_id = oppleoConfig.chargerName
 
-    qr = charge_sessions.get_max_n_sessions_between(
-        energy_device_id=oppleoConfig.chargerName, 
-        from_ts=req_from, 
-        to_ts=req_to,
-        n=req_limit
-        )
-
+    qr = []
+    try:
+        qr = charge_sessions.get_max_n_sessions_between(
+            energy_device_id=oppleoConfig.chargerName, 
+            from_ts=req_from, 
+            to_ts=req_to,
+            n=req_limit
+            )
+    except Exception as e:
+        flaskRoutesLogger.warning('/charge_sessions exception ChargeSessionModel.get_max_n_sessions_between {}'.format(str(e)))
+        abort(500)
+        pass
 
     """
     qr = charge_sessions.get_last_n_sessions_since(
@@ -871,6 +883,11 @@ def charge_sessions(since_timestamp=None):
 @authenticated_resource
 def charge_report(year=-1, month=-1):
     global flaskRoutesLogger, oppleoConfig
+    '''
+        year    - actual year
+        month   - zero based month (0-11)
+        the html file uses js to obtain the data
+    '''
     flaskRoutesLogger.debug('/charge_report {} {} {}'.format(year, month, request.method))
     return render_template("charge_report.html",
                 year=year,

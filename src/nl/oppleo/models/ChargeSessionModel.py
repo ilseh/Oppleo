@@ -263,6 +263,8 @@ class ChargeSessionModel(Base):
 
     """
         Filtered by end time
+        from_ts and to_ts are date string ('%d/%m/%Y, %H:%M:%S')
+        Date values as zero-padded decimal number (01, 02, ...) and month 1-based (Jan = 1)
     """
     def get_max_n_sessions_between(self, energy_device_id=None, from_ts=None, to_ts=None, n=-1) -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
@@ -387,7 +389,10 @@ class ChargeSessionModel(Base):
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return csm
 
-
+    """
+        since_ts date string ('%d/%m/%Y, %H:%M:%S')
+        Date values as zero-padded decimal number (01, 02, ...) and month 1-based (Jan = 1)
+    """
     def get_last_n_sessions_since(self, energy_device_id=None, since_ts=None, n=-1) -> typing.List[ChargeSessionModel]:
         db_session = DbSession()
         csm = None
@@ -450,7 +455,14 @@ class ChargeSessionModel(Base):
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return csm
 
-
+    """
+        %d  Day of the month as a zero-padded decimal. 01, 02, ..., 31
+        %m	Month as a zero-padded decimal number.	01, 02, ..., 12
+        %Y	Year with century as a decimal number.	2013, 2019 etc.
+        %H	Hour (24-hour clock) as a zero-padded decimal number.	00, 01, ..., 23
+        %M	Minute as a zero-padded decimal number.	00, 01, ..., 59
+        %S	Second as a zero-padded decimal number.	00, 01, ..., 59
+    """
     def date_str_to_datetime(self, date_time_str: str) -> datetime:
         return datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
 
