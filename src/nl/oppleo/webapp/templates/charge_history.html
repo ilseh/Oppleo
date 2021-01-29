@@ -31,7 +31,26 @@
   <!-- Responsive -->
   <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
-  
+
+  <!-- Required Flot -->
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.canvaswrapper.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.colorhelpers.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.saturated.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.browser.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.drawSeries.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.uiConstants.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.axislabels.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.time.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.resize.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.selection.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.stack.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.crosshair.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.navigate.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.touchNavigate.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.hover.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.legend.js') }}"></script>
+
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
@@ -81,6 +100,18 @@
       font-weight: bold;
       cursor: pointer;
     }
+    .legendLayer .background {
+      fill: rgba(54, 64, 74, 0.85);
+      stroke: rgba(152, 166, 173, 0.85);
+      stroke-width: 1;
+    }
+    .legendLayer text { 
+      fill: rgba(222, 226, 230, 0.85); 
+      font-size: 16px;
+    }
+    div #his_month_flotgraph text {
+      fill: rgba(222, 226, 230, 0.85); 
+    }
   </style>
 
   <script>
@@ -127,6 +158,7 @@
       $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
     }
 
+    var flotMonthData = []
 
     function getChargeHistory() {
       console.log(timestamp() + ' getChargeHistory()')
@@ -263,6 +295,18 @@
               ( element.TotalEnergy == null ? "0" : element.TotalEnergy),
               ( element.TotalPrice == null ? "0" : element.TotalPrice)
             ])
+
+            let monthDA = flotMonthData.filter( monthD => monthD['label'] === element.Year )
+            if (monthDA.length == 0) {
+              // create it
+              monthDA = { "label": element.Year, data: [] }
+              flotMonthData.push(monthDA)
+            } else {
+              monthDA = monthDA[0]
+            }
+            // Add the data point
+            monthDA.data.push([ element.Month, element.TotalEnergy])
+
           }
 
         })
@@ -284,6 +328,7 @@
                             ((dt.cell( this, 2 ).data()+1)<10?'0':'')+(dt.cell( this, 2 ).data()+1) + '/'
         })
 
+        drawMonthGraph()
       })
       .fail(function() {
         autoHideNotify('error', 'top-left', 'Probleem', 'Laadsessiehistorie niet beschikbaar.')
@@ -294,9 +339,99 @@
       })
     }
 
+    function drawMonthGraph() {
+        let color = [ "#3bafda",  // Blue
+                      "#00b19d",  // Green
+                      "#ffaa00"   // Orange
+                    ]
+
+        var flotDataset = [ 
+          { label: 'Stroom [A]', data: [], color: "#00b19d", yaxis: 1, lines: { show: true, fill: true } },
+          { label: 'Energie [kWh]', data: [], color: "#ffaa00", yaxis: 2 } 
+        ]
+
+        // Shift x-axis
+        flotMonthData 
+          .sort((a, b) => a.label - b.label)  // Sort on year
+          .forEach((element, index) => { element.data.forEach(data => { data[0] += .2 * index }); element.color = color[index]; }) // Add .2 shift per year
+
+        flotObj = $.plot($("#his_month_flotgraph"), flotMonthData, {
+          series: {
+             bars: {
+                 show: true,
+                 barWidth: .15,
+                 align: 'center'
+             },
+          },
+          grid: {
+            hoverable: true,
+            clickable: true
+          },
+          yaxis: { 
+            // max: 20
+            color: color[0],
+            //tickColor: color[2],
+            font: "15px Arial, sans-serif",
+            fontColor: color[2],
+            tickSize: 100,
+            label: "Y-Axis"
+          },
+          xaxis: {
+            min: 0.8,
+            max: 13,
+            color: color[0],
+            font: "15px Arial, sans-serif",
+            ticks: [[1, 'Jan'], [2, 'Feb'], [3, 'Maa'], [4, 'Apr'], [5, 'Mei'], [6, 'Jun'], [7, 'Jul'], [8, 'Aug'], [9, 'Sep'], [10, 'Okt'], [11, 'Nov'], [12, 'Dec']]
+          },
+          legend: {
+            show: true,
+            noColumns: 3,
+            position: "ne"
+          }
+        })
+        flotObj.setupGrid()
+        flotObj.draw()
+
+        $("<div id='tooltip'></div>").css({
+          position: "absolute",
+          display: "none",
+          border: "0px solid #fdd",
+          padding: "1px",
+          "background-color": "rgba(54, 64, 74, 0.85)",
+          "font-size": "smaller"
+        }).appendTo("body")
+
+        $("#his_month_flotgraph").bind("plothover", function (event, pos, item) {
+          if (item) {
+            document.body.style.cursor = 'pointer'
+            let m = item.datapoint[0].toFixed(2)
+            let e = item.datapoint[1].toFixed(2)
+
+            $("#tooltip").html(months[Math.floor(m)-1] + ' ' + item.series.label + " " + Math.round(e) + "kWh")
+              .css({top: item.pageY+5, left: item.pageX+5, color: item.series.color, opacity: 0.6 })
+              .fadeIn(200)
+          } else {
+            document.body.style.cursor = 'default';
+            $("#tooltip").hide()
+          }
+        })
+        $("#his_month_flotgraph").bind("plotclick", function (event, pos, item) {
+          if (item) {
+            //$("#clickdata").text(" - click point " + item.dataIndex + " in " + item.series.label);
+            let m = Math.floor(item.datapoint[0])
+            window.location = '/charge_report/' +
+                              item.series.label + '/' +
+                              (m<10?'0':'') + m + '/'
+          }
+        })
+		
+
+    }
+
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       getChargeHistory()
+
     })
 
     </script>
@@ -348,6 +483,19 @@
           </table>
         </div>
       </div>
+
+      <div id="his_month" class="col-6">
+        <div class="portlet"><!-- /primary heading -->
+            <div id="portlet 1" class="panel-collapse collapse show">
+                <div class="portlet-body">
+                    <div id="his_month_flotgraph" style="height: 320px;" class="flot-chart"></div>
+                    <div id="his_month_waiting" style="position: absolute; top: 50%; left: 50%; font-size: 30px;" class="flot-chart"> </div>
+                </div>
+            </div>
+        </div>
+      </div>
+  
+
     </div> <!-- end row -->
 
   </div>
