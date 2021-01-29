@@ -214,7 +214,42 @@
 
             }
           ],
-          "searching": false
+          "searching": false,
+          "footerCallback": function ( row, data, start, end, display ) {
+            var api = this.api(), data;
+
+            // Remove the formatting to get integer data for summation
+            var intVal = function ( i ) {
+                return typeof i === 'string' ?
+                    i.replace(/[\$,]/g, '')*1 :
+                    typeof i === 'number' ?
+                        i : 0
+            }
+            // Total over all pages
+            totalEnergy = api
+                .column( 3 )
+                .data()
+                .reduce( function (a, b) {
+                    return intVal(a) + intVal(b)
+                }, 0 )
+ 
+            // Total over all pages
+            totalPrice = api
+                .column( 4 )
+                .data()
+                .reduce( function (a, b) {
+                    return intVal(a) + intVal(b)
+                }, 0 )
+            // Update footer
+            $( api.column( 1 ).footer() ).html( '' ) // Make sure default text is empty
+            $( api.column( 2 ).footer() ).html( '<h6 class="text-right font-weight-bold">Totaal:</h6>' )
+            $( api.column( 3 ).footer() ).html(
+              '<nobr><h6 class="d-flex justify-content-center font-weight-bold">' + (Math.round(totalEnergy * 10) /10) + 'kWh</h6></nobr>'
+            )
+            $( api.column( 4 ).footer() ).html(
+              '<nobr><h6 class="d-flex justify-content-center font-weight-bold">&euro;&nbsp;' + (Math.round(totalPrice * 100) /100).toFixed(2) + '</h6></nobr>'
+            )
+          },          
         })
         dt.draw('full-reset')
 
