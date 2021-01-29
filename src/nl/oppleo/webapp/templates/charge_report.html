@@ -195,10 +195,18 @@
             extend: 'excelHtml5',
             text: "<i class='far fa-file-excel'></i> Excel",
             className: 'btn btn-low-key btn-sm',
-            title: 'Oppleo laadsessie rapport',
-            messageTop: (months[{{ month }} -1] + ' {{ year }}'),
+            title: 'Oppleo laadsessierapport',
+            messageTop: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ?    // month 1-based, getMonth 0-based
+                          ('Lopende maand ' + months[{{ month }} -1] + ' {{ year }} t/m de ' + new Date().getDate() + 'e')
+                          :
+                          (months[{{ month }} -1] + ' {{ year }}')
+                        ),
             messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
-            filename: ('Oppleo laadsessie rapport - ' + months[{{ month }} -1] + ' {{ year }}'),
+            filename: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ? 
+                        ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }} - lopende maand')
+                        :
+                        ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }}')
+                      ),
             footer: true,
             exportOptions: {
               orthogonal: {
@@ -218,10 +226,18 @@
             className: 'btn btn-low-key btn-sm',
             orientation: 'landscape',
             pageSize: 'A4',
-            title: 'Oppleo laadsessie rapport',
-            messageTop: (months[{{ month }} -1] + ' {{ year }}'),
+            title: 'Oppleo laadsessierapport',
+            messageTop: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ?    // month 1-based, getMonth 0-based
+                          ('Lopende maand ' + months[{{ month }} -1] + ' {{ year }} t/m de ' + new Date().getDate() + 'e')
+                          :
+                          (months[{{ month }} -1] + ' {{ year }}')
+                        ),
             messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
-            filename: ('Oppleo laadsessie rapport - ' + months[{{ month }} -1] + ' {{ year }}'),
+            filename: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ? 
+                        ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }} - lopende maand')
+                        :
+                        ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }}')
+                      ),
             footer: true,
             customize: function(doc) {
               doc.styles['tableBodyOddRight'] = doc.styles.tableBodyOdd
@@ -305,10 +321,18 @@
             className: 'btn btn-low-key btn-sm',
             orientation: 'landscape',
             pageSize: 'A4',
-            title: 'Oppleo laadsessie rapport',
-            messageTop: (months[{{ month }} -1] + ' {{ year }}'),
+            title: 'Oppleo laadsessierapport',
+            messageTop: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ?    // month 1-based, getMonth 0-based
+                          ('Lopende maand ' + months[{{ month }} -1] + ' {{ year }} t/m de ' + new Date().getDate() + 'e')
+                          :
+                          (months[{{ month }} -1] + ' {{ year }}')
+                        ),
             messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
-            filename: ('Oppleo laadsessie rapport - ' + months[{{ month }} -1] + ' {{ year }}'),
+            filename: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ? 
+                        ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }} - lopende maand')
+                        :
+                        ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }}')
+                      ),
             footer: true,
             exportOptions: {
               orthogonal: {
@@ -628,7 +652,13 @@
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       getChargeReport( {{ year }}, {{ month }} )
-      $('h4#page_title').html('Laad rapport ' + months[{{ month }} -1] + ' {{ year }}')
+      let now = new Date()
+      if ({{ year }} == now.getFullYear() && {{ month }} == (now.getMonth() +1)) {   // month 1-based, getMonth 0-based
+        // Month not closed yet
+        $('h4#page_title').html('Laadrapport lopende maand (' + months[{{ month }} -1] + ' {{ year }} t/m de ' + now.getDate() + 'e)')
+      } else {
+        $('h4#page_title').html('Laadrapport ' + months[{{ month }} -1] + ' {{ year }}')
+      }
       getRfidTokens()
     })
 
@@ -644,7 +674,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box">
-                <h4 id="page_title" class="page-title">Laad rapport</h4>
+                <h4 id="page_title" class="page-title">Laadrapport</h4>
             </div>
         </div>
     </div>

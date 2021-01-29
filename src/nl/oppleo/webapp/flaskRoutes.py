@@ -824,8 +824,8 @@ def active_charge_session():
     req_from and req_to are date string ('%d/%m/%Y, %H:%M:%S')
     Date values as zero-padded decimal number (01, 02, ...) and month 1-based (Jan = 1)
 '''
-@flaskRoutes.route("/charge_sessions")
-@flaskRoutes.route("/charge_sessions/")
+@flaskRoutes.route("/charge_sessions", methods=["GET"])
+@flaskRoutes.route("/charge_sessions/", methods=["GET"])
 @authenticated_resource
 def charge_sessions(since_timestamp=None):
     global flaskRoutesLogger, oppleoConfig
@@ -876,6 +876,44 @@ def charge_sessions(since_timestamp=None):
     for o in qr:
         qr_l.append(o.to_dict())
     return jsonify(qr_l)
+
+
+@flaskRoutes.route("/charge_history", methods=["GET"])
+@flaskRoutes.route("/charge_history/", methods=["GET"])
+@authenticated_resource
+def charge_history():
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/charge_history {}'.format(request.method))
+    jsonRequested = ('CONTENT_TYPE' in request.environ and 
+                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
+    if (not jsonRequested):
+        return render_template("charge_history.html",
+                oppleoconfig=oppleoConfig
+                )
+    # Return history
+    charge_sessions = ChargeSessionModel()
+    charge_sessions.energy_device_id = oppleoConfig.chargerName
+
+    csh = []
+    try:
+        # Return with no year and month is the open session (no end time)
+        csh = charge_sessions.get_history()
+    except Exception as e:
+        flaskRoutesLogger.warning('/charge_history exception ChargeSessionModel.get_history {}'.format(str(e)))
+        abort(500)
+        pass
+
+    csh_l = []
+    for o in csh:
+        csh_l.append({ 'Year': o.Year,
+                      'Month': o.Month,
+                      'TotalEnergy': o.TotalEnergy,
+                      'TotalEnergyUnit': 'kWh',
+                      'TotalPrice': o.TotalPrice,
+                      'TotalPriceUnit': '€'
+                    })
+    return jsonify(csh_l)
+
 
 
 @flaskRoutes.route("/charge_report/<int:year>/<int:month>")

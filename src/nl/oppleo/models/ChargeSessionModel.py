@@ -467,6 +467,68 @@ class ChargeSessionModel(Base):
         return datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
 
 
+    """
+        Overview total energy and price amounts per month
+            SELECT DATE_PART('year', end_time) AS Year, DATE_PART('month', end_time) AS Month, SUM(total_energy) AS TotalEnergy, SUM(total_price) AS Price FROM charge_session GROUP BY DATE_PART('year', end_time), DATE_PART('month', end_time) ORDER BY Year DESC, Month ASC;
+
+            SELECT DATE_PART('year', end_time) AS Year, DATE_PART('month', end_time) AS Month, SUM(total_energy) AS TotalEnergy, SUM(total_price) AS Price
+            FROM charge_session
+            GROUP BY DATE_PART('year', end_time), DATE_PART('month', end_time)
+            ORDER BY Month ASC
+
+            select distinct date_part('year', date_created) from charge_session;
+            result = session.query(distinct(func.date_part('YEAR', 'date_created')))
+
+            - extract vs date_part, extract seems to be the SQL standard
+            SELECT DATE_PART('year', end_time) AS Year, 
+            SELECT EXTRACT(year FROM end_time) AS Year FROM charge_session
+            
+            SELECT EXTRACT(year FROM end_time) AS Year, EXTRACT(month FROM end_time) AS Month, SUM(total_energy) AS TotalEnergy, SUM(total_price) AS Price FROM charge_session GROUP BY EXTRACT(year FROM end_time), EXTRACT(month FROM end_time) ORDER BY Year DESC, Month ASC;
+
+            SELECT EXTRACT(year FROM end_time) AS Year, EXTRACT(month FROM end_time) AS Month, SUM(total_energy) AS TotalEnergy, SUM(total_price) AS Price 
+            FROM charge_session 
+            GROUP BY EXTRACT(year FROM end_time), EXTRACT(month FROM end_time) 
+            ORDER BY Year DESC, Month ASC;
+
+            select distinct EXTRACT(year, date_created) from date_created;
+            result = session.query(distinct(func.extract('YEAR', 'date_created')))
+
+    """
+    @staticmethod
+    def get_history(energy_device_id=None) -> typing.List[ChargeSessionModel] | None:
+        db_session = DbSession()
+
+        from sqlalchemy import func, extract #, distinct
+
+        csm = None
+        try:
+            if (energy_device_id == None):
+                csm = db_session.query( func.sum(ChargeSessionModel.total_energy).label('TotalEnergy'), \
+                                        func.sum(ChargeSessionModel.total_price).label('TotalPrice'),   \
+                                        extract('year', ChargeSessionModel.end_time).label('Year'),     \
+                                        extract('month', ChargeSessionModel.end_time).label('Month'))   \
+                                        .group_by( extract('year', ChargeSessionModel.end_time),        \
+                                                extract('month', ChargeSessionModel.end_time))          \
+                                        .all()
+            else:  # filter energy_device_id
+                csm = db_session.query( func.sum(ChargeSessionModel.total_energy).label('TotalEnergy'),     \
+                                        func.sum(ChargeSessionModel.total_price).label('TotalPrice'),       \
+                                        extract('year', ChargeSessionModel.end_time).label('Year'),         \
+                                        extract('month', ChargeSessionModel.end_time).label('Month'))       \
+                                        .filter(ChargeSessionModel.energy_device_id == energy_device_id)    \
+                                        .group_by( extract('year', ChargeSessionModel.end_time),            \
+                                                extract('month', ChargeSessionModel.end_time))              \
+                                        .all()
+
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
+        except Exception as e:
+            # Nothing to roll back
+            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
+        return csm
+
+
     # convert into JSON:
     def to_json(self) -> str:
         return (
@@ -492,7 +554,7 @@ class ChargeSessionModel(Base):
 
 
     # convert into JSON:
-    def to_str(self) -> str:
+    def to_str(self) -> dict:
         return ({
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
@@ -514,7 +576,7 @@ class ChargeSessionModel(Base):
 
 
     # convert into dict:
-    def to_dict(self) -> typing.TypedDict:
+    def to_dict(self) -> dict:
         return ({
             "id": str(self.id),
             "energy_device_id": str(self.energy_device_id),

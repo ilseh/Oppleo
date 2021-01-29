@@ -323,8 +323,8 @@
             function addReports() {
                 // settings
                 monthsHistory = 8
-                startMonth = 0
-                startYear = 2020
+                startMonth = 11
+                startYear = 2019
                 //
                 let now = new Date()
                 thisYear = now.getFullYear()
@@ -731,6 +731,11 @@
                                     <a href="#"><i class="fas fa-file-invoice"></i> Rapporten</a>
                                     <ul class="submenu" id="reports">
                                     </ul>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('flaskRoutes.charge_history') }}" class="stay">
+                                        <i class="fas fa-file-invoice-dollar"></i> Historie
+                                    </a>
                                 </li>
                             </ul>
                         </li>

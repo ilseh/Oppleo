@@ -1,0 +1,320 @@
+{% extends "template.html" %}
+{% block title %}Charge sessions{% endblock %}
+{% block jquery %} 
+  {% include 'includes/include.jquery-3.3.1.html' %}
+{% endblock %} 
+{% block head %}
+  {{ super() }}
+
+  <!-- DataTables CSS -->
+  <link href="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+  <link href="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+  <link href="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+
+  <!-- Responsive datatable examples -->
+  <link href="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+   
+  <!-- Required datatable js -->
+  <script src="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.js') }}"></script>
+  <!-- Buttons -->
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/dataTables.buttons.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.flash.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/jszip/3.1.3/jszip.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/pdfmake.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/vfs_fonts.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.html5.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.print.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.colVis.min.js') }}"></script>
+
+  <!-- Responsive -->
+  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
+  
+  <!-- Socket IO -->
+  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
+  <style>
+    .paginate_button {
+        padding: 0px !important;
+    }
+    tbody td {
+      padding: 2px 2px !important;
+      text-align: center;
+      background-color: #36404a;
+    }
+    tbody tr:hover {
+      background-color: #ffffff !important;
+    }
+    div .dataTables_info {
+      color: #98a6ad !important;
+      margin-left: 5px;
+    }
+    div .dt-buttons {
+      margin-bottom: 10px;
+      margin-left: 3px;
+    }
+    div .dataTables_length {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+    }
+    div .dataTables_length label {
+      font-size: smaller;
+      margin-left: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      color: #98a6ad !important;
+    }
+    div .dataTables_length label select {
+      width: 80px;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+    .hover_history {
+      background-color: #3bafda;
+      color: #ffffff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+
+  <script>
+    // returns 1-based month (1 = Jan), where Javascript Date defaults to 0-based month
+    function timestamp() {
+      d = new Date();
+      return (d.getFullYear() + "-" + 
+             ((d.getMonth()+1)<10?'0':'') + (d.getMonth()+1) + "-" +      // convert to 1-based month
+             (d.getDate()<10?'0':'') + d.getDate() + '.' + 
+             (d.getHours()<10?'0':'') + d.getHours() + ":" + 
+             (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
+             (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
+             (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
+      )
+    }
+    let rfidTokens = {}
+    let dt = undefined
+    let unfilteredData = null
+    let filters = []
+
+    function isData(val) {
+      return (val != undefined && val != null && val !== "None" && val !== '')
+    }
+    function addOnNewline(str, addition, newline) {
+      return (!str.endsWith(newline) && str.length > 0) ? str + newline + addition : str + addition
+    }
+
+    function filterTable() {
+      // Start with whole table
+      dt.clear()
+      $.each(unfilteredData, function(index, row) {
+        dt.row.add(row)
+      })
+      dt.draw()
+      // Apply all filters on token and on energy_device_id
+      var filteredData = dt.rows().indexes().filter( function ( value, index ) {
+        return (filters.indexOf(dt.row(value).data()[2]) > -1) ||   // token
+               (filters.indexOf(dt.row(value).data()[1]) > -1)      // energy_device_id
+      })
+      dt.rows( filteredData )
+        .remove()
+        .draw()
+      // Enable tooltip
+      $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+    }
+
+
+    function getChargeHistory() {
+      console.log(timestamp() + ' getChargeHistory()')
+
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/charge_history/',
+        contentType : "application/json",
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+
+        dt = $('table#charge_history').DataTable( {
+          paging: false,
+          "order": [[ 1, "desc" ], [ 2, "desc"]], // id
+          dom: 'lfrtip',
+          "createdRow": function(row, data, dataIndex) {
+            $(row).toggleClass("text-info").fadeOut(800, function() {              
+              $(this).toggleClass("text-info").fadeIn(50)
+            })
+          },
+          "columnDefs": [{
+              orderable: true, 
+              className: 'reorder', 
+              targets: [1, 2, 3, 4]
+            }, { 
+              orderable: false,
+              targets: '_all' 
+            }, {
+              // 0-based month [2]
+              "targets": 2,
+              "render": function (data, type, row) {
+                if ( type === "sort" || type === 'type' ) {
+                  return data;
+                } else {  // type = display
+                  return ( (typeof data === 'number') ?
+                            months[data] :
+                            data
+                        )
+                }
+              }
+
+            }, {
+              // Total energy [3]
+              "targets": 3,
+              "render": function (data, type, row) {
+                // Render for screen: type = 'display'
+                // Render for Excel export: type = { display: 'Plain'}
+                if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
+                  // Excel export, skip the 'kWh' and change . with ,
+                  if (data == undefined || data === "None") {
+                    return ""
+                  }
+                  return (Math.round(data * 10) /10)
+                } else {
+                  // Default - type = 'display' - on screen or other exports
+                  return data == undefined || data === "None" ? 
+                          "-" : 
+                          '<span style="text-align: right;">' + (Math.round(data * 10) /10) + 'kWh</span>'
+                }
+              }
+
+            }, {
+              // Price [4]
+              "targets": 4,
+              "render": function (data, type, row) {
+                // Render for screen: type = 'display'
+                if (type.hasOwnProperty('display')) {
+                  // Excel export, change . with ,
+                  if (data == undefined || data === "None") {
+                    return ""
+                  }
+                  return '&euro; ' + (Math.round(data * 100) /100).toString().replace('.', ',')
+                } else {
+                  // Default - type = 'display' - on screen or other exports
+                  return data == undefined || data === "None" ? 
+                          "-" : 
+                          '<span style="text-align: right;">&euro; ' + (Math.round(data * 100) /100).toFixed(2) + '</span>'
+                }
+              }
+
+            }
+          ],
+          "searching": false
+        })
+        dt.draw('full-reset')
+
+        data.forEach(element => {
+          // Null year and month is the current open session, ignore that (visible on dashboard)
+          if ( element.Year != null && element.Month != null ) {
+            dt.row.add([
+              "<i class='fas fa-file-invoice'></i>",
+              ( element.Year == null ? "99" : element.Year),
+              ( element.Month == null ? "99" : (element.Month -1)),     // convert from 1-based to 0-based
+              ( element.TotalEnergy == null ? "0" : element.TotalEnergy),
+              ( element.TotalPrice == null ? "0" : element.TotalPrice)
+            ])
+          }
+
+        })
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+
+        dt.draw( false )
+
+        $('table#charge_history tbody tr td').hover( function() { 
+          // mouseenter
+          $(this).parent().children().addClass("hover_history")
+        }, function() { 
+          // mouseleave
+          $(this).parent().children().removeClass("hover_history")
+        })
+
+        $('table#charge_history tbody').on( 'click', 'tr', function () {
+          window.location = '/charge_report/' +
+                            dt.cell( this, 1 ).data() + '/' +
+                            ((dt.cell( this, 2 ).data()+1)<10?'0':'')+(dt.cell( this, 2 ).data()+1) + '/'
+        })
+
+      })
+      .fail(function() {
+        autoHideNotify('error', 'top-left', 'Probleem', 'Laadsessiehistorie niet beschikbaar.')
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
+    jQuery(document).ready(function () {
+      console.log(timestamp() + " file load completed!")
+      getChargeHistory()
+    })
+
+    </script>
+
+{% endblock %}
+{% block content %}
+
+<div class="wrapper" id="{{ var1 }}">
+  <div class="container-fluid">
+
+    <!-- Page-Title -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <h4 id="page_title" class="page-title">Laad historie</h4>
+            </div>
+        </div>
+    </div>
+    <!-- end page title end breadcrumb -->
+
+
+    <div class="row">
+      <div class="col-6">
+
+        <div class="card-box table-responsive">
+
+          <table id="charge_history" class="table table-bordered hover" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+            <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
+              <tr>
+                <th class="pl-0 pr-0 text-center">Details</th>
+                <th class="pl-0 pr-0 text-center">Jaar</th>
+                <th class="pl-0 pr-0 text-center">Maand</th>
+                <th class="pl-0 pr-0 text-center">Verbruik</th>
+                <th class="pl-0 pr-0 text-center">Prijs</th>
+              </tr>
+            </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
+            <tbody>
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <td colspan="2"></td>
+                <td class="text-right">Totaal:</td>
+                <td class="pl-0 pr-0 ml-0 mr-0"></td>
+                <td class="pl-0 pr-0 ml-0 mr-0"></td>
+              </tr>
+            </tfoot>
+
+          </table>
+        </div>
+      </div>
+    </div> <!-- end row -->
+
+  </div>
+</div>
+{% endblock %}
