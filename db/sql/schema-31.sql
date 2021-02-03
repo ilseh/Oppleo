@@ -4,7 +4,7 @@ UPDATE charger_config SET backup_enabled = 'f';
 ALTER TABLE charger_config ADD backup_interval varchar(1);
 UPDATE charger_config SET backup_interval = 'd';
 
-ALTER TABLE charger_config ADD backup_time_of_day TIME NOT NULL;
+ALTER TABLE charger_config ADD backup_time_of_day TIME;
 UPDATE charger_config SET backup_time_of_day = '08:00:00';
 
 ALTER TABLE charger_config ADD backup_local_history INT;
