@@ -15,16 +15,16 @@ ALTER TABLE charger_config ADD os_backup_enabled BOOLEAN;
 UPDATE charger_config SET os_backup_enabled = 'f';
 
 ALTER TABLE charger_config ADD os_backup_type varchar(20);
-UPDATE charger_config SET os_backup_type = 'smb';
+UPDATE charger_config SET os_backup_type = '';
 
 ALTER TABLE charger_config ADD smb_backup_ip_address varchar(20);
-UPDATE charger_config SET smb_backup_ip_address = '10.0.0.249';
+UPDATE charger_config SET smb_backup_ip_address = '';
 
 ALTER TABLE charger_config ADD smb_backup_username varchar(60);
-UPDATE charger_config SET smb_backup_username = '10.0.0.249';
+UPDATE charger_config SET smb_backup_username = '';
 
 ALTER TABLE charger_config ADD smb_backup_password varchar(100);
-UPDATE charger_config SET smb_backup_password = '10.0.0.249';
+UPDATE charger_config SET smb_backup_password = '';
 
 ALTER TABLE charger_config ADD smb_backup_share_name varchar(200);
 UPDATE charger_config SET smb_backup_share_name = '';
