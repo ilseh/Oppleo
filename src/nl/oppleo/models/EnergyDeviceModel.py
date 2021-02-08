@@ -3,7 +3,7 @@ from marshmallow import fields, Schema
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
-from sqlalchemy import orm, func, Column, String, Integer, Boolean
+from sqlalchemy import orm, func, Column, String, Integer, Boolean, desc
 from sqlalchemy.exc import InvalidRequestError
 
 
@@ -71,10 +71,10 @@ class EnergyDeviceModel(Base):
         edm = None
         try:
             edm =  db_session.query(EnergyDeviceModel) \
-                             .order_by(EnergyDeviceModel.energy_device_id.desc()) \
+                             .order_by(desc(EnergyDeviceModel.energy_device_id)) \
                              .first()
         except InvalidRequestError as e:
-            EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__.__name__)
+            EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
         except Exception as e:
             # Nothing to roll back
             EnergyDeviceModel.logger.error("Could not delete from {} table in database".format(EnergyDeviceModel.__tablename__ ), exc_info=True)

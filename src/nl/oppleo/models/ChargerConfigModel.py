@@ -4,7 +4,7 @@ import logging
 from marshmallow import fields, Schema
 from marshmallow.fields import Boolean, Integer
 
-from sqlalchemy import orm, Column, String, Float, DateTime, Integer, Boolean
+from sqlalchemy import orm, Column, String, Float, DateTime, Integer, Boolean, Time, desc
 from sqlalchemy.exc import InvalidRequestError
 
 from nl.oppleo.models.Base import Base, DbSession
@@ -56,6 +56,19 @@ class ChargerConfigModel(Base):
     router_ip_address = Column(String(20)) 
 
     receipt_prefix = Column(String(20))
+
+    backup_enabled = Column(Boolean)
+    backup_interval = Column(String(20))
+    backup_time_of_day = Column(Time)
+    backup_local_history = Column(Integer)
+    os_backup_enabled = Column(Boolean)
+    os_backup_type = Column(String(20))
+    smb_backup_server_name = Column(String(200))
+    smb_backup_ip_address = Column(String(20))
+    smb_backup_username = Column(String(60))
+    smb_backup_password = Column(String(100))
+    smb_backup_share_name  = Column(String(200))
+    smb_backup_share_path = Column(String(256))
 
 
     def __init__(self):
@@ -120,7 +133,7 @@ class ChargerConfigModel(Base):
         try:
             # Should be only one, return last modified
             ccm = db_session.query(ChargerConfigModel) \
-                            .order_by(ChargerConfigModel.modified_at.desc()) \
+                            .order_by(desc(ChargerConfigModel.modified_at)) \
                             .first()
         except InvalidRequestError as e:
             ChargerConfigModel.__cleanupDbSession(db_session, ChargerConfigModel.__class__.__name__)
@@ -207,3 +220,16 @@ class ChargerConfigSchema(Schema):
     router_ip_address = fields.Str(dump_only=True)
 
     receipt_prefix = fields.Str(dump_only=True)
+
+    backup_enabled = fields.Bool(dump_only=True)
+    backup_interval = fields.Str(dump_only=True)
+    backup_time_of_day = fields.Time(dump_only=True)
+    backup_local_history = fields.Int(dump_only=True)
+    os_backup_enabled = fields.Bool(dump_only=True)
+    os_backup_type = fields.Str(dump_only=True)
+    smb_backup_server_name = fields.Str(dump_only=True)
+    smb_backup_ip_address = fields.Str(dump_only=True)
+    smb_backup_username = fields.Str(dump_only=True)
+    smb_backup_password = fields.Str(dump_only=True)
+    smb_backup_share_name  = fields.Str(dump_only=True)
+    smb_backup_share_path = fields.Str(dump_only=True)

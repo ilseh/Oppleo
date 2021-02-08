@@ -3,7 +3,7 @@ import logging
 
 from marshmallow import fields, Schema
 
-from sqlalchemy import orm, Column, Integer, String, DateTime, Float
+from sqlalchemy import orm, Column, Integer, String, DateTime, Float, desc
 from sqlalchemy.exc import InvalidRequestError
 
 from nl.oppleo.models.Base import Base, DbSession
@@ -78,7 +78,7 @@ class EnergyDeviceMeasureModel(Base):
         try:
             edmm = db_session.query(EnergyDeviceMeasureModel) \
                              .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
-                             .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                             .order_by(desc(EnergyDeviceMeasureModel.created_at)) \
                              .limit(n) \
                              .all()
         except InvalidRequestError as e:
@@ -97,13 +97,13 @@ class EnergyDeviceMeasureModel(Base):
                 edmm = db_session.query(EnergyDeviceMeasureModel) \
                                  .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                                  .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
-                                 .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                                 .order_by(desc(EnergyDeviceMeasureModel.created_at)) \
                                  .all()
             else:
                 edmm = db_session.query(EnergyDeviceMeasureModel) \
                                  .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                                  .filter(EnergyDeviceMeasureModel.created_at >= self.date_str_to_datetime(since_ts)) \
-                                 .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                                 .order_by(desc(EnergyDeviceMeasureModel.created_at)) \
                                  .limit(n) \
                                  .all()
         except InvalidRequestError as e:
@@ -123,7 +123,7 @@ class EnergyDeviceMeasureModel(Base):
             energy_at_ts = db_session.query(EnergyDeviceMeasureModel) \
                                     .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
                                     .filter(EnergyDeviceMeasureModel.created_at <= since_ts) \
-                                    .order_by(EnergyDeviceMeasureModel.created_at.desc()) \
+                                    .order_by(desc(EnergyDeviceMeasureModel.created_at)) \
                                     .first()
         except InvalidRequestError as e:
             self.__cleanupDbSession(db_session, self.__class__.__name__)

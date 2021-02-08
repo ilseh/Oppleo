@@ -1,19 +1,52 @@
+from typing import Union, List, Any
 import requests
 import json
 import time
 import logging
 import datetime
+import random
+import string
+import os
+from base64 import b64encode
+from bs4 import BeautifulSoup   # HTML and XML parser
+import urllib.parse
 
+
+"""
+    https://tesla-api.timdorr.com/api-basics/authentication
+    https://github.com/fkhera/powerwallCloud/blob/master/powerwallBackup.py#L132
+    
+    Tesla uses a separate SSO service (auth.tesla.com) for authentication across their app and website (V3). Since feb 2021 the 
+    previous (V2) authentication API is no longer operational. This V3 service is designed around a browser-based flow using 
+    OAuth 2.0, but also appears to have support for Open ID Connect. This supports both obtaining an access token and refreshing 
+    it as it expires.
+
+    Tesla's SSO service has a WAF (web application firewall) that may temporarily block you if you make repeated, execessive requests.
+    This is to prevent bots from attacking the service, either as a brute force or denial-of-service attack. This normally presents 
+    a "challenge" page, which requires running some non-trivial JavaScript code to validate that you have a full browser engine 
+    available. While you can potentially fully evaluate this page to remove the block, the best practice for now is to reduce your 
+    calls to the SSO service to a minimum and avoid things like automatic request retries.
+
+"""
 
 class TeslaAPI:
     # defining the api-endpoint  
     API_BASE = 'https://owner-api.teslamotors.com'
     API_AUTHENTICATION = '/oauth/token'  # POST
+
+    API_AUTH_V3 = 'https://auth.tesla.com/oauth2/v3'
+    API_AUTH_V3_REDIRECT_URI = 'https://auth.tesla.com/void/callback'
+    API_AUTH_V3_AUTHORIZE = '/authorize'
+    API_AUTH_V3_TOKEN = '/token'
+
     API_VEHICLES = '/api/1/vehicles'  # GET
     API_WAKE_UP = '/api/1/vehicles/{id}/wake_up'  # POST
     API_VEHICLE_STATE = '/api/1/vehicles/{id}/data_request/vehicle_state'  # GET
     API_REVOKE = '/oauth/revoke'  # POST
     # All requests require a User-Agent header with any value provided.
+
+    API_CODE_STATE_LENGTH_CHARS = 24
+    API_CODE_VERIFIER_LENGTH_CHARS = 86
 
     API_AUTHENTICATION_GRANT_TYPE_PARAM = 'grant_type'
     API_AUTHENTICATION_GRANT_TYPE_PASSWORD = 'password'
@@ -31,6 +64,7 @@ class TeslaAPI:
     #TESLA_CLIENT_SECRET = 'c75f14bbadc8bee3a7594412c31416f8300256d7668ea7e6e7f06727bfb9d220'
 
     HTTP_200_OK = 200
+    HTTP_302_FOUND = 302    # When logged in, Tesla redirects to a non-existent URL
     HTTP_401_UNAUTHORIZED = 401
     HTTP_408_REQUEST_TIMEOUT = 408
 
@@ -69,6 +103,83 @@ class TeslaAPI:
         self.refresh_token = None
         self.vehicle_list = None
 
+    """ 
+        A stable state value for requests, which is a random string of any length.
+    """
+    def generate_state(self):
+        return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(self.API_CODE_STATE_LENGTH_CHARS))
+
+    """
+        Subsequent requests to the SSO service will require a "code verifier" and "code challenge". These are a random 
+        86-character alphanumeric string and its SHA-256 hash encoded in URL-safe base64 (base64url). 
+
+        Here is an example of generating them in Ruby, but you can apply this same process to other languages.            
+            code_verifier = random_string(86)
+            code_challenge = Base64.urlsafe_encode64(Digest::SHA256.hexdigest(code_verifier))
+
+    """
+    def generate_challenge(self):
+        import base64
+        from hashlib import sha256
+
+        """
+        verifier = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(self.API_CODE_VERIFIER_LENGTH_CHARS))
+        challenge = base64.urlsafe_b64encode(sha256(verifier.encode('utf-8')).digest()).decode('utf-8')
+        """
+
+        verifier_bytes = os.urandom(32)
+        challenge = base64.urlsafe_b64encode(verifier_bytes).rstrip(b'=')
+        challenge_bytes = sha256(challenge).digest()
+        challengeSum = base64.urlsafe_b64encode(challenge_bytes).rstrip(b'=')
+
+        return verifier_bytes, challengeSum
+
+    def generate_rnd(self, chars=43):
+        letters = string.ascii_lowercase + string.ascii_uppercase + string.digits + "-" + "_"
+        return "".join(random.choice(letters) for i in range(chars))        
+
+    """ 
+        Step 2: Get any hidden params from the session form, including session cookie, transaction_id and csrf
+    """
+    def authenticate_v3_getform(self, challenge, state):
+        payload = {
+            'client_id'             : 'ownerapi',
+            'code_challenge'        : challenge,
+            'code_challenge_method' : 'S256',
+            'redirect_uri'          : self.API_AUTH_V3_REDIRECT_URI,
+            'response_type'         : 'code',
+            'scope'                 : 'openid email offline_access',
+            'state'                 : state
+        }
+        session = requests.Session()
+        r = session.get(
+            url=self.API_AUTH_V3 +
+                self.API_AUTH_V3_AUTHORIZE,
+            params=payload
+        )
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.authenticate_v3_getform(): status code {}".format(r.status_code))
+            return None, None
+        self.logger.debug("TeslaAPI.authenticate_v3_getform(): status code {} text: {}".format(r.status_code, r.text))
+
+        session_params = {}
+        soup = BeautifulSoup(r.text)
+        # Known tags
+        for tag in ['_csrf', '_phase', '_process', 'transaction_id', 'cancel']:
+            # Cannot find for the name directly, as name is the key for the tag itself (input here)
+            try:
+                session_params[tag] = soup.find(name="input", attrs={"name": tag})['value']
+            except: # Field does not exist
+                pass
+        # Hidden tags (includes the known)
+        hidden_tags = soup.find_all("input", type="hidden")
+        for tag in hidden_tags:
+            session_params[tag.name] = tag.value
+
+        return session, session_params
+
+
     def auth_post(self, data, grant_type_param_value):
         r = requests.post(
             url=self.API_BASE +
@@ -80,6 +191,8 @@ class TeslaAPI:
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.auth_post(): status code {}".format(r.status_code))
+            if r.text is not None:
+                self.logger.warn("TeslaAPI.auth_post(): status code {} text: {}".format(r.status_code, r.text))
             if r.status_code == self.HTTP_401_UNAUTHORIZED:
                 self.got401Unauthorized = True
             return False
@@ -98,6 +211,178 @@ class TeslaAPI:
             "\n  'refresh_token': '%s'\n}" %
             (self.access_token, self.token_type, self.created_at, self.expires_in, self.refresh_token))
         return True
+
+    """ 
+        Step 3: Login and obtain authorization code
+    """
+    def authorization_v3_get_auth_code(self, challenge, session_params, session, state):
+        headers = {
+            'User-Agent' : 'PowerwallDarwinManager' 
+        }
+        hdrform = {
+            'client_id'             : 'ownerapi',
+            'code_challenge'        : challenge,
+            'code_challenge_method' : 'S256',
+            'redirect_uri'          : self.API_AUTH_V3_REDIRECT_URI,
+            'response_type'         : 'code',
+            'scope'                 : 'openid email offline_access',
+            'state'                 : state
+        }
+        r = session.post(
+            url=self.API_AUTH_V3 +
+                self.API_AUTH_V3_AUTHORIZE +
+                '?' +
+                urllib.parse.urlencode(hdrform),
+            headers=headers,
+            data=session_params,
+            allow_redirects=False
+        )
+        # HTTP 302 Found is returned if correct username/password is given (don't follow the redirect).
+        # HTTP 200 OK is returned if no username/password is given.
+        # HTTP 401 Unauthorized is returned if incorrect username/password is given.
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_302_FOUND:
+            self.logger.warn("TeslaAPI.new_auth_token(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
+            return None
+        self.got401Unauthorized = False
+
+        # TODO - implement MFA
+        is_mfa = True if r.status_code == 200 and "/mfa/verify" in r.text else False
+
+        auth_code = None
+        try:
+            parsed = urllib.parse.urlparse(r.headers["Location"])
+            auth_code = urllib.parse.parse_qs(parsed.query)['code'][0]
+        except Exception as e:
+            pass
+
+        return auth_code
+
+    """ 
+        Step 4: Get bearer token using authentication code
+    """
+    def authorization_v3_get_bearer_token(self, session, auth_code, code_verifier):
+        headers = {
+            'User-Agent' : 'PowerwallDarwinManager' 
+        }
+#        headers = { 
+#            'Accept': 'application/json' 
+#        }
+        payload = {
+            'grant_type'    : 'authorization_code',
+            'client_id'     : 'ownerapi',
+            'code'          : auth_code,
+            'code_verifier' : self.generate_rnd(108), # code_verifier
+            'redirect_uri'  : self.API_AUTH_V3_REDIRECT_URI
+        }
+        r = session.post(
+            url=self.API_AUTH_V3 +
+                self.API_AUTH_V3_TOKEN,
+            headers=headers,
+            data=payload
+        )
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.new_bearer_token(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
+            return None
+        self.got401Unauthorized = False
+
+        bearer_token = None
+        try:
+            bearer_token = r.json()["access_token"]
+        except Exception as e:
+            pass
+        return bearer_token
+
+ 
+    """ 
+        Step 5: Get an access_token with expiry date etc using bearer token
+    """
+    def authorization_v3_get_access_token(self, session, bearer_token) -> bool:
+        headers = {
+            'User-Agent' : 'PowerwallDarwinManager',
+            'authorization' : 'bearer ' + bearer_token
+        }
+        payload = {
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "client_id": self.TESLA_CLIENT_ID,
+        }
+        r = session.post(
+            url=self.API_BASE +
+                self.API_AUTHENTICATION,
+            headers=headers,
+            data=payload
+        )
+
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.new_access_token(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
+            return False
+        self.got401Unauthorized = False
+
+        try:
+            response_json = r.json()
+            # extracting response text
+            response_dict = json.loads(r.text)
+            self.access_token = response_dict['access_token']
+            self.token_type = response_dict['token_type']
+            self.created_at = response_dict['created_at']
+            self.expires_in = response_dict['expires_in']
+            self.refresh_token = response_dict['refresh_token']
+        except Exception as e:
+            return False
+        return True
+
+    """
+        This method gets the form, obtains the cookie and possible hidden fields, submits a login form to 
+        emulate a web browser.
+
+    """
+    def authenticate_v3(self, email=None, password=None) -> bool:
+
+        # Step 1: Generate a state (random string, static during this cycle) and verifier
+        state = self.generate_state()
+        code_verifier, challenge = self.generate_challenge()
+
+        # Step 2: Get any hidden params from the session form, including session cookie, transaction_id and csrf
+        session, session_params = self.authenticate_v3_getform(challenge=challenge, state=state)
+
+        # Step 3: Login and obtain authorization code
+        # Add credentials
+        session_params['identity'] = email
+        session_params['credential'] = password
+        # Submit login form
+        auth_code = self.authorization_v3_get_auth_code(session=session,                \
+                                                        challenge=challenge,            \
+                                                        session_params=session_params,  \
+                                                        state=state
+                                                    )
+        if (self.got401Unauthorized or auth_code is None):
+            # Not authorized
+            return False
+
+        # Step 4: Get bearer token using authentication code
+        bearer_token = self.authorization_v3_get_bearer_token(session=session,               \
+                                                              code_verifier=code_verifier,   \
+                                                              auth_code=auth_code            \
+                                                            )
+        if (self.got401Unauthorized or bearer_token is None):
+            # Not authorized
+            return False
+
+        # Step 5: Get an access_token with expiry date etc using bearer token
+        result = self.authorization_v3_get_access_token(session=session,           \
+                                                        bearer_token=bearer_token  \
+                                                    )
+
+        return result
+
 
     def authenticate(self, email=None, password=None):
         self.logger.debug('authenticate() ' + self.API_AUTHENTICATION)

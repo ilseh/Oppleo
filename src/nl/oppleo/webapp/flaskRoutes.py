@@ -43,6 +43,7 @@ from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.GitUtil import GitUtil
 
 from nl.oppleo.utils.EnergyUtil import modbusConfigOptions
+from nl.oppleo.utils.BackupUtil import BackupUtil
 
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
@@ -1095,7 +1096,7 @@ def TeslaApi_GenerateOAuth(token=None):
 
     # Update for specific token
     tesla_api = TeslaAPI()
-    if tesla_api.authenticate(
+    if tesla_api.authenticate_v3(
         email=request.form['oauth_email'], 
         password=request.form['oauth_password']):
         # Obtained token
@@ -1188,6 +1189,7 @@ def TeslaApi_RevokeOAuth(token=None):
 
 
 # Always returns json
+@flaskRoutes.route("/update_settings/<path:param>", defaults={'value': None}, strict_slashes=False, methods=["POST"])
 @flaskRoutes.route("/update_settings/<path:param>/<path:value>", methods=["POST"])
 @flaskRoutes.route("/update_settings/<path:param>/<path:value>/", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
@@ -1424,7 +1426,7 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid interget value' })
+            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid integer value' })
         energyDeviceModel = EnergyDeviceModel.get()
         energyDeviceModel.slave_address = value
         energyDeviceModel.save()
@@ -1484,7 +1486,7 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid interget value' })
+            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid integer value' })
         oppleoConfig.modbusInterval = value
         return jsonify({ 'status': 200, 'param': param, 'value': value })
 
@@ -1494,8 +1496,115 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.httpPort = value
         return jsonify({ 'status': 200, 'param': param, 'value': oppleoSystemConfig.httpPort })
 
+
+
+
+
+    # backupEnabled
+    if (param == 'backupEnabled'):
+        oppleoConfig.backupEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.backupEnabled })
+
+    # backupInterval
+    validation="^(hdwm)$"
+    if (param == 'backupInterval') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.backupInterval = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # backupTimeOfDay
+    validation="^([0-9]{2}:[0-9]{2}:[0-9]{2})$"
+    if (param == 'backupTimeOfDay') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.backupTimeOfDay = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # backupLocalHistory
+    validation="^([0-9]{1,3})$"
+    if (param == 'backupLocalHistory') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.backupLocalHistory = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # osBackupEnabled
+    if (param == 'osBackupEnabled'):
+        oppleoConfig.osBackupEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.osBackupEnabled })
+
+    # osBackupType
+    if (param == 'osBackupType') and isinstance(value, str) and value.lower() in ['smb']:
+        oppleoConfig.osBackupType = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # smbBackupServerName
+    if (param == 'smbBackupServerName') and isinstance(value, str):
+        oppleoConfig.smbBackupServerName = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # smbBackupIPAddress (can be empty)
+    validation="^()|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
+    if (param == 'smbBackupIPAddress') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.smbBackupIPAddress = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # smbBackupUsername
+    if (param == 'smbBackupUsername') and isinstance(value, str):
+        oppleoConfig.smbBackupUsername = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # smbBackupPassword
+    if (param == 'smbBackupPassword') and isinstance(value, str):
+        oppleoConfig.smbBackupPassword = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # smbBackupShareName
+    if (param == 'smbBackupShareName') and isinstance(value, str):
+        oppleoConfig.smbBackupShareName = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+    # smbBackupSharePath
+    if (param == 'smbBackupSharePath') and isinstance(value, str):
+        oppleoConfig.smbBackupSharePath = value
+        return jsonify({ 'status': 200, 'param': param, 'value': value })
+
+
     # No parameter found or conditions not met
     return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
+
+
+
+# Always returns json
+@flaskRoutes.route("/backup/<path:cmd>", methods=["GET"])
+@flaskRoutes.route("/backup/<path:cmd>/", methods=["GET"])
+@authenticated_resource  # CSRF Token is valid
+def getBackupInfo(cmd=None):
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/backup/{}'.format(cmd))
+
+    backupUtil = BackupUtil()
+    
+    if isinstance(cmd, str) and len(cmd) > 3:
+        if (cmd.lower() == "smbshares"):
+            # Return the shared folders
+            shareList = backupUtil.listSMBShares()
+            return jsonify({ 
+                'status'        : 200 if isinstance(shareList, list) else 401,
+                'cmd'           : cmd,
+                'smbshares'     : shareList if isinstance(shareList, list) else []
+                })
+        if (cmd.lower() == "smbvalidateuser"):
+            # Return the shared folders
+            validConnection = backupUtil.validateSMBConnection()
+            return jsonify({ 
+                'status'            : 200,
+                'cmd'               : cmd,
+                'smbvalidateuser'   : 'true' if validConnection else 'false'
+                })
+
+
+    return jsonify({ 
+        'status'        : 500, 
+        'id'            : oppleoConfig.chargerName, 
+        'reason'        : 'Could not return information'
+        })
+
 
 
 # Always returns json
