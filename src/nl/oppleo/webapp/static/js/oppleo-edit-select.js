@@ -3,13 +3,24 @@
 
   Import the following in the main file
 
-  <!-- Select2 -->
+  <!-- https://select2.org/ -->
   <link href="/static/plugins/select2/4.0.7/select2.min.css" rel="stylesheet" type="text/css" />
   <script src="/static/plugins/select2/4.0.7/select2.min.js" type="text/javascript"></script>
 
   Options: 
     - info is optional. 
     - unlock=true leaves selectbox open and does not trigger onApply event
+
+  Dynamic update options example. Create a data Object 
+    let dObj = []
+    optionList.forEach( (v) => {
+      dObj.push( { id: v, text: v  } )
+    })
+  Set options as jQuery property (object or string) or as HTMLElement attribute (string):
+    $('oppleo-edit-select#id').prop('options', dObj)
+    $('oppleo-edit-select#id').prop('options', JSON.stringify(dObj))
+    $('oppleo-edit-select#id').attr('options', JSON.stringify(dObj))
+
 
 */
 
@@ -291,7 +302,7 @@ class OppleoEditSelect extends HTMLElement {
       //this.$editApplyButton.click()
     }
 
-    this.render() // needed?
+    this.render() // needed, doesn't call it by itself
   }
   close() {
     if ($(this.$select).hasClass("select2-hidden-accessible")) {

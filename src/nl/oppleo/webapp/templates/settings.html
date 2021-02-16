@@ -14,9 +14,13 @@
   <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/datepicker-nl.js') }}"></script>
   
-  <!-- Select2 -->
+  <!-- https://select2.org/ -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.css') }}">
   <script src="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.js') }}"></script>
+
+  <!-- https://timepicker.co/ -->
+  <link href="/static/plugins/timepicker/1.3.5/jquery.timepicker.min.css" rel="stylesheet" type="text/css" />
+  <script src="/static/plugins/timepicker/1.3.5/jquery.timepicker.min.js" type="text/javascript"></script>
 
   <!-- Custombox -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/custombox/4.0.3/dist/custombox.min.css') }}">
@@ -25,6 +29,7 @@
   <!-- Oppleo edit web components -->
   <script src="{{ url_for('static', filename='js/oppleo-edit-str.js') }}" shadydom></script>
   <script src="{{ url_for('static', filename='js/oppleo-edit-select.js') }}" shadydom></script>
+  <script src="{{ url_for('static', filename='js/oppleo-edit-time.js') }}" shadydom></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/oppleo-edit-select.css') }}">
 
   <style>
@@ -397,8 +402,6 @@
       })
     }
 
-
-
     function offsiteBackupDataReq( req, reqdata={} ) {
       console.log(timestamp() + ' offsiteBackupDataReq()')            
       // Show spinner
@@ -470,7 +473,6 @@
                   data.shareList.forEach( (v) => {
                     dObj.push( { id: v, text: v  } )
                   })
-//                  $('oppleo-edit-select#osBackupServiceName').attr('options', tmpD)
                   $('oppleo-edit-select#osBackupServiceName').prop('options', JSON.stringify(dObj))
 
                 } else {                        // --> stay on tab 1
@@ -503,7 +505,6 @@
                 }
                 break
 
-                
               default:
                 break
             }
@@ -2167,7 +2168,7 @@
                         <table class="table table-striped table-sm">
                           <tbody>
                             <tr>
-                              <td class="text-dark">Activeer backup:</td>
+                              <td class="text-dark w-25">Activeer backup:</td>
                               <td class="text-primary">
                                 <form id="backup-enabled-form">
                                   <input type="checkbox" 
@@ -2197,6 +2198,90 @@
                                 ]'
                                 placeholder="Maak een keuze..."
                                 info=""
+                                />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Tijdstip:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-time 
+                                id="backupTime"
+                                value=""
+                                validation=""
+                                info="Tijdstip van de backup."
+                                />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Weekdag:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                  id="backupDayOfWeek"
+                                  options='[ { "text": "Maandag",   "id": "0"{% if "0" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
+                                             { "text": "Dinsdag",   "id": "1"{% if "1" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
+                                             { "text": "Woensdag",  "id": "2"{% if "2" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} }, 
+                                             { "text": "Donderdag", "id": "3"{% if "3" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
+                                             { "text": "Vrijdag",   "id": "4"{% if "4" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
+                                             { "text": "Zaterdag",  "id": "5"{% if "5" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
+                                             { "text": "Zondag",    "id": "6"{% if "6" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} } 
+                                           ]'
+                                  info="Weekdag voor de weekelijkse backup."
+                                />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Kalenderdag:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                  id="backupDayOfMonth"
+                                  options='[ { "text":  "1e",  "id":  "1"{% if  "1" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text":  "2e",  "id":  "2"{% if  "2" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text":  "3e",  "id":  "3"{% if  "3" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text":  "4e",  "id":  "4"{% if  "4" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text":  "5e",  "id":  "5"{% if  "5" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text":  "6e",  "id":  "6"{% if  "6" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text":  "7e",  "id":  "7"{% if  "7" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text":  "8e",  "id":  "8"{% if  "8" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text":  "9e",  "id":  "9"{% if  "9" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "10e",  "id": "10"{% if "10" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "11e",  "id": "11"{% if "11" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "12e",  "id": "12"{% if "12" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "13e",  "id": "13"{% if "13" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "14e",  "id": "14"{% if "14" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "15e",  "id": "15"{% if "15" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "16e",  "id": "16"{% if "16" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "17e",  "id": "17"{% if "17" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "18e",  "id": "18"{% if "18" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "19e",  "id": "19"{% if "19" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "20e",  "id": "20"{% if "20" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "21e",  "id": "21"{% if "21" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "22e",  "id": "22"{% if "22" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "23e",  "id": "23"{% if "23" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "24e",  "id": "24"{% if "24" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "25e",  "id": "25"{% if "25" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "26e",  "id": "26"{% if "26" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
+                                             { "text": "27e",  "id": "27"{% if "27" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "28e",  "id": "28"{% if "28" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "29e",  "id": "29"{% if "29" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "30e",  "id": "30"{% if "30" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
+                                             { "text": "31e",  "id": "31"{% if "31" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }
+                                           ]'
+                                  info="Kalenderdag van de maand voor maandelijkse backup. <br><i>Wanneer de dag niet voorkomt in de maand, bijvoorbeeld de 30e in februari, wordt de backup uitgevoerd na het verstrijken op de 1e van de volgende maand.</i>"
+                                />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Aantal:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="backupCount"
+                                value=""
+                                validation="^(0?[1-9]|[1-9][0-9])$"
+                                info="Aantal lokaal te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
                                 />
                               </td>
                             </tr>
@@ -2256,7 +2341,19 @@
                               <td class="text-primary" id="smbBackupLocation">
                                 <span id="smbBackupServiceName">{% if oppleoconfig.smbBackupServiceName is not none %}//{{ oppleoconfig.smbBackupServiceName }}{% else %}{% endif %}</span><span id="smbBackupRemotePath">{% if oppleoconfig.smbBackupRemotePath is not none %}{{ oppleoconfig.smbBackupRemotePath }}{% else %}{% endif %}</span>
                             </tr>
-  
+
+                            <tr>
+                              <td class="text-dark">Aantal:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="osBackupCount"
+                                value=""
+                                validation="^(0?[1-9]|[1-9][0-9])$"
+                                info="Aantal offsite te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
+                                />
+                              </td>
+                            </tr>
+
                             <tr>
                               <td class="text-dark">&nbsp;</td>
                               <td class="text-primary">
