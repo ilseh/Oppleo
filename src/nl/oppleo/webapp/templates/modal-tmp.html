@@ -1,0 +1,128 @@
+        <!-- Custom Modal -->
+        <div id="offsite-backup-modal" class="offsite-backup-modal-dialog modal-dialog">
+            <button type="button" class="close btn-secondary" style="cursor: pointer;" onclick="Custombox.close();">
+              <span>&times;</span><span class="sr-only">Close</span>
+            </button>
+            <h4 class="custom-modal-title">Modal title</h4>
+            <div class="custom-modal-text">
+  
+              <ul class="nav nav-tabs tabs-bordered nav-justified" id="BackupModalNavTabs">
+                <li class="nav-item">
+                  <a href="#bm-step1" class="nav-link" aaria-expanded="true" style="cursor: default;"><i class="fas fa-charging-station"></i> Step 1: Type</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#bm-step2" class="nav-link" aaria-expanded="true" style="cursor: default;"><i class="fas fa-charging-station"></i> Step 2: Server</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#bm-step3" class="nav-link" aria-expanded="false" style="cursor: default;"><i class="fas fa-charging-station"></i> Step 3: Share</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#bm-step4" class="nav-link" aria-expanded="false" style="cursor: default;"><i class="fas fa-charging-station"></i> Step 4: Directory</a>
+                </li>
+              </ul>            
+              <div class="tab-content">
+  
+                <div class="tab-pane fade" id="bm-step1">
+                  <div class="col-lg-12">
+                    Lorem Ipsum is s.
+                    <table class="w-100">
+                      <tr>
+                        <td>Type</td>
+                        <td>
+                          <select name="offsite-backup-type">
+                            <option name="smb" selected>Server message Block (SMB)</option>
+                          </select>
+                        </td>
+                      </tr>
+                    </table>
+                    <hr/>
+                    <button 
+                      id="offsite-backup-dialog-close" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Close
+                    </button>
+                    <button 
+                      id="offsite-backup-dialog-select-type" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Select
+                    </button>
+                  </div>
+                </div>
+  
+                <div class="tab-pane fade" id="bm-step2">
+                  <div class="col-lg-12">
+                    Lorem Ipsum is s.
+                    <table>
+                      <tr>
+                        <td>Server naam of IP adres</td>
+                        <td><input name="offsite-backup-server-of-ip" value=""></td>
+                      </tr>
+                      <tr>
+                        <td>Gebruikersnaam</td>
+                        <td><input name="offsite-backup-username" value=""></td>
+                      </tr>
+                      <tr>
+                        <td>Wachtwoord</td>
+                        <td><input name="offsite-backup-password" value=""></td>
+                      </tr>
+                    </table>
+                    <hr/>
+                    <button 
+                      id="offsite-backup-dialog-close" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Close
+                    </button>
+                    <button 
+                      id="offsite-backup-dialog-connect" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Connect
+                    </button>
+                  </div>
+                </div>
+  
+  
+                <div class="tab-pane fade" id="bm-step3">
+                  <div class="col-lg-12">
+                    Lorem Ipsum is simply dummy text of t.
+  
+                    <button 
+                      id="custom-modal1" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Next
+                    </button>
+                    <button 
+                      id="offsite-backup-dialog-close" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="tab-pane fade" id="bm-step4">
+                  <div class="col-lg-12">
+                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+  
+                    <button 
+                      id="custom-modal1" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Apply
+                    </button>
+                    <button 
+                      id="offsite-backup-dialog-close" 
+                      class="btn btn-sm btn-primary waves-effect waves-light" 
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+  
+              </div>
+            </div>
+          </div>

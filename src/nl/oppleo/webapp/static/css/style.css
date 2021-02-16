@@ -1566,6 +1566,11 @@ code, pre {
   background-color: transparent;
   border-color: #323b44; }
 
+.btn-primary:disabled {
+  background-color: #485561;
+  border-color: #485561;
+  cursor: default; } 
+
 .btn-custom {
   border-bottom: 3px solid transparent; }
 

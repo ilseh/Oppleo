@@ -18,6 +18,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.css') }}">
   <script src="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.js') }}"></script>
 
+  <!-- Custombox -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/custombox/4.0.3/dist/custombox.min.css') }}">
+  <script src="{{ url_for('static', filename='plugins/custombox/4.0.3/dist/custombox.min.js') }}"></script>
+
   <!-- Oppleo edit web components -->
   <script src="{{ url_for('static', filename='js/oppleo-edit-str.js') }}" shadydom></script>
   <script src="{{ url_for('static', filename='js/oppleo-edit-select.js') }}" shadydom></script>
@@ -142,6 +146,82 @@
       background-color: rgba(0,0,0,.05);/* #576676; */
     }
 
+    .modal-dialog {
+      border-radius: 4px;
+      max-width: 900px;
+      border: 2px solid rgba(152, 166, 173, 0.2) !important;
+    }
+    .modal-header {
+      background-color: #3bafda;
+      width: 100%;
+      padding: 0.1rem;
+      padding-left: 1rem;
+    }
+    .modal-title {
+      color: #ffffff;
+    }
+    .modal-header .close-x {
+      position: absolute;
+      top: 0px;
+      font-size: 24px;
+      right: .1rem;
+      height: 36px;
+      width: 36px;
+      background-color: #3bafda;
+      opacity: 1;
+      border: 0px;
+      text-shadow: none;
+      color: #ffffff;
+      padding: 0;
+    }
+    .modal-body {
+      min-height:280px; 
+      overflow-y: auto;
+    }    
+    .modal-content {
+      background-color: #36404a;
+      border: 1px solid rgba(152, 166, 173, 0.4) !important;
+    }
+    .modal-footer {
+      border-top: 1px solid rgba(152, 166, 173, 0.4) !important;
+    }
+    .numberCircle {
+      border-radius: 50%;
+      width: 2rem;
+      height: 1rem;
+      padding: 1px 4px 1px 4px;
+
+      /* background: #3bafda; */
+      border: 2px solid #485561;
+      color: #98a6ad;
+      text-align: center;
+      opacity: 0.5;
+
+      font: 16px Arial, sans-serif;
+    }
+    .active .numberCircle {
+      border-radius: 50%;
+      width: 2rem;
+      height: 1rem;
+      padding: 1px 4px 1px 4px;
+
+      /* background: #3bafda; */
+      border: 2px solid#3bafda !important;
+      color: #fff;
+      text-align: center;
+      opacity: 0.5;
+
+      font: 16px Arial, sans-serif;
+    }
+    .spacer-10 {
+      height: 10px;
+    }
+    .spacer-20 {
+      height: 20px;
+    }
+    .spacer-25 {
+      height: 25px;
+    }
   </style>
 
   <script>
@@ -168,7 +248,7 @@
           }
       $.ajax({
         type		    : 'POST',
-        url			    : ('/update_settings/' + encodeURIComponent(param) +'/' + encodeURIComponent(value) + '/'),
+        url			    : ('/update_settings/'+encodeURIComponent(param)+'/'+(value.length>0?encodeURIComponent(value)+'/':'')),
         dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
         encode		  : true,
@@ -246,7 +326,193 @@
 
       })
       .fail(function(data) {
-        notify('error','top-left', 'Connectie fout', 'Instelling niet gewijzigd.')
+        autoHideNotify('error','top-left', 'Connectie fout', 'Instelling niet gewijzigd.')
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
+    function getBackupData( req ) {
+      console.log(timestamp() + ' getBackupData()')            
+      // Show spinner
+      $('.spinner').show()
+      data = {
+            csrf_token    : '{{ csrf_token() }}',
+            param         : req
+          }
+      $.ajax({
+        type		    : 'GET',
+        url			    : ('/backup/' + encodeURIComponent(req) +'/'),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        switch (data.status) {
+          case 401:
+            // Not authosized response
+            autoHideNotify('warning','top-left', 'Autorisatie fout', 'Data niet beschikbaar.')
+            break
+          case 200:
+            // Ok response
+            switch (data.cmd) {
+              case 'smbshares':
+                // Oppleo web component applied change
+                $('oppleo-edit-select#smbBackupShareName')[0].setAttribute('options', 
+                  '[' + data.smbshares.map(share => '{ "text": "'+share+'", "value": "'+share+'" }').join(", ") + ']'
+                )
+                $('oppleo-edit-select#smbBackupShareName')[0].render()
+                break
+
+              case 'smbvalidateuser':
+                // 
+                if (data.smbvalidateuser === 'true') {
+                  $('button#smbBackupValidatePassword').html('<i class="fas fa-user-check"></i>') 
+                  $('button#smbBackupValidatePassword').addClass('btn-outline-success')
+                  $('button#smbBackupValidatePassword').removeClass('btn-outline-warning')
+                  $('button#smbBackupValidatePassword').removeClass('btn-outline-danger')
+                } else {
+                  $('button#smbBackupValidatePassword').html('<i class="fas fa-user-slash"></i>') 
+                  $('button#smbBackupValidatePassword').removeClass('btn-outline-success')
+                  $('button#smbBackupValidatePassword').removeClass('btn-outline-warning')
+                  $('button#smbBackupValidatePassword').addClass('btn-outline-danger')
+                }
+
+              default:
+                break
+            }
+          default:
+            break
+        }
+      })
+      .fail(function(data) {
+        autoHideNotify('error','top-left', 'Connectie fout', 'Data niet beschikbaar.')
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
+
+
+    function offsiteBackupDataReq( req, reqdata={} ) {
+      console.log(timestamp() + ' offsiteBackupDataReq()')            
+      // Show spinner
+      $('.spinner').show()
+      data = {
+        csrf_token    : '{{ csrf_token() }}',
+        param         : req,
+        data          : JSON.stringify(reqdata)
+      }
+      $.ajax({
+        type		    : 'GET',
+        url			    : ('/backup/' + encodeURIComponent(req) +'/' + encodeURIComponent(JSON.stringify(reqdata)) +'/'),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        switch (data.status) {
+          case 400:
+            // Bad request
+            autoHideNotify('error','top-left', 'Bad request', 'Data niet beschikbaar.')
+            break
+          case 401:
+            // Not authorized response
+            autoHideNotify('warning','top-left', 'Autorisatie fout', 'Data niet beschikbaar.')
+            break
+          case 200:
+            // Ok response
+            switch (data.cmd) {
+              case 'smbValidateAccount':
+                if (data.validConnection || data.validConnection === 'true') {   // --> tab 1 to tab 2
+                  $('a[href="#bm-step3"').tab('show')
+                  $("button#modal-footer-prevaction").prop('disabled', false)
+                  $('#offsiteBackupServerOrIP')[0].$input.classList.remove("border", "border-danger")
+                  $("#bm-step2-msg").html("")
+                  $('#offsiteBackupUsername')[0].$input.classList.remove("border", "border-danger")
+                  $('#offsiteBackupPassword')[0].$input.classList.remove("border", "border-danger")
+                  $('button#modal-footer-nextaction').addClass('btn-primary')
+                  $('button#modal-footer-nextaction').removeClass('btn-danger')
+                  // Load shares
+                  offsiteBackupDataReq( 'smbListServices', 
+                        reqdata={ 
+                          serverOrIP: $('#offsiteBackupServerOrIP')[0].$input.value, 
+                          username: $('#offsiteBackupUsername')[0].$input.value, 
+                          password: $('#offsiteBackupPassword')[0].$input.value 
+                        })
+                } else {                        // --> stay on tab 1
+                  if (!data.resolved || data.resolved === 'false') {
+                    $("#bm-step2-msg").html("Server niet bereikbaar")
+                    $('#offsiteBackupServerOrIP')[0].$input.classList.add("border", "border-danger")
+                  } else if (!data.connectionRefused || data.connectionRefused === 'false') {
+                    $("#bm-step2-msg").html("Authenticatiefout")
+                    $('#offsiteBackupUsername')[0].$input.classList.add("border", "border-danger")
+                    $('#offsiteBackupPassword')[0].$input.classList.add("border", "border-danger")
+                  } else {
+                    $("#bm-step2-msg").html("Onbekende fout")
+                  }
+                  $('button#modal-footer-nextaction').removeClass('btn-primary')
+                  $('button#modal-footer-nextaction').addClass('btn-danger')
+                }
+                $('button#modal-footer-nextaction').html(' <i class="fas fa-angle-right"></i> ')
+                break
+
+              case 'smbListServices':
+                if (data.validConnection || data.validConnection === 'true') {
+                  // Load shares in selectbox
+                  let dObj = []
+                  data.shareList.forEach( (v) => {
+                    dObj.push( { id: v, text: v  } )
+                  })
+//                  $('oppleo-edit-select#osBackupServiceName').attr('options', tmpD)
+                  $('oppleo-edit-select#osBackupServiceName').prop('options', JSON.stringify(dObj))
+
+                } else {                        // --> stay on tab 1
+                  if (!data.resolved || data.resolved === 'false') {
+                    $("#bm-step2-msg").html("Server niet bereikbaar")
+                  } else if (!data.connectionRefused || data.connectionRefused === 'false') {
+                    $("#bm-step2-msg").html("Authenticatiefout")
+                  } else {
+                    $("#bm-step2-msg").html("Onbekende fout")
+                  }
+                }
+                break
+
+              case 'smbListDirectories':
+                if (data.validConnection || data.validConnection === 'true') {   // --> tab 1 to tab 2
+                  // Load directories in selectbox
+                  let dObj = []
+                  data.directoryList.forEach( (v) => {
+                    dObj.push( { id: v, text: v } )
+                  })
+                  $('oppleo-edit-select#smbBackupRemotePathSelect').prop('options', JSON.stringify(dObj))
+                } else {                        // --> stay on tab 1
+                  if (!data.resolved || data.resolved === 'false') {
+                    $("#bm-step2-msg").html("Server niet bereikbaar")
+                  } else if (!data.connectionRefused || data.connectionRefused === 'false') {
+                    $("#bm-step2-msg").html("Authenticatiefout")
+                  } else {
+                    $("#bm-step2-msg").html("Onbekende fout")
+                  }
+                }
+                break
+
+                
+              default:
+                break
+            }
+          default:
+            break
+        }
+      })
+      .fail(function(data) {
+        autoHideNotify('error','top-left', 'Connectie fout', 'Data niet beschikbaar.')
       })
       .always(function() {
         // Remove spinner
@@ -255,6 +521,52 @@
     }
 
     var diag_data = {{ diag_json | safe }}
+    var backupOffsiteDialog = null
+
+    function updateSmbBackupSettings() {
+      autoHideNotify('warning','top-left', 'Not implemented', 'Dit is nog niet klaar...')
+
+      // Succesful ending, Keep on/off enabled
+      $('td#smbBackupServerNameOrIPAddress').text($('#offsiteBackupServerOrIP')[0].$input.value)
+      $('td#smbBackupPassword').attr('value', $('#offsiteBackupUsername')[0].$input.value)
+      $('td#smbBackupPassword').text('********')
+      let serviceName = $($('#osBackupServiceName')[0].$select).find("option:selected").text()
+      $('span#smbBackupServiceName').text((typeof serviceName == 'string' && serviceName.length > 0 ? '//' + serviceName : ''))
+      let remotePath = $('#smbBackupRemotePathList ul li').map( (i, el) => {return el.innerText.trim() }).toArray().join('')
+      $('span#smbBackupRemotePath').text(remotePath)
+
+      $('button#modal-backup-edit').prop('disabled', false)
+
+// XXXX
+      
+      // TODO
+      // - Submit to server
+      
+
+      // Close modal dialog
+      backupOffsiteDialog.modal('hide')
+
+    }
+
+    function showBackupModal() {
+      // Init modal dialog
+
+      // TODO - populate type, serverorip, username and password fields with existing values
+
+      $('#offsiteBackupServerOrIP')[0].$input.classList.remove("border", "border-danger")
+      $("#bm-step2-msg").html("")
+      $('#offsiteBackupUsername')[0].$input.classList.remove("border", "border-danger")
+      $('#offsiteBackupPassword')[0].$input.classList.remove("border", "border-danger")
+
+      $('#osBackupServiceName')[0].$select_container.classList.remove("border", "border-danger")
+      $("#bm-step3-msg").html("")
+
+      $('button#modal-footer-nextaction').html(' <i class="fas fa-angle-right"></i> ')
+
+      backupOffsiteDialog.modal('show')
+      $('a[href="#bm-step1"').tab('show')
+    }
+
 
     jQuery(document).ready(function() {
       console.log(timestamp() + " file load completed!")
@@ -396,16 +708,235 @@
       $('oppleo-edit-str').on('apply', (e) => {
         console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
         // Submit
-        updateSettings( e.target.id, e.detail.newValue )
+// TODO         updateSettings( e.target.id, e.detail.newValue )
       })
       // Oppleo web component applied change
       $('oppleo-edit-select').on('apply', (e) => {
         console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' oldText:' + e.detail.oldText + ' newValue:' + e.detail.newValue + ' newText:' + e.detail.newText)
         // Submit
-        updateSettings( e.target.id, e.detail.newValue )
+// TODO         updateSettings( e.target.id, e.detail.newValue )
       })
 
-      $('button#softwateUpdateCheck').on('click', getSoftwareStatus)
+
+      $('button#smbBackupValidatePassword').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Clean data fields
+        getBackupData('smbvalidateuser')
+        $('button#smbBackupValidatePassword').html('<i class="fas fa-user-cog"></i>') 
+        $('button#smbBackupValidatePassword').removeClass('btn-outline-success')
+        $('button#smbBackupValidatePassword').addClass('btn-outline-warning')
+        $(this).tooltip('hide')
+      })     
+      $('#smbBackupSelectShare').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Clean data fields
+        getBackupData('smbshares')
+        $(this).tooltip('hide')
+      })
+
+      // --- Backup
+
+      backupOffsiteDialog = $('#offsiteBackupModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      backupOffsiteDialog.on('hidden.bs.modal', function () {
+        // Modal closed. Close all select2's
+        $('oppleo-edit-select').each( (i, el) => el.close() )
+      })        
+
+      $('oppleo-edit-select').on('select', (e) => {
+        console.log('oppleo-edit-str onSelect [' + e.target.id + '] id:' + e.detail.id + ' text:' + e.detail.text)
+        $('button#modal-directory-apply').prop('disabled', false)
+        $('button#modal-directory-apply').attr('data-original-title', 'Selecteer directory "' + e.detail.text + '"')
+        // Reset no service chosen error
+        $("#bm-step3-msg").html("")
+        $('#osBackupServiceName')[0].$select_container.classList.remove("border", "border-danger")
+        $('button#modal-footer-nextaction').addClass('btn-primary')
+        $('button#modal-footer-nextaction').removeClass('btn-danger')
+      })
+      $('oppleo-edit-select').on('unselect', (e) => {
+        console.log('oppleo-edit-str onSelect [' + e.target.id + '] id:' + e.detail.id + ' text:' + e.detail.text)
+        $('button#modal-directory-apply').prop('disabled', true)
+        $('button#modal-directory-apply').attr('data-original-title', '')
+
+      })
+      $('button#modal-directory-apply').on('click', function(bev) {
+        $('button#modal-directory-apply').prop('disabled', true)
+        $('button#modal-directory-apply').attr('data-original-title', '')
+        $('button#modal-directory-apply').tooltip('hide') // Make sure tooltips don't remain          
+        let dir = $($('#smbBackupRemotePathSelect')[0].$select).find("option:selected").text()
+
+        let li = $('<li style="display: inline;">' + dir + '</li>')
+        let span = $(`<span
+                        class="text-secondary onhover-danger cursor-pointer"
+                        data-toggle="tooltip" 
+                        data-placement="bottom" 
+                        data-html="true"
+                        title='Verwijder "` + dir + `" uit het path'
+                        >
+                        <sup><i class="fas fa-times"></i></sup>
+                      </span>`)
+        li.append(span)
+        let liSep = $('<li style="display: inline;">/</li>')
+        $('#smbBackupRemotePathList ul').append(li)
+        $('#smbBackupRemotePathList ul').append(liSep)
+
+        span.on('click', (sev) => {
+          let nextLiList = $(sev.currentTarget).parent().nextAll()
+          nextLiList.each( (i, el) => { $(el).remove() })
+          // prevList is from the currentTarget, thus reverse order
+          let prevLiList = $(sev.currentTarget).parent().prevAll().reverse()
+          let smbPath = ""
+          prevLiList.each( (i, el) => { smbPath += el.innerText.trim() })
+          $(sev.currentTarget).parent().remove()
+          offsiteBackupDataReq( 'smbListDirectories', 
+                          reqdata={ 
+                            serverOrIP: $('#offsiteBackupServerOrIP')[0].$input.value, 
+                            username: $('#offsiteBackupUsername')[0].$input.value, 
+                            password: $('#offsiteBackupPassword')[0].$input.value,
+                            serviceName: $($('#osBackupServiceName')[0].$select).find("option:selected").text(),
+                            smbPath: smbPath
+                          })
+        })
+
+        let smbPath = ""
+        $('#smbBackupRemotePathList ul li').each( (i, el) => { smbPath += el.innerText.trim() })
+        offsiteBackupDataReq( 'smbListDirectories', 
+                        reqdata={ 
+                          serverOrIP: $('#offsiteBackupServerOrIP')[0].$input.value, 
+                          username: $('#offsiteBackupUsername')[0].$input.value, 
+                          password: $('#offsiteBackupPassword')[0].$input.value,
+                          serviceName: $($('#osBackupServiceName')[0].$select).find("option:selected").text(),
+                          smbPath: smbPath
+                        })
+      })
+
+      $('button#modal-backup-edit').on('click', (ev) => {
+        showBackupModal()
+      })
+
+      $('input#osBackupEnabled').change(function() {
+        if (!$('input#osBackupEnabled').prop('checked')){
+          // Switching off
+
+          // TODO
+          // - submit to server
+
+          // Disable edit button
+          $('button#modal-backup-edit').prop('disabled', true)
+          return
+        }
+        showBackupModal()
+      })
+      $('a[href="#bm-step1"').tab('show')
+      $("button#modal-footer-nextaction").on('click', function(e) {
+        $('button#modal-footer-nextaction').html(' <i class="fas fa-spinner fa-spin"></i> ')
+        var activeTab = $("ul#BackupModalNavTabs li a.active").attr("href")
+        switch (activeTab) {
+          case '#bm-step1':
+            $('a[href="#bm-step2"').tab('show')
+            $('button#modal-footer-nextaction').html(' <i class="fas fa-angle-right"></i> ')
+            $("button#modal-footer-prevaction").prop('disabled', false)
+            // Close all select2's
+            $('oppleo-edit-select').each( (i, el) => el.close() )
+            break
+          case '#bm-step2':
+            // Validate the account
+            offsiteBackupDataReq( 'smbValidateAccount', 
+                        reqdata={ 
+                          serverOrIP: $('#offsiteBackupServerOrIP')[0].$input.value, 
+                          username: $('#offsiteBackupUsername')[0].$input.value, 
+                          password: $('#offsiteBackupPassword')[0].$input.value 
+                        })
+            break
+          case '#bm-step3':
+            if ($($('#osBackupServiceName')[0].$select).find("option:selected").length == 0) {
+              // Nothing selected
+              $("#bm-step3-msg").html("Selecteer een service")
+              $('#osBackupServiceName')[0].$select_container.classList.add("border", "border-danger")
+              $('button#modal-footer-nextaction').html(' <i class="fas fa-angle-right"></i> ')
+              $('button#modal-footer-nextaction').addClass('btn-danger')
+              $('button#modal-footer-nextaction').removeClass('btn-primary')
+            } else {
+              $("#bm-step3-msg").html("")
+              $('#osBackupServiceName')[0].$select_container.classList.remove("border", "border-danger")
+              $('button#modal-footer-nextaction').addClass('btn-primary')
+              $('button#modal-footer-nextaction').removeClass('btn-danger')
+
+              // get the root in the service
+              offsiteBackupDataReq( 'smbListDirectories', 
+                          reqdata={ 
+                            serverOrIP: $('#offsiteBackupServerOrIP')[0].$input.value, 
+                            username: $('#offsiteBackupUsername')[0].$input.value, 
+                            password: $('#offsiteBackupPassword')[0].$input.value,
+                            serviceName: $($('#osBackupServiceName')[0].$select).find("option:selected").text(),
+                            smbPath: '/'
+                          })
+              // Clear path, start fresh
+              $('#smbBackupRemotePathList ul li').remove()
+              $('#smbBackupRemotePathList ul').append('<li style="display: inline;">/</li>')
+              // Close all select2's
+              $('oppleo-edit-select').each( (i, el) => el.close() )
+
+              $('a[href="#bm-step4"').tab('show')
+              $('button#modal-footer-nextaction').html(' <i class="fas fa-flag-checkered"></i> ')
+            }
+
+            break
+          case '#bm-step4':
+            updateSmbBackupSettings()
+            $('button#modal-footer-nextaction').html(' <i class="fas fa-flag-checkered"></i> ')
+            // Close all select2's
+            $('oppleo-edit-select').each( (i, el) => el.close() )
+            break
+        }          
+
+      })
+      // Cancel clicked
+      $("button#modal-footer-cancel").on('click', function(e) {
+        // Cancel button pressed
+        $('input#osBackupEnabled').bootstrapToggle('off')
+        $('#offsiteBackupModal').modal('hide')
+      })
+
+      $("button#modal-footer-prevaction").on('click', function(e) {
+        $('.spinner').show()
+        var activeTab = $("ul#BackupModalNavTabs li a.active").attr("href")
+        switch (activeTab) {
+          case '#bm-step1': // disabled
+            break
+          case '#bm-step2':
+            $('a[href="#bm-step1"').tab('show')
+            $("button#modal-footer-prevaction").prop('disabled', true)
+            // Close all select2's
+            $('oppleo-edit-select').each( (i, el) => el.close() )
+            break
+          case '#bm-step3':
+            $("#bm-step3-msg").html("")
+            $('#osBackupServiceName')[0].$select_container.classList.remove("border", "border-danger")
+            $('button#modal-footer-nextaction').addClass('btn-primary')
+            $('button#modal-footer-nextaction').removeClass('btn-danger')
+            $('a[href="#bm-step2"').tab('show')
+            // Close all select2's
+            $('oppleo-edit-select').each( (i, el) => el.close() )
+            break
+          case '#bm-step4':
+            $('a[href="#bm-step3"').tab('show')
+            $('button#modal-footer-nextaction').html(' <i class="fas fa-angle-right"></i> ')
+            // Close all select2's
+            $('oppleo-edit-select').each( (i, el) => el.close() )
+            break
+        }          
+        $('.spinner').hide()
+      })
+      $('a[href="#bm-step?"').on('click', function (e) {
+        e.preventDefault()
+      })
+
 
        // Remove spinner
       $('.spinner').hide()
@@ -433,7 +964,7 @@
           <div class="card-box">
               <h4 class="header-title m-t-0 m-b-30">Instellingen</h4>
 
-              <ul class="nav nav-tabs tabs-bordered nav-justified">
+              <ul class="nav nav-tabs tabs-bordered nav-justified" id="SettingsNavTabs">
                 <li class="nav-item">
                   <a href="#v-charger" class="nav-link{% if active==1 %} active{% endif %}" data-toggle="tab" aria-expanded="false"><i class="fas fa-charging-station"></i> Laadpunt</a>
                 </li>
@@ -450,7 +981,10 @@
                   <a href="#v-hardware" class="nav-link{% if active==5 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-microchip"></i> Hardware</a>
                 </li>
                 <li class="nav-item">
-                  <a href="#v-diagnostics" class="nav-link{% if active==6 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
+                  <a href="#v-backup" class="nav-link{% if active==6 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-download"></i> Backup</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#v-diagnostics" class="nav-link{% if active==7 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
                 </li>
               </ul>
 
@@ -944,17 +1478,17 @@
                               <td class="text-dark">Snelheid:</td>
                               <td class="text-primary">
                                 <oppleo-edit-select 
-                                id="baudrate"
-                                options='[ { "text": "2400", "value": "2400" }, 
-                                           { "text": "4800", "value": "4800" },
-                                           { "text": "9600", "value": "9600" },
-                                           { "text": "19200", "value": "19200" },
-                                           { "text": "38400", "value": "38400" },
-                                           { "text": "57600", "value": "57600" },
-                                           { "text": "115200", "value": "115200" }
-                                         ]'
-                                selectedText="{{ energydevicemodel.baudrate }}"
-                                info="Seriele poort snelheid om de kWh meter uit te lezen. Dit moet overeenkomen met de snelheid op de kWh meter! Max van de Eastron SMD630 Modbus is 38400"
+                                  id="baudrate"
+                                  options='[{ "text":   "2400", "id":   "2400"{% if energydevicemodel.baudrate ==   2400 %}, "selected": "true"{% endif %} }, 
+                                            { "text":   "4800", "id":   "4800"{% if energydevicemodel.baudrate ==   4800 %}, "selected": "true"{% endif %} },
+                                            { "text":   "9600", "id":   "9600"{% if energydevicemodel.baudrate ==   9600 %}, "selected": "true"{% endif %} },
+                                            { "text":  "19200", "id":  "19200"{% if energydevicemodel.baudrate ==  19200 %}, "selected": "true"{% endif %} },
+                                            { "text":  "38400", "id":  "38400"{% if energydevicemodel.baudrate ==  38400 %}, "selected": "true"{% endif %} },
+                                            { "text":  "57600", "id":  "57600"{% if energydevicemodel.baudrate ==  57600 %}, "selected": "true"{% endif %} },
+                                            { "text": "115200", "id": "115200"{% if energydevicemodel.baudrate == 115200 %}, "selected": "true"{% endif %} }
+                                          ]'
+                                  placeholder="Maak een keuze..."                                
+                                  info="Seriele poort snelheid om de kWh meter uit te lezen. Dit moet overeenkomen met de snelheid op de kWh meter! Max van de Eastron SMD630 Modbus is 38400"
                                 />
                               </td>
                             </tr>
@@ -991,8 +1525,8 @@
                               <td class="text-primary">
                                 <oppleo-edit-select 
                                 id="modbusConfig"
-                                options='[ {% for mco in diag['modbusConfigOptions'] %}{ "text": "{{ mco.short }}", "value": "{{ mco.name }}" }{% if mco.name != (diag['modbusConfigOptions'] | last).name %}, {% endif %}{% endfor %} ]'
-                                selectedValue="{{ energydevicemodel.modbus_config }}"
+                                options='[ {% for mco in diag['modbusConfigOptions'] %}{ "text": "{{ mco.short }}", "id": "{{ mco.name }}"{% if mco.name == energydevicemodel.modbus_config %}, "selected": "true" {% endif %}}{% if mco.name != (diag['modbusConfigOptions'] | last).name %}, {% endif %}{% endfor %} ]'
+                                placeholder="Maak een keuze..."
                                 info="Modbus register definitie, kan verschillen per energiemeter type en versie."
                                 />
                               </td>
@@ -1136,6 +1670,7 @@
                                 prefix=""
                                 value=""
                                 hide="[hashed]"
+                                hideEdit=true
                                 validation="^[a-zA-Z0-9]{8,}$"
                                 info="Wanneer de database niet beschikbaar is zijn alle instellingen onbekend en is inloggen niet mogelijk. Dit wachtwoord geeft alleen dan autorisatie om de applicatie te herstarten, en eventueel de database URL opnieuw in te stellen."
                                 />
@@ -1291,10 +1826,10 @@
                               <td class="text-primary">
                                 <oppleo-edit-select 
                                 id="gpioMode"
-                                options='[ { "text": "BCM: Broadcom SOC Channel (GPIO01 etc.)", "value": "BCM" },
-                                           { "text": "BOARD: De GPIO.BOARD spec (Pin 1 etc.)", "value": "BOARD" }
+                                options='[ { "text": "BCM: Broadcom SOC Channel (GPIO01 etc.)", "id": "BCM"{% if "BCM" == oppleoconfig.gpioMode %}, "selected": "true"{% endif %} },
+                                           { "text": "BOARD: De GPIO.BOARD spec (Pin 1 etc.)", "id": "BOARD"{% if "BOARD" == oppleoconfig.gpioMode %}, "selected": "true"{% endif %} }
                                        ]'
-                                selectedValue="{{ oppleoconfig.gpioMode }}"
+                                placeholder="Maak een keuze..."
                                 info="Raspberry Pi GPIO Pin definitie. De GPIO.BOARD spec refereert aan de pins per pin nummer op de header. GPIO.BCM spec refereert aan de pins per <b>Broadcom SOC Channel</b> nummer, als GPIO01. Bij elke Raspberry Pi versie kan de <i>BOARD</i> header Pin nummering verschillen, terwijl de <i>BCM</i> nummering meestal onveranderd blijft."
                                 />
                               </td>
@@ -1583,10 +2118,10 @@
                               <td class="text-primary">
                                 <oppleo-edit-select 
                                 id="ENV"
-                                options='[ { "text": "Development", "value": "Development", "optgroup": "Environment setting" }, 
-                                           { "text": "Production", "value": "Production", "optgroup": "Environment setting" }
+                                options='[ { "text": "Development", "id": "Development"{% if "Development" == oppleosystemconfig.ENV %}, "selected": "true"{% endif %} }, 
+                                           { "text": "Production", "id": "Production"{% if "Production" == oppleosystemconfig.ENV %}, "selected": "true"{% endif %} }
                                          ]'
-                                selectedText="{{ oppleosystemconfig.ENV }}"
+                                placeholder="Maak een keuze..."
                                 info="Bij Production worden Threads gestart om o.a. de kWh meter uit te lezen en wijzigingen op te slaan in de database, en worde de EVSE aangestuurd. In Development worden hiervoor stubs gebruikt."
                                 />
                               </td>
@@ -1625,7 +2160,118 @@
                     </div>
                   </div>
 
-                  <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-diagnostics">
+                  <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-backup">
+                    <div class="col-lg-12">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="fas fa-download"></i> Backup</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+                            <tr>
+                              <td class="text-dark">Activeer backup:</td>
+                              <td class="text-primary">
+                                <form id="backup-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.backupEnabled %}checked{% endif %}
+                                    name="backupEnabled"
+                                    id="backupEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Interval:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                id="backupInterval"
+                                options='[ { "text": "Dagelijks", "id": "day"{% if "day" == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} },
+                                           { "text": "Wekelijks", "id": "week"{% if "week" == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} },
+                                           { "text": "Maandelijks", "id": "month"{% if "month" == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} }
+                                ]'
+                                placeholder="Maak een keuze..."
+                                info=""
+                                />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-cloud-upload-alt"></i> Offsite Backup</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Offsite Backup:</td>
+                              <td class="text-primary">
+                                <form id="offsite-backup-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.osBackupEnabled %}checked{% endif %}
+                                    name="osBackupEnabled"
+                                    id="osBackupEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Type:</td>
+                              <td class="text-primary">
+                                Server Message Block (SMB)
+                              </td>
+                            </tr>
+                            <!--- SMB -->
+                            <tr>
+                              <td class="text-dark">Server naam of IP adres:</td>
+                              <td class="text-primary" id="smbBackupServerNameOrIPAddress">{% if oppleoconfig.smbBackupServerNameOrIPAddress is not none %}{{ oppleoconfig.smbBackupServerNameOrIPAddress }}{% else %}-{% endif %}
+                              </td>
+                            </tr>          
+                            <tr>
+                              <td class="text-dark">Gebruikersnaam:</td>
+                              <td class="text-primary" id="smbBackupUsername">{% if oppleoconfig.smbBackupUsername is not none %}{{ oppleoconfig.smbBackupUsername }}{% else %}-{% endif %}
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Wachtwoord:</td>
+                              <td class="text-primary" id="smbBackupPassword" value="{% if oppleoconfig.smbBackupPassword is not none %}{{ oppleoconfig.smbBackupPassword }}{% else %}{% endif %}">
+                                {% if oppleoconfig.smbBackupPassword is not none %}********{% else %}{% endif %}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Locatie:</td>
+                              <td class="text-primary" id="smbBackupLocation">
+                                <span id="smbBackupServiceName">{% if oppleoconfig.smbBackupServiceName is not none %}//{{ oppleoconfig.smbBackupServiceName }}{% else %}{% endif %}</span><span id="smbBackupRemotePath">{% if oppleoconfig.smbBackupRemotePath is not none %}{{ oppleoconfig.smbBackupRemotePath }}{% else %}{% endif %}</span>
+                            </tr>
+  
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-primary">
+                                <button type="button" class="btn btn-sm btn-primary" id="modal-backup-edit"{% if not oppleoconfig.osBackupEnabled %} disabled{% endif %}> <i class="fas fa-angle-right"></i> Wijzigen </button>
+                              </td>
+                            </tr>
+
+                          </tbody>
+                        </table>
+
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane{% if active==7 %} active{% endif %}" id="v-diagnostics">
                     <div class="col-lg-12">
                       <div class="card-box">
                         <h4 class="m-t-0 header-title"><i class="fas fa-network-wired"></i> Diagnostics</h4>
@@ -1649,4 +2295,211 @@
 
   </div>
 </div>
+
+
+
+
+
+        <!-- Bootstrap Modal -->
+        <div class="modal fade" id="offsiteBackupModal" tabindex="-1" role="dialog" aria-labelledby="offsiteBackupModalLabel" aria-hidden="true" data-backdrop="static">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 class="modal-title" id="offsiteBackupModalLabel">Offsite backup</h3>
+                <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true"><i class="fas fa-times"></i></span>
+                </button>
+              </div>
+              <div class="modal-body">
+
+                <ul class="nav nav-tabs tabs-bordered nav-justified" id="BackupModalNavTabs">
+                  <li class="nav-item">
+                    <a href="#bm-step1" class="nav-link" aaria-expanded="true" style="cursor: default;"><span class="numberCircle">1</span> Type <i class="fas fa-shoe-prints float-right"></i></a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="#bm-step2" class="nav-link" aaria-expanded="true" style="cursor: default;"><span class="numberCircle">2</span> Server <i class="fas fa-shoe-prints float-right"></i></a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="#bm-step3" class="nav-link" aria-expanded="false" style="cursor: default;"><span class="numberCircle">3</span> Share <i class="fas fa-shoe-prints float-right"></i></a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="#bm-step4" class="nav-link" aria-expanded="false" style="cursor: default;"><span class="numberCircle">4</span> Directory <i class="fas fa-flag-checkered float-right"></i></a>
+                  </li>
+                </ul>            
+                <div class="tab-content">
+    
+                  <div class="tab-pane fade" id="bm-step1">
+                    <div class="col-lg-12">
+                      <div class="w-100 pb-4 pt-2">
+                        <h4 class="header-title">Offsite backup</h4>
+                      </div>
+                      <table class="w-100">
+                        <tr class="spacer-20"></tr> 
+                        <tr>
+                          <td class="text-dark">Type</td>
+                          <td class="text-primary">
+                            <oppleo-edit-select 
+                            id="osBackupType"
+                            options='[ { "text": "Server Message Block (SMB)", "id": "smb"{% if "smb" == oppleoconfig.osBackupType %}, "selected": "true"{% endif %} } ]'
+                            placeholder="Maak een keuze..."
+                            info="Om dit moment wordt alleen SMB ondersteund. SMB (Server Message Block), ook bekend als Common Internet File System of CIFS, is het netwerkprotocol dat gebruikt wordt om in Microsoft Windows bestandsuitwisseling tussen meerdere computers mogelijk te maken (shared drive)."
+                            unlock=true
+                            />
+                          </td>
+                        </tr>
+                      </table>
+
+                    </div>
+                  </div>
+    
+                  <div class="tab-pane fade" id="bm-step2">
+                    <div class="col-lg-12">
+
+                      <table class="w-100 mb-1">
+                        <tr>
+                          <td class="w-25 header-title pl-3" colspan="2">Server</td>
+                        </tr>
+                        <tr style="height: 1em;">
+                          <td></td>
+                          <td id="bm-step2-msg" class="text-danger font-italic"></td>
+                        </tr>
+                        <tr class="spacer-10"></tr> 
+                        <tr>
+                          <td class="text-dark w-25">Server naam of IP adres</td>
+                          <td>
+                            <oppleo-edit-str 
+                            id="offsiteBackupServerOrIP"
+                            value="{{ oppleoconfig.smbBackupServerNameOrIPAddress }}"
+                            validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
+                            info="Servernaam of IP adres van de remote server."
+                            unlock=true
+                            />
+                          </td>
+                        </tr>
+                        <tr class="spacer-20"></tr> 
+                        <tr>
+                          <td class="text-dark">Gebruikersnaam</td>
+                          <td class="text-primary">
+                            <oppleo-edit-str 
+                            id="offsiteBackupUsername"
+                            value="{{ oppleoconfig.smbUsername }}"
+                            validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
+                            info="Om openstaande laadsessies te voorkomen kan de naam van het laadpunt alleen worden gewijzigd wanneer de laadsessie is afgesloten."
+                            unlock=true
+                            />
+                          </td>
+                        </tr>
+                        <tr class="spacer-10"></tr> 
+                        <tr>
+                          <td class="text-dark">Wachtwoord</td>
+                          <td class="text-primary">
+                            <oppleo-edit-str 
+                            id="offsiteBackupPassword"
+                            value="{{ oppleoconfig.obPassword }}"
+                            validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
+                            info="Om openstaande laadsessies te voorkomen kan de naam van het laadpunt alleen worden gewijzigd wanneer de laadsessie is afgesloten."
+                            unlock=true
+                            hideEdit=true
+                            />
+                          </td>
+                        </tr>
+                      </table>
+
+                    </div>
+                  </div>
+    
+                  <div class="tab-pane fade" id="bm-step3">
+                    <div class="col-lg-12">
+                      <table class="w-100">
+                        <tr>
+                          <td class="w-25 header-title pl-3" colspan="2">Service</td>
+                        </tr>
+                        <tr class="spacer-20"></tr> 
+                        <tr style="height: 1em;">
+                          <td></td>
+                          <td id="bm-step3-msg" class="text-danger font-italic"></td>
+                        </tr>
+                        <tr class="spacer-10"></tr> 
+                        <tr>
+                          <td class="text-dark w-25">Service</td>
+                          <td class="text-primary">
+                            <oppleo-edit-select 
+                            id="osBackupServiceName"
+                            {% if oppleoconfig.smbBackupServiceName is not none %}
+                            options='[ { "text": "{{ oppleoconfig.smbBackupServiceName }}", "id": "{{ oppleoconfig.smbBackupServiceName }}", "selected": "true" } ]'
+                            {% else %}
+                            options='[ ]'
+                            {% endif %}
+                            info="Selecteer de service (naam van de share of gedeelde schijf)."
+                            placeholder="Maak een keuze..."
+                            unlock=true
+                            />
+                          </td>
+                        </tr>
+                      </table>
+    
+                    </div>
+                  </div>
+                  
+                  <div class="tab-pane fade" id="bm-step4">
+                    <div class="col-lg-12">
+                      <div class="w-100 pb-4 pt-2">
+                        <h4 class="header-title">Directory</h4>
+                      </div>
+                      <table class="w-100">
+                        <tr class="spacer-20"></tr> 
+                        <tr>
+                          <td class="text-dark w-25">Path</td>
+                          <td id="smbBackupRemotePathList" class="text-primary" colspan="2">
+                            <ul style="list-style-type: none;" class="pl-0 pb-0 mb-0">
+                              <li style="display: inline;">/</li>
+                            </ul>
+
+                          </td>
+                        </tr>
+                        <tr class="spacer-10"></tr> 
+                        <tr>
+                          <td class="text-dark w-25">Directory</td>
+                          <td class="text-primary">
+                            <oppleo-edit-select 
+                            id="smbBackupRemotePathSelect"
+                            options='[ ]'
+                            placeholder="Maak een keuze..."
+                            info="Selecteer de folder (directory)."
+                            unlock=true
+                            />
+                          </td>
+                          <td class="text-primary w-10">
+                            <button 
+                              type="button" 
+                              id="modal-directory-apply" 
+                              class="btn btn-sm btn-primary" 
+                              style="width: 100px;" 
+                              data-toggle="tooltip" 
+                              data-placement="bottom" 
+                              data-html="true"
+                              title=""
+                              disabled
+                              >
+                               <i class="fas fa-sign-in-alt"></i> Selecteer 
+                            </button>
+                          </td>
+                        </tr>
+                      </table>
+
+                    </div>
+                  </div>
+    
+                </div>
+
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary mr-2" id="modal-footer-cancel">Annuleren</button>
+                <button type="button" class="btn btn-primary" style="width: 50px;" id="modal-footer-prevaction" disabled> <i class="fas fa-angle-left"></i> </button>
+                <button type="button" class="btn btn-primary" style="width: 50px;" id="modal-footer-nextaction"> <i class="fas fa-angle-right"></i> </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
 {% endblock %}

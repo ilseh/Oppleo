@@ -29,4 +29,4 @@ install/Oppleo.service
 db/backup/*.*.dump
 # install log files
 install/log/update_*.log
-
+backup/*.zip

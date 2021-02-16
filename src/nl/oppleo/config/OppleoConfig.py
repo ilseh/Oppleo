@@ -582,3 +582,123 @@ class OppleoConfig(object, metaclass=Singleton):
         self.__chargerConfigModel.setAndSave('receipt_prefix', value)
 
 
+    """
+        backupEnabled --> backup_enabled
+    """
+    @property
+    def backupEnabled(self):
+        return self.__chargerConfigModel.backup_enabled
+
+    @backupEnabled.setter
+    def backupEnabled(self, value):
+        self.__chargerConfigModel.setAndSave('backup_enabled', value)
+
+    """
+        backupInterval --> backup_interval
+    """
+    @property
+    def backupInterval(self):
+        return self.__chargerConfigModel.backup_interval
+
+    @backupInterval.setter
+    def backupInterval(self, value):
+        self.__chargerConfigModel.setAndSave('backup_interval', value)
+
+    """
+        backupTimeOfDay --> backup_time_of_day
+    """
+    @property
+    def backupTimeOfDay(self):
+        return self.__chargerConfigModel.backup_time_of_day
+
+    @backupTimeOfDay.setter
+    def backupTimeOfDay(self, value):
+        self.__chargerConfigModel.setAndSave('backup_time_of_day', value)
+
+    """
+        backupLocalHistory --> backup_local_history
+    """
+    @property
+    def backupLocalHistory(self):
+        return self.__chargerConfigModel.backup_local_history
+
+    @backupLocalHistory.setter
+    def backupLocalHistory(self, value):
+        self.__chargerConfigModel.setAndSave('backup_local_history', value)
+
+    """
+        osBackupEnabled --> os_backup_enabled
+    """
+    @property
+    def osBackupEnabled(self):
+        return self.__chargerConfigModel.os_backup_enabled
+
+    @osBackupEnabled.setter
+    def osBackupEnabled(self, value):
+        self.__chargerConfigModel.setAndSave('os_backup_enabled', value)
+
+    """
+        osBackupType --> os_backup_type
+    """
+    @property
+    def osBackupType(self):
+        return self.__chargerConfigModel.os_backup_type
+
+    @osBackupType.setter
+    def osBackupType(self, value):
+        self.__chargerConfigModel.setAndSave('os_backup_type', value)
+
+    """
+        smbBackupServerNameOrIPAddress --> smb_backup_servername_or_ip_address
+    """
+    @property
+    def smbBackupServerNameOrIPAddress(self):
+        return self.__chargerConfigModel.smb_backup_servername_or_ip_address
+
+    @smbBackupServerNameOrIPAddress.setter
+    def smbBackupServerName(self, value):
+        self.__chargerConfigModel.setAndSave('smb_backup_servername_or_ip_address', value)
+
+    """
+        smbBackupUsername --> smb_backup_username
+    """
+    @property
+    def smbBackupUsername(self):
+        return self.__chargerConfigModel.smb_backup_username
+
+    @smbBackupUsername.setter
+    def smbBackupUsername(self, value):
+        self.__chargerConfigModel.setAndSave('smb_backup_username', value)
+
+    """
+        smbBackupPassword --> smb_backup_password
+    """
+    @property
+    def smbBackupPassword(self):
+        return self.__chargerConfigModel.smb_backup_password
+
+    @smbBackupPassword.setter
+    def smbBackupPassword(self, value):
+        self.__chargerConfigModel.setAndSave('smb_backup_password', value)
+
+    """
+        smbBackupServiceName --> smb_backup_service_name
+    """
+    @property
+    def smbBackupServiceName(self):
+        return self.__chargerConfigModel.smb_backup_service_name
+
+    @smbBackupServiceName.setter
+    def smbBackupServiceName(self, value):
+        self.__chargerConfigModel.setAndSave('smb_backup_service_name', value)
+
+    """
+        smbBackupRemotePath --> smb_backup_remote_path
+    """
+    @property
+    def smbBackupRemotePath(self):
+        return self.__chargerConfigModel.smb_backup_remote_path
+
+    @smbBackupRemotePath.setter
+    def smbBackupRemotePath(self, value):
+        self.__chargerConfigModel.setAndSave('smb_backup_remote_path', value)

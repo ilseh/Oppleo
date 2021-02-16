@@ -10,7 +10,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from functools import wraps
 import json
+from json import JSONDecodeError
+
 import logging
+import re
 from urllib.parse import urlparse
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
@@ -45,6 +48,15 @@ from nl.oppleo.utils.GitUtil import GitUtil
 from nl.oppleo.utils.EnergyUtil import modbusConfigOptions
 from nl.oppleo.utils.BackupUtil import BackupUtil
 
+# https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+HTTP_CODE_200_OK                    = 200
+HTTP_CODE_400_BAD_REQUEST           = 400
+HTTP_CODE_401_UNAUTHORIZED          = 401
+HTTP_CODE_403_FORBIDDEN             = 403
+HTTP_CODE_404_NOT_FOUND             = 404
+HTTP_CODE_500_INTERNAL_SERVER_ERROR = 500
+HTTP_CODE_501_NOT_IMPLEMENTED       = 501
+
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
@@ -78,7 +90,7 @@ def authenticated_resource(function):
             # Redirect to login but rememmber the original request 
             session['login_next'] = request.full_path
             return redirect(url_for('flaskRoutes.login'))
-        return ('Niet ingelogd', 401)
+        return ('Niet ingelogd', HTTP_CODE_401_UNAUTHORIZED)
     return decorated
 
 # Resource is only served for logged in user if allowed in preferences
@@ -106,7 +118,7 @@ def config_dashboard_access_restriction(function):
             # Redirect to login but rememmber the original request 
             session['login_next'] = request.full_path
             return redirect(url_for('flaskRoutes.login'))
-        return ('Niet ingelogd', 401)
+        return ('Niet ingelogd', HTTP_CODE_401_UNAUTHORIZED)
     return decorated
 
 
@@ -121,7 +133,7 @@ def index():
             oppleoconfig=oppleoConfig
             )
     except TemplateNotFound:
-        abort(404)
+        abort(HTTP_CODE_404_NOT_FOUND)
     except Exception as e:
         flaskRoutesLogger.debug('/  - exception')
         flaskRoutesLogger.debug(e)
@@ -135,28 +147,28 @@ def home():
     return redirect('/')
 
 # 400 Bad Request
-@flaskRoutes.errorhandler(400)
+@flaskRoutes.errorhandler(HTTP_CODE_400_BAD_REQUEST)
 def page_not_found(e):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('400 bad request error handler')
     # No need for oppleoconfig=oppleoConfig
-    return render_template('errorpages/400.html'), 400
+    return render_template('errorpages/400.html'), HTTP_CODE_400_BAD_REQUEST
 
 # 404 Not Found
-@flaskRoutes.errorhandler(404)
+@flaskRoutes.errorhandler(HTTP_CODE_404_NOT_FOUND)
 def bad_request(e):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('404 page not found error handler')
     # No need for oppleoconfig=oppleoConfig
-    return render_template('errorpages/404.html'), 404
+    return render_template('errorpages/404.html'), HTTP_CODE_404_NOT_FOUND
 
 # 500 Internal Server
-@flaskRoutes.errorhandler(500)
+@flaskRoutes.errorhandler(HTTP_CODE_500_INTERNAL_SERVER_ERROR)
 def internal_server_error(e):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('500 internal_server_error error handler')
     # No need for oppleoconfig=oppleoConfig
-    return render_template('errorpages/500.html'), 500
+    return render_template('errorpages/500.html'), HTTP_CODE_500_INTERNAL_SERVER_ERROR
 
 
 @flaskRoutes.route('/login', methods=['GET', 'POST'])
@@ -459,7 +471,7 @@ def delete_charge_session(id=None):
     global flaskRoutesLogger, oppleoConfig
     if id is None:
         return jsonify({
-            'status': 404, 
+            'status': HTTP_CODE_404_NOT_FOUND, 
             'id': oppleoConfig.chargerName, 
             'reason': 'Laadsessie niet gevonden'
             })
@@ -502,7 +514,7 @@ def start_charge_session(token=None):
 
     if token is None:
         return jsonify({
-            'status': 404, 
+            'status': HTTP_CODE_404_NOT_FOUND, 
             'id': oppleoConfig.chargerName, 
             'reason': 'RFID token niet gevonden'
             })
@@ -590,7 +602,7 @@ def stop_charge_session(charge_session_id=None):
 
     if charge_session_id is None:
         return jsonify({
-            'status': 404, 
+            'status': HTTP_CODE_404_NOT_FOUND, 
             'id': oppleoConfig.chargerName, 
             'reason': 'Laadsessie niet gevonden'
             })
@@ -784,7 +796,7 @@ def active_charge_session():
     if open_charge_session_for_device is None:
         # None, no active session
         return jsonify({
-            'status'            : 404, 
+            'status'            : HTTP_CODE_404_NOT_FOUND, 
             'id'                : oppleoConfig.chargerName, 
             'chargeSession'     : False,
             'evseEnabled'       : True if evse.is_enabled() else False,
@@ -798,7 +810,7 @@ def active_charge_session():
     try:
         rfid_data = RfidModel.get_one(open_charge_session_for_device.rfid)
         return jsonify({ 
-            'status'            : 200,
+            'status'            : HTTP_CODE_200_OK,
             'id'                : oppleoConfig.chargerName, 
             'chargeSession'     : True if open_charge_session_for_device is not None else False,
             'evseEnabled'       : True if evse.is_enabled() else False,
@@ -814,7 +826,7 @@ def active_charge_session():
         flaskRoutesLogger.error("active_charge_session - could not return information", exc_info=True)
         pass
     return jsonify({ 
-        'status'        : 500, 
+        'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 
         'id'            : oppleoConfig.chargerName, 
         'reason'        : 'Could not determine charge session'
         })
@@ -863,7 +875,7 @@ def charge_sessions(since_timestamp=None):
             )
     except Exception as e:
         flaskRoutesLogger.warning('/charge_sessions exception ChargeSessionModel.get_max_n_sessions_between {}'.format(str(e)))
-        abort(500)
+        abort(HTTP_CODE_500_INTERNAL_SERVER_ERROR)
         pass
 
     """
@@ -901,7 +913,7 @@ def charge_history():
         csh = charge_sessions.get_history()
     except Exception as e:
         flaskRoutesLogger.warning('/charge_history exception ChargeSessionModel.get_history {}'.format(str(e)))
-        abort(500)
+        abort(HTTP_CODE_500_INTERNAL_SERVER_ERROR)
         pass
 
     csh_l = []
@@ -1038,7 +1050,7 @@ def rfid_tokens(token=None):
     if (request.method == 'DELETE'):
         if (token == None):
             # Not found
-            abort(404)
+            abort(HTTP_CODE_404_NOT_FOUND)
         # Specific token
         rfid_model = RfidModel().get_one(token)
         # Only allow deletion if token has no charge sessions
@@ -1052,7 +1064,7 @@ def rfid_tokens(token=None):
                 }), 405, {'ContentType':'application/json'} 
         rfid_model.delete()
         # 204 leads to no data in the response
-        return json.dumps({'success': True, 'token': token, 'status': 200}), 200, {'ContentType':'application/json'} 
+        return json.dumps({'success': True, 'token': token, 'status': HTTP_CODE_200_OK}), HTTP_CODE_200_OK, {'ContentType':'application/json'} 
 
     # JSON 
     if (request.method == 'GET'):
@@ -1090,7 +1102,7 @@ def TeslaApi_GenerateOAuth(token=None):
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
         return jsonify({
-            'status': 404, 
+            'status': HTTP_CODE_404_NOT_FOUND, 
             'reason': 'No known RFID token'
             })
 
@@ -1103,7 +1115,7 @@ def TeslaApi_GenerateOAuth(token=None):
         UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(tesla_api, rfid_model)
         rfid_model.save()
         return jsonify({
-            'status': 200, 
+            'status': HTTP_CODE_200_OK, 
             'token_type': rfid_model.api_token_type, 
             'created_at': rfid_model.api_created_at, 
             'expires_in': rfid_model.api_expires_in,
@@ -1112,7 +1124,7 @@ def TeslaApi_GenerateOAuth(token=None):
     else:
         # Nope, no token
         return jsonify({
-            'status': 401,  
+            'status': HTTP_CODE_401_UNAUTHORIZED,  
             'reason': 'Not authorized'
             })
 
@@ -1128,7 +1140,7 @@ def TeslaApi_RefreshOAuth(token=None):
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
         return jsonify({
-            'status': 404, 
+            'status': HTTP_CODE_404_NOT_FOUND, 
             'reason': 'No known RFID token'
             })
     # Update for specific token
@@ -1136,7 +1148,7 @@ def TeslaApi_RefreshOAuth(token=None):
     UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model, tesla_api)
     if not tesla_api.refreshToken():
         return jsonify({
-            'status': 500,
+            'status': HTTP_CODE_500_INTERNAL_SERVER_ERROR,
             'reason': 'Refresh failed'
             })
     # Refresh succeeded, Obtained token
@@ -1144,7 +1156,7 @@ def TeslaApi_RefreshOAuth(token=None):
     rfid_model.save()
 
     return jsonify({
-        'status': 200, 
+        'status': HTTP_CODE_200_OK, 
         'token_type': rfid_model.api_token_type, 
         'created_at': rfid_model.api_created_at, 
         'expires_in': rfid_model.api_expires_in,
@@ -1163,7 +1175,7 @@ def TeslaApi_RevokeOAuth(token=None):
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
         return jsonify({
-            'status': 404, 
+            'status': HTTP_CODE_404_NOT_FOUND, 
             'reason': 'No known RFID token'
             })
     # Update for specific token
@@ -1171,7 +1183,7 @@ def TeslaApi_RevokeOAuth(token=None):
     UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model, tesla_api)
     if not tesla_api.revokeToken():
         return jsonify({
-            'status': 500,
+            'status': HTTP_CODE_500_INTERNAL_SERVER_ERROR,
             'reason': 'Revoke failed'
             })
     # Revoke succeeded, remove token
@@ -1180,7 +1192,7 @@ def TeslaApi_RevokeOAuth(token=None):
     rfid_model.save()
 
     return jsonify({
-        'status': 200, 
+        'status': HTTP_CODE_200_OK, 
         'token_type': '', 
         'created_at': '', 
         'expires_in': '',
@@ -1209,8 +1221,8 @@ def update_settings(param=None, value=None):
             edm.port_name = value
             edm.save()
             oppleoConfig.restartRequired = True
-            return jsonify({ 'status': 200, 'param': param, 'value': edm.port_name })
-        return jsonify({ 'status': 200, 'param': param, 'reason': 'No change.' })
+            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
 
     # The kWhh meter modbus register parameters
     if param == 'modbusConfig':
@@ -1219,8 +1231,8 @@ def update_settings(param=None, value=None):
             edm.modbus_config = value
             edm.save()
             oppleoConfig.restartRequired = True
-            return jsonify({ 'status': 200, 'param': param, 'value': edm.modbus_config })
-        return jsonify({ 'status': 200, 'param': param, 'reason': 'No change.' })
+            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.modbus_config })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
 
 
     # The USB port for the modbus interface
@@ -1230,8 +1242,8 @@ def update_settings(param=None, value=None):
             edm.port_name = value
             edm.save()
             oppleoConfig.restartRequired = True
-            return jsonify({ 'status': 200, 'param': param, 'value': edm.port_name })
-        return jsonify({ 'status': 200, 'param': param, 'reason': 'No change.' })
+            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
 
     # With an open charge session, there params are not allowed to change
     if param in ['chargerName', 'chargerTariff'] and \
@@ -1253,7 +1265,7 @@ def update_settings(param=None, value=None):
                 namespace='/charge_session',
                 public=True
                 )
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.offpeakEnabled })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.offpeakEnabled })
 
     if (param == 'allowPeakOnePeriod'):
         oppleoConfig.allowPeakOnePeriod = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
@@ -1268,15 +1280,15 @@ def update_settings(param=None, value=None):
                     namespace='/charge_session',
                     public=True
                 )
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.allowPeakOnePeriod })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.allowPeakOnePeriod })
 
     if (param == 'autoSessionEnabled'):
         oppleoConfig.autoSessionEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.autoSessionEnabled })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.autoSessionEnabled })
 
     if (param == 'autoSessionCondenseSameOdometer'):
         oppleoConfig.autoSessionCondenseSameOdometer = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.autoSessionCondenseSameOdometer })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.autoSessionCondenseSameOdometer })
 
     # Add off peak database entry day|month|year|recurring|description (month is zero-based)
     if (param == 'offPeakAddHolidayEntry'):
@@ -1292,132 +1304,131 @@ def update_settings(param=None, value=None):
         ophm.is_holiday = True
         # Save
         ophm.save()
-        return jsonify({ 'status': 200, 'param': param, 'value': str(ophm.id) })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': str(ophm.id) })
 
     # Delete off peak database entry
     if (param == 'offPeakDeleteEntry') and (isinstance(value, int) or RepresentsInt(value)):
         # Delete
         OffPeakHoursModel.deleteId(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # chargerName
     if (param == 'chargerName') and isinstance(value, str) and len(value) > 0:
         oppleoConfig.chargerName = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # factorWhkm
     if (param == 'factorWhkm') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.factorWhkm = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # chargerTariff
     if (param == 'chargerTariff') and (isinstance(value, float) or RepresentsFloat(value)):
         oppleoConfig.chargerTariff = float(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # gpioMode
     if (param == 'gpioMode') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.gpioMode = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinLedRed
     if (param == 'pinLedRed') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinLedRed = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinLedGreen
     if (param == 'pinLedGreen') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinLedGreen = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinLedBlue
     if (param == 'pinLedBlue') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinLedBlue = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinBuzzer
     if (param == 'pinBuzzer') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinBuzzer = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinEvseSwitch
     if (param == 'pinEvseSwitch') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinEvseSwitch = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinEvseLed
     if (param == 'pinEvseLed') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinEvseLed = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # ENV
     if (param == 'ENV') and isinstance(value, str) and value in ['Development', 'Production']:
         oppleoSystemConfig.ENV = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # DATABASE_URL
-    import re
     validation="^(postgresql://)[a-zA-Z0-9]+(:)[a-zA-Z0-9]+(@)[a-zA-Z0-9.:/]+$"
     if (param == 'DATABASE_URL') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.DATABASE_URL = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pulseLedMin
     if (param == 'pulseLedMin') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pulseLedMin = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pulseLedMax
     if (param == 'pulseLedMax') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pulseLedMax = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # autoSessionMinutes
     if (param == 'autoSessionMinutes') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.autoSessionMinutes = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # autoSessionEnergy
     if (param == 'autoSessionEnergy') and (isinstance(value, float) or RepresentsFloat(value)):
         oppleoConfig.autoSessionEnergy = int(value)
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # logFile
     if (param == 'logFile') and isinstance(value, str) and len(value) > 0:
         oppleoConfig.logFile = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # logFile
     if (param == 'PYTHONPATH') and isinstance(value, str):
         oppleoSystemConfig.PYTHONPATH = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # onDbFailureAllowRestart
     if (param == 'onDbFailureAllowRestart') and isinstance(value, str):
         oppleoSystemConfig.onDbFailureAllowRestart = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # onDbFailureMagicPassword
     if (param == 'onDbFailureMagicPassword') and isinstance(value, str):
         oppleoSystemConfig.onDbFailureMagicPassword = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # onDbFailureAllowUrlChange
     if (param == 'onDbFailureAllowUrlChange') and isinstance(value, str):
         oppleoSystemConfig.onDbFailureAllowUrlChange = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # onDbFailureShowCurrentUrl
     if (param == 'onDbFailureShowCurrentUrl') and isinstance(value, str):
         oppleoSystemConfig.onDbFailureShowCurrentUrl = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # baudrate
     if (param == 'baudrate') and int(value) in [2400, 4800, 9600, 19200, 38400, 57600, 115200]:
         energyDeviceModel = EnergyDeviceModel.get()
         energyDeviceModel.baudrate = value
         energyDeviceModel.save()
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # slave_address
     validation="^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$"
@@ -1426,58 +1437,58 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid integer value' })
+            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' })
         energyDeviceModel = EnergyDeviceModel.get()
         energyDeviceModel.slave_address = value
         energyDeviceModel.save()
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # prowlEnabled
     if (param == 'prowlEnabled'):
         oppleoSystemConfig.prowlEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoSystemConfig.prowlEnabled })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.prowlEnabled })
 
     # prowlApiKey
     if (param == 'prowlApiKey') and isinstance(value, str):
         oppleoSystemConfig.prowlApiKey = value if len(value) > 0 else None
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # webChargeOnDashboard
     if (param == 'webChargeOnDashboard'):
         oppleoConfig.webChargeOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.webChargeOnDashboard })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.webChargeOnDashboard })
 
     # authWebCharge
     if (param == 'authWebCharge'):
         oppleoConfig.authWebCharge = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.authWebCharge })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.authWebCharge })
 
     # restrictDashboardAccess
     if (param == 'restrictDashboardAccess'):
         oppleoConfig.restrictDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.restrictDashboardAccess })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.restrictDashboardAccess })
 
     # restrictMenu
     if (param == 'restrictMenu'):
         oppleoConfig.restrictMenu = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.restrictMenu })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.restrictMenu })
 
     # allowLocalDashboardAccess
     if (param == 'allowLocalDashboardAccess'):
         oppleoConfig.allowLocalDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.allowLocalDashboardAccess })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.allowLocalDashboardAccess })
 
     # routerIPAddress
     validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
     if (param == 'routerIPAddress') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.routerIPAddress = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # receiptPrefix
     validation="^[A-Za-z0-9.-]{0,20}$"
     if (param == 'receiptPrefix') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.receiptPrefix = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # modbusInterval
     validation="^([1-9]|[1-5][0-9]|60)$"
@@ -1486,15 +1497,15 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': 404, 'param': param, 'reason': 'No valid integer value' })
+            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' })
         oppleoConfig.modbusInterval = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # httpPort
     validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
     if (param == 'httpPort') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.httpPort = value
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoSystemConfig.httpPort })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpPort })
 
 
 
@@ -1503,104 +1514,212 @@ def update_settings(param=None, value=None):
     # backupEnabled
     if (param == 'backupEnabled'):
         oppleoConfig.backupEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.backupEnabled })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.backupEnabled })
 
     # backupInterval
     validation="^(hdwm)$"
     if (param == 'backupInterval') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.backupInterval = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # backupTimeOfDay
     validation="^([0-9]{2}:[0-9]{2}:[0-9]{2})$"
     if (param == 'backupTimeOfDay') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.backupTimeOfDay = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # backupLocalHistory
     validation="^([0-9]{1,3})$"
     if (param == 'backupLocalHistory') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.backupLocalHistory = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # osBackupEnabled
     if (param == 'osBackupEnabled'):
         oppleoConfig.osBackupEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': 200, 'param': param, 'value': oppleoConfig.osBackupEnabled })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.osBackupEnabled })
 
     # osBackupType
     if (param == 'osBackupType') and isinstance(value, str) and value.lower() in ['smb']:
         oppleoConfig.osBackupType = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # smbBackupServerName
     if (param == 'smbBackupServerName') and isinstance(value, str):
         oppleoConfig.smbBackupServerName = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # smbBackupIPAddress (can be empty)
     validation="^()|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
     if (param == 'smbBackupIPAddress') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.smbBackupIPAddress = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # smbBackupUsername
     if (param == 'smbBackupUsername') and isinstance(value, str):
         oppleoConfig.smbBackupUsername = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # smbBackupPassword
     if (param == 'smbBackupPassword') and isinstance(value, str):
         oppleoConfig.smbBackupPassword = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # smbBackupShareName
     if (param == 'smbBackupShareName') and isinstance(value, str):
         oppleoConfig.smbBackupShareName = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # smbBackupSharePath
     if (param == 'smbBackupSharePath') and isinstance(value, str):
         oppleoConfig.smbBackupSharePath = value
-        return jsonify({ 'status': 200, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
 
     # No parameter found or conditions not met
-    return jsonify({ 'status': 404, 'param': param, 'reason': 'Not found' })
+    return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'Not found' })
 
 
 
 # Always returns json
-@flaskRoutes.route("/backup/<path:cmd>", methods=["GET"])
-@flaskRoutes.route("/backup/<path:cmd>/", methods=["GET"])
+@flaskRoutes.route("/backup/<path:cmd>", defaults={'value': None}, strict_slashes=False, methods=["GET"])
+@flaskRoutes.route("/backup/<path:cmd>/<path:data>", methods=["GET"])
+@flaskRoutes.route("/backup/<path:cmd>/<path:data>/", methods=["GET"])
 @authenticated_resource  # CSRF Token is valid
-def getBackupInfo(cmd=None):
+def getBackupInfo(cmd=None, data=None):
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/backup/{}'.format(cmd))
 
     backupUtil = BackupUtil()
     
     if isinstance(cmd, str) and len(cmd) > 3:
-        if (cmd.lower() == "smbshares"):
+        if (cmd.lower() == "smbvalidateaccount"):
             # Return the shared folders
-            shareList = backupUtil.listSMBShares()
+            # Check if valid JSON, fail 400 if not
+            try:
+                jsonD = json.loads(data)
+            except JSONDecodeError as jde:
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : jde.msg
+                    })                
+
+            # Check if the keys do exist in the jsonD dict, fail 400 if they don't
+            if not all([True for key in ['serverOrIP', 'username', 'password'] if key in jsonD.keys()]):
+                # Not all required parameters
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : 'Missing variables'
+                    })                
+
+            validConnection, connectionDetails = backupUtil.validateSMBAccount(serverOrIP=jsonD['serverOrIP'],
+                                                                               username=jsonD['username'],
+                                                                               password=jsonD['password']
+                                                                              )
             return jsonify({ 
-                'status'        : 200 if isinstance(shareList, list) else 401,
-                'cmd'           : cmd,
-                'smbshares'     : shareList if isinstance(shareList, list) else []
+                'status'            : HTTP_CODE_200_OK,
+                'cmd'               : cmd,
+                'validConnection'   : validConnection,
+                'resolved'          : connectionDetails['resolved'],
+                'connectionRefused' : connectionDetails['connectionRefused']
                 })
+
+        if (cmd.lower() == "smblistservices"):
+            # Return the shared folders
+            # Check if valid JSON, fail 400 if not
+            try:
+                jsonD = json.loads(data)
+            except JSONDecodeError as jde:
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : jde.msg
+                    })                
+
+            # Check if the keys do exist in the jsonD dict, fail 400 if they don't
+            if not all([True for key in ['serverOrIP', 'username', 'password'] if key in jsonD.keys()]):
+                # Not all required parameters
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : 'Missing variables'
+                    })                
+
+            shareList, connectionDetails = backupUtil.listSMBShares(serverOrIP=jsonD['serverOrIP'],
+                                                                    username=jsonD['username'],
+                                                                    password=jsonD['password']
+                                                                    )
+
+            return jsonify({ 
+                'status'            : HTTP_CODE_200_OK,
+                'cmd'               : cmd,
+                'shareList'         : shareList if isinstance(shareList, list) else [],
+                'resolved'          : connectionDetails['resolved'],
+                'connectionRefused' : connectionDetails['connectionRefused'],
+                'validConnection'   : connectionDetails['validConnection']
+                })
+
+        if (cmd.lower() == "smblistdirectories"):
+            # Return the shared folders
+            # Check if valid JSON, fail 400 if not
+            try:
+                jsonD = json.loads(data)
+            except JSONDecodeError as jde:
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : jde.msg
+                    })                
+
+            # Check if the keys do exist in the jsonD dict, fail 400 if they don't
+            if not all([True for key in ['serverOrIP', 'username', 'password', 'serviceName', 'smbPath' ] if key in jsonD.keys()]):
+                # Not all required parameters
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : 'Missing variables'
+                    })                
+
+            directoryList, connectionDetails = backupUtil.listSMBFilesAndDirectories(
+                            serverOrIP=jsonD['serverOrIP'],
+                            username=jsonD['username'],
+                            password=jsonD['password'],
+                            serviceName=jsonD['serviceName'],
+                            smbPath=jsonD['smbPath'],
+                            hideDirectories=False,
+                            hideFiles=True
+                        )
+
+            return jsonify({ 
+                'status'            : HTTP_CODE_200_OK,
+                'cmd'               : cmd,
+                'directoryList'     : directoryList if isinstance(directoryList, list) else [],
+                'resolved'          : connectionDetails['resolved'],
+                'connectionRefused' : connectionDetails['connectionRefused'],
+                'validConnection'   : connectionDetails['validConnection'],
+                'smbPath'           : connectionDetails['smbPath']
+                })
+
         if (cmd.lower() == "smbvalidateuser"):
             # Return the shared folders
             validConnection = backupUtil.validateSMBConnection()
             return jsonify({ 
-                'status'            : 200,
+                'status'            : HTTP_CODE_200_OK,
                 'cmd'               : cmd,
                 'smbvalidateuser'   : 'true' if validConnection else 'false'
                 })
 
 
     return jsonify({ 
-        'status'        : 500, 
+        'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 
         'id'            : oppleoConfig.chargerName, 
         'reason'        : 'Could not return information'
         })
@@ -1615,7 +1734,7 @@ def systemStatus():
     flaskRoutesLogger.debug('/system_status/')
 
     return jsonify({
-        'status': 200, 
+        'status': HTTP_CODE_200_OK, 
         'restartRequired': (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
         'softwareUpdateInProgress': oppleoConfig.softwareUpdateInProgress,
         'startTime': oppleoConfig.upSinceDatetimeStr
@@ -1633,7 +1752,7 @@ def softwareStatus():
     GitUtil.gitRemoteUpdate()
 
     return jsonify({
-        'status': 200, 
+        'status': HTTP_CODE_200_OK, 
         'softwareUpdateAvailable': GitUtil.gitUpdateAvailable(),
         'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr()
         })

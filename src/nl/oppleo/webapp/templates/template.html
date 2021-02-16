@@ -99,6 +99,8 @@
                 5: 'Vrijdag',
                 6: 'Zaterdag'
             }
+            // Have jQuery behave reverse() like Array
+            jQuery.fn.reverse = [].reverse
             // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
             function parseDate(dateStr) {
                 var p1 = dateStr.split(',')
@@ -466,8 +468,18 @@
         .cursor-help {
             cursor: help;
         }
+        .cursor-pointer {
+            cursor: pointer;
+        }
         button {
             cursor: pointer;
+        }
+        .onhover-danger:hover {
+            color: #ef5350 !important;
+        }
+
+        .w-10 {
+            width: 10% !important;
         }
         .spinner {
             position: absolute;
@@ -820,6 +832,11 @@
                                 </li>
                                 <li>
                                     <a href="{{ url_for('flaskRoutes.settings', active=6) }}" class="stay">
+                                        <i class="fas fa-microchip"></i> Backup
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('flaskRoutes.settings', active=7) }}" class="stay">
                                         <i class="fas fa-stethoscope"></i> Diagnostics
                                     </a>
                                 </li>

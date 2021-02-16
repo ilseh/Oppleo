@@ -63,12 +63,11 @@ class ChargerConfigModel(Base):
     backup_local_history = Column(Integer)
     os_backup_enabled = Column(Boolean)
     os_backup_type = Column(String(20))
-    smb_backup_server_name = Column(String(200))
-    smb_backup_ip_address = Column(String(20))
+    smb_backup_servername_or_ip_address = Column(String(200))
     smb_backup_username = Column(String(60))
     smb_backup_password = Column(String(100))
-    smb_backup_share_name  = Column(String(200))
-    smb_backup_share_path = Column(String(256))
+    smb_backup_service_name  = Column(String(200))
+    smb_backup_remote_path = Column(String(256))
 
 
     def __init__(self):
@@ -227,9 +226,8 @@ class ChargerConfigSchema(Schema):
     backup_local_history = fields.Int(dump_only=True)
     os_backup_enabled = fields.Bool(dump_only=True)
     os_backup_type = fields.Str(dump_only=True)
-    smb_backup_server_name = fields.Str(dump_only=True)
-    smb_backup_ip_address = fields.Str(dump_only=True)
+    smb_backup_servername_or_ip_address = fields.Str(dump_only=True)
     smb_backup_username = fields.Str(dump_only=True)
     smb_backup_password = fields.Str(dump_only=True)
-    smb_backup_share_name  = fields.Str(dump_only=True)
-    smb_backup_share_path = fields.Str(dump_only=True)
+    smb_backup_service_name  = fields.Str(dump_only=True)
+    smb_backup_remote_path = fields.Str(dump_only=True)
