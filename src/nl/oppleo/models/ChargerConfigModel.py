@@ -59,10 +59,16 @@ class ChargerConfigModel(Base):
 
     backup_enabled = Column(Boolean)
     backup_interval = Column(String(20))
+    backup_interval_weekday = Column(String(200))
+    backup_interval_calday = Column(String(200))
     backup_time_of_day = Column(Time)
     backup_local_history = Column(Integer)
+    backup_success_timestamp = Column(DateTime)  
+
     os_backup_enabled = Column(Boolean)
     os_backup_type = Column(String(20))
+    os_backup_history = Column(Integer)
+
     smb_backup_servername_or_ip_address = Column(String(200))
     smb_backup_username = Column(String(60))
     smb_backup_password = Column(String(100))
@@ -222,10 +228,16 @@ class ChargerConfigSchema(Schema):
 
     backup_enabled = fields.Bool(dump_only=True)
     backup_interval = fields.Str(dump_only=True)
+    backup_interval_weekday = fields.Str(dump_only=True)
+    backup_interval_calday = fields.Str(dump_only=True)
     backup_time_of_day = fields.Time(dump_only=True)
     backup_local_history = fields.Int(dump_only=True)
+    backup_success_timestamp = fields.DateTime(dump_only=True)
+
     os_backup_enabled = fields.Bool(dump_only=True)
     os_backup_type = fields.Str(dump_only=True)
+    os_backup_history = fields.Int(dump_only=True)
+
     smb_backup_servername_or_ip_address = fields.Str(dump_only=True)
     smb_backup_username = fields.Str(dump_only=True)
     smb_backup_password = fields.Str(dump_only=True)

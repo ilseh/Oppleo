@@ -227,6 +227,15 @@
     .spacer-25 {
       height: 25px;
     }
+    .float-boxes {
+      display: inline-block;
+    }
+    .wf-100 {
+      width: 100px;
+    }
+    .day-label {
+      width: 30px; 
+    }
   </style>
 
   <script>
@@ -402,7 +411,7 @@
       })
     }
 
-    function offsiteBackupDataReq( req, reqdata={} ) {
+    function offsiteBackupDataReq( req, reqdata={}, successCallback=null, failCallback=null ) {
       console.log(timestamp() + ' offsiteBackupDataReq()')            
       // Show spinner
       $('.spinner').show()
@@ -421,13 +430,18 @@
       }) // using the done promise callback
       .done(function(data) {
         switch (data.status) {
-          case 400:
-            // Bad request
-            autoHideNotify('error','top-left', 'Bad request', 'Data niet beschikbaar.')
+          case 400:   // Bad request
+          case 500:   // Internal Server Error
+            autoHideNotify('error','top-left', 'Bad request ('+data.status+')', 'Data niet beschikbaar.')
+            if (failCallback != null) { failCallback(data) }
             break
           case 401:
             // Not authorized response
             autoHideNotify('warning','top-left', 'Autorisatie fout', 'Data niet beschikbaar.')
+            if (failCallback != null) { failCallback(data) }
+            break
+          case 404:   // Not Found
+            if (failCallback != null) { failCallback(data) }
             break
           case 200:
             // Ok response
@@ -505,15 +519,27 @@
                 }
                 break
 
+              case 'listLocalBackups':
+              case 'listRemoteBackups':
+              case 'createBackupNow':
+              case 'removeLocalBackup':
+                // Call callback
+                if (successCallback != null) { successCallback(data) }
+                break
+
+
               default:
                 break
             }
+            break
           default:
+            if (failCallback != null) { failCallback(data) }
             break
         }
       })
       .fail(function(data) {
         autoHideNotify('error','top-left', 'Connectie fout', 'Data niet beschikbaar.')
+        if (failCallback != null) { failCallback(data) }
       })
       .always(function() {
         // Remove spinner
@@ -536,7 +562,6 @@
       let remotePath = $('#smbBackupRemotePathList ul li').map( (i, el) => {return el.innerText.trim() }).toArray().join('')
       $('span#smbBackupRemotePath').text(remotePath)
 
-      $('button#modal-backup-edit').prop('disabled', false)
 
 // XXXX
       
@@ -566,6 +591,57 @@
 
       backupOffsiteDialog.modal('show')
       $('a[href="#bm-step1"').tab('show')
+    }
+
+    let backupStatusSocket = null
+    function startSystemStatusWebSocket() {
+      // start up the SocketIO connection to the server on namespace /backup
+      backupStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/backup')
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+      backupStatusSocket.on('backup_started', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+          $('#backupNowStatusText').html('Backup gestart op ' + msg.data.started)
+        }
+      })
+      backupStatusSocket.on('backup_completed', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+          $('#backupNowStatusText').html('Backup uitgevoerd op ' + msg.data.completed)
+          $('button#backup-create').prop('disabled', false)
+          $('button#backup-create').html(' <i class="fas fa-angle-right"></i> Maak backup')
+          // Add to list if visible
+          if (!$('tr#localBackupList').hasClass('d-none')) {
+            // Visible
+            let row = $('<tr style="display: none;">')
+            let cells = $('<td class="text-center"><i class="far fa-save"></i></td><td>'+msg.data.completed+'</td><td class="text-center">'+formatFilesize(msg.data.filesize)+'</td><td>'+msg.data.filename+'</td><td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td>')
+            row.append(cells)
+            $('tbody#backupLocalList').prepend(row)
+            row.fadeIn(300).fadeOut(300).fadeIn(300).fadeOut(300).fadeIn(300)
+            let cnt = parseInt($('#backupLocalCount').text().split(' backups')[0]) +1
+            $('#backupLocalCount').html(cnt + ' backups')
+            addClickEventToLocalBackupDeleteButton()
+          }
+        }
+      })
+    }    
+
+    function addClickEventToLocalBackupDeleteButton() {
+      // Remove existing click event handlers
+      $('button#backup-delete-local').off('click')
+      // Remove existing click event handlers
+      $('button#backup-delete-local').on('click', function(ev) {
+        let backupFilename = $(ev.currentTarget).parent().prev().text()
+        offsiteBackupDataReq( 'removeLocalBackup', reqdata={ filename: $(ev.currentTarget).parent().prev().text() }, function(result) {
+          autoHideNotify('success','top-left', 'Backup verwijderd', 'Lokale backup is verwijderd.')
+          // remove from list
+          $(ev.currentTarget).parent().parent().remove()
+          let cnt = parseInt($('#backupLocalCount').text().split(' backups')[0]) -1
+          $('#backupLocalCount').html(cnt + ' backups')
+        }, function(result) {
+          autoHideNotify('error','top-left', 'Backup niet verwijderd', 'Het verwijderen van de lokale backup is niet gelukt ('+result.status+').')
+        })
+      })
     }
 
 
@@ -708,14 +784,118 @@
       // Oppleo web component applied change
       $('oppleo-edit-str').on('apply', (e) => {
         console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+
         // Submit
 // TODO         updateSettings( e.target.id, e.detail.newValue )
       })
       // Oppleo web component applied change
       $('oppleo-edit-select').on('apply', (e) => {
         console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' oldText:' + e.detail.oldText + ' newValue:' + e.detail.newValue + ' newText:' + e.detail.newText)
+        if (e.target.id == 'backupInterval' && e.detail.newValue == '{{ oppleoconfig.BACKUP_INTERVAL_WEEKDAY }}') {
+          $('#backupDayOfMonthRow').addClass('d-none')
+          $('#backupDayOfWeekRow').removeClass('d-none')
+        }
+        if (e.target.id == 'backupInterval' && e.detail.newValue == '{{ oppleoconfig.BACKUP_INTERVAL_CALDAY }}') {
+          $('#backupDayOfMonthRow').removeClass('d-none')
+          $('#backupDayOfWeekRow').addClass('d-none')
+        }
         // Submit
 // TODO         updateSettings( e.target.id, e.detail.newValue )
+      })
+      
+      // Fill the backup weekday and calday fields
+      let weekDays = JSON.parse('{{ oppleoconfig.backupIntervalWeekday }}')
+      $('tr#backupDayOfWeekRow input:checkbox').each((i, el) => {
+        $(el).prop('checked', weekDays[parseInt(el.id.replace('backupDayOfWeekDay',''))])
+      })
+      $('tr#backupDayOfWeekRow input:checkbox').on( "change", (ev) => {
+        let cbs = []
+        $('tr#backupDayOfWeekRow input:checkbox').each((i, el) => {
+          cbs[parseInt(el.id.replace('backupDayOfWeekDay',''))] = $(el).prop('checked')
+        })
+        updateSettings( 'backupIntervalWeekday', JSON.stringify(cbs) )
+      })
+      let calDays = JSON.parse('{{ oppleoconfig.backupIntervalCalday }}') // 0-based
+      $('tr#backupDayOfMonthRow input:checkbox').each((i, el) => {
+        $(el).prop('checked', calDays[parseInt(el.id.replace('backupDayOfMonthDay',''))-1])
+      })
+      $('tr#backupDayOfMonthRow input:checkbox').on( "change", (ev) => {
+        let cbs = []
+        $('tr#backupDayOfMonthRow input:checkbox').each((i, el) => {
+          cbs[parseInt(el.id.replace('backupDayOfMonthDay',''))] = $(el).prop('checked')
+        })
+        updateSettings( 'backupIntervalCalday', JSON.stringify(cbs) )
+      })
+
+      $('button#backup-create').on('click', function(ev) {
+        $('button#backup-create').prop('disabled', true)
+        $('button#backup-create').html(' <i class="fas fa-spinner fa-spin"></i> Backup actief...')
+        offsiteBackupDataReq( 'createBackupNow', reqdata={}, function(result) {
+          // Button enabled after websocket message backup completed
+        }, function(result) {
+          // Fail
+          autoHideNotify('error','top-left', 'Backup maken mislukt', 'Het maken van een backup is mislukt.')
+          $('button#backup-create').prop('disabled', false)
+          $('button#backup-create').html(' <i class="fas fa-angle-right"></i> Maak backup')
+        })
+      })
+      $('button#backup-local-showinfo').on('click', function(ev) {
+        $('button#backup-local-showinfo').prop('disabled', true)
+        $('button#backup-local-showinfo').html(' <i class="fas fa-spinner fa-spin"></i> Ophalen...')
+        offsiteBackupDataReq( 'listLocalBackups', reqdata={}, function(result) {
+
+
+          // TODO: show directory?
+          // result.directory
+          // 
+
+          $('tr#localBackupList').removeClass('d-none')
+
+          $('tbody#backupLocalList tr').remove()
+
+          // YYYY-MM-DD HH.mm.ss => YYYY-MM-DDTHH:mm:ss.sss
+          result.localBackupList.sort(function(elA, elB) {
+            let [elAd, elAt] = elA.timestamp.split(' ')
+            let [elBd, elBt] = elB.timestamp.split(' ')
+            let elAdo = new Date(elAd +'T'+elAt.replace(/\./g,':'))
+            let elBdo = new Date(elBd +'T'+elBt.replace(/\./g,':'))
+            // return >0 sort B before A
+            return ( elBdo.getTime() > elAdo.getTime() ? 1 : ( elBdo.getTime() < elAdo.getTime() ? -1 : 0 ) )
+          })
+
+          result.localBackupList.forEach( (el, i ) => {
+            let row = $('<tr style="display: none;">')
+            let cells = $('<td class="text-center"><i class="far fa-save"></i></td><td>'+el.timestamp+'</td><td class="text-center">'+formatFilesize(el.filesize)+'</td><td>'+el.filename+'</td><td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td>')        
+            row.append(cells)
+            $('tbody#backupLocalList').append(row)
+            row.delay(i*150).fadeIn(300)
+
+            ///
+            
+            // $('tbody#backupLocalList').append('<tr>').append($('<td class="text-center"><i class="far fa-save"></i></td><td>'+el.timestamp+'</td><td class="text-center">'+el.filesize+'</td><td>'+el.filename+'</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td>'))        
+          })
+          addClickEventToLocalBackupDeleteButton()
+          $('#backupLocalCount').html(result.localBackupList.length + ' backups')
+          $('button#backup-local-showinfo').prop('disabled', false)
+          $('button#backup-local-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens vernieuwen')
+        }, function(result) {
+          // Fail
+          $('button#backup-local-showinfo').prop('disabled', false)
+          $('button#backup-local-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens ophalen')
+        })
+      
+//xxxxx
+      })
+      $('button#backup-offsite-showinfo').on('click', function(ev) {
+        $('button#backup-offsite-showinfo').prop('disabled', true)
+        $('button#backup-offsite-showinfo').html(' <i class="fas fa-spinner fa-spin"></i> Ophalen...')
+        offsiteBackupDataReq( 'listRemoteBackups', reqdata={}, function(result) {
+          alert('y')
+        } )
+
+        //      <i class="fas fa-angle-right"></i> Maak backup<
+      
+//xxxxx
       })
 
 
@@ -827,8 +1007,6 @@
           // TODO
           // - submit to server
 
-          // Disable edit button
-          $('button#modal-backup-edit').prop('disabled', true)
           return
         }
         showBackupModal()
@@ -2164,11 +2342,69 @@
                   <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-backup">
                     <div class="col-lg-12">
                       <div class="card-box">
-                        <h4 class="m-t-0 header-title"><i class="fas fa-download"></i> Backup</h4>
                         <table class="table table-striped table-sm">
                           <tbody>
+
                             <tr>
-                              <td class="text-dark w-25">Activeer backup:</td>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-download"></i> Backup</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Lokale backup directory:</td>
+                              <td class="text-primary">{{ oppleoconfig.localBackupDirectory }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Handmatig:</td>
+                              <td class="text-primary">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="backup-create"> <i class="fas fa-angle-right"></i> Maak backup</button>
+                                <span id="backupNowStatusText" class="pl-2"></span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Lokaal beschikbare backups:</td>
+                              <td class="text-primary">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="backup-local-showinfo"> <i class="far fa-save"></i></i> Gegevens ophalen</button>
+                              </td>
+                            </tr>
+                            <tr id='localBackupList' class="d-none">
+                              <td class="text-dark">
+                                Lokale backups:
+                                <div id="backupLocalCount" class="text-primary"></div>
+                              </td>
+                              <td class="text-primary" style="overflow: hidden;">
+
+                                <div style="max-height: 200px; overflow-y: auto;">
+
+                                <table class="w-100">
+                                  <thead>
+                                    <tr>
+                                      <td class="pl-3 pr-3 text-center" style="border: 0px;"></td>
+                                      <td style="border: 0px;">Tijdstip</td>
+                                      <td style="border: 0px;">Omvang</td>
+                                      <td style="border: 0px;">Filenaam</td>
+                                      <td style="border: 0px;">Verwijder</td>
+                                    </tr>
+                                  </thead>
+                                  <tbody id='backupLocalList'>
+                                  </tbody>
+                                </table>
+                                </div>
+                                
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="far fa-calendar-alt"></i> Periodieke Backup</h4>
+                              </th>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark w-25">Activeer periodieke backup:</td>
                               <td class="text-primary">
                                 <form id="backup-enabled-form">
                                   <input type="checkbox" 
@@ -2188,13 +2424,12 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Interval:</td>
+                              <td class="text-dark">Backup interval:</td>
                               <td class="text-primary">
                                 <oppleo-edit-select 
                                 id="backupInterval"
-                                options='[ { "text": "Dagelijks", "id": "day"{% if "day" == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} },
-                                           { "text": "Wekelijks", "id": "week"{% if "week" == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} },
-                                           { "text": "Maandelijks", "id": "month"{% if "month" == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} }
+                                options='[ { "text": "Weekdag",     "id": "{{ oppleoconfig.BACKUP_INTERVAL_WEEKDAY }}"{% if oppleoconfig.BACKUP_INTERVAL_WEEKDAY == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} },
+                                           { "text": "Kalenderdag", "id": "{{ oppleoconfig.BACKUP_INTERVAL_CALDAY }}"{% if oppleoconfig.BACKUP_INTERVAL_CALDAY == oppleoconfig.backupInterval %}, "selected": "true"{% endif %} }
                                 ]'
                                 placeholder="Maak een keuze..."
                                 info=""
@@ -2202,8 +2437,250 @@
                               </td>
                             </tr>
 
+                            <tr id="backupDayOfWeekRow"{% if oppleoconfig.BACKUP_INTERVAL_WEEKDAY != oppleoconfig.backupInterval %} class="d-none"{% endif %}>
+                              <td class="text-dark">Weekdag:</td>
+                              <td class="text-primary" id="backupDayOfWeek">
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfWeekDay1" type="checkbox" checked="">
+                                  <label for="backupDayOfWeekDay1">
+                                    Maandag
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfWeekDay2" type="checkbox">
+                                  <label for="backupDayOfWeekDay2">
+                                    Dinsdag
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfWeekDay3" type="checkbox" checked="">
+                                  <label for="backupDayOfWeekDay3">
+                                    Woensdag
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfWeekDay4" type="checkbox" checked="">
+                                  <label for="backupDayOfWeekDay4">
+                                    Donderdag
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfWeekDay5" type="checkbox">
+                                  <label for="backupDayOfWeekDay5">
+                                    Vrijdag
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfWeekDay6" type="checkbox" checked="">
+                                  <label for="backupDayOfWeekDay6">
+                                    Zaterdag
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfWeekDay0" type="checkbox" checked="">
+                                  <label for="backupDayOfWeekDay0">
+                                    Zondag
+                                  </label>
+                                </div>
+                              </td>
+                            </tr>
+
+                            <tr id="backupDayOfMonthRow"{% if oppleoconfig.BACKUP_INTERVAL_CALDAY != oppleoconfig.backupInterval %} class="d-none"{% endif %}>
+                              <td class="text-dark">Kalenderdag:</td>
+                              <td class="text-primary" id="backupDayOfMonth">
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay1" type="checkbox">
+                                  <label for="backupDayOfMonthDay1" class="day-label">
+                                    1<sup>e</sup>
+                                  </label>
+                              </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay2" type="checkbox">
+                                  <label for="backupDayOfMonthDay2" class="day-label">
+                                    2<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay3" type="checkbox">
+                                  <label for="backupDayOfMonthDay3" class="day-label">
+                                    3<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay4" type="checkbox">
+                                  <label for="backupDayOfMonthDay4" class="day-label">
+                                    4<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay5" type="checkbox">
+                                  <label for="backupDayOfMonthDay5" class="day-label">
+                                    5<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay6" type="checkbox">
+                                  <label for="backupDayOfMonthDay6" class="day-label">
+                                    6<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay7" type="checkbox">
+                                  <label for="backupDayOfMonthDay7" class="day-label">
+                                    7<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay8" type="checkbox">
+                                  <label for="backupDayOfMonthDay8" class="day-label">
+                                    8<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay9" type="checkbox">
+                                  <label for="backupDayOfMonthDay9" class="day-label">
+                                    9<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay10" type="checkbox">
+                                  <label for="backupDayOfMonthDay10" class="day-label">
+                                    10<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay11" type="checkbox">
+                                  <label for="backupDayOfMonthDay11" class="day-label">
+                                    11<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay12" type="checkbox">
+                                  <label for="backupDayOfMonthDay12" class="day-label">
+                                    12<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay13" type="checkbox">
+                                  <label for="backupDayOfMonthDay13" class="day-label">
+                                    13<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay14" type="checkbox">
+                                  <label for="backupDayOfMonthDay14" class="day-label">
+                                    14<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay15" type="checkbox">
+                                  <label for="backupDayOfMonthDay15" class="day-label">
+                                    15<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay16" type="checkbox">
+                                  <label for="backupDayOfMonthDay16" class="day-label">
+                                    16<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay17" type="checkbox">
+                                  <label for="backupDayOfMonthDay17" class="day-label">
+                                    17<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay18" type="checkbox">
+                                  <label for="backupDayOfMonthDay18" class="day-label">
+                                    18<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay19" type="checkbox">
+                                  <label for="backupDayOfMonthDay19" class="day-label">
+                                    19<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay20" type="checkbox">
+                                  <label for="backupDayOfMonthDay20" class="day-label">
+                                    20<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay21" type="checkbox">
+                                  <label for="backupDayOfMonthDay21" class="day-label">
+                                    21<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay22" type="checkbox">
+                                  <label for="backupDayOfMonthDay22" class="day-label">
+                                    22<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay23" type="checkbox">
+                                  <label for="backupDayOfMonthDay23" class="day-label">
+                                    23<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay24" type="checkbox">
+                                  <label for="backupDayOfMonthDay24" class="day-label">
+                                    24<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay25" type="checkbox">
+                                  <label for="backupDayOfMonthDay25" class="day-label">
+                                    25<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay26" type="checkbox">
+                                  <label for="backupDayOfMonthDay26" class="day-label">
+                                    26<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay27" type="checkbox">
+                                  <label for="backupDayOfMonthDay27" class="day-label">
+                                    27<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay28" type="checkbox">
+                                  <label for="backupDayOfMonthDay28" class="day-label">
+                                    28<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay29" type="checkbox">
+                                  <label for="backupDayOfMonthDay29" class="day-label">
+                                    29<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay30" type="checkbox">
+                                  <label for="backupDayOfMonthDay30" class="day-label">
+                                    30<sup>e</sup>
+                                  </label>
+                                </div>
+                                <div class="checkbox checkbox-primary float-boxes wf-100">
+                                  <input id="backupDayOfMonthDay31" type="checkbox">
+                                  <label for="backupDayOfMonthDay31" class="day-label">
+                                    31<sup>e</sup>
+                                  </label>
+                                </div>
+
+
+                              </td>
+                            </tr>
+
                             <tr>
-                              <td class="text-dark">Tijdstip:</td>
+                              <td class="text-dark">Backup tijdstip:</td>
                               <td class="text-primary">
                                 <oppleo-edit-time 
                                 id="backupTime"
@@ -2215,67 +2692,7 @@
                             </tr>
 
                             <tr>
-                              <td class="text-dark">Weekdag:</td>
-                              <td class="text-primary">
-                                <oppleo-edit-select 
-                                  id="backupDayOfWeek"
-                                  options='[ { "text": "Maandag",   "id": "0"{% if "0" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
-                                             { "text": "Dinsdag",   "id": "1"{% if "1" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
-                                             { "text": "Woensdag",  "id": "2"{% if "2" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} }, 
-                                             { "text": "Donderdag", "id": "3"{% if "3" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
-                                             { "text": "Vrijdag",   "id": "4"{% if "4" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
-                                             { "text": "Zaterdag",  "id": "5"{% if "5" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} },
-                                             { "text": "Zondag",    "id": "6"{% if "6" == oppleoconfig.backupDayOfWeek %}, "selected": "true"{% endif %} } 
-                                           ]'
-                                  info="Weekdag voor de weekelijkse backup."
-                                />
-                              </td>
-                            </tr>
-
-                            <tr>
-                              <td class="text-dark">Kalenderdag:</td>
-                              <td class="text-primary">
-                                <oppleo-edit-select 
-                                  id="backupDayOfMonth"
-                                  options='[ { "text":  "1e",  "id":  "1"{% if  "1" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text":  "2e",  "id":  "2"{% if  "2" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text":  "3e",  "id":  "3"{% if  "3" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text":  "4e",  "id":  "4"{% if  "4" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text":  "5e",  "id":  "5"{% if  "5" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text":  "6e",  "id":  "6"{% if  "6" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text":  "7e",  "id":  "7"{% if  "7" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text":  "8e",  "id":  "8"{% if  "8" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text":  "9e",  "id":  "9"{% if  "9" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "10e",  "id": "10"{% if "10" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "11e",  "id": "11"{% if "11" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "12e",  "id": "12"{% if "12" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "13e",  "id": "13"{% if "13" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "14e",  "id": "14"{% if "14" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "15e",  "id": "15"{% if "15" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "16e",  "id": "16"{% if "16" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "17e",  "id": "17"{% if "17" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "18e",  "id": "18"{% if "18" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "19e",  "id": "19"{% if "19" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "20e",  "id": "20"{% if "20" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "21e",  "id": "21"{% if "21" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "22e",  "id": "22"{% if "22" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "23e",  "id": "23"{% if "23" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "24e",  "id": "24"{% if "24" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "25e",  "id": "25"{% if "25" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "26e",  "id": "26"{% if "26" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} },
-                                             { "text": "27e",  "id": "27"{% if "27" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "28e",  "id": "28"{% if "28" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "29e",  "id": "29"{% if "29" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "30e",  "id": "30"{% if "30" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }, 
-                                             { "text": "31e",  "id": "31"{% if "31" == oppleoconfig.backupDayOfMonth %}, "selected": "true"{% endif %} }
-                                           ]'
-                                  info="Kalenderdag van de maand voor maandelijkse backup. <br><i>Wanneer de dag niet voorkomt in de maand, bijvoorbeeld de 30e in februari, wordt de backup uitgevoerd na het verstrijken op de 1e van de volgende maand.</i>"
-                                />
-                              </td>
-                            </tr>
-
-                            <tr>
-                              <td class="text-dark">Aantal:</td>
+                              <td class="text-dark">Aantal lokale backups behouden:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                 id="backupCount"
@@ -2323,12 +2740,15 @@
                             <!--- SMB -->
                             <tr>
                               <td class="text-dark">Server naam of IP adres:</td>
-                              <td class="text-primary" id="smbBackupServerNameOrIPAddress">{% if oppleoconfig.smbBackupServerNameOrIPAddress is not none %}{{ oppleoconfig.smbBackupServerNameOrIPAddress }}{% else %}-{% endif %}
+                              <td class="text-primary" id="smbBackupServerNameOrIPAddress">
+                                {% if oppleoconfig.smbBackupServerNameOrIPAddress is not none %}{{ oppleoconfig.smbBackupServerNameOrIPAddress }}{% else %}-{% endif %}
                               </td>
                             </tr>          
                             <tr>
                               <td class="text-dark">Gebruikersnaam:</td>
-                              <td class="text-primary" id="smbBackupUsername">{% if oppleoconfig.smbBackupUsername is not none %}{{ oppleoconfig.smbBackupUsername }}{% else %}-{% endif %}
+                              <td class="text-primary" id="smbBackupUsername">
+                                {% if oppleoconfig.smbBackupUsername is not none %}{{ oppleoconfig.smbBackupUsername }}{% else %}-{% endif %}
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Wachtwoord:</td>
@@ -2339,27 +2759,56 @@
                             <tr>
                               <td class="text-dark">Locatie:</td>
                               <td class="text-primary" id="smbBackupLocation">
-                                <span id="smbBackupServiceName">{% if oppleoconfig.smbBackupServiceName is not none %}//{{ oppleoconfig.smbBackupServiceName }}{% else %}{% endif %}</span><span id="smbBackupRemotePath">{% if oppleoconfig.smbBackupRemotePath is not none %}{{ oppleoconfig.smbBackupRemotePath }}{% else %}{% endif %}</span>
+                                <span id="smbBackupServiceName">
+                                  {% if oppleoconfig.smbBackupServiceName is not none %}//{{ oppleoconfig.smbBackupServiceName }}{% else %}{% endif %}</span><span id="smbBackupRemotePath">{% if oppleoconfig.smbBackupRemotePath is not none %}{{ oppleoconfig.smbBackupRemotePath }}{% else %}{% endif %}
+                                </span>
+                              </td>
                             </tr>
 
                             <tr>
-                              <td class="text-dark">Aantal:</td>
-                              <td class="text-primary">
-                                <oppleo-edit-str 
-                                id="osBackupCount"
-                                value=""
-                                validation="^(0?[1-9]|[1-9][0-9])$"
-                                info="Aantal offsite te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
-                                />
+                              <td class="text-dark">Aantal offsite backups:</td>
+                              <td class="text-primary" id="osBackupCount">
+                                {% if oppleoconfig.osBackupCount is not none %}{{ oppleoconfig.osBackupCount }}{% else %}-{% endif %}
                               </td>
                             </tr>
 
                             <tr>
                               <td class="text-dark">&nbsp;</td>
                               <td class="text-primary">
-                                <button type="button" class="btn btn-sm btn-primary" id="modal-backup-edit"{% if not oppleoconfig.osBackupEnabled %} disabled{% endif %}> <i class="fas fa-angle-right"></i> Wijzigen </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="modal-backup-edit"> <i class="fas fa-angle-right"></i> Offsite backup wijzigen </button>
                               </td>
                             </tr>
+
+                            <tr>
+                              <td class="text-dark">Offsite backups:</td>
+                              <td class="text-primary">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="backup-offsite-showinfo"> <i class="fas fa-cloud-upload-alt"></i> Gegevens ophalen</button>
+                              </td>
+                            </tr>
+
+                            <tr id='remoteBackupList'>
+                              <td class="text-dark">Offsite backups:</td>
+                              <td class="text-primary">
+                                <div>
+                                  15 backups //darabont/laadpaalnoord/noord/
+                                </div>
+                                <table class="w-100">
+                                  <thead>
+                                    <tr><td class="pl-3 pr-3 text-center" style="border: 0px;"></td>
+                                      <td style="border: 0px;">Tijdstip</td>
+                                      <td style="border: 0px;">Omvang</td>
+                                      <td style="border: 0px;">Filenaam</td>
+                                      <td style="border: 0px;">Verwijder</td>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr><td class="text-center"><i class="fas fa-cloud-upload-alt"></i></td><td>02-02-2021 18.52</td><td class="text-center">3MB</td><td>backup_2021-02-02_18.52.08_laadpaal_noord.zip</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td></tr>
+                                    <tr><td class="text-center"><i class="fas fa-cloud-upload-alt"></i></td><td>02-02-2021 18:45</td><td class="text-center">3MB</td><td>backup_2021-02-02_18.45.23_laadpaal_noord.zip</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td></tr>
+                                    <tr><td class="text-center"><i class="fas fa-cloud-upload-alt"></i></td><td>02-02-2021 18:48</td><td class="text-center">3MB</td><td>backup_2021-02-02_18.48.56_laadpaal_noord.zip</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td></tr>
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>                            
 
                           </tbody>
                         </table>
@@ -2444,6 +2893,20 @@
                             />
                           </td>
                         </tr>
+                        <tr class="spacer-20"></tr> 
+                        <tr>
+                          <td class="text-dark">Aantal offsite backups:</td>
+                          <td class="text-primary">
+                            <oppleo-edit-str 
+                            id="osBackupCount"
+                            value=""
+                            validation="^(0?[1-9]|[1-9][0-9])$"
+                            info="Aantal offsite te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
+                            unlock=true
+                            />
+                          </td>
+                        </tr>
+
                       </table>
 
                     </div>

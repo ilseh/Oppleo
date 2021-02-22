@@ -2,6 +2,7 @@ from nl.oppleo.utils.BackupUtil import BackupUtil
 
 b = BackupUtil()
 
+b.setBackupCalDay()
 # b.__purgeLocalBackups__()
 
 

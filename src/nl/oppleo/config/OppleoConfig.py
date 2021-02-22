@@ -86,7 +86,21 @@ class OppleoConfig(object, metaclass=Singleton):
     # Off Peak disabled for this period (not-persistent)
     # peakHoursAllowPeakOnePeriod = False
 
+    BACKUP_INTERVAL_WEEKDAY = "d"
+    BACKUP_INTERVAL_CALDAY  = "c"
 
+    """ 
+        Offsite Backup type. For now only Samba (Windows shared drive) supported. Future expansions to AFP, OneDrive, iCloud Drive etc.
+    """
+    OS_BACKUP_TYPE_UNKNOWN  = 0
+    OS_BACKUP_TYPE_SMB      = 1
+    OS_BACKUP_TYPE_AFP      = 2
+    OS_BACKUP_TYPE_ONEDRIVE = 3
+    OS_BACKUP_TYPE_ICLOUD   = 4
+    
+    BACKUP_DIR_NAME         = 'backup'
+
+    
     """
         Private variables
     """
@@ -605,6 +619,28 @@ class OppleoConfig(object, metaclass=Singleton):
         self.__chargerConfigModel.setAndSave('backup_interval', value)
 
     """
+        backupIntervalWeekday --> backup_interval_weekday
+    """
+    @property
+    def backupIntervalWeekday(self):
+        return self.__chargerConfigModel.backup_interval_weekday
+
+    @backupIntervalWeekday.setter
+    def backupIntervalWeekday(self, value):
+        self.__chargerConfigModel.setAndSave('backup_interval_weekday', value)
+
+    """
+        backupIntervalCalday --> backup_interval_calday
+    """
+    @property
+    def backupIntervalCalday(self):
+        return self.__chargerConfigModel.backup_interval_calday
+
+    @backupIntervalCalday.setter
+    def backupIntervalCalday(self, value):
+        self.__chargerConfigModel.setAndSave('backup_interval_calday', value)
+
+    """
         backupTimeOfDay --> backup_time_of_day
     """
     @property
@@ -614,6 +650,31 @@ class OppleoConfig(object, metaclass=Singleton):
     @backupTimeOfDay.setter
     def backupTimeOfDay(self, value):
         self.__chargerConfigModel.setAndSave('backup_time_of_day', value)
+
+    """
+        backupSuccessTimestamp --> backup_success_timestamp
+    """
+    @property
+    def backupSuccessTimestamp(self):
+        return self.__chargerConfigModel.backup_success_timestamp
+
+    @backupSuccessTimestamp.setter
+    def modifiedAt(self, value):
+        self.__chargerConfigModel.setAndSave('backup_success_timestamp', value)
+
+    """
+        returns the absolute path to the Oppleo root folder
+    """
+    @property
+    def oppleoRootDirectory(self) -> str:
+        return os.path.realpath(".")
+
+    """
+        returns the absolute path to the backup folder
+    """
+    @property
+    def localBackupDirectory(self) -> str:
+        return os.path.join(self.oppleoRootDirectory, self.BACKUP_DIR_NAME)
 
     """
         backupLocalHistory --> backup_local_history
@@ -647,6 +708,17 @@ class OppleoConfig(object, metaclass=Singleton):
     @osBackupType.setter
     def osBackupType(self, value):
         self.__chargerConfigModel.setAndSave('os_backup_type', value)
+
+    """
+        osBackupHistory --> os_backup_history
+    """
+    @property
+    def osBackupHistory(self):
+        return self.__chargerConfigModel.os_backup_history
+
+    @osBackupHistory.setter
+    def osBackupHistory(self, value):
+        self.__chargerConfigModel.setAndSave('os_backup_history', value)
 
     """
         smbBackupServerNameOrIPAddress --> smb_backup_servername_or_ip_address

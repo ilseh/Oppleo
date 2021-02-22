@@ -54,6 +54,7 @@ HTTP_CODE_400_BAD_REQUEST           = 400
 HTTP_CODE_401_UNAUTHORIZED          = 401
 HTTP_CODE_403_FORBIDDEN             = 403
 HTTP_CODE_404_NOT_FOUND             = 404
+HTTP_CODE_405_METHOD_NOT_ALLOWED    = 405
 HTTP_CODE_500_INTERNAL_SERVER_ERROR = 500
 HTTP_CODE_501_NOT_IMPLEMENTED       = 501
 
@@ -1517,10 +1518,35 @@ def update_settings(param=None, value=None):
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.backupEnabled })
 
     # backupInterval
-    validation="^(hdwm)$"
-    if (param == 'backupInterval') and isinstance(value, str) and re.match(validation, value):
+    if ((param == 'backupInterval') and isinstance(value, str) and 
+        (value == oppleoConfig.BACKUP_INTERVAL_WEEKDAY or value == oppleoConfig.BACKUP_INTERVAL_CALDAY) ):
         oppleoConfig.backupInterval = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # backupIntervalWeekday
+    if (param == 'backupIntervalWeekday'):
+        try:
+            lst = json.loads(value)
+            if len(lst) == 7 and all(isinstance(x, bool) for x in lst):
+                oppleoConfig.backupIntervalWeekday = json.dumps(lst)
+                return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        except Exception as e:
+            pass
+        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value })
+
+    # backupIntervalWeekday
+    if (param == 'backupIntervalCalday'):
+        try:
+            lst = json.loads(value)
+            if len(lst) == 32:
+                # List is 1 offset, make 0 offset by popping the first entry
+                lst.pop(0)
+            if len(lst) == 31 and all(isinstance(x, bool) for x in lst):
+                oppleoConfig.backupIntervalCalday = json.dumps(lst)
+                return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        except Exception as e:
+            pass
+        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value })
 
     # backupTimeOfDay
     validation="^([0-9]{2}:[0-9]{2}:[0-9]{2})$"
@@ -1706,6 +1732,59 @@ def getBackupInfo(cmd=None, data=None):
                 'connectionRefused' : connectionDetails['connectionRefused'],
                 'validConnection'   : connectionDetails['validConnection'],
                 'smbPath'           : connectionDetails['smbPath']
+                })
+
+        if (cmd.lower() == "listlocalbackups"):
+            backupList = backupUtil.listLocalBackups()
+
+            return jsonify({ 
+                'status'            : HTTP_CODE_200_OK,
+                'cmd'               : cmd,
+                'directory'         : backupList['directory'],
+                'localBackupList'   : backupList['files']
+                })
+
+
+
+
+        if (cmd.lower() == "listremotebackups"):
+            backupList, connectionDetails = backupUtil.listSMBBackups(smbPath='/laadpaalnoord/', serverOrIP='darabont', 
+                                username='frans', password='D4movlaa', serviceName='laadpaalnoord')
+
+        if (cmd.lower() == "createbackupnow"):
+            backupUtil.startCreateBackupTask()
+            return jsonify({ 
+                'status'            : HTTP_CODE_200_OK,
+                'cmd'               : cmd
+                })
+
+        if (cmd.lower() == "removelocalbackup"):
+            try:
+                jsonD = json.loads(data)
+            except JSONDecodeError as jde:
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : jde.msg
+                    })                
+
+            # Check if the keys do exist in the jsonD dict, fail 400 if they don't
+            if not all([True for key in ['filename'] if key in jsonD.keys()]):
+                # Not all required parameters
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : 'Missing variables'
+                    })                
+
+            result = backupUtil.removeLocalBackup(filename=jsonD['filename'])
+            return jsonify({ 
+                'status'            : HTTP_CODE_200_OK if result['result'] else 
+                                        HTTP_CODE_404_NOT_FOUND if not result['found'] else 
+                                        HTTP_CODE_500_INTERNAL_SERVER_ERROR,
+                'cmd'               : cmd
                 })
 
         if (cmd.lower() == "smbvalidateuser"):

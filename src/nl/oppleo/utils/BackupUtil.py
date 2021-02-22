@@ -1,10 +1,12 @@
 import threading
 import os
 from os import path
+import ntpath
 import subprocess
 from datetime import datetime
 import logging
 import re
+import json
 
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
@@ -12,12 +14,14 @@ from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
 from nl.oppleo.utils.SMBClient import SMBClient
+from nl.oppleo.services.PushMessage import PushMessage
+from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
 
 # A function that returns the length of the value:
-def sortBackups(filename:str) -> int:
+def sortBackups(file:dict) -> int:
     try:
-        return int(datetime.strptime(filename[7:26], '%Y-%m-%d_%H.%M.%S').timestamp())
+        return int(datetime.strptime(file['filename'][7:26], '%Y-%m-%d_%H.%M.%S').timestamp())
     except Exception as e:
         pass
     return 0
@@ -38,9 +42,7 @@ def sortBackups(filename:str) -> int:
 
 class BackupUtil:
 
-    __backupDirectory__ = None
     __DBTYPE_POSTGRESS__ = 0
-    __DEFAULTDIRNAME__ = 'backup'
 
     __SYSTEMSINIPATH__ = 'src/nl/oppleo/config/'
     __SYSTEMSINIFILENAME__ = 'oppleo'
@@ -69,7 +71,6 @@ class BackupUtil:
             self.logger.debug('Production environment')
         else:
             self.logger.debug('Not production environment')
-        self.backupDirectory = self.__getBackupDirectory__()
 
 
 
@@ -83,25 +84,93 @@ class BackupUtil:
         Remove temporary folder
 
     """
+    def startCreateBackupTask(self):
+        self.logger.debug(f'{datetime.now()} - Launching backup background task...')
+        self.thread = self.oppleoConfig.appSocketIO.start_background_task(self.createBackup)
+
+
     def createBackup(self):
-        # 0. Make timestamp
-        now = datetime.now()
+        startTime = datetime.now()
+        # Announce
+        WebSocketUtil.emit(
+                wsEmitQueue=self.oppleoConfig.wsEmitQueue,
+                event='backup_started', 
+                id=self.oppleoConfig.chargerName,
+                data={
+                    "started"     : startTime.strftime('%Y-%m-%d %H:%M.%S')
+                },
+                namespace='/backup',
+                public=False
+            )
+        backup_file = self.createLocalBackup(start_time=startTime)
+
+        if self.oppleoConfig.osBackupEnabled:
+            # Create offsite backup
+            if (self.oppleoConfig.osBackupType == self.oppleoConfig.OS_BACKUP_TYPE_SMB):
+                self.__storeBackupToSmbShare__(filename=backup_file)
+
+        timeCompleted = datetime.now()
+
+        # Get the fileszie
+        filesize = 0
+        try: 
+            filesize = os.path.getsize(backup_file)
+        except OSError as ose:
+            pass
+
+        # Announce
+        WebSocketUtil.emit(
+                wsEmitQueue=self.oppleoConfig.wsEmitQueue,
+                event='backup_completed', 
+                id=self.oppleoConfig.chargerName,
+                data={
+                    "started"     : startTime.strftime('%Y-%m-%d %H:%M.%S'),
+                    "completed"   : timeCompleted.strftime('%Y-%m-%d %H:%M.%S'),
+                    "filename"    : ntpath.basename(backup_file),
+                    "filesize"    : filesize
+                },
+                namespace='/backup',
+                public=False
+            )
+
+        PushMessage.sendMessage(
+            "Backup completed", 
+            "Backup completed at {} {}"
+            .format(
+                timeCompleted.strftime('%Y-%m-%d %H:%M'),
+                "(offsite backup not enabled)" if not self.oppleoConfig.osBackupEnabled else (
+                    "(Offsite copy to SMB //{}/{}/{})".format(
+                        self.oppleoConfig.smbBackupServerNameOrIPAddress, 
+                        self.oppleoConfig.smbBackupServiceName, 
+                        self.oppleoConfig.smbBackupSharePath
+                        ) if self.oppleoConfig.osBackupType == self.oppleoConfig.OS_BACKUP_TYPE_SMB else (
+                            "(offsite backup type not supported"
+                        )
+                    )
+                )
+            )
+
+
+    def createLocalBackup(self, start_time:datetime=None):
+        # 0. Make timestamp if not provided
+        if (start_time == None):
+            start_time = datetime.now()
         files = []
         # 1. Create temporary directory in the backup directory
-        tmp_dir, backup_dir = self.__createTemporaryDirectory(now)
+        tmp_dir, backup_dir = self.__createTemporaryDirectory(start_time)
         # 2. Create a db backup dump in the temporary directory
         # --- files.append(self.backupDatabase(now, tmp_dir))
         # 3. Copy /src/nl/oppleo/config/oppleo.ini
-        files.append(self.__copySystemsIniFile(now, tmp_dir))
+        files.append(self.__copySystemsIniFile(start_time, tmp_dir))
         # 4. Copy /db/liquibase.properties
-        files.append(self.__copyLiquibasePropertiesFile(now, tmp_dir))
+        files.append(self.__copyLiquibasePropertiesFile(start_time, tmp_dir))
         # 5. copy the service file (can be generated, history on platform)
         # install/Oppleo.service
-        files.append(self.__copyServiceConfigFile(now, tmp_dir))
+        files.append(self.__copyServiceConfigFile(start_time, tmp_dir))
         # 5. copy the install log files (history on platform)
-        files.append(self.__zipInstallLogFiles(now, tmp_dir))
+        files.append(self.__zipInstallLogFiles(start_time, tmp_dir))
         # 6. Zip temporary directory in one backup file
-        backup_file = self.__zipBackupFile(now, backup_dir, tmp_dir, files)
+        backup_file = self.__zipBackupFile(start_time, backup_dir, tmp_dir, files)
         # 7. Remove temporary folder
         self.__removeTemporaryDirectory(tmp_dir, files)
 
@@ -109,7 +178,7 @@ class BackupUtil:
 
 
     def __createTemporaryDirectory(self, now: datetime):
-        backup_dir = self.__getBackupDirectory__()
+        backup_dir = self.oppleoConfig.localBackupDirectory
         if not backup_dir.endswith(os.path.sep):
             backup_dir += os.path.sep
 
@@ -127,7 +196,7 @@ class BackupUtil:
         ini_source_filename = self.__SYSTEMSINIFILENAME__ + '.' + self.__SYSTEMSINIFILEEXT__ 
         ini_target_filename = self.__SYSTEMSINIFILENAME__ + '_' + now.strftime('%Y-%m-%d_%H.%M.%S') + '.' + self.__SYSTEMSINIFILEEXT__ 
 
-        ini_source_path = os.path.join(self.__getOppleoRootDirectory__(), 
+        ini_source_path = os.path.join(self.oppleoConfig.oppleoRootDirectory, 
                                        self.__SYSTEMSINIPATH__,            
                                        ini_source_filename
                                       )
@@ -146,7 +215,7 @@ class BackupUtil:
         liqbase_source_filename = self.__LIQUIBASEPROPFILENAME__ + '.' + self.__LIQUIBASEPROPFILEEXT__ 
         liqbase_target_filename = self.__LIQUIBASEPROPFILENAME__ + '_' + now.strftime('%Y-%m-%d_%H.%M.%S') + '.' + self.__LIQUIBASEPROPFILEEXT__ 
 
-        liqbase_source_path = os.path.join(self.__getOppleoRootDirectory__(), 
+        liqbase_source_path = os.path.join(self.oppleoConfig.oppleoRootDirectory, 
                                        self.__LIQUIBASEPROPPATH__,            
                                        liqbase_source_filename
                                       )
@@ -166,7 +235,7 @@ class BackupUtil:
         service_source_filename = self.__SERVICEFILENAME__ + '.' + self.__SERVICEFILEEXT__ 
         service_target_filename = self.__SERVICEFILENAME__ + '_' + now.strftime('%Y-%m-%d_%H.%M.%S') + '.' + self.__SERVICEFILEEXT__ 
 
-        service_source_path = os.path.join(self.__getOppleoRootDirectory__(), 
+        service_source_path = os.path.join(self.oppleoConfig.oppleoRootDirectory, 
                                        self.__SERVICEPATH__,            
                                        service_source_filename
                                       )
@@ -188,7 +257,7 @@ class BackupUtil:
         install_log_source_filename = self.__INSTALLLOGFILENAME__ + '*' + '.' + self.__INSTALLLOGFILEEXT__ 
         install_log_target_filename = self.__INSTALLLOGFILENAME__ + self.__INSTALLLOGFILEEXT__ + '_' + now.strftime('%Y-%m-%d_%H.%M.%S') + '.zip'
 
-        install_log_source_path = os.path.join(self.__getOppleoRootDirectory__(), 
+        install_log_source_path = os.path.join(self.oppleoConfig.oppleoRootDirectory, 
                                        self.__INSTALLLOGPATH__,            
                                        install_log_source_filename
                                       )
@@ -245,21 +314,6 @@ class BackupUtil:
             pass
 
 
-    """
-        returns the absolute path to the backup folder
-    """
-    def __getBackupDirectory__(self) -> str:
-        return os.path.join(self.__getOppleoRootDirectory__(), self.__DEFAULTDIRNAME__)
-
-    """
-        returns the absolute path to the backup folder
-    """
-    def __getOppleoRootDirectory__(self) -> str:
-
-        if self.__backupDirectory__ is None:
-            print(os.path.realpath("."))
-            return os.path.realpath(".")
-        return ""
 
 
     """
@@ -267,7 +321,7 @@ class BackupUtil:
     """
     def __backupDirectoryExists__(self) -> bool:
 
-        backupPath = self.__getBackupDirectory__()
+        backupPath = self.oppleoConfig.localBackupDirectory
         return path.exists(backupPath) and path.isdir(backupPath)
 
     """
@@ -275,7 +329,7 @@ class BackupUtil:
     """
     def __createBackupDirectory__(self) -> None:
 
-        directory = self.__getBackupDirectory__()
+        directory = self.oppleoConfig.localBackupDirectory
 
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -300,12 +354,6 @@ class BackupUtil:
         if not self.__cmd_exists__(cmd):
             return
         cmd = self.__cmd_which__(cmd)
-
-        """
-        dir_name = self.__getBackupDirectory__()
-        if not self.__backupDirectoryExists__():
-            self.__createBackupDirectory__()
-        """
 
         if not dir_name.endswith(os.path.sep):
             dir_name += os.path.sep
@@ -349,17 +397,23 @@ class BackupUtil:
     """
         Returns the list of files in the backup directory, ignoring sub directories
     """
-    def listLocalBackups(self):
+    def listLocalBackups(self, directory:str=None):
 
-        directory = self.__getBackupDirectory__()
+        if directory is None:
+            directory = self.oppleoConfig.localBackupDirectory
         files = []
-        for f in os.listdir(directory):
-            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+'\.zip$', f):
-                files.append(f)
+        for filename in os.listdir(directory):
+            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+'\.zip$', filename):
+                filesize = None
+                try: 
+                    filesize = os.path.getsize(os.path.join(directory, filename))
+                except OSError as ose:
+                    pass
+                files.append({ 'filename': filename, 'filesize': filesize, 'timestamp': filename[7:26].replace('_', ' ') })
 
         files.sort(key=sortBackups)
 
-        return directory, files
+        return { 'directory': directory, 'files': files }
 
 
     """
@@ -368,6 +422,7 @@ class BackupUtil:
     def purgeLocalBackups(self, n:int=5):
 
         directory, files = self.listLocalBackups()
+        # TODO return is dict now
         # note: the list is sorted
         purgelist = files[0:(-1*n)] 
         for file in purgelist:
@@ -375,17 +430,41 @@ class BackupUtil:
             os.remove(filename)
 
     """
+        Removes a local backup
+    """
+    def removeLocalBackup(self, filename:str=None):
+        if filename is None:
+            return { 'result': False, 'found': False, 'filename': '', 'reason': 'No filename given' }
+        localBackups = self.listLocalBackups()
+        localBackupFilteredList = [entry for entry in localBackups['files'] 
+                                      if entry['filename'] == filename
+                                  ]
+        if len(localBackupFilteredList) != 1:
+            return { 'result': False, 'found': False, 'reason': 'File not found', 'filename': filename }
+        try:
+            os.remove(os.path.join(localBackups['directory'], localBackupFilteredList[0]['filename']))
+            return { 'result': True, 'found': True, 'filename': filename, 'filesize': localBackupFilteredList[0]['filesize'], 'timestamp': localBackupFilteredList[0]['timestamp'] }
+        except IsADirectoryError as iad:
+            return { 'result': False, 'found': True, 'filename': filename, 'reason': 'Is a directory' }
+        except Exception as e:
+            pass
+        return { 'result': False, 'found': True, 'filename': filename, 'reason': 'Unknown error' }
+
+
+    """
         Returns the list of files in the backup directory, ignoring sub directories
     """
-    def __listSMBBackups__(self):
+    def listSMBBackups(self, smbPath:str=None, serverOrIP:str=None, username:str=None, password:str=None, 
+                           serviceName:str=None):
 
-        smb_client = SMBClient(serverOrIP=self.oppleoConfig.smbBackupServerOrIP,
-                               username=self.oppleoConfig.smbBackupUsername, 
-                               password=self.oppleoConfig.smbBackupPassword, 
-                               share_name=self.oppleoConfig.smbBackupShareName
+        smb_client = SMBClient(serverOrIP=serverOrIP if serverOrIP is not None else self.oppleoConfig.smbBackupServerNameOrIPAddress,
+                               username=username if username is not None else self.oppleoConfig.smbBackupUsername, 
+                               password=password if password is not None else self.oppleoConfig.smbBackupPassword,
+                               service_name=serviceName if serviceName is not None else self.oppleoConfig.smbBackupServiceName, 
                                )
+
         smb_client.connect()
-        smbfilelist = smb_client.list(self.oppleoConfig.smbBackupSharePath)
+        smbfilelist = smb_client.list(smbPath if smbPath is not None else self.oppleoConfig.smbBackupSharePath)
         smb_client.close()
 
         files = []
@@ -396,6 +475,7 @@ class BackupUtil:
         files.sort(key=sortBackups)
 
         return self.oppleoConfig.smbBackupSharePath, files
+
 
     """
         Returns the list of files and directories in the directory path
@@ -529,5 +609,79 @@ class BackupUtil:
         response = smb_client.upload([os.path.join(self.oppleoConfig.smbBackupSharePath, filename)])
         smb_client.close()
 
+        PushMessage.sendMessage(
+            "Offsite Backup failed", 
+            "Could not write backup file {} to SMB //{}/{}/{}!"
+            .format(
+                 filename, 
+                 self.oppleoConfig.smbBackupServerNameOrIPAddress, 
+                 self.oppleoConfig.smbBackupServiceName, 
+                 self.oppleoConfig.smbBackupSharePath
+                )
+            )
 
+    """
+        Helper function to set or reset a specific calendar day
+        -- calendar days are offset by 1 (1st is index 0)
+    """
+    def setBackupCalDay(self, calday:int=-1, enable:bool=False):
+        calDayList = json.loads(self.oppleoConfig.backupIntervalCalday)
+        calDayList[calday] = enable
+        self.oppleoConfig.backupIntervalCalday = json.dumps(calDayList)
 
+    """
+        Helper function to set or reset a specific weekday
+        -- weekday, 0=Sunday, 1=Monday, ...
+    """
+    def setBackupWeekDay(self, weekday:int=-1, enable:bool=False):
+        weekDayList = json.loads(self.oppleoConfig.backupIntervalWeekday)
+        weekDayList[weekday] = enable
+        self.oppleoConfig.backupIntervalWeekday = json.dumps(weekDayList)
+
+    def isBackupDue(self) -> bool:
+        lastBackup = None
+        try:
+            lastBackup = datetime.fromtimestamp(
+                int(self.oppleoConfig.backupSuccessTimestamp)
+            )
+        except Exception as e:
+            return True
+
+        now = datetime.now()
+
+        """
+            check backup type: Weekday or Calendar day
+        """
+
+        if self.oppleoConfig.backupInterval == self.oppleoConfig.BACKUP_INTERVAL_WEEKDAY:
+            """
+                --> Weekday
+                    If today is enabled and time has passed, and no backup was made after time passed, Go
+                    If any weekday between last success and now was enabled -> GO 
+
+                    zo      ma      di      wo      do      fr      za
+                        |
+                                        | 
+                                            |
+
+            """
+            weekDayList = json.loads(self.oppleoConfig.backupIntervalWeekday)
+
+            # weekDayList[weekday] = enable
+
+            pass
+
+        if self.oppleoConfig.backupInterval == self.oppleoConfig.BACKUP_INTERVAL_CALDAY:
+            """
+                --> Calendar day
+                    If todays date is enabled and time has passed, or any calendar day since success was enabled -> Go
+                    
+            """
+            calDayList = json.loads(self.oppleoConfig.backupIntervalCalday)
+            pass
+
+        """
+            None of the above, no backup then
+        """
+
+        return False

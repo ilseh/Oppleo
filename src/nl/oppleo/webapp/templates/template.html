@@ -133,6 +133,16 @@
                             message: message
                         })
             }
+            function formatFilesize(size) {
+                let type = ['Bytes', 'kB', 'MB', 'GB', 'TB']
+                let selector = 0
+                size = parseFloat(size)
+                while (size > 1000) {
+                    size /= 1000
+                    selector++
+                }
+                return (size % 1 === 0 ? size : size.toFixed(1)) + type[selector]
+            }
             softwareUpdateInProgress = false
             function getSystemStatus( ) {
                 console.log(timestamp() + ' getSystemStatus()')
@@ -200,7 +210,7 @@
                 .always(function() {
                     // Remove spinner?
                 })
-            }    
+            }
             let systemStatusSocket = null
             function startSystemStatusWebSocket() {
                 // start up the SocketIO connection to the server on namespace /usage
