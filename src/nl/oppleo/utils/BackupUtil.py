@@ -3,7 +3,7 @@ import os
 from os import path
 import ntpath
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta, time
 import logging
 import re
 import json
@@ -656,20 +656,26 @@ class BackupUtil:
         if self.oppleoConfig.backupInterval == self.oppleoConfig.BACKUP_INTERVAL_WEEKDAY:
             """
                 --> Weekday
-                    If today is enabled and time has passed, and no backup was made after time passed, Go
-                    If any weekday between last success and now was enabled -> GO 
-
-                    zo      ma      di      wo      do      fr      za
-                        |
-                                        | 
-                                            |
-
+                    Determine due date by first enabled day since now (iterate through weekDayList from todays day), set due time,
+                    and verify if last backup was prior or after due day/time.
             """
             weekDayList = json.loads(self.oppleoConfig.backupIntervalWeekday)
+            # Return the day of the week as an integer, where Monday is 0 and Sunday is 6.
+            weekDayToday = now.weekday()
+    
+            # Find the first required backup time, by looking back in enabled days
+            daysPast = 8
+            for i in range(7):
+                # +1 to convert from 0=Monday to 0=Sunday
+                # +i to go through the week (7 days)
+                daysPast = i if weekDayList[(weekDayToday+1+i)%7] and daysPast == 8 else daysPast
 
-            # weekDayList[weekday] = enable
+            due = datetime.now() - timedelta(days=daysPast)
+            due.replace(hour=self.oppleoConfig.backupTimeOfDay[0,2], minute=self.oppleoConfig.backupTimeOfDay[3,2])
 
-            pass
+            # Backup due? (daysPast=8 indicates no active days)
+            return daysPast != 8 and lastBackup < due
+
 
         if self.oppleoConfig.backupInterval == self.oppleoConfig.BACKUP_INTERVAL_CALDAY:
             """
@@ -678,6 +684,26 @@ class BackupUtil:
                     
             """
             calDayList = json.loads(self.oppleoConfig.backupIntervalCalday)
+            # Return the day of the month as an integer, where the first is 1.
+            calDayToday = now.day
+    
+            # Find the first required backup time, by looking back in enabled days
+            daysPast = 32
+            for i in range(31):
+                # +1 to convert from 0=Monday to 0=Sunday
+                # +i to go through the week (7 days)
+                daysPast = i if calDayList[(calDayToday+1+i)%31] and daysPast == 32 else daysPast
+
+            due = datetime.now() - timedelta(days=daysPast)
+            due.replace(hour=self.oppleoConfig.backupTimeOfDay[0,2], minute=self.oppleoConfig.backupTimeOfDay[3,2])
+
+            # Backup due? (daysPast=32 indicates no active days)
+            return daysPast != 32 and lastBackup < due
+
+
+
+
+
             pass
 
         """
