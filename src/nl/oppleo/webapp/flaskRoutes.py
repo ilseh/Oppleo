@@ -1,6 +1,6 @@
 import os
 import threading
-from datetime import datetime
+from datetime import datetime, time
 from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session
 
 from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
@@ -325,7 +325,19 @@ def shutdown():
     form = AuthorizeForm()
     if form.validate_on_submit() and \
        check_password_hash(current_user.password, form.password.data):
-        flaskRoutesLogger.debug('Shutdown requested and authorized. Shutting down in 2 seconds...')
+        flaskRoutesLogger.debug('Shutdown requested and authorized.')
+        if BackupUtil().backupInProgress:
+            # Cannot shutdown now, wait for backup to complete
+            flaskRoutesLogger.debug('Restart request denied. Backup in progress.')
+            return render_template("authorize.html", 
+                    form=form, 
+                    requesttitle="Uitschakelen",
+                    requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
+                    buttontitle="Schakel uit!",
+                    errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
+                    oppleoconfig=oppleoConfig
+                    )
+        flaskRoutesLogger.debug('Shutting down in 2 seconds...')
         # Simple os.system('sudo shutdown now') initiates shutdown before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; shutdown now' &>/dev/null")
         return render_template("shuttingdown.html", 
@@ -361,7 +373,19 @@ def reboot():
     form = AuthorizeForm()
     if form.validate_on_submit() and \
        check_password_hash(current_user.password, form.password.data):
-        flaskRoutesLogger.debug('Reboot requested and authorized. Rebooting in 2 seconds...')
+        flaskRoutesLogger.debug('Reboot requested and authorized.')
+        if BackupUtil().backupInProgress:
+            # Cannot reboot now, wait for backup to complete
+            flaskRoutesLogger.debug('Reboot request denied. Backup in progress.')
+            return render_template("authorize.html", 
+                    form=form, 
+                    requesttitle="Reboot",
+                    requestdescription="Reboot het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. <br />Dit zal ongeveer 40 seconden duren.",
+                    buttontitle="Reboot!",
+                    errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
+                    oppleoconfig=oppleoConfig
+                    )
+        flaskRoutesLogger.debug('Rebooting in 2 seconds...')
         # Simple os.system('sudo reboot') initiates reboot before a webpage can be returned
         os.system("nohup sudo -b bash -c 'sleep 2; reboot' &>/dev/null")
         return render_template("rebooting.html", 
@@ -397,6 +421,18 @@ def restart():
     form = AuthorizeForm()
     if form.validate_on_submit() and \
        check_password_hash(current_user.password, form.password.data):
+        if BackupUtil().backupInProgress:
+            # Cannot restart now, wait for backup to complete
+            flaskRoutesLogger.debug('Restart request denied. Backup in progress.')
+            return render_template("authorize.html", 
+                    form=form, 
+                    requesttitle="Herstarten",
+                    requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
+                    buttontitle="Herstart!",
+                    errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
+                    oppleoconfig=oppleoConfig
+                    )
+
         flaskRoutesLogger.debug('Restart requested and authorized. Restarting in 2 seconds...')
         # Simple os.system('sudo systemctl restart Oppleo.service') initiates restart before a webpage can be returned
         try:
@@ -440,7 +476,20 @@ def software_update():
     form = AuthorizeForm()
     if form.validate_on_submit() and \
        check_password_hash(current_user.password, form.password.data):
-        flaskRoutesLogger.debug('Software update requested and authorized. Updating in 2 seconds...')
+        flaskRoutesLogger.debug('Software update requested and authorized.')
+        if BackupUtil().backupInProgress:
+            # Cannot start software update now, wait for backup to complete
+            flaskRoutesLogger.debug('Software update request denied. Backup in progress.')
+            return render_template("authorize.html", 
+                    form=form, 
+                    requesttitle="Software Update",
+                    requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie kan 30 seconden tot 1 minuut duren.",
+                    buttontitle="Herstart!",
+                    errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
+                    oppleoconfig=oppleoConfig
+                    )
+
+        flaskRoutesLogger.debug('Updating in 2 seconds...')
         try: 
             updateSoftwareInstallCmd = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/install.sh')
             updateSoftwareLogFile = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/log/update_{}.log'.format(datetime.now().strftime("%Y%m%d%H%M%S")))
@@ -740,7 +789,8 @@ def settings(active=1):
                 charger_config=charger_config_str,
                 energydevicemodel=EnergyDeviceModel.get(),
                 oppleosystemconfig=oppleoSystemConfig,
-                oppleoconfig=oppleoConfig
+                oppleoconfig=oppleoConfig,
+                backuputil=BackupUtil()
             )
 
 
@@ -1508,13 +1558,19 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.httpPort = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpPort })
 
-
-
-
-
     # backupEnabled
     if (param == 'backupEnabled'):
-        oppleoConfig.backupEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        backupUtil = BackupUtil()
+        # Make sure the thread running and the config settings are in sync
+        backupUtil.lock.acquire()
+        enableBackup = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        oppleoConfig.backupEnabled = enableBackup
+        if enableBackup:
+            BackupUtil().startBackupMonitorThread()
+        else:
+            BackupUtil().stopBackupMonitorThread()
+        backupUtil.lock.release()
+
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.backupEnabled })
 
     # backupInterval
@@ -1549,20 +1605,29 @@ def update_settings(param=None, value=None):
         return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value })
 
     # backupTimeOfDay
-    validation="^([0-9]{2}:[0-9]{2}:[0-9]{2})$"
+    validation='^([01]\d|2[0-3]):?([0-5]\d)$'
     if (param == 'backupTimeOfDay') and isinstance(value, str) and re.match(validation, value):
-        oppleoConfig.backupTimeOfDay = value
+        oppleoConfig.backupTimeOfDay = time(hour=int(value[0:2]), minute=int(value[3:5]), second=0, microsecond=0)
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # backupLocalHistory
-    validation="^([0-9]{1,3})$"
+    validation="^(0?[1-9]|[1-9][0-9])$"
     if (param == 'backupLocalHistory') and isinstance(value, str) and re.match(validation, value):
+        try:
+            value = int(value)
+        except ValueError as e:
+            # Conditions not met
+            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' })
         oppleoConfig.backupLocalHistory = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # osBackupEnabled
     if (param == 'osBackupEnabled'):
-        oppleoConfig.osBackupEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        enableOsBackup = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        # Only enable if valid settings
+        if enableOsBackup and not BackupUtil().validOffsiteBackup():
+            return jsonify({ 'status': HTTP_CODE_405_METHOD_NOT_ALLOWED, 'param': param, 'value': oppleoConfig.osBackupEnabled })
+        oppleoConfig.osBackupEnabled = enableOsBackup
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.osBackupEnabled })
 
     # osBackupType
@@ -1573,6 +1638,36 @@ def update_settings(param=None, value=None):
     # smbBackupServerName
     if (param == 'smbBackupServerName') and isinstance(value, str):
         oppleoConfig.smbBackupServerName = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # osBackupHistory
+    validation="^(0?[1-9]|[1-9][0-9])$"
+    if (param == 'osBackupHistory') and isinstance(value, str) and re.match(validation, value):
+        try:
+            value = int(value)
+        except ValueError as e:
+            # Conditions not met
+            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' })
+        oppleoConfig.osBackupHistory = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # smbBackupSettings
+    if (param == 'smbBackupSettings'):
+        try:
+            jsonD = json.loads(value)
+        except JSONDecodeError as jde:
+            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value, 'reason' : 'JSON decode error' })
+
+        # Check if the keys do exist in the jsonD dict, fail 400 if they don't
+        if not all([True for key in ['serverOrIP', 'username', 'password', 'serviceName', 'remotePath'] if key in jsonD.keys()]):
+            # Not all required parameters
+            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value, 'reason' : 'Missing variables' })
+
+        oppleoConfig.smbBackupServerNameOrIPAddress = jsonD['serverOrIP']
+        oppleoConfig.smbBackupUsername              = jsonD['username']
+        oppleoConfig.smbBackupPassword              = jsonD['password']
+        oppleoConfig.smbBackupServiceName           = jsonD['serviceName']
+        oppleoConfig.smbBackupRemotePath            = jsonD['remotePath']
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # smbBackupIPAddress (can be empty)
@@ -1744,15 +1839,24 @@ def getBackupInfo(cmd=None, data=None):
                 'localBackupList'   : backupList['files']
                 })
 
+        if (cmd.lower() == "listoffsitebackups"):
+            result = backupUtil.listOffsiteBackups()
 
+            data = { 'status': HTTP_CODE_200_OK if result['success'] else HTTP_CODE_404_NOT_FOUND,
+                     'cmd'   : cmd
+                   }
+            if result['success']:
+                data.update({ 'directory'     : result['directory'],
+                              'osBackupList'  : result['files']
+                            })
+            else:
+                data.update({ 'reason' : result['reason'] })
 
+            return jsonify(data)
 
-        if (cmd.lower() == "listremotebackups"):
-            backupList, connectionDetails = backupUtil.listSMBBackups(smbPath='/laadpaalnoord/', serverOrIP='darabont', 
-                                username='frans', password='D4movlaa', serviceName='laadpaalnoord')
 
         if (cmd.lower() == "createbackupnow"):
-            backupUtil.startCreateBackupTask()
+            backupUtil.startSingleBackupThread()
             return jsonify({ 
                 'status'            : HTTP_CODE_200_OK,
                 'cmd'               : cmd
@@ -1787,13 +1891,33 @@ def getBackupInfo(cmd=None, data=None):
                 'cmd'               : cmd
                 })
 
-        if (cmd.lower() == "smbvalidateuser"):
-            # Return the shared folders
-            validConnection = backupUtil.validateSMBConnection()
+        if (cmd.lower() == "removeoffsitebackup"):
+            try:
+                jsonD = json.loads(data)
+            except JSONDecodeError as jde:
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : jde.msg
+                    })                
+
+            # Check if the keys do exist in the jsonD dict, fail 400 if they don't
+            if not all([True for key in ['filename'] if key in jsonD.keys()]):
+                # Not all required parameters
+                return jsonify({ 
+                    'status'            : HTTP_CODE_400_BAD_REQUEST,
+                    'cmd'               : cmd,
+                    'result'            : 'false',
+                    'reason'            : 'Missing variables'
+                    })                
+
+            result = backupUtil.removeOffsiteBackup(filename=jsonD['filename'])
             return jsonify({ 
-                'status'            : HTTP_CODE_200_OK,
-                'cmd'               : cmd,
-                'smbvalidateuser'   : 'true' if validConnection else 'false'
+                'status'            : HTTP_CODE_200_OK if result['result'] else 
+                                        HTTP_CODE_404_NOT_FOUND if not result['found'] else 
+                                        HTTP_CODE_500_INTERNAL_SERVER_ERROR,
+                'cmd'               : cmd
                 })
 
 
@@ -1816,7 +1940,8 @@ def systemStatus():
         'status': HTTP_CODE_200_OK, 
         'restartRequired': (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
         'softwareUpdateInProgress': oppleoConfig.softwareUpdateInProgress,
-        'startTime': oppleoConfig.upSinceDatetimeStr
+        'startTime': oppleoConfig.upSinceDatetimeStr,
+        'backupInProgress' : BackupUtil().backupInProgress
         })
 
 

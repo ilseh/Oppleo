@@ -236,6 +236,17 @@
     .day-label {
       width: 30px; 
     }
+    .block-highlight {
+      background-color: #ffc107; /* danger: #dc3545; warning: #ffc107;*/
+      display: inline-block;
+      margin-left: 20px;
+      margin-right: 7px;
+      width: 3px; 
+      height: 100%;
+    }
+    input[type=checkbox], input[type=radio] {
+      cursor: pointer;
+    }
   </style>
 
   <script>
@@ -324,15 +335,53 @@
               case 'chargerTariff':
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt tarief gewijzigd in ' + data.value + '.');
                 break
+              case 'smbBackupSettings':
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Offsite backup instellingen aangepast.')
+                // Now update the fields
+                let dObj = JSON.parse(data.value)
+                $('td#smbBackupServerNameOrIPAddress').text(dObj.serverOrIP)
+                $('td#smbBackupUsername').text(dObj.username)
+                $('td#smbBackupPassword').attr('value', dObj.password)
+                $('td#smbBackupPassword').text('********')
+                let serviceName = ( dObj.serviceName.startsWith('//') ? '' : '//' ) + dObj.serviceName
+                $('span#smbBackupServiceName').text( serviceName )
+                let remotePath = ( dObj.remotePath.startsWith('/') ? '' : '/' ) +
+                                 dObj.remotePath +
+                                 ( dObj.remotePath.endsWith('/') ? '' : '/' )
+                $('span#smbBackupRemotePath').text( remotePath )
+                $('td#currentSmbBackupServiceName').html('<span class="text-secondary">(Huidige service: </span>' +
+                                                        '<span class="text-success">' + serviceName + '</span>' +
+                                                        '<span class="text-secondary">)</span>'
+                                                        )
+                $('td#currentSmbBackupRemotePath').html('<span class="text-secondary">(Huidige path: </span>' +
+                                                        '<span class="text-success">' + remotePath + '</span>' +
+                                                        '<span class="text-secondary">)</span>'
+                                                        )
+                break
+              case 'osBackupEnabled':
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Offsite backup geactiveerd.')
+                break
               default:
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Instelling aangepast.')
+                break
+            }
+            break
+          case 404:
+            autoHideNotify('warning','top-left', 'Onbekend', 'Instelling onbekend (404). Niet gewijzigd.')
+            break
+          case 405:
+            switch (data.param) {
+              case 'osBackupEnabled':
+                autoHideNotify('warning','top-left', 'Niet toegestaan', 'Activeren offsite backup alleen toegestaan met werkende instellingen (405). Configureer eerst de Offsite Backup instellingen.')
+                break
+              default:
+                autoHideNotify('warning','top-left', 'Niet toegestaan', 'Instelling wijzigen niet toegestaan (405).')
                 break
             }
             break
           case 409:
             autoHideNotify('warning', 'top-left', 'Foutmelding', 'Wijziging kon niet doorgevoerd worden. ' + data.reason)
             break
-          case 404:
           default:
             autoHideNotify('warning','top-left', 'Onbekend', 'Instelling onbekend. Niet gewijzigd.')
             break
@@ -520,9 +569,10 @@
                 break
 
               case 'listLocalBackups':
-              case 'listRemoteBackups':
+              case 'listOffsiteBackups':
               case 'createBackupNow':
               case 'removeLocalBackup':
+              case 'removeOffsiteBackup':
                 // Call callback
                 if (successCallback != null) { successCallback(data) }
                 break
@@ -551,33 +601,47 @@
     var backupOffsiteDialog = null
 
     function updateSmbBackupSettings() {
-      autoHideNotify('warning','top-left', 'Not implemented', 'Dit is nog niet klaar...')
-
       // Succesful ending, Keep on/off enabled
-      $('td#smbBackupServerNameOrIPAddress').text($('#offsiteBackupServerOrIP')[0].$input.value)
-      $('td#smbBackupPassword').attr('value', $('#offsiteBackupUsername')[0].$input.value)
-      $('td#smbBackupPassword').text('********')
+//      $('td#smbBackupServerNameOrIPAddress').text($('#offsiteBackupServerOrIP')[0].$input.value)
+//      $('td#smbBackupPassword').attr('value', $('#offsiteBackupUsername')[0].$input.value)
+//      $('td#smbBackupPassword').text('********')
       let serviceName = $($('#osBackupServiceName')[0].$select).find("option:selected").text()
-      $('span#smbBackupServiceName').text((typeof serviceName == 'string' && serviceName.length > 0 ? '//' + serviceName : ''))
+ //     $('span#smbBackupServiceName').text((typeof serviceName == 'string' && serviceName.length > 0 ? '//' + serviceName : ''))
+//yyyy
+//smbBackupServiceName
+//currentSmbBackupServiceName
+
+//      $('td#currentSmbBackupServiceName').html('<span class="text-secondary">(Huidige service: </span>' +
+//                                               '<span class="text-success">//' + serviceName + '/</span>' +
+//                                               '<span class="text-secondary">)</span>'
+//                                              )
+
       let remotePath = $('#smbBackupRemotePathList ul li').map( (i, el) => {return el.innerText.trim() }).toArray().join('')
-      $('span#smbBackupRemotePath').text(remotePath)
-
-
-// XXXX
-      
-      // TODO
+//      $('span#smbBackupRemotePath').text(remotePath)
       // - Submit to server
-      
-
+      updateSettings( 'smbBackupSettings', JSON.stringify({ 
+                                              serverOrIP      : $('#offsiteBackupServerOrIP')[0].$input.value, 
+                                              username        : $('#offsiteBackupUsername')[0].$input.value, 
+                                              password        : $('#offsiteBackupPassword')[0].$input.value,
+                                              serviceName     : serviceName,
+                                              remotePath      : remotePath
+                                            }) )
       // Close modal dialog
       backupOffsiteDialog.modal('hide')
-
     }
 
     function showBackupModal() {
       // Init modal dialog
 
       // TODO - populate type, serverorip, username and password fields with existing values
+      // TODO - ook share en path als er niets wijzigd aan de server en user/pw?
+// XXXX
+      
+      
+      // TODO bug bij next na share - button al enabled
+
+
+
 
       $('#offsiteBackupServerOrIP')[0].$input.classList.remove("border", "border-danger")
       $("#bm-step2-msg").html("")
@@ -601,17 +665,29 @@
       backupStatusSocket.on('backup_started', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         if (msg.id == '{{ oppleoconfig.chargerName }}') {
-          $('#backupNowStatusText').html('Backup gestart op ' + msg.data.started)
+          $('button#backup-create').prop('disabled', true)
+          $('button#backup-create').html(' <i class="fas fa-spinner fa-spin"></i> Backup actief...')
+          $('#backupNowStatusText').html('<span class="text-success">Backup gestart op ' + msg.data.started + '</span>')
         }
       })
       backupStatusSocket.on('backup_completed', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         if (msg.id == '{{ oppleoconfig.chargerName }}') {
-          $('#backupNowStatusText').html('Backup uitgevoerd op ' + msg.data.completed)
+          // '%Y-%m-%d %H:%M.%S' -> 2011-10-10T14:48:00
+          let ts = new Date(msg.data.started.substring(0, 10)+'T'+msg.data.started.replace(/\./g,':').substring(11, 19))
+          let tc = new Date(msg.data.completed.substring(0, 10)+'T'+msg.data.completed.replace(/\./g,':').substring(11, 19))
+          var elapsed = Math.round((tc - ts) /1000) // convert from milliseconds to seconds
+          var elapS = (elapsed > 3600 ? Math.floor(elapsed / 3600) + 'uur, ' : '') +
+                      ((elapsed % 3600) > 60 ? Math.floor((elapsed % 3600) /60) + 'min, ' : '') +
+                      (elapsed % 60) + 'sec'
+          $('#backupNowStatusText').html('<span class="text-success">Backup uitgevoerd op ' + msg.data.completed + ' (' + formatFilesize(msg.data.filesize) + ' in ' + elapS + ')</span>')
+          $('#backupSuccessTimestamp').html(ts.getDate()+' '+months[ts.getMonth()]+' '+ts.getFullYear()+' '+
+                                            (ts.getHours()<10?'0':'')+ts.getHours()+':'+(ts.getMinutes()<10?'0':'')+ts.getMinutes()+'u'
+                                           )
           $('button#backup-create').prop('disabled', false)
           $('button#backup-create').html(' <i class="fas fa-angle-right"></i> Maak backup')
-          // Add to list if visible
-          if (!$('tr#localBackupList').hasClass('d-none')) {
+          // Add to local list if visible
+          if (!$('tr#localBackupList').hasClass('d-none') && msg.data.localBackupSuccess) {
             // Visible
             let row = $('<tr style="display: none;">')
             let cells = $('<td class="text-center"><i class="far fa-save"></i></td><td>'+msg.data.completed+'</td><td class="text-center">'+formatFilesize(msg.data.filesize)+'</td><td>'+msg.data.filename+'</td><td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td>')
@@ -622,6 +698,24 @@
             $('#backupLocalCount').html(cnt + ' backups')
             addClickEventToLocalBackupDeleteButton()
           }
+          // Add to offsite list if visible and created
+          if (!$('tr#offsiteBackupList').hasClass('d-none') && msg.data.osBackupSuccess ) {
+            // Visible
+            let row = $('<tr style="display: none;">')
+            let cells = $('<td class="text-center"><i class="far fa-save"></i></td><td>'+msg.data.completed+'</td><td class="text-center">'+formatFilesize(msg.data.filesize)+'</td><td>'+msg.data.filename+'</td><td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-offsite"> <i class="far fa-trash-alt"></i> </button></td>')
+            row.append(cells)
+            $('tbody#backupOffsiteList').prepend(row)
+            row.fadeIn(300).fadeOut(300).fadeIn(300).fadeOut(300).fadeIn(300)
+            let cnt = parseInt($('#backupOffsiteCount').text().split(' backups')[0]) +1
+            $('#backupOffsiteCount').html(cnt + ' backups')
+            addClickEventToOffsiteBackupDeleteButton()
+          }
+        }
+      })
+      backupStatusSocket.on('backup_failed', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+          $('#backupNowStatusText').html('<span class="text-danger">Backup mislukt! (' + msg.data.reason + ')</span>')
         }
       })
     }    
@@ -632,18 +726,39 @@
       // Remove existing click event handlers
       $('button#backup-delete-local').on('click', function(ev) {
         let backupFilename = $(ev.currentTarget).parent().prev().text()
+        $(ev.currentTarget).prop('disabled', true)
         offsiteBackupDataReq( 'removeLocalBackup', reqdata={ filename: $(ev.currentTarget).parent().prev().text() }, function(result) {
           autoHideNotify('success','top-left', 'Backup verwijderd', 'Lokale backup is verwijderd.')
           // remove from list
-          $(ev.currentTarget).parent().parent().remove()
+          $(ev.currentTarget).parent().parent().fadeOut(300).fadeIn(300).fadeOut(300, function() { $(this).remove() })
           let cnt = parseInt($('#backupLocalCount').text().split(' backups')[0]) -1
           $('#backupLocalCount').html(cnt + ' backups')
         }, function(result) {
           autoHideNotify('error','top-left', 'Backup niet verwijderd', 'Het verwijderen van de lokale backup is niet gelukt ('+result.status+').')
+          $(ev.currentTarget).prop('disabled', false)
         })
       })
     }
 
+    function addClickEventToOffsiteBackupDeleteButton() {
+      // Remove existing click event handlers
+      $('button#backup-delete-offsite').off('click')
+      // Remove existing click event handlers
+      $('button#backup-delete-offsite').on('click', function(ev) {
+        let backupFilename = $(ev.currentTarget).parent().prev().text()
+        $(ev.currentTarget).prop('disabled', true)
+        offsiteBackupDataReq( 'removeOffsiteBackup', reqdata={ filename: $(ev.currentTarget).parent().prev().text() }, function(result) {
+          autoHideNotify('success','top-left', 'Backup verwijderd', 'Offsite backup is verwijderd.')
+          // remove from list
+          $(ev.currentTarget).parent().parent().fadeOut(300).fadeIn(300).fadeOut(300, function() { $(this).remove() })
+          let cnt = parseInt($('#backupOffsiteCount').text().split(' backups')[0]) -1
+          $('#backupOffsiteCount').html(cnt + ' backups')
+        }, function(result) {
+          autoHideNotify('error','top-left', 'Backup niet verwijderd', 'Het verwijderen van de offsite backup is niet gelukt ('+result.status+').')
+          $(ev.currentTarget).prop('disabled', false)
+        })
+      })
+    }
 
     jQuery(document).ready(function() {
       console.log(timestamp() + " file load completed!")
@@ -784,9 +899,8 @@
       // Oppleo web component applied change
       $('oppleo-edit-str').on('apply', (e) => {
         console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
-
         // Submit
-// TODO         updateSettings( e.target.id, e.detail.newValue )
+        updateSettings( e.target.id, e.detail.newValue )
       })
       // Oppleo web component applied change
       $('oppleo-edit-select').on('apply', (e) => {
@@ -800,9 +914,15 @@
           $('#backupDayOfWeekRow').addClass('d-none')
         }
         // Submit
-// TODO         updateSettings( e.target.id, e.detail.newValue )
+        updateSettings( e.target.id, e.detail.newValue )
       })
-      
+      // Oppleo web component applied change
+      $('oppleo-edit-time').on('apply', (e) => {
+        console.log('oppleo-edit-time onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+        // Submit
+        updateSettings( e.target.id, e.detail.newValue )
+      })
+
       // Fill the backup weekday and calday fields
       let weekDays = JSON.parse('{{ oppleoconfig.backupIntervalWeekday }}')
       $('tr#backupDayOfWeekRow input:checkbox').each((i, el) => {
@@ -829,7 +949,6 @@
 
       $('button#backup-create').on('click', function(ev) {
         $('button#backup-create').prop('disabled', true)
-        $('button#backup-create').html(' <i class="fas fa-spinner fa-spin"></i> Backup actief...')
         offsiteBackupDataReq( 'createBackupNow', reqdata={}, function(result) {
           // Button enabled after websocket message backup completed
         }, function(result) {
@@ -843,16 +962,8 @@
         $('button#backup-local-showinfo').prop('disabled', true)
         $('button#backup-local-showinfo').html(' <i class="fas fa-spinner fa-spin"></i> Ophalen...')
         offsiteBackupDataReq( 'listLocalBackups', reqdata={}, function(result) {
-
-
-          // TODO: show directory?
-          // result.directory
-          // 
-
           $('tr#localBackupList').removeClass('d-none')
-
           $('tbody#backupLocalList tr').remove()
-
           // YYYY-MM-DD HH.mm.ss => YYYY-MM-DDTHH:mm:ss.sss
           result.localBackupList.sort(function(elA, elB) {
             let [elAd, elAt] = elA.timestamp.split(' ')
@@ -862,17 +973,12 @@
             // return >0 sort B before A
             return ( elBdo.getTime() > elAdo.getTime() ? 1 : ( elBdo.getTime() < elAdo.getTime() ? -1 : 0 ) )
           })
-
           result.localBackupList.forEach( (el, i ) => {
             let row = $('<tr style="display: none;">')
             let cells = $('<td class="text-center"><i class="far fa-save"></i></td><td>'+el.timestamp+'</td><td class="text-center">'+formatFilesize(el.filesize)+'</td><td>'+el.filename+'</td><td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td>')        
             row.append(cells)
             $('tbody#backupLocalList').append(row)
             row.delay(i*150).fadeIn(300)
-
-            ///
-            
-            // $('tbody#backupLocalList').append('<tr>').append($('<td class="text-center"><i class="far fa-save"></i></td><td>'+el.timestamp+'</td><td class="text-center">'+el.filesize+'</td><td>'+el.filename+'</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td>'))        
           })
           addClickEventToLocalBackupDeleteButton()
           $('#backupLocalCount').html(result.localBackupList.length + ' backups')
@@ -889,8 +995,36 @@
       $('button#backup-offsite-showinfo').on('click', function(ev) {
         $('button#backup-offsite-showinfo').prop('disabled', true)
         $('button#backup-offsite-showinfo').html(' <i class="fas fa-spinner fa-spin"></i> Ophalen...')
-        offsiteBackupDataReq( 'listRemoteBackups', reqdata={}, function(result) {
-          alert('y')
+        offsiteBackupDataReq( 'listOffsiteBackups', reqdata={}, function(result) {
+          $('tr#offsiteBackupList').removeClass('d-none')
+          $('tbody#offsiteBackupList tr').remove()
+          // YYYY-MM-DD HH.mm.ss => YYYY-MM-DDTHH:mm:ss.sss
+          result.osBackupList.sort(function(elA, elB) {
+            let [elAd, elAt] = elA.timestamp.split(' ')
+            let [elBd, elBt] = elB.timestamp.split(' ')
+            let elAdo = new Date(elAd +'T'+elAt.replace(/\./g,':'))
+            let elBdo = new Date(elBd +'T'+elBt.replace(/\./g,':'))
+            // return >0 sort B before A
+            return ( elBdo.getTime() > elAdo.getTime() ? 1 : ( elBdo.getTime() < elAdo.getTime() ? -1 : 0 ) )
+          })
+          result.osBackupList.forEach( (el, i ) => {
+            let row = $('<tr style="display: none;">')
+            let cells = $('<td class="text-center"><i class="far fa-save"></i></td><td>'+el.timestamp+'</td><td class="text-center">'+formatFilesize(el.filesize)+'</td><td>'+el.filename+'</td><td class="text-center"><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-offsite"> <i class="far fa-trash-alt"></i> </button></td>')        
+            row.append(cells)
+            $('tbody#backupOffsiteList').append(row)
+            row.delay(i*150).fadeIn(300)
+          })
+          addClickEventToOffsiteBackupDeleteButton()
+          $('#backupOffsiteCount').html(result.osBackupList.length + ' backups')
+          $('button#backup-offsite-showinfo').prop('disabled', false)
+          $('button#backup-offsite-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens vernieuwen')
+
+
+
+        }, function(result) {
+          // Fail
+          $('button#backup-offsite-showinfo').prop('disabled', false)
+          $('button#backup-offsite-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens ophalen')
         } )
 
         //      <i class="fas fa-angle-right"></i> Maak backup<
@@ -918,7 +1052,11 @@
       })
 
       // --- Backup
-
+      let mrbs = '{{ oppleoconfig.backupSuccessTimestamp }}'
+      let mrbd = new Date(mrbs.substring(0, 10)+'T'+mrbs.replace(/\./g,':').substring(11, 19))
+      $('#backupSuccessTimestamp').html(mrbd.getDate()+' '+months[mrbd.getMonth()]+' '+mrbd.getFullYear()+' '+
+                                        (mrbd.getHours()<10?'0':'')+mrbd.getHours()+':'+(mrbd.getMinutes()<10?'0':'')+mrbd.getMinutes()+'u'
+                                       )
       backupOffsiteDialog = $('#offsiteBackupModal').modal({
         backdrop: 'static',
         keyboard: false,
@@ -1000,16 +1138,13 @@
         showBackupModal()
       })
 
+      $('input#backupEnabled').change(function() {
+        // Switching on/off - submit to server
+        updateSettings( 'backupEnabled', $(this).prop('checked') )
+      })
       $('input#osBackupEnabled').change(function() {
-        if (!$('input#osBackupEnabled').prop('checked')){
-          // Switching off
-
-          // TODO
-          // - submit to server
-
-          return
-        }
-        showBackupModal()
+        // Switching on/off - submit to server
+        updateSettings( 'osBackupEnabled', $(this).prop('checked') )
       })
       $('a[href="#bm-step1"').tab('show')
       $("button#modal-footer-nextaction").on('click', function(e) {
@@ -1045,7 +1180,8 @@
               $('#osBackupServiceName')[0].$select_container.classList.remove("border", "border-danger")
               $('button#modal-footer-nextaction').addClass('btn-primary')
               $('button#modal-footer-nextaction').removeClass('btn-danger')
-
+              $('button#modal-directory-apply').prop('disabled', true)
+              $('button#modal-directory-apply').attr('data-original-title', '')
               // get the root in the service
               offsiteBackupDataReq( 'smbListDirectories', 
                           reqdata={ 
@@ -1060,7 +1196,6 @@
               $('#smbBackupRemotePathList ul').append('<li style="display: inline;">/</li>')
               // Close all select2's
               $('oppleo-edit-select').each( (i, el) => el.close() )
-
               $('a[href="#bm-step4"').tab('show')
               $('button#modal-footer-nextaction').html(' <i class="fas fa-flag-checkered"></i> ')
             }
@@ -1078,7 +1213,6 @@
       // Cancel clicked
       $("button#modal-footer-cancel").on('click', function(e) {
         // Cancel button pressed
-        $('input#osBackupEnabled').bootstrapToggle('off')
         $('#offsiteBackupModal').modal('hide')
       })
 
@@ -2351,13 +2485,25 @@
                               </th>
                             </tr>
                             <tr>
+                              <td class="text-dark">Recentste backup:</td>
+                              <td class="text-primary" id="backupSuccessTimestamp">...</td>
+                            </tr>
+                            <tr>
                               <td class="text-dark">Lokale backup directory:</td>
                               <td class="text-primary">{{ oppleoconfig.localBackupDirectory }}</td>
                             </tr>
                             <tr>
                               <td class="text-dark">Handmatig:</td>
                               <td class="text-primary">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="backup-create"> <i class="fas fa-angle-right"></i> Maak backup</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="backup-create"{% if backuputil.backupInProgress %} disabled{% endif %}> 
+                                  {% if backuputil.backupInProgress %}
+                                  <i class="fas fa-spinner fa-spin"></i> 
+                                  Backup actief...
+                                  {% else %}
+                                  <i class="fas fa-angle-right"></i> 
+                                  Maak backup
+                                  {% endif %}
+                                </button>
                                 <span id="backupNowStatusText" class="pl-2"></span>
                               </td>
                             </tr>
@@ -2373,24 +2519,21 @@
                                 <div id="backupLocalCount" class="text-primary"></div>
                               </td>
                               <td class="text-primary" style="overflow: hidden;">
-
                                 <div style="max-height: 200px; overflow-y: auto;">
-
-                                <table class="w-100">
-                                  <thead>
-                                    <tr>
-                                      <td class="pl-3 pr-3 text-center" style="border: 0px;"></td>
-                                      <td style="border: 0px;">Tijdstip</td>
-                                      <td style="border: 0px;">Omvang</td>
-                                      <td style="border: 0px;">Filenaam</td>
-                                      <td style="border: 0px;">Verwijder</td>
-                                    </tr>
-                                  </thead>
-                                  <tbody id='backupLocalList'>
-                                  </tbody>
-                                </table>
+                                  <table class="w-100">
+                                    <thead>
+                                      <tr>
+                                        <td class="pl-3 pr-3 text-center" style="border: 0px;"></td>
+                                        <td style="border: 0px;">Tijdstip</td>
+                                        <td style="border: 0px;">Omvang</td>
+                                        <td style="border: 0px;">Filenaam</td>
+                                        <td style="border: 0px;">Verwijder</td>
+                                      </tr>
+                                    </thead>
+                                    <tbody id='backupLocalList'>
+                                    </tbody>
+                                  </table>
                                 </div>
-                                
                               </td>
                             </tr>
 
@@ -2683,9 +2826,8 @@
                               <td class="text-dark">Backup tijdstip:</td>
                               <td class="text-primary">
                                 <oppleo-edit-time 
-                                id="backupTime"
-                                value=""
-                                validation=""
+                                id="backupTimeOfDay"
+                                options='{ "defaultTime": "{{ oppleoconfig.backupTimeOfDay.strftime('%H:%M') }}" }'
                                 info="Tijdstip van de backup."
                                 />
                               </td>
@@ -2695,8 +2837,8 @@
                               <td class="text-dark">Aantal lokale backups behouden:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="backupCount"
-                                value=""
+                                id="backupLocalHistory"
+                                value="{% if oppleoconfig.backupLocalHistory is not none %}{{ oppleoconfig.backupLocalHistory }}{% endif %}"
                                 validation="^(0?[1-9]|[1-9][0-9])$"
                                 info="Aantal lokaal te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
                                 />
@@ -2711,6 +2853,19 @@
                                 <h4 class="m-t-0 header-title"><i class="fas fa-cloud-upload-alt"></i> Offsite Backup</h4>
                               </th>
                             </tr>
+
+                            <tr>
+                              <td class="text-dark">Aantal offsite backups:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="osBackupHistory"
+                                value="{% if oppleoconfig.osBackupHistory is not none %}{{ oppleoconfig.osBackupHistory }}{% endif %}"
+                                validation="^(0?[1-9]|[1-9][0-9])$"
+                                info="Aantal offsite te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
+                                />
+                              </td>
+                            </tr>
+
                             <tr>
                               <td class="text-dark">Offsite Backup:</td>
                               <td class="text-primary">
@@ -2732,50 +2887,46 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Type:</td>
+                              <td class="text-dark"><span class="block-highlight">&nbsp;</span>Type:</td>
                               <td class="text-primary">
-                                Server Message Block (SMB)
+                                {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_SMB %}{{ oppleoconfig.OS_BACKUP_TYPE_SMB_STR }}{% endif %}
+                                {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_AFP %}{{ oppleoconfig.OS_BACKUP_TYPE_AFP_STR }}{% endif %}
+                                {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_ONEDRIVE %}{{ oppleoconfig.OS_BACKUP_TYPE_ONEDRIVE_STR }}{% endif %}
+                                {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_ICLOUD %}{{ oppleoconfig.OS_BACKUP_TYPE_ICLOUD_STR }}{% endif %}
+                                {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_UNKNOWN %}-{% endif %}
                               </td>
                             </tr>
                             <!--- SMB -->
                             <tr>
-                              <td class="text-dark">Server naam of IP adres:</td>
+                              <td class="text-dark"><span class="block-highlight">&nbsp;</span>Server naam of IP adres:</td>
                               <td class="text-primary" id="smbBackupServerNameOrIPAddress">
                                 {% if oppleoconfig.smbBackupServerNameOrIPAddress is not none %}{{ oppleoconfig.smbBackupServerNameOrIPAddress }}{% else %}-{% endif %}
                               </td>
                             </tr>          
                             <tr>
-                              <td class="text-dark">Gebruikersnaam:</td>
+                              <td class="text-dark"><span class="block-highlight">&nbsp;</span>Gebruikersnaam:</td>
                               <td class="text-primary" id="smbBackupUsername">
                                 {% if oppleoconfig.smbBackupUsername is not none %}{{ oppleoconfig.smbBackupUsername }}{% else %}-{% endif %}
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Wachtwoord:</td>
+                              <td class="text-dark"><span class="block-highlight">&nbsp;</span>Wachtwoord:</td>
                               <td class="text-primary" id="smbBackupPassword" value="{% if oppleoconfig.smbBackupPassword is not none %}{{ oppleoconfig.smbBackupPassword }}{% else %}{% endif %}">
                                 {% if oppleoconfig.smbBackupPassword is not none %}********{% else %}{% endif %}
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Locatie:</td>
-                              <td class="text-primary" id="smbBackupLocation">
+                              <td class="text-dark"><span class="block-highlight">&nbsp;</span>Locatie:</td>
+                              <td class="text-primary">
                                 <span id="smbBackupServiceName">
-                                  {% if oppleoconfig.smbBackupServiceName is not none %}//{{ oppleoconfig.smbBackupServiceName }}{% else %}{% endif %}</span><span id="smbBackupRemotePath">{% if oppleoconfig.smbBackupRemotePath is not none %}{{ oppleoconfig.smbBackupRemotePath }}{% else %}{% endif %}
-                                </span>
-                              </td>
-                            </tr>
-
-                            <tr>
-                              <td class="text-dark">Aantal offsite backups:</td>
-                              <td class="text-primary" id="osBackupCount">
-                                {% if oppleoconfig.osBackupCount is not none %}{{ oppleoconfig.osBackupCount }}{% else %}-{% endif %}
+                                  {% if oppleoconfig.smbBackupServiceName is not none %}//{{ oppleoconfig.smbBackupServiceName }}{% endif %}</span><span id="smbBackupRemotePath">{% if oppleoconfig.smbBackupRemotePath is not none %}{{ oppleoconfig.smbBackupRemotePath }}{% endif %}</span>
                               </td>
                             </tr>
 
                             <tr>
                               <td class="text-dark">&nbsp;</td>
                               <td class="text-primary">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="modal-backup-edit"> <i class="fas fa-angle-right"></i> Offsite backup wijzigen </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" id="modal-backup-edit"> <i class="fas fa-angle-right"></i> Offsite backup wijzigen </button>
                               </td>
                             </tr>
 
@@ -2786,27 +2937,27 @@
                               </td>
                             </tr>
 
-                            <tr id='remoteBackupList'>
-                              <td class="text-dark">Offsite backups:</td>
-                              <td class="text-primary">
-                                <div>
-                                  15 backups //darabont/laadpaalnoord/noord/
+                            <tr id='offsiteBackupList' class="d-none">
+                              <td class="text-dark">
+                                Offsite backups:
+                                <div id="backupOffsiteCount" class="text-primary"></div>
+                              </td>
+                              <td class="text-primary" style="overflow: hidden;">
+                                <div style="max-height: 200px; overflow-y: auto;">
+                                  <table class="w-100">
+                                    <thead>
+                                      <tr>
+                                        <td class="pl-3 pr-3 text-center" style="border: 0px;"></td>
+                                        <td style="border: 0px;">Tijdstip</td>
+                                        <td style="border: 0px;">Omvang</td>
+                                        <td style="border: 0px;">Filenaam</td>
+                                        <td style="border: 0px;">Verwijder</td>
+                                      </tr>
+                                    </thead>
+                                    <tbody id='backupOffsiteList'>
+                                    </tbody>
+                                  </table>
                                 </div>
-                                <table class="w-100">
-                                  <thead>
-                                    <tr><td class="pl-3 pr-3 text-center" style="border: 0px;"></td>
-                                      <td style="border: 0px;">Tijdstip</td>
-                                      <td style="border: 0px;">Omvang</td>
-                                      <td style="border: 0px;">Filenaam</td>
-                                      <td style="border: 0px;">Verwijder</td>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    <tr><td class="text-center"><i class="fas fa-cloud-upload-alt"></i></td><td>02-02-2021 18.52</td><td class="text-center">3MB</td><td>backup_2021-02-02_18.52.08_laadpaal_noord.zip</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td></tr>
-                                    <tr><td class="text-center"><i class="fas fa-cloud-upload-alt"></i></td><td>02-02-2021 18:45</td><td class="text-center">3MB</td><td>backup_2021-02-02_18.45.23_laadpaal_noord.zip</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td></tr>
-                                    <tr><td class="text-center"><i class="fas fa-cloud-upload-alt"></i></td><td>02-02-2021 18:48</td><td class="text-center">3MB</td><td>backup_2021-02-02_18.48.56_laadpaal_noord.zip</td><td><button type="button" class="btn btn-xs btn-outline-danger pl-1 pr-1" id="backup-delete-local"> <i class="far fa-trash-alt"></i> </button></td></tr>
-                                  </tbody>
-                                </table>
                               </td>
                             </tr>                            
 
@@ -2886,22 +3037,9 @@
                           <td class="text-primary">
                             <oppleo-edit-select 
                             id="osBackupType"
-                            options='[ { "text": "Server Message Block (SMB)", "id": "smb"{% if "smb" == oppleoconfig.osBackupType %}, "selected": "true"{% endif %} } ]'
+                            options='[ { "text": "{{ oppleoconfig.OS_BACKUP_TYPE_SMB_STR }}", "id": "{{ oppleoconfig.OS_BACKUP_TYPE_SMB }}"{% if oppleoconfig.OS_BACKUP_TYPE_SMB == oppleoconfig.osBackupType %}, "selected": "true"{% endif %} } ]'
                             placeholder="Maak een keuze..."
                             info="Om dit moment wordt alleen SMB ondersteund. SMB (Server Message Block), ook bekend als Common Internet File System of CIFS, is het netwerkprotocol dat gebruikt wordt om in Microsoft Windows bestandsuitwisseling tussen meerdere computers mogelijk te maken (shared drive)."
-                            unlock=true
-                            />
-                          </td>
-                        </tr>
-                        <tr class="spacer-20"></tr> 
-                        <tr>
-                          <td class="text-dark">Aantal offsite backups:</td>
-                          <td class="text-primary">
-                            <oppleo-edit-str 
-                            id="osBackupCount"
-                            value=""
-                            validation="^(0?[1-9]|[1-9][0-9])$"
-                            info="Aantal offsite te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
                             unlock=true
                             />
                           </td>
@@ -2942,7 +3080,7 @@
                           <td class="text-primary">
                             <oppleo-edit-str 
                             id="offsiteBackupUsername"
-                            value="{{ oppleoconfig.smbUsername }}"
+                            value="{{ oppleoconfig.smbBackupUsername }}"
                             validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
                             info="Om openstaande laadsessies te voorkomen kan de naam van het laadpunt alleen worden gewijzigd wanneer de laadsessie is afgesloten."
                             unlock=true
@@ -2955,7 +3093,7 @@
                           <td class="text-primary">
                             <oppleo-edit-str 
                             id="offsiteBackupPassword"
-                            value="{{ oppleoconfig.obPassword }}"
+                            value=""
                             validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
                             info="Om openstaande laadsessies te voorkomen kan de naam van het laadpunt alleen worden gewijzigd wanneer de laadsessie is afgesloten."
                             unlock=true
@@ -2994,6 +3132,15 @@
                             placeholder="Maak een keuze..."
                             unlock=true
                             />
+                          </td>
+                        </tr>
+                        <tr class="spacer-10"></tr> 
+                        <tr>
+                          <td class="text-dark w-25"></td>
+                          <td class="text-primary" id="currentSmbBackupServiceName">
+                            {% if oppleoconfig.smbBackupServiceName is not none %}
+                            <span class="text-secondary">(Huidige service: </span><span class="text-success">{% if not oppleoconfig.smbBackupServiceName.startswith('//') %}//{% endif %}{{ oppleoconfig.smbBackupServiceName }}{% if not oppleoconfig.smbBackupServiceName.endswith('/') %}/{% endif %}</span><span class="text-secondary">)</span>
+                            {% endif %}
                           </td>
                         </tr>
                       </table>
@@ -3043,6 +3190,15 @@
                               >
                                <i class="fas fa-sign-in-alt"></i> Selecteer 
                             </button>
+                          </td>
+                        </tr>
+                        <tr class="spacer-10"></tr> 
+                        <tr>
+                          <td class="text-dark w-25"></td>
+                          <td class="text-primary" id="currentSmbBackupRemotePath">
+                            {% if oppleoconfig.smbBackupRemotePath is not none %}
+                            <span class="text-secondary">(Huidige path: </span><span class="text-success">{% if not oppleoconfig.smbBackupRemotePath.startswith('/') %}/{% endif %}{{ oppleoconfig.smbBackupRemotePath }}{% if not oppleoconfig.smbBackupRemotePath.endswith('/') %}/{% endif %}</span><span class="text-secondary">)</span>
+                            {% endif %}
                           </td>
                         </tr>
                       </table>

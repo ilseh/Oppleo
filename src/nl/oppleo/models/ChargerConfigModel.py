@@ -58,9 +58,9 @@ class ChargerConfigModel(Base):
     receipt_prefix = Column(String(20))
 
     backup_enabled = Column(Boolean)
-    backup_interval = Column(String(20))
+    backup_interval = Column(String(1))
     backup_interval_weekday = Column(String(200))
-    backup_interval_calday = Column(String(200))
+    backup_interval_calday = Column(String(300))
     backup_time_of_day = Column(Time)
     backup_local_history = Column(Integer)
     backup_success_timestamp = Column(DateTime)  
@@ -69,7 +69,7 @@ class ChargerConfigModel(Base):
     os_backup_type = Column(String(20))
     os_backup_history = Column(Integer)
 
-    smb_backup_servername_or_ip_address = Column(String(200))
+    smb_backup_servername_or_ip_address = Column(String(20))
     smb_backup_username = Column(String(60))
     smb_backup_password = Column(String(100))
     smb_backup_service_name  = Column(String(200))

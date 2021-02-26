@@ -89,12 +89,12 @@ try:
     from nl.oppleo.webapp.flaskRoutes import flaskRoutes
     from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+    from nl.oppleo.utils.BackupUtil import BackupUtil
 
     # Create an emit queue, for other Threads to communicate to th ews emit background task
     wsEmitQueue = Queue()
     oppleoConfig.wsEmitQueue = wsEmitQueue
     oppleoSystemConfig.wsEmitQueue = wsEmitQueue
-
 
     # The Oppleo root flaskRoutes
     app.register_blueprint(flaskRoutes) # no url_prefix
@@ -217,7 +217,7 @@ try:
 
     if __name__ == "__main__":
 
-        # Define the Energy Device Monitor thread and rge ChangeHandler (RFID) thread
+        # Define the Energy Device Monitor thread and the ChangeHandler (RFID) thread
         meuThread = None
         chThread = None
         try:
@@ -241,6 +241,10 @@ try:
         phmThread = None
         phmThread = PeakHoursMonitorThread(appSocketIO)
         oppleoConfig.phmThread = phmThread
+
+        if oppleoConfig.backupEnabled:
+            backupUtil = BackupUtil()
+            backupUtil.startBackupMonitorThread()
 
         # Starting the web socket queue reader background task
         oppleoLogger.debug('Starting queue reader background task...')

@@ -357,7 +357,7 @@ class OppleoEditStr extends HTMLElement {
       if (this.hideEdit != undefined) {
         this.$input.setAttribute('type', 'password')
       } else {
-        this.$input.value = this.prefix + this.$input.getAttribute('placeholder') + this.suffix        
+        this.$input.value = this.prefix + this.value + this.suffix
       }
     }
     $(this.$info).tooltip({ boundary: 'window' })

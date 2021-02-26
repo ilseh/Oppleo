@@ -86,17 +86,21 @@ class OppleoConfig(object, metaclass=Singleton):
     # Off Peak disabled for this period (not-persistent)
     # peakHoursAllowPeakOnePeriod = False
 
-    BACKUP_INTERVAL_WEEKDAY = "d"
+    BACKUP_INTERVAL_WEEKDAY = "w"
     BACKUP_INTERVAL_CALDAY  = "c"
 
     """ 
         Offsite Backup type. For now only Samba (Windows shared drive) supported. Future expansions to AFP, OneDrive, iCloud Drive etc.
     """
-    OS_BACKUP_TYPE_UNKNOWN  = 0
-    OS_BACKUP_TYPE_SMB      = 1
-    OS_BACKUP_TYPE_AFP      = 2
-    OS_BACKUP_TYPE_ONEDRIVE = 3
-    OS_BACKUP_TYPE_ICLOUD   = 4
+    OS_BACKUP_TYPE_UNKNOWN      = '-'
+    OS_BACKUP_TYPE_SMB          = 'smb'
+    OS_BACKUP_TYPE_SMB_STR      = 'Server Message Block (SMB)'
+    OS_BACKUP_TYPE_AFP          = 'afp'
+    OS_BACKUP_TYPE_AFP_STR      = 'Apple Filing Protocol (AFP)'
+    OS_BACKUP_TYPE_ONEDRIVE     = 'onedrive'
+    OS_BACKUP_TYPE_ONEDRIVE_STR = 'Microsoft OneDrive'
+    OS_BACKUP_TYPE_ICLOUD       = 'icloud'
+    OS_BACKUP_TYPE_ICLOUD_STR   = 'Apple iCloud'
     
     BACKUP_DIR_NAME         = 'backup'
 
@@ -136,12 +140,10 @@ class OppleoConfig(object, metaclass=Singleton):
     """
     kWhMeter_serial = None
 
-
     def __init__(self):
         self.___logger = logging.getLogger('nl.oppleo.config.' + self.__class__.__name__)
         self.___logger.debug('Initializing Oppleo...')
         self.__chargerConfigModel = ChargerConfigModel.get_config()
-
 
     """
         chargerName --> charger_name
@@ -659,7 +661,7 @@ class OppleoConfig(object, metaclass=Singleton):
         return self.__chargerConfigModel.backup_success_timestamp
 
     @backupSuccessTimestamp.setter
-    def modifiedAt(self, value):
+    def backupSuccessTimestamp(self, value):
         self.__chargerConfigModel.setAndSave('backup_success_timestamp', value)
 
     """
@@ -728,7 +730,7 @@ class OppleoConfig(object, metaclass=Singleton):
         return self.__chargerConfigModel.smb_backup_servername_or_ip_address
 
     @smbBackupServerNameOrIPAddress.setter
-    def smbBackupServerName(self, value):
+    def smbBackupServerNameOrIPAddress(self, value):
         self.__chargerConfigModel.setAndSave('smb_backup_servername_or_ip_address', value)
 
     """

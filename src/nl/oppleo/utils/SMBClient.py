@@ -123,7 +123,7 @@ class SMBClient:
                                           file_obj=file_obj
                                           )
 
-    def upload(self, service_name:str=None, local_path:str=None, remote_path:str=None, files:list=[], timeout:int=UPLOAD_TIMEOUT):
+    def upload(self, service_name:str=None, local_path:str=None, remote_path:str=None, files:list=[], timeout:int=UPLOAD_TIMEOUT) -> dict:
         """ Upload files to the remote share. """
         try:
             for file in files:
@@ -134,7 +134,22 @@ class SMBClient:
                                            timeout=timeout
                                            )
         except Exception as e:
-            pass
+            return { 'success': False, 'reason': str(e) }
+        return { 'success': True }
+
+
+    def deleteFiles(self, service_name:str=None, remote_path:str=None, files:list=[], delete_matching_folders:bool=False, timeout:int=UPLOAD_TIMEOUT) -> dict:
+        """ Remove files from the remote share. """
+        try:
+            for file in files:
+                self._server.deleteFiles(service_name=service_name if service_name is not None else self._service_name, 
+                                            path_file_pattern=os.path.join(remote_path, file) if remote_path is not None else file, 
+                                            delete_matching_folders=delete_matching_folders, 
+                                            timeout=timeout
+                                            )
+        except Exception as e:
+            return { 'success': False, 'reason': str(e) }
+        return { 'success': True }
 
 
     def __get_localhost__(self):
