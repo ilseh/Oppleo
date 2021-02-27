@@ -669,7 +669,9 @@ class OppleoConfig(object, metaclass=Singleton):
     """
     @property
     def oppleoRootDirectory(self) -> str:
-        return os.path.realpath(".")
+        return os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/config')[0]
+        # return os.path.realpath(".")
+
 
     """
         returns the absolute path to the backup folder
