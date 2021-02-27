@@ -8,6 +8,7 @@ from time import sleep
 import logging
 import re
 import json
+from shutil import which
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
@@ -515,28 +516,19 @@ class BackupUtil(object, metaclass=Singleton):
             os.system() returns the (encoded) process exit value. 
     """
     def __cmd_exists__(self, cmd) -> bool:
-        
-        try:
-            # Returns 0 if found, 1 if not present
-            return int(subprocess.check_output('command -v ' + cmd + ' &> /dev/null; echo "$?"', shell=True)) == 0
-        except Exception as e:
-            self.logger.debug('__cmd_exists__() command -v {} Exception {}'.format(cmd, str(e)))
+        self.logger.debug('__cmd_exists__() command: {}'.format(cmd))
 
-        return False
+        return which(cmd) is not None
 
 
     """
         Returns the full path of a command if found on the path
     """
     def __cmd_which__(self, cmd):
+        self.logger.debug('__cmd_which__() which {}'.format(cmd))
 
-        try:
-            full_path = subprocess.check_output('which ' + cmd, shell=True).decode("utf-8").strip()
-            return (None if len(full_path) == 0 else full_path)
-        except Exception as e:
-            self.logger.debug('__cmd_which__() which {} Exception {}'.format(cmd, str(e)))
+        return which(cmd)
 
-        return None
 
     """
         Returns the list of files in the backup directory, ignoring sub directories
