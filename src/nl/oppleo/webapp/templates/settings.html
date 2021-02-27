@@ -923,6 +923,10 @@
         updateSettings( e.target.id, e.detail.newValue )
       })
 
+      $('button#softwateUpdateCheck').on('click', getSoftwareStatus)
+      
+      // --- Backup
+
       // Fill the backup weekday and calday fields
       let weekDays = JSON.parse('{{ oppleoconfig.backupIntervalWeekday }}')
       $('tr#backupDayOfWeekRow input:checkbox').each((i, el) => {
@@ -1027,11 +1031,7 @@
           $('button#backup-offsite-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens ophalen')
         } )
 
-        //      <i class="fas fa-angle-right"></i> Maak backup<
-      
-//xxxxx
       })
-
 
       $('button#smbBackupValidatePassword').on('click', function(e) {
         e.preventDefault()
@@ -1051,7 +1051,6 @@
         $(this).tooltip('hide')
       })
 
-      // --- Backup
       let mrbs = '{{ oppleoconfig.backupSuccessTimestamp }}'
       let mrbd = new Date(mrbs.substring(0, 10)+'T'+mrbs.replace(/\./g,':').substring(11, 19))
       $('#backupSuccessTimestamp').html(mrbd.getDate()+' '+months[mrbd.getMonth()]+' '+mrbd.getFullYear()+' '+
