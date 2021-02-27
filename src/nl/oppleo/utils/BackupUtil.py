@@ -247,17 +247,17 @@ class BackupUtil(object, metaclass=Singleton):
                         public=False
                     )
 
-            pushMsg = ("Local backup {}{} at {}."
+            pushMsg = ("Local backup {}{} {}."
                     .format(
                         ('(' + formatFilesize(filesize) + ')') if localBackup['success'] else '',
                         ' completed' if localBackup['success'] else 'failed',
-                        timeCompleted.strftime('%Y-%m-%d %H:%M')
+                        timeCompleted.strftime('%A %-d %B %Y, %H:%Mu')
                     )
                 )
             pushMsg += (" {}"
                     .format(
                         "(Offsite backup not enabled)" if not self.oppleoConfig.osBackupEnabled else (
-                            "Offsite backup (SMB) to //{}/{}/{} {}".format(
+                            "Offsite backup (SMB) copied to //{}/{}{} {}".format(
                                 self.oppleoConfig.smbBackupServerNameOrIPAddress, 
                                 self.oppleoConfig.smbBackupServiceName, 
                                 self.oppleoConfig.smbBackupRemotePath,
