@@ -30,3 +30,4 @@ db/backup/*.*.dump
 # install log files
 install/log/update_*.log
 backup/*.zip
+db/liquibase.properties

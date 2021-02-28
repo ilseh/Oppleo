@@ -1,0 +1,6 @@
+changeLogFile: ./changelog.xml
+url: jdbc:postgresql://localhost:5432/<dbname>
+username: <dbuser>
+password: <dbpassword>
+driver: org.postgresql.Driver
+classpath: ./postgresql-42.2.14.jar

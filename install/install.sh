@@ -225,6 +225,9 @@ function installPsycopg2( ) {
 function installSystemdService( ) {
   echo " installSystemdService - Start"
   
+  echo "  Preparing service file Oppleo.service from template by updating path..."
+  sed 's?#WORKINGDIR_PLACEHOLDER?'$OPPLEO_ROOT_DIR'?'g < $INSTALL_SCRIPT_DIR/Oppleo.service.template >$INSTALL_SCRIPT_DIR/Oppleo.service
+
   # Are we on a raspberry? 
   if [ "$1" == false ] || [ "$1" == 1 ]; then
     echo "  Not on Raspberry, skipping Oppleo systemd service file installation."
@@ -247,8 +250,6 @@ function installSystemdService( ) {
 
   echo "  Installing the Oppleo systemd service..."
 
-  echo "  - preparing service file Oppleo.service from template by updating path..."
-  sed 's?#WORKINGDIR_PLACEHOLDER?'$OPPLEO_ROOT_DIR'?'g < $INSTALL_SCRIPT_DIR/Oppleo.service.template >$INSTALL_SCRIPT_DIR/Oppleo.service
   echo "  - Update config/ installing Oppleo.service for systemd..."
   sudo cp $INSTALL_SCRIPT_DIR/Oppleo.service /etc/systemd/system/Oppleo.service
   echo "  - reloading daemon config..."
