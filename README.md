@@ -221,7 +221,8 @@ ask again next time (default "S"):
 
 
 ---
-## Oppleo should now be running. Check http://localhost/ or the IP address of the raspberry.
+## Oppleo should now be running. 
+Check http://localhost/ or the IP address of the raspberry.
 
 
 ___
