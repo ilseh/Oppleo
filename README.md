@@ -15,7 +15,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
   * I run Oppleo on a __Raspberry Pi 4__. I have not tested other versions, I can only assume a 3 would work too. If you need to order one, get a 4, if you have one laying around give it a try.
   * You'll need a __SmartEVSE__ to control the actual car charging. Oppleo pulls a pin down to enable/disable charging, so any other EVSE with a similar control pin might work.
   * `ssh` enabled on the Raspberry. 
-    * Add an empty file named `ssh` (no extension) to the root of the sdcard to enable ssh after boot on the Raspberry. You'll probably need ssh to install Python and Postgress anyway.
+    * Add an empty file named `ssh` (no extension) to the root of the sdcard to enable ssh after boot on the Raspberry. You'll probably need ssh to install Python and Postgres anyway.
   * Make sure __apt-get__ is up to date  
     > `sudo apt-get update && sudo apt-get upgrade`
   * git installed on your Raspberry
@@ -32,34 +32,35 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
   * __Pyhton3__ and __pip__ installed on the Raspberry
     > `sudo apt-get install python3-dev python3-pip`
   * __Postgres__ database installed on your Raspberry
-    * (Google for [How-to](https://opensource.com/article/17/10/set-postgres-database-your-raspberry-pi)'s)
-    Basic steps involve installing postgresql
-    > `sudo apt install postgresql libpq-dev postgresql-client postgresql-client-common -y`
-    Creating a user (no superuser, can be useful to be allowed to create databases, no need to be allowed to create more new roles. Choose your own database username and replace <dbuser> (also replace the angle brackets). Make sure you remember the password (<dbpassword>).
-    > `sudo su postgres`
-    > `createuser <dbuser> -P`
-    As user postgress, create a database. Choose your own databasecname and replace <dbname>.
-    > `createdb <dbname>`
-    As user postgress, start psql, the postgress cmd line tool.
-    > `psql`
-    On the psql command line, change the postgress user to allow access to the database.
-    > `alter user <dbuser> with encrypted password '<dbpassword>';`
-    Granting privileges on the created database to the created user
-    > `grant all privileges on database <dbname> to <dbuser>;`
-    Exit from the psql shell and again from the Postgres user by pressing Ctrl+D twice. 
+    (Google for [How-to](https://opensource.com/article/17/10/set-postgres-database-your-raspberry-pi)'s)
+    
+    * Basic steps involve installing postgresql
+      > `sudo apt install postgresql libpq-dev postgresql-client postgresql-client-common -y`
+    * Creating a user (no superuser, can be useful to be allowed to create databases, no need to be allowed to create more new roles. Choose your own database username and replace <dbuser> (also replace the angle brackets). Make sure you remember the password (<dbpassword>).
+      > `sudo su postgres`
+      > `createuser <dbuser> -P`
+    * As user postgres, create a database. Choose your own databasecname and replace <dbname>.
+      > `createdb <dbname>`
+    * As user postgres, start psql, the postgres cmd line tool.
+      > `psql`
+    * On the psql command line, change the postgres user to allow access to the database.
+      > `alter user <dbuser> with encrypted password '<dbpassword>';`
+    * Granting privileges on the created database to the created user
+      > `grant all privileges on database <dbname> to <dbuser>;`
+    * Exit from the psql shell and again from the Postgres user by pressing Ctrl+D twice. 
 
-    To verify the postgress install, start psql, the postgress cmd line tool, with the username created above. 
-    > `psql -U <dbuser> -d <dbname> -h <ipaddress>`
-    Create a table
-    > `create table people (name text, company text);`
-    Get info on the table using
-    > `\d`
-    > `\dt people`
-    Drop the table again using
-    > `drop table people;`
-    Exit the psql tool using
-    > `\q`
-    For the next steps yo need to have an empty database ready, with a user with the proper read-write rights to that database, and know the password. Oppleo will create the tables and required content, not the database itself.
+    * To verify the postgres install, start psql, the postgres cmd line tool, with the username created above. 
+      > `psql -U <dbuser> -d <dbname> -h <ipaddress>`
+    * Create a table
+      > `create table people (name text, company text);`
+    * Get info on the table using
+      > `\d`
+      > `\dt people`
+    * Drop the table again using
+      > `drop table people;`
+    * Exit the psql tool using
+      > `\q`
+    * For the next steps yo need to have an empty database ready, with a user with the proper read-write rights to that database, and know the password. Oppleo will create the tables and required content, not the database itself.
   * Install __spidev__ for interfacing with SPI devices. This is required to interface with the RFID reader which uses the SPI bus.
     * Install the C library
       > `cd /home/pi`  
@@ -103,41 +104,42 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     * to get a list of USB devices. 
 
    * Install [liquibase](https://docs.liquibase.com/concepts/installation/installation-linux-unix-mac.html). You can follow the guidelines on the liquibase website, below is an example install.
-    * Create a directory for liquibase
-      > `sudo mkdir /usr/apps/`
-      > `sudo mkdir /usr/apps/liquibase`
-    * Add the directory to the PATH by running
-      > `export PATH=$PATH:/usr/apps/liquibase`
-    * Make the updated PATH permanent. Note that this line must be in .bashrc as the install script gets the liquibase path from here.
-      > `echo 'export PATH=$PATH:/usr/apps/liquibase' >> ~/.bashrc`
+     * Create a directory for liquibase
+       > `sudo mkdir /usr/apps/`
+       > `sudo mkdir /usr/apps/liquibase`
+     * Add the directory to the PATH by running
+       > `export PATH=$PATH:/usr/apps/liquibase`
+     * Make the updated PATH permanent. Note that this line must be in .bashrc as the install script gets the liquibase path from here.
+       > `echo 'export PATH=$PATH:/usr/apps/liquibase' >> ~/.bashrc`
 
-    * Extract the downloaded content to the directory
-      > `cd /usr/apps/liquibase`
-      > `wget https://github.com/liquibase/liquibase/releases/download/v4.3.1/liquibase-4.3.1.tar.gz`
-    * Unpack it 
-      > `sudo tar -xzf liquibase-4.3.1.tar.gz`
-    * Remove the download 
-      > `sudo rm liquibase-4.3.1.tar.gz`
+     * Extract the downloaded content to the directory
+       > `cd /usr/apps/liquibase`
+       > `wget https://github.com/liquibase/liquibase/releases/download/v4.3.1/liquibase-4.3.1.tar.gz`
+     * Unpack it 
+       > `sudo tar -xzf liquibase-4.3.1.tar.gz`
+     * Remove the download 
+       > `sudo rm liquibase-4.3.1.tar.gz`
 
-    * For Liquibase to run correctly, Java must be installed on the raspberry pi. To verify that Java is installed
-      > `java -version`
-      * If you see the error: -bash: java: command not found, then you need to either install Java, or you need to add the location of the Java executable to your PATH. To install Java on your computer navigate to https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html and install the Java JDK, and add the location of the Java executable to your PATH. 
+     * For Liquibase to run correctly, Java must be installed on the raspberry pi. To verify that Java is installed
+       > `java -version`
+       * If you see the error: -bash: java: command not found, then you need to either install Java, or you need to add the location of the Java executable to your PATH. To install Java on your computer navigate to https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html and install the Java JDK, and add the location of the Java executable to your PATH. 
     
-    * To verify liquibase
+   * To verify liquibase
       > `cd /hope/pi/oppleo`
       > `liquibase --help`
       The help page should be visible.
 
-    * Create a local copy of the example liquibase properties:
-      > `cp /home/pi/Oppleo/db/liquibase.properties.example /home/pi/Oppleo/db/liquibase.properties`
-    8 Edit this local copy using any text editor, like `nano` for example
-      > `nano /home/pi/Oppleo/db/liquibase.properties`
-    * Configure the Oppleo specific liquibase properties in `/home/pi/Oppleo/db/liquibase.properties` using any text editor like `nano` for example
-      > `nano /home/pi/Oppleo/db/liquibase.properties`
-    * Update the url replacing <ipaddress> for the ip or localhost, and <dbname> with the database name created earlier. Also update <dbuser> and <dbpassword> (replace also the angle brackets, they are not part of the syntax).  
-      > `url: jdbc:postgresql://<ipaddress>:5432/<dbname>`
-      > `username: <dbuser>`
-      > `password: <dbpassword>`
+   * Create the Oppleo specific `liquibase.properties`
+     * Create a local copy of the example liquibase properties:
+       > `cp /home/pi/Oppleo/db/liquibase.properties.example /home/pi/Oppleo/db/liquibase.properties`
+     * Edit this local copy using any text editor, like `nano` for example
+       > `nano /home/pi/Oppleo/db/liquibase.properties`
+     * Configure the Oppleo specific liquibase properties in `/home/pi/Oppleo/db/liquibase.properties` using any text editor like `nano` for example
+       > `nano /home/pi/Oppleo/db/liquibase.properties`
+     * Update the url replacing <ipaddress> for the ip or localhost, and <dbname> with the database name created earlier. Also update <dbuser> and <dbpassword> (replace also the angle brackets, they are not part of the syntax).  
+       > `url: jdbc:postgresql://<ipaddress>:5432/<dbname>`
+       > `username: <dbuser>`
+       > `password: <dbpassword>`
 
 
  #### Installation
@@ -161,7 +163,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
  * Edit the oppleo ini file to reflect your installation. The example ini file has comments to help. Note that this ini file is overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost.
    * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalize the first letter.
    * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. No need to manually chnage this.
-   * `database_url` is `postgresql://<dbuser>:<dbpassword>@<ipaddress>:5432/<dbname>` where <dbuser>, <dbpassword>, and <dbname> are the values used when installing postgress. <ipaddress> can be `localhost` when both postgres and oppleo are installed on the same raspberry pi.  
+   * `database_url` is `postgresql://<dbuser>:<dbpassword>@<ipaddress>:5432/<dbname>` where <dbuser>, <dbpassword>, and <dbname> are the values used when installing postgres. <ipaddress> can be `localhost` when both postgres and oppleo are installed on the same raspberry pi.  
    * `sqlalchemy_track_modifications` should be `False` 
    * `env` should be `Production`
    * `debug` should be `False`
