@@ -103,41 +103,41 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     * to get a list of USB devices. 
 
    * Install [liquibase](https://docs.liquibase.com/concepts/installation/installation-linux-unix-mac.html). You can follow the guidelines on the liquibase website, below is an example install.
-    Create a directory for liquibase
-    > `sudo mkdir /usr/apps/`
-    > `sudo mkdir /usr/apps/liquibase`
-    Add the directory to the PATH by running
-    > `export PATH=$PATH:/usr/apps/liquibase`
-    Make the updated PATH permanent. Note that this line must be in .bashrc as the install script gets the liquibase path from here.
-    > `echo 'export PATH=$PATH:/usr/apps/liquibase' >> ~/.bashrc`
+    * Create a directory for liquibase
+      > `sudo mkdir /usr/apps/`
+      > `sudo mkdir /usr/apps/liquibase`
+    * Add the directory to the PATH by running
+      > `export PATH=$PATH:/usr/apps/liquibase`
+    * Make the updated PATH permanent. Note that this line must be in .bashrc as the install script gets the liquibase path from here.
+      > `echo 'export PATH=$PATH:/usr/apps/liquibase' >> ~/.bashrc`
 
-    Extract the downloaded content to the directory
-    > `cd /usr/apps/liquibase`
-    > `wget https://github.com/liquibase/liquibase/releases/download/v4.3.1/liquibase-4.3.1.tar.gz`
-    Unpack it 
-    > `sudo tar -xzf liquibase-4.3.1.tar.gz`
-    Remove the download 
-    > `sudo rm liquibase-4.3.1.tar.gz`
+    * Extract the downloaded content to the directory
+      > `cd /usr/apps/liquibase`
+      > `wget https://github.com/liquibase/liquibase/releases/download/v4.3.1/liquibase-4.3.1.tar.gz`
+    * Unpack it 
+      > `sudo tar -xzf liquibase-4.3.1.tar.gz`
+    * Remove the download 
+      > `sudo rm liquibase-4.3.1.tar.gz`
 
-    For Liquibase to run correctly, Java must be installed on the raspberry pi. To verify that Java is installed
-    > `java -version`
-    If you see the error: -bash: java: command not found, then you need to either install Java, or you need to add the location of the Java executable to your PATH. To install Java on your computer navigate to https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html and install the Java JDK, and add the location of the Java executable to your PATH. 
+    * For Liquibase to run correctly, Java must be installed on the raspberry pi. To verify that Java is installed
+      > `java -version`
+      * If you see the error: -bash: java: command not found, then you need to either install Java, or you need to add the location of the Java executable to your PATH. To install Java on your computer navigate to https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html and install the Java JDK, and add the location of the Java executable to your PATH. 
     
-    To verify liquibase
-    > `cd /hope/pi/oppleo`
-    > `liquibase --help`
-    The help page should be visible.
+    * To verify liquibase
+      > `cd /hope/pi/oppleo`
+      > `liquibase --help`
+      The help page should be visible.
 
-    Create a local copy of the example liquibase properties:
-    > `cp /home/pi/Oppleo/db/liquibase.properties.example /home/pi/Oppleo/db/liquibase.properties`
-    Edit this local copy using any text editor, like `nano` for example
-    > `nano /home/pi/Oppleo/db/liquibase.properties`
-    Configure the Oppleo specific liquibase properties in `/home/pi/Oppleo/db/liquibase.properties` using any text editor like `nano` for example
-    > `nano /home/pi/Oppleo/db/liquibase.properties`
-    Update the url replacing <ipaddress> for the ip or localhost, and <dbname> with the database name created earlier. Also update <dbuser> and <dbpassword> (replace also the angle brackets, they are not part of the syntax).  
-    > `url: jdbc:postgresql://<ipaddress>:5432/<dbname>`
-    > `username: <dbuser>`
-    > `password: <dbpassword>`
+    * Create a local copy of the example liquibase properties:
+      > `cp /home/pi/Oppleo/db/liquibase.properties.example /home/pi/Oppleo/db/liquibase.properties`
+    8 Edit this local copy using any text editor, like `nano` for example
+      > `nano /home/pi/Oppleo/db/liquibase.properties`
+    * Configure the Oppleo specific liquibase properties in `/home/pi/Oppleo/db/liquibase.properties` using any text editor like `nano` for example
+      > `nano /home/pi/Oppleo/db/liquibase.properties`
+    * Update the url replacing <ipaddress> for the ip or localhost, and <dbname> with the database name created earlier. Also update <dbuser> and <dbpassword> (replace also the angle brackets, they are not part of the syntax).  
+      > `url: jdbc:postgresql://<ipaddress>:5432/<dbname>`
+      > `username: <dbuser>`
+      > `password: <dbpassword>`
 
 
  #### Installation
@@ -176,48 +176,48 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
    
  
  * Install Oppleo as a service (creates a Oppleo.service file in /etc/systemd/system/ and reloads systemctl)
- > `install/install.sh`
+   > `install/install.sh`
 
- Note that liquibase will prompt for changes to be registered in Liquibase Hub. 
- > ```
-  Run liquibase update...
-Liquibase Community 4.3.1 by Datical
-####################################################
-##   _     _             _ _                      ##
-##  | |   (_)           (_) |                     ##
-##  | |    _  __ _ _   _ _| |__   __ _ ___  ___   ##
-##  | |   | |/ _` | | | | | '_ \ / _` / __|/ _ \  ##
-##  | |___| | (_| | |_| | | |_) | (_| \__ \  __/  ##
-##  \_____/_|\__, |\__,_|_|_.__/ \__,_|___/\___|  ##
-##              | |                               ##
-##              |_|                               ##
-##                                                ## 
-##  Get documentation at docs.liquibase.com       ##
-##  Get certified courses at learn.liquibase.com  ## 
-##  Free schema change activity reports at        ##
-##      https://hub.liquibase.com                 ##
-##                                                ##
-####################################################
-Starting Liquibase at 10:06:44 (version 4.3.1 #26 built at 2021-02-12 17:41+0000)
-Do you want to see this operation's report in Liquibase Hub, which improves team collaboration? 
-If so, enter your email. If not, enter [N] to no longer be prompted, or [S] to skip for now, but ask again next time (default "S"): 
-```
- If you know you what that go ahead and configure it, otherwise you want to set this to **N** as this install script is used for software updates from the web front, and continuing liquibase interaction here breaks that functionality.
+ * Note that liquibase will prompt for changes to be registered in Liquibase Hub. 
+   > `  Run liquibase update...`
+   > `Liquibase Community 4.3.1 by Datical`
+   > `####################################################`
+   > `##   _     _             _ _                      ##`
+   > `##  | |   (_)           (_) |                     ##`
+   > `##  | |    _  __ _ _   _ _| |__   __ _ ___  ___   ##`
+   > `##  | |   | |/ _` | | | | | '_ \ / _` / __|/ _ \  ##`
+   > `##  | |___| | (_| | |_| | | |_) | (_| \__ \  __/  ##`
+   > `##  \_____/_|\__, |\__,_|_|_.__/ \__,_|___/\___|  ##`
+   > `##              | |                               ##`
+   > `##              |_|                               ##`
+   > `##                                                ##`
+   > `##  Get documentation at docs.liquibase.com       ##`
+   > `##  Get certified courses at learn.liquibase.com  ## `
+   > `##  Free schema change activity reports at        ##`
+   > `##      https://hub.liquibase.com                 ##`
+   > `##                                                ##`
+   > `####################################################`
+   > `Starting Liquibase at 10:06:44 (version 4.3.1 #26 built at 2021-02-12 17:41+0000)`
+   > `Do you want to see this operation's report in Liquibase Hub, which improves team collaboration?`
+   > `If so, enter your email. If not, enter [N] to no longer be prompted, or [S] to skip for now, but ask again next time (default "S"):`
+
+   If you know you what that go ahead and configure it, otherwise you want to set this to **N** as this install script is used for software updates from the web front, and continuing liquibase interaction here breaks that functionality.
 
 
 Oppleo should now be running. Check http://localhost/ or the IP address of the raspberry.
 
 
- * NOTE: If not running on a Raspberry Pi, detected in the install script by checking `cat /proc/cpuinfo`, the system service file is created but not installed and the service is not enabled and started. If running on another system or VM this can be done manually. Install the Oppleo service file 
- > `sudo cp /home/pi/Oppleo/install/Oppleo.service /etc/systemd/system/Oppleo.service`
- Reload the daemon config...
- > `sudo systemctl daemon-reload`
- Start the service
- > `sudo systemctl start Oppleo.service`
- Check the status
- > `sudo systemctl status Oppleo.service`
- Enable the service (restart after boot)
- > `sudo systemctl enable Oppleo.service`
+ * NOTE: If not running on a Raspberry Pi, detected in the install script by checking `cat /proc/cpuinfo`, the system service file is created but not installed and the service is not enabled and started. If running on another system or VM this can be done manually. 
+   * Install the Oppleo service file 
+     > `sudo cp /home/pi/Oppleo/install/Oppleo.service /etc/systemd/system/Oppleo.service`
+   * Reload the daemon config...
+     > `sudo systemctl daemon-reload`
+   * Start the service
+     > `sudo systemctl start Oppleo.service`
+   * Check the status
+     > `sudo systemctl status Oppleo.service`
+   * Enable the service (restart after boot)
+     > `sudo systemctl enable Oppleo.service`
 
 
 After installing Oppleo:
