@@ -1001,7 +1001,7 @@
         $('button#backup-offsite-showinfo').html(' <i class="fas fa-spinner fa-spin"></i> Ophalen...')
         offsiteBackupDataReq( 'listOffsiteBackups', reqdata={}, function(result) {
           $('tr#offsiteBackupList').removeClass('d-none')
-          $('tbody#offsiteBackupList tr').remove()
+          $('tbody#backupOffsiteList tr').remove()
           // YYYY-MM-DD HH.mm.ss => YYYY-MM-DDTHH:mm:ss.sss
           result.osBackupList.sort(function(elA, elB) {
             let [elAd, elAt] = elA.timestamp.split(' ')
