@@ -145,19 +145,19 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
  Use ssh to login to the Raspberry. You'' end up in `/home/pi`
  
  * Clone the __Oppleo__ repo in the `/home/pi` folder (note: get the URL from the Clone or Download button above!)
- > `git clone https://github.com/ilseh/Oppleo.git`
+   > `git clone https://github.com/ilseh/Oppleo.git`
  * Move into the Oppleo directory
- > `cd Oppleo`
+   > `cd Oppleo`
  * Create a virtual environment for Oppleo
- > `python3 -m venv venv`
+   > `python3 -m venv venv`
  * Activate it
-	> `source venv/bin/activate`
+	 > `source venv/bin/activate`
  * Upgrade pip (if required)
-	> `pip install --upgrade pip`
+	 > `pip install --upgrade pip`
  * Install all dependencies from the requirements_raspberry.txt file
-	> `pip install -r requirements_raspberry.txt`
+	 > `pip install -r requirements_raspberry.txt`
  * Create an Oppleo ini file 
- > `cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini`
+   > `cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini`
  * Edit the oppleo ini file to reflect your installation. The example ini file has comments to help. Note that this ini file is overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost.
    * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalize the first letter.
    * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. No need to manually chnage this.
@@ -179,7 +179,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
    > `install/install.sh`
 
  * Note that liquibase will prompt for changes to be registered in Liquibase Hub. 
-   > ``` shell script
+``` shell script
 Run liquibase update...
 Liquibase Community 4.3.1 by Datical
 ####################################################
