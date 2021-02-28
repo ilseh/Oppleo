@@ -200,16 +200,14 @@ Liquibase Community 4.3.1 by Datical
 ####################################################
 Starting Liquibase at 10:06:44 (version 4.3.1 #26 built at 2021-02-12 17:41+0000)
 Do you want to see this operation's report in Liquibase Hub, which improves team collaboration?
-If so, enter your email. If not, enter [N] to no longer be prompted, or [S] to skip for now, but ask again next time (default "S"):
+If so, enter your email. If not, enter [N] to no longer be prompted, or [S] to skip for now, but 
+ask again next time (default "S"):
 ```
 
    If you know you what that go ahead and configure it, otherwise you want to set this to **N** as this install script is used for software updates from the web front, and continuing liquibase interaction here breaks that functionality.
 
 
-Oppleo should now be running. Check http://localhost/ or the IP address of the raspberry.
-
-
- * NOTE: If not running on a Raspberry Pi, detected in the install script by checking `cat /proc/cpuinfo`, the system service file is created but not installed and the service is not enabled and started. If running on another system or VM this can be done manually. 
+* NOTE: If not running on a Raspberry Pi, detected in the install script by checking `cat /proc/cpuinfo`, the system service file is created but not installed and the service is not enabled and started. If running on another system or VM this can be done manually. 
    * Install the Oppleo service file 
      > `sudo cp /home/pi/Oppleo/install/Oppleo.service /etc/systemd/system/Oppleo.service`
    * Reload the daemon config...
@@ -222,7 +220,12 @@ Oppleo should now be running. Check http://localhost/ or the IP address of the r
      > `sudo systemctl enable Oppleo.service`
 
 
-After installing Oppleo:
+---
+Oppleo should now be running. Check http://localhost/ or the IP address of the raspberry.
+---
+
+
+What to do once Oppleo is running:
   * go to settings in the webfront and change them. Not all settings are changeable in the web front, for some you'll have to update the database. Tables:
     * `charger_config` for general configurations
     * `energy_device` for the modbus settings
@@ -253,22 +256,13 @@ ___
 > `sudo apt install python3.6-dev`  
 > `sudo apt-get install build-essential`  
 
-### Database schema setup
-In db folder, update the liquibase.properties to match your situation, then run:
-``` shell script
-$ liquibase update
-```
-
 ### gcc errors installing requirements_non_raspberry.txt on MacOS
-
 If there are gcc errors when installing the non-raspberry dependencies on MacOS, add 
   > `export LDFLAGS="-L/usr/local/opt/openssl/lib"`
 before running
   > `pip install -r requirements_non_raspberry.txt`
 
-
 ### pkg-resources==0.0.0
-
 Running `pip freeze > requirements_raspberry.txt` can add a line `pkg-resources==0.0.0` which in term can cause errors installing the dependencies. This line can be removed from the requirements files.
   > `pip freeze | grep -v "pkg-resources" > requirements_raspberry.txt"`
 excludes pkg-resources from the file when generating it.
