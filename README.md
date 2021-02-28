@@ -222,9 +222,9 @@ ask again next time (default "S"):
 
 ---
 Oppleo should now be running. Check http://localhost/ or the IP address of the raspberry.
----
 
 
+___
 What to do once Oppleo is running:
   * go to settings in the webfront and change them. Not all settings are changeable in the web front, for some you'll have to update the database. Tables:
     * `charger_config` for general configurations
@@ -250,7 +250,6 @@ Oppleo works with
 
 
 ___
-
 ### Some Developer specific references
 > `sudo apt-get install libpq-dev`  
 > `sudo apt install python3.6-dev`  
