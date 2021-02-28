@@ -1,5 +1,5 @@
 changeLogFile: ./changelog.xml
-url: jdbc:postgresql://localhost:5432/<dbname>
+url: jdbc:postgresql://<ipaddress>:5432/<dbname>
 username: <dbuser>
 password: <dbpassword>
 driver: org.postgresql.Driver
