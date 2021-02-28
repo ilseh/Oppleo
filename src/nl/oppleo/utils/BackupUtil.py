@@ -866,7 +866,7 @@ class BackupUtil(object, metaclass=Singleton):
                   )
 
             # Backup due? (daysPast=8 indicates no active days)
-            return daysPast != 8 and lastBackup < due
+            return daysPast != 8 and lastBackup < due  and now > due
 
 
         if self.oppleoConfig.backupInterval == self.oppleoConfig.BACKUP_INTERVAL_CALDAY:
