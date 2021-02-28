@@ -179,27 +179,29 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
    > `install/install.sh`
 
  * Note that liquibase will prompt for changes to be registered in Liquibase Hub. 
-   > `  Run liquibase update...`
-   > `Liquibase Community 4.3.1 by Datical`
-   > `####################################################`
-   > `##   _     _             _ _                      ##`
-   > `##  | |   (_)           (_) |                     ##`
-   > `##  | |    _  __ _ _   _ _| |__   __ _ ___  ___   ##`
-   > `##  | |   | |/ _` | | | | | '_ \ / _` / __|/ _ \  ##`
-   > `##  | |___| | (_| | |_| | | |_) | (_| \__ \  __/  ##`
-   > `##  \_____/_|\__, |\__,_|_|_.__/ \__,_|___/\___|  ##`
-   > `##              | |                               ##`
-   > `##              |_|                               ##`
-   > `##                                                ##`
-   > `##  Get documentation at docs.liquibase.com       ##`
-   > `##  Get certified courses at learn.liquibase.com  ## `
-   > `##  Free schema change activity reports at        ##`
-   > `##      https://hub.liquibase.com                 ##`
-   > `##                                                ##`
-   > `####################################################`
-   > `Starting Liquibase at 10:06:44 (version 4.3.1 #26 built at 2021-02-12 17:41+0000)`
-   > `Do you want to see this operation's report in Liquibase Hub, which improves team collaboration?`
-   > `If so, enter your email. If not, enter [N] to no longer be prompted, or [S] to skip for now, but ask again next time (default "S"):`
+   > ``` shell script
+Run liquibase update...
+Liquibase Community 4.3.1 by Datical
+####################################################
+##   _     _             _ _                      ##
+##  | |   (_)           (_) |                     ##
+##  | |    _  __ _ _   _ _| |__   __ _ ___  ___   ##
+##  | |   | |/ _` | | | | | '_ \ / _` / __|/ _ \  ##
+##  | |___| | (_| | |_| | | |_) | (_| \__ \  __/  ##
+##  \_____/_|\__, |\__,_|_|_.__/ \__,_|___/\___|  ##
+##              | |                               ##
+##              |_|                               ##
+##                                                ##
+##  Get documentation at docs.liquibase.com       ##
+##  Get certified courses at learn.liquibase.com  ##
+##  Free schema change activity reports at        ##
+##      https://hub.liquibase.com                 ##
+##                                                ##
+####################################################
+Starting Liquibase at 10:06:44 (version 4.3.1 #26 built at 2021-02-12 17:41+0000)
+Do you want to see this operation's report in Liquibase Hub, which improves team collaboration?
+If so, enter your email. If not, enter [N] to no longer be prompted, or [S] to skip for now, but ask again next time (default "S"):
+```
 
    If you know you what that go ahead and configure it, otherwise you want to set this to **N** as this install script is used for software updates from the web front, and continuing liquibase interaction here breaks that functionality.
 
