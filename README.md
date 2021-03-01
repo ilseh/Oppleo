@@ -162,6 +162,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
    > `cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini`
  * Edit the oppleo ini file to reflect your installation. The example ini file has comments to help. Note that this ini file is overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost.
    * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalize the first letter.
+   * `log_file` is the log file location. Default /tmp/Oppleo.log 
    * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. No need to manually chnage this.
    * `database_url` is `postgresql://<dbuser>:<dbpassword>@<ipaddress>:5432/<dbname>` where <dbuser>, <dbpassword>, and <dbname> are the values used when installing postgres. <ipaddress> can be `localhost` when both postgres and oppleo are installed on the same raspberry pi.  
    * `sqlalchemy_track_modifications` should be `False` 

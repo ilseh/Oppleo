@@ -425,19 +425,6 @@ class OppleoConfig(object, metaclass=Singleton):
 
 
     """
-        logFile --> log_file
-    """
-    @property
-    def logFile(self):
-        return self.__chargerConfigModel.log_file
-
-    @logFile.setter
-    def logFile(self, value):
-        self.__chargerConfigModel.setAndSave('log_file', value)
-        self.restartRequired = True
-
-
-    """
         restartRequired (no database persistence)
     """
     @property

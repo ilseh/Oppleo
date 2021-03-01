@@ -1446,7 +1446,7 @@ def update_settings(param=None, value=None):
 
     # logFile
     if (param == 'logFile') and isinstance(value, str) and len(value) > 0:
-        oppleoConfig.logFile = value
+        oppleoSystemConfig.LOG_FILE = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # logFile

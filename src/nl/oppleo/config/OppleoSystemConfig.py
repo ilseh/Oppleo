@@ -36,6 +36,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     # Params are all read as lowercase by ConfigParser (!)
     __INI_SIGNATURE = 'SIGNATURE'
+    __INI_LOG_FILE = 'LOG_FILE'
     __INI_DATABASE_URL = 'DATABASE_URL'
     __INI_SQLALCHEMY_TRACK_MODIFICATIONS = 'SQLALCHEMY_TRACK_MODIFICATIONS'
 
@@ -104,16 +105,29 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     chargerName = None
 
     def __init__(self):
-        self.__initLogger__()
+        iniFileNotFound = False
+        log = None
         try:
-            self.__loadConfig__()
+            log = self.__loadConfig__()
         except FileNotFoundError as fnfe:
-            self.__logger.debug('System configuration file not found! (Creating with defaults)')
+            # System configuration file not found! (Creating with defaults)
+            iniFileNotFound = True
             # Only in this situation, set these params
             self.__ON_DB_FAILURE_ALLOW_RESTART = True
             self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = True
             self.__ON_DB_FAILURE_SHOW_CURRENT_URL = True
             self.__writeConfig__()
+        # Start logger after ini load to get configured logfile name or use default
+        self.__initLogger__()
+        if log is not None and len(log) > 0:
+            for log_entry in log:
+                if log_entry['type'] == 'error':
+                    self.__logger.error(log_entry['entry'])
+                if log_entry['type'] == 'debug':
+                    self.__logger.debug(log_entry['entry'])
+
+        if iniFileNotFound:
+            self.__logger.debug('System configuration file not found! (Creating with defaults)')
 
 
     """
@@ -124,45 +138,56 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
 
     def __loadConfig__(self):
-        self.__logger.debug('Initializing Oppleo System...')
+        log = [] if self.__logger is None else None
+        lt = 'Initializing Oppleo System...'
+        self.__logger.debug(lt) if self.__logger is not None else log.append({ 'type': 'debug', 'entry': lt })
+
         # Load the ini file
         if (self.__ini_settings is None):
             self.__ini_settings = ConfigParser()
 
         # The absolute dir the script is in
         configFile = self.__getConfigFile__()
-        self.__logger.debug('Looking for system configuration file ' + configFile)
+        lt = 'Looking for system configuration file ' + configFile
+        self.__logger.debug(lt) if self.__logger is not None else log.append({ 'type': 'debug', 'entry': lt })
         self.__ini_settings.read_file(open(configFile, "r"))
 
         # Read the ini file
         if not self.__ini_settings.has_section(self.__INI_MAIN):
-            self.__logger.debug('System configuration file has no ' + self.__INI_MAIN + ' section.')
+            lt = 'System configuration file has no ' + self.__INI_MAIN + ' section.'
+            self.__logger.debug(lt) if self.__logger is not None else log.append({ 'type': 'debug', 'entry': lt })
             return
 
-        self.__SIGNATURE = self.__getOption__(self.__INI_MAIN, self.__INI_SIGNATURE)
+        self.__SIGNATURE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_SIGNATURE, log=log)
 
-        self.__DATABASE_URL = self.__getOption__(self.__INI_MAIN, self.__INI_DATABASE_URL)
-        self.__SQLALCHEMY_TRACK_MODIFICATIONS = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS)
+        self.__LOG_FILE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_FILE, log=log)
+        self.__DATABASE_URL = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_DATABASE_URL, log=log)
+        self.__SQLALCHEMY_TRACK_MODIFICATIONS = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS, log=log)
 
-        self.__ENV = self.__getOption__(self.__INI_MAIN, self.__INI_ENV)
-        self.__HTTP_HOST = self.__getOption__(self.__INI_MAIN, self.__INI_HTTP_HOST, self.__HTTP_HOST)
-        self.__HTTP_PORT = self.__getIntOption__(self.__INI_MAIN, self.__INI_HTTP_PORT, self.__HTTP_PORT)
-        self.__DEBUG = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_DEBUG)
-        self.__TESTING = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_TESTING)
+        self.__ENV = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_ENV, log=log)
+        self.__HTTP_HOST = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HTTP_HOST, default=self.__HTTP_HOST, log=log)
+        self.__HTTP_PORT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_HTTP_PORT, default=self.__HTTP_PORT, log=log)
+        self.__DEBUG = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_DEBUG, log=log)
+        self.__TESTING = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_TESTING, log=log)
 
-        self.__PYTHONPATH = self.__getOption__(self.__INI_MAIN, self.__INI_PYTHONPATH)
-        self.__EXPLAIN_TEMPLATE_LOADING = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_EXPLAIN_TEMPLATE_LOADING)
+        self.__PYTHONPATH = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PYTHONPATH, log=log)
+        self.__EXPLAIN_TEMPLATE_LOADING = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_EXPLAIN_TEMPLATE_LOADING, log=log)
 
-        self.__ON_DB_FAILURE_ALLOW_RESTART = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_ALLOW_RESTART)
-        self.__ON_DB_FAILURE_MAGIC_PASSWORD = self.__getOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_MAGIC_PASSWORD)
-        self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE)
-        self.__ON_DB_FAILURE_SHOW_CURRENT_URL = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL)
+        self.__ON_DB_FAILURE_ALLOW_RESTART = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_ON_DB_FAILURE_ALLOW_RESTART, log=log)
+        self.__ON_DB_FAILURE_MAGIC_PASSWORD = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_ON_DB_FAILURE_MAGIC_PASSWORD, log=log)
+        self.__ON_DB_FAILURE_ALLOW_URL_CHANGE = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_ON_DB_FAILURE_ALLOW_URL_CHANGE, log=log)
+        self.__ON_DB_FAILURE_SHOW_CURRENT_URL = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_ON_DB_FAILURE_SHOW_CURRENT_URL, log=log)
 
-        self.__PROWL_ENABLED = self.__getBooleanOption__(self.__INI_MAIN, self.__INI_PROWL_ENABLED, self.__PROWL_ENABLED)
-        self.__PROWL_API_KEY = self.__getOption__(self.__INI_MAIN, self.__INI_PROWL_API_KEY, self.__PROWL_API_KEY)
+        self.__PROWL_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_PROWL_ENABLED, default=self.__PROWL_ENABLED, log=log)
+        self.__PROWL_API_KEY = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PROWL_API_KEY, default=self.__PROWL_API_KEY, log=log)
 
         self.load_completed = True
-        print('System configuration loaded')
+        
+        lt = 'System configuration loaded'
+        self.__logger.debug(lt) if self.__logger is not None else log.append({ 'type': 'error', 'entry': lt })
+
+        if log is not None and len(log) > 0:
+            return log
 
 
     def reload(self):
@@ -188,6 +213,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             # Set the parameters
             self.__ini_settings[self.__INI_MAIN][self.__INI_SIGNATURE] = self.__SIGNATURE
 
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_FILE] = self.__LOG_FILE
             self.__ini_settings[self.__INI_MAIN][self.__INI_DATABASE_URL] = self.__DATABASE_URL
             self.__ini_settings[self.__INI_MAIN][self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS] = 'True' if self.__SQLALCHEMY_TRACK_MODIFICATIONS else 'False'
 
@@ -216,27 +242,39 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             pass
 
 
-    def __getBooleanOption__(self, section, option, default=False):
+    def __getBooleanOption__(self, section, option, default=False, log:list=None):
         if not self.__ini_settings.has_option(section, option):
-            self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            if log is not None:
+                log.append({ 'type': 'error', 'entry': 'Ini file ERROR: No ' + option + ' in ' + section })
+            if self.__logger is not None:
+                self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
             return default
         return self.__ini_settings.getboolean(section, option)
 
-    def __getIntOption__(self, section, option, default=0):
+    def __getIntOption__(self, section, option, default=0, log:list=None):
         if not self.__ini_settings.has_option(section, option):
-            self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            if log is not None:
+                log.append({ 'type': 'error', 'entry': 'Ini file ERROR: No ' + option + ' in ' + section })
+            if self.__logger is not None:
+                self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
             return default
         return self.__ini_settings.getint(section, option)
 
-    def __getFloatOption__(self, section, option, default=0):
+    def __getFloatOption__(self, section, option, default=0, log:list=None):
         if not self.__ini_settings.has_option(section, option):
-            self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            if log is not None:
+                log.append({ 'type': 'error', 'entry': 'Ini file ERROR: No ' + option + ' in ' + section })
+            if self.__logger is not None:
+                self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
             return default
         return self.__ini_settings.getfloat(section, option)
 
-    def __getOption__(self, section, option, default=''):
+    def __getOption__(self, section, option, default='', log:list=None):
         if not self.__ini_settings.has_option(section, option):
-            self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            if log is not None:
+                log.append({ 'type': 'error', 'entry': 'Ini file ERROR: No ' + option + ' in ' + section })
+            if self.__logger is not None:
+                self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
             return default
         return self.__ini_settings.get(section, option)
 
@@ -260,7 +298,6 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
 
     def __initLogger__(self):
-        self.__LOG_FILE = '/tmp/%s.log' % self.__PROCESS_NAME
         Logger.init_log(self.__PROCESS_NAME, self.__LOG_FILE)
         self.__logger = logging.getLogger('nl.oppleo.config.OppleoSystemConfig')
 
@@ -275,7 +312,6 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             pool_status = self.sqlalchemy_engine.pool.status()
             self.__logger.info('sqlAlchemyPoolStatus() - %s' % pool_status)
             return pool_status
-
 
     """
         SIGNATURE
