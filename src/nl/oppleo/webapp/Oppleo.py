@@ -219,9 +219,14 @@ try:
 
         # Define the Energy Device Monitor thread and the ChangeHandler (RFID) thread
         meuThread = None
-        chThread = None
+
         try:
             meuThread = MeasureElectricityUsageThread(appSocketIO)
+        except Exception as e:
+            oppleoLogger.error("MeasureElectricityUsageThread failed - no energy measurements. Details:{}".format(str(e)))
+
+        chThread = None
+        try:
             chThread = ChargerHandlerThread(
                         device=oppleoConfig.chargerName,
                         energy_util=meuThread.energyDevice.energyUtil, 
@@ -232,11 +237,14 @@ try:
                         evse_reader=EvseReader(), 
                         appSocketIO=appSocketIO
                     )
-            meuThread.addCallback(chThread.energyUpdate)
-            oppleoConfig.meuThread = meuThread
-            oppleoConfig.chThread = chThread
         except Exception as e:
-            oppleoLogger.error("MeasureElectricityUsageThread failed - no energy measurements. Details:{}".format(str(e)))
+            oppleoLogger.error("ChargerHandlerThread failed - no charger management. Details:{}".format(str(e)))
+
+        if meuThread is not None and chThread is not None:
+            meuThread.addCallback(chThread.energyUpdate)
+
+        oppleoConfig.meuThread = meuThread
+        oppleoConfig.chThread = chThread
 
         phmThread = None
         phmThread = PeakHoursMonitorThread(appSocketIO)
