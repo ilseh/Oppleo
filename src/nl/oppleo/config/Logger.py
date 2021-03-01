@@ -1,6 +1,6 @@
 import logging
 import sys
-
+import os
 
 def init_log(process_name, log_file, daemons=[]):
     logger_process = logging.getLogger(process_name)
@@ -9,7 +9,12 @@ def init_log(process_name, log_file, daemons=[]):
     logger_package.setLevel(logging.DEBUG)
 
     # create file handler which logs even debug messages
-    fh = logging.FileHandler(log_file)
+    try:
+        fh = logging.FileHandler(log_file)
+    except PermissionError as pe:
+        # So this location is  not allowed. Fall back to the Oppleo directory
+        log_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/config')[0], 'Oppleo.log')
+        fh = logging.FileHandler(log_file)
     fh.setLevel(logging.DEBUG)
 
     # create console handler with a higher log level

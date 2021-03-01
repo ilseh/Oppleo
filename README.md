@@ -36,10 +36,10 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     
     * Basic steps involve installing postgresql
       > `sudo apt install postgresql libpq-dev postgresql-client postgresql-client-common -y`
-    * Creating a user (no superuser, can be useful to be allowed to create databases, no need to be allowed to create more new roles. Choose your own database username and replace <dbuser> (also replace the angle brackets). Make sure you remember the password (<dbpassword>).
+    * Creating a user (no superuser, can be useful to be allowed to create databases, no need to be allowed to create more new roles. Choose your own database username and replace `<dbuser>` (also replace the angle brackets). Make sure you remember the password (`<dbpassword>`).
       > `sudo su postgres`
       > `createuser <dbuser> -P`
-    * As user postgres, create a database. Choose your own databasecname and replace <dbname>.
+    * As user postgres, create a database. Choose your own databasecname and replace `<dbname>`.
       > `createdb <dbname>`
     * As user postgres, start psql, the postgres cmd line tool.
       > `psql`
@@ -49,7 +49,9 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
       > `grant all privileges on database <dbname> to <dbuser>;`
     * Exit from the psql shell and again from the Postgres user by pressing Ctrl+D twice. 
 
-    * To verify the postgres install, start psql, the postgres cmd line tool, with the username created above. 
+    * You can setup postgres to use Raspbian OS users. This can simplify local postgres usage, but isn't required for Oppleo. I noticed that the default config in `/etc/postgresql/11/main/pg_hba.conf` (the 11 is the version, yours may differ) shows peer as password hast type, referring to the Raspbian user. If you set a non-OS user like I do here, you can either change `peer` to `md5` as default method in the pg_hba.conf file, or simply add `-h localhost` to the psql command line to use md5 configured for network access as done below. Also if you want to allow access to the database from your local 10.0.x.x network you can add a line `host	all		all		10.0.0.0/16		md5` to the pg_hba.conf file.
+
+    * To verify the postgres install, start psql, the postgres cmd line tool, with the username created above. I noticed that the default config in `/etc/postgresql/11/main/pg_hba.conf`.
       > `psql -U <dbuser> -d <dbname> -h <ipaddress>`
     * Create a table
       > `create table people (name text, company text);`
@@ -136,7 +138,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
        > `nano /home/pi/Oppleo/db/liquibase.properties`
      * Configure the Oppleo specific liquibase properties in `/home/pi/Oppleo/db/liquibase.properties` using any text editor like `nano` for example
        > `nano /home/pi/Oppleo/db/liquibase.properties`
-     * Update the url replacing <ipaddress> for the ip or localhost, and <dbname> with the database name created earlier. Also update <dbuser> and <dbpassword> (replace also the angle brackets, they are not part of the syntax).  
+     * Update the url replacing `<ipaddress>` for the ip or localhost, and `<dbname>` with the database name created earlier. Also update `<dbuser>` and `<dbpassword>` (replace also the angle brackets, they are not part of the syntax).  
        > `url: jdbc:postgresql://<ipaddress>:5432/<dbname>`
        > `username: <dbuser>`
        > `password: <dbpassword>`
@@ -164,7 +166,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
    * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalize the first letter.
    * `log_file` is the log file location. Default /tmp/Oppleo.log 
    * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. No need to manually chnage this.
-   * `database_url` is `postgresql://<dbuser>:<dbpassword>@<ipaddress>:5432/<dbname>` where <dbuser>, <dbpassword>, and <dbname> are the values used when installing postgres. <ipaddress> can be `localhost` when both postgres and oppleo are installed on the same raspberry pi.  
+   * `database_url` is `postgresql://<dbuser>:<dbpassword>@<ipaddress>:5432/<dbname>` where `<dbuser>`, `<dbpassword>`, and `<dbname>` are the values used when installing postgres. `<ipaddress>` can be `localhost` when both postgres and oppleo are installed on the same raspberry pi.  
    * `sqlalchemy_track_modifications` should be `False` 
    * `env` should be `Production`
    * `debug` should be `False`
