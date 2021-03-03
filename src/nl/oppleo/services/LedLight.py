@@ -2,27 +2,27 @@
 
 import logging
 
-from .LedLightDev import LedLightDev
+from nl.oppleo.services.LedLightDev import LedLightDev
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.utils.GenericUtil import GenericUtil
-from .LedLightPulseProd import LedLightPulseProd
+from nl.oppleo.services.LedLightPulseProd import LedLightPulseProd
 
+oppleoSystemConfig = OppleoSystemConfig()
 try:
-    from .LedLightProd import LedLightProd
+    from nl.oppleo.services.LedLightProd import LedLightProd
 except NameError:
     print('Assuming dev env')
 
 
 class LedLight(object):
 
-    def __init__(self, *colors, intensity, pulse=False, services=None):
+    def __init__(self, *colors, intensity, pulse=False, services=[]):
         self.logger = logging.getLogger('nl.oppleo.services.LedLight')
-        if services is None:
-            services = []
         self.services = services
 
         for color in colors:
-            if GenericUtil.isProd():
+            if oppleoSystemConfig.oppleoLedEnabled:
                 self.services.append(LedLightPulseProd(color, intensity=intensity) if pulse else LedLightProd(color, intensity=intensity))
             else:
                 self.services.append(LedLightDev(color, intensity=intensity))

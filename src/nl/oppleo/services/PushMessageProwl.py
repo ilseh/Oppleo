@@ -1,6 +1,9 @@
 import logging
 import requests
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
 
 class PushMessageProwl(object):
     __logger = logging.getLogger('nl.oppleo.services.PushMessageProwl')
@@ -32,15 +35,18 @@ class PushMessageProwl(object):
             'event'         : title,
             'description'   : message
         }
-        r = requests.post(
-            url = PushMessageProwl.__API_BASE,
-            headers= {
-                'Content-Type': 'application/x-www-form-urlencoded'
-                },
-            data = data
-        )
-        PushMessageProwl.__logger.debug("Result {} - {} ".format(r.status_code, r.reason))
-        if r.status_code != PushMessageProwl.HTTP_200_OK:
-            PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): status code {} not Ok!".format(r.status_code))
-
+        try:
+            r = requests.post(
+                url     = PushMessageProwl.__API_BASE,
+                headers = {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                data    = data,
+                timeout = oppleoSystemConfig.httpTimeout
+            )
+            PushMessageProwl.__logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+            if r.status_code != PushMessageProwl.HTTP_200_OK:
+                PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): status code {} not Ok!".format(r.status_code))
+        except Exception as e:
+            PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): Exception {} not Ok!".format(e))
 

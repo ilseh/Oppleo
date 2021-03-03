@@ -14,7 +14,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 #### Prereqs
   * I run Oppleo on a __Raspberry Pi 4__. I have not tested other versions, I can only assume a 3 would work too. If you need to order one, get a 4, if you have one laying around give it a try.
   * You'll need a __SmartEVSE__ to control the actual car charging. Oppleo pulls a pin down to enable/disable charging, so any other EVSE with a similar control pin might work.
-  * A kWh meter attached through modbus to the Raspberry Pi is required to start and stop charge sessions.
+  * A kWh meter attached through modbus to the Raspberry Pi is not longer required to start and stop charge sessions, however it makes Oppleo much more usefull.
   * `ssh` enabled on the Raspberry. 
     * Add an empty file named `ssh` (no extension) to the root of the sdcard to enable ssh after boot on the Raspberry. You'll probably need ssh to install Python and Postgres anyway.
   * Make sure __apt-get__ is up to date  
@@ -159,15 +159,19 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 	 > `pip install -r requirements_raspberry.txt`
  * Create an Oppleo ini file 
    > `cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini`
- * Edit the oppleo ini file to reflect your installation. The example ini file has comments to help. Note that this ini file is overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost.
-   * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalize the first letter.
-   * `log_file` is the log file location. Default /tmp/Oppleo.log 
+ * Edit the oppleo.ini file to reflect your local installation. The oppleo.example.ini file has comments to help. Note that the local copied oppleo.ini file is completely overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost. Make changes using any text editor like `vi` or `nano` when Oppleo is not running. 
+   * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalizine the first letter is required.
+   * `log_file` is the log file location. Default `/tmp/Oppleo.log` 
    * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. No need to manually chnage this.
    * `database_url` is `postgresql://<dbuser>:<dbpassword>@<ipaddress>:5432/<dbname>` where `<dbuser>`, `<dbpassword>`, and `<dbname>` are the values used when installing postgres. `<ipaddress>` can be `localhost` when both postgres and oppleo are installed on the same raspberry pi.  
    * `sqlalchemy_track_modifications` should be `False` 
-   * `env` should be `Production`
-   * `debug` should be `False`
-   * `testing` should be `False`
+   * `debug` should be `False`. Enabling this shows any uncatched exceptions and errors in the web front. Useful for development or debugging only.
+   * The following 5 entries describe the connected hardware, inclusing RFID reader, busser, EVSE and RGB LED. If they are present and connected to the Raspberry Pi through the [GPIO header](https://www.raspberrypi.org/documentation/usage/gpio/) enable them here. After making changes Oppleo needs to restart to take them into effect.
+     * `evse_switch` enable if the switch pin of the SmartEVSE is connected. This allows Oppleo to actually prevent or allow charging.
+     * `evse_led_reader` enable if the LED pin out of the SmartEVSE is connected to the Raspberry Pi GPIO. Oppleo will detect the EVSE status by detecting the on/off state and pulse-width.
+     * `buzzer` enable if a buzzer is connected.
+     * `oppleo_led` enable if an RGB led is connected to the GPIO.
+     * `mfrc522_rfid_reader` enable if the RFID reader is connected to the SPI bus on the GPIO.
    * `pythonpath` is empty
    * `explain_template_loading` provides a debug information on screen if something goes wrong internally. `False` should be better. 
    * The `on_db_failure_` variables come into play if the database cannot be reached by Oppleo. It becomes blind to settings, and thus some fallback settings are required.
@@ -288,6 +292,20 @@ If there are gcc errors when installing the non-raspberry dependencies on MacOS,
   > `export LDFLAGS="-L/usr/local/opt/openssl/lib"`
 before running
   > `pip install -r requirements_non_raspberry.txt`
+
+### postgres on macos
+If `psql -U postgres` returns `psql: error: could not connect to server: FATAL:  role "postgres" does not exist` create the postgres user. This can occur when installed through homebrew.
+  > `/usr/local/opt/postgres/bin/createuser -s postgres`
+Start server using
+  > `pg_ctl -D /usr/local/var/postgres start`
+Stop using
+  > `pg_ctl -D /usr/local/var/postgres stop`
+Start automatically and have launchd start postgresql now and restart at login
+  > `brew services start postgresql`
+You can use [Postgres.app](https://postgresapp.com/)
+Create the database using
+  > `/usr/local/opt/postgres/bin/createdb <dbname>`
+
 
 ### pkg-resources==0.0.0
 Running `pip freeze > requirements_raspberry.txt` can add a line `pkg-resources==0.0.0` which in term can cause errors installing the dependencies. This line can be removed from the requirements files.

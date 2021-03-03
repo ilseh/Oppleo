@@ -87,10 +87,6 @@ class BackupUtil(object, metaclass=Singleton):
         self.logger = logging.getLogger('nl.oppleo.services.BackupUtil')
         self.oppleoConfig = OppleoConfig()
         self.oppleoSystemConfig = OppleoSystemConfig()
-        if GenericUtil.isProd():
-            self.logger.debug('Production environment')
-        else:
-            self.logger.debug('Not production environment')
         self.monitorThread = None
         self.singleBackupThread = None
         self.stop_event = threading.Event()

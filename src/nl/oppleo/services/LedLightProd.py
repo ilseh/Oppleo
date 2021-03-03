@@ -19,17 +19,23 @@ class LedLightProd(object):
         self.intensity = intensity
 
     def on(self):
+        self.logger.debug('Starting led light %s (intensity %d)' % (self.hardware.color_desc(), self.intensity))
         self.pwm = self.hardware.init_gpio_pwm()
-
+        if self.pwm is None:
+            self.logger.debug('Led light %s not started (intensity %d)' % (self.hardware.color_desc(), self.intensity))
+            return
         try:
             self.pwm.start(0)
-            self.logger.debug('Starting led light %s intensity %d' % (self.hardware.color_desc(), self.intensity))
+            self.logger.debug('Started led light %s (intensity %d)' % (self.hardware.color_desc(), self.intensity))
             self.pwm.ChangeDutyCycle(self.intensity)
         except Exception as ex:
             self.logger.error('Exception lighting led %s' % ex)
 
     def off(self):
-        self.logger.debug('Stopping led light %s %d' % (self.hardware.color_desc(), self.intensity))
+        self.logger.debug('Stopping led light %s (intensity %d)' % (self.hardware.color_desc(), self.intensity))
+        if self.pwm is None:
+            self.logger.debug('Led light %s not stopped (intensity %d)' % (self.hardware.color_desc(), self.intensity))
+            return
         try:
             self.pwm.stop()
         except Exception as ex:

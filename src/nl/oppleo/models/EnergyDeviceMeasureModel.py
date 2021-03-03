@@ -69,7 +69,11 @@ class EnergyDeviceMeasureModel(Base):
 
     def get_last_saved(self, energy_device_id):
         self.__logger.debug("get_last_saved() energy_device_id {} ".format(energy_device_id))
-        return self.get_last_n_saved(energy_device_id, 1)[0]
+        last_saved = self.get_last_n_saved(energy_device_id=energy_device_id, n=1)
+        if last_saved is not None and isinstance(last_saved, list) and len(last_saved) == 1:
+            return last_saved[0]
+        self.__logger.debug("get_last_saved() energy_device_id {} - no previous recordings".format(energy_device_id))
+        return None
 
 
     def get_last_n_saved(self, energy_device_id, n):

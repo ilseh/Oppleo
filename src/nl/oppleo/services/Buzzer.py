@@ -2,9 +2,11 @@ import threading
 import time
 import logging
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 GPIO = GenericUtil.importGpio()
 
@@ -60,7 +62,7 @@ class Buzzer(object):
     def __init__(self):
         self.logger = logging.getLogger('nl.oppleo.services.Buzzer')
 
-        if GenericUtil.isProd():
+        if oppleoSystemConfig.buzzerEnabled:
             self.buzzer = BuzzerProd()
         else:
             self.buzzer = BuzzerDev()

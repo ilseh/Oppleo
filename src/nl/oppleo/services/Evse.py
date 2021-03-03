@@ -2,9 +2,11 @@ import logging
 import threading
 
 from nl.oppleo.utils.GenericUtil import GenericUtil
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 GPIO = GenericUtil.importGpio()
@@ -37,7 +39,13 @@ class EvseProd(object):
         with self.threadLock:
             self.logger.debug("Product evse on")
             # Setting the output to LOW enables the charging. Keep low.
-            GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.LOW)
+            try:
+                GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.LOW)
+            except Exception as e:
+                self.logger.debug("Could not setmode GPIO, assuming dev env")
+
+
+
 
 
     def switch_off(self):
@@ -45,8 +53,11 @@ class EvseProd(object):
 
         with self.threadLock:
             self.logger.debug("Product Evse off")
-            # Setting the output to HIGH disables the charging. Keep high.
-            GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.HIGH)
+            try:
+                # Setting the output to HIGH disables the charging. Keep high.
+                GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.HIGH)
+            except Exception as e:
+                self.logger.debug("Could not set GPIO, assuming dev env")
 
     # Read the state
     def is_enabled(self):
@@ -88,7 +99,7 @@ class Evse(object, metaclass=Singleton):
 
     def __init__(self):
         self.logger = logging.getLogger('nl.oppleo.services.Evse')
-        if GenericUtil.isProd():
+        if oppleoSystemConfig.evseSwitchEnabled:
             self.logger.debug("Using production Evse")
             self.evse = EvseProd()
         else:

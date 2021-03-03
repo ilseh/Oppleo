@@ -28,6 +28,7 @@ class EnergyDeviceModel(Base):
     close_port_after_each_call = Column(Boolean)
     modbus_timeout = Column(Integer)
     modbus_config = Column(String(100))
+    device_enabled = Column(Boolean)
 
     def __init__(self, data):
         pass
@@ -77,8 +78,8 @@ class EnergyDeviceModel(Base):
             EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            EnergyDeviceModel.logger.error("Could not delete from {} table in database".format(EnergyDeviceModel.__tablename__ ), exc_info=True)
-            raise DbException("Could not delete from {} table in database".format(EnergyDeviceModel.__tablename__ ))
+            EnergyDeviceModel.logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
+            raise DbException("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)))
         return edm
 
     def __repr(self):
@@ -129,4 +130,5 @@ class EnergyDeviceSchema(Schema):
     close_port_after_each_call = fields.Bool(dump_only=True)
     modbus_timeout = fields.Int(dump_only=True)
     modbus_config = fields.Str(dump_only=True)
+    device_enabled = fields.Bool(dump_only=True)
 

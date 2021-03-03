@@ -802,6 +802,27 @@
       $('input#autoSessionCondenseSameOdometer').change(function() {
         updateSettings( 'autoSessionCondenseSameOdometer', $(this).prop('checked') )
       })
+      $('input#energyDeviceEnabled').bootstrapToggle()
+      $('input#energyDeviceEnabled').change(function() {
+        updateSettings( 'energyDeviceEnabled', $(this).prop('checked') )
+      })
+
+      $('input#oppleoLedEnabled').change(function() {
+        updateSettings( 'oppleoLedEnabled', $(this).prop('checked') )
+      })
+      $('input#buzzerEnabled').change(function() {
+        updateSettings( 'buzzerEnabled', $(this).prop('checked') )
+      })
+      $('input#evseLedReaderEnabled').change(function() {
+        updateSettings( 'evseLedReaderEnabled', $(this).prop('checked') )
+      })
+      $('input#evseSwitchEnabled').change(function() {
+        updateSettings( 'evseSwitchEnabled', $(this).prop('checked') )
+      })
+      $('input#rfidEnabled').change(function() {
+        updateSettings( 'rfidEnabled', $(this).prop('checked') )
+      })
+
       // Add 'bootstrapToggle_' to the id field, and use the parameter name after
       $('input[id^=bootstrapToggle]').bootstrapToggle()
       $('input[id^=bootstrapToggle]').change(function() {
@@ -1387,21 +1408,19 @@
                             <tr>
                               <td class="text-dark">Alleen laden binnen daluren:</td>
                               <td class="text-primary">
-                                <form id="peak-hours-off-peak-enabled-form">
-                                  <input type="checkbox" 
-                                    {% if oppleoconfig.offpeakEnabled %}checked{% endif %}
-                                    name="offpeakEnabled"
-                                    id="offpeakEnabled"
-                                    data-toggle="toggle"
-                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
-                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
-                                    data-onstyle="primary"
-                                    data-offstyle="dark"
-                                    data-size="sm"
-                                    data-height="30"
-                                    data-width="70"
-                                  />
-                                </form>
+                                <input type="checkbox" 
+                                  {% if oppleoconfig.offpeakEnabled %}checked{% endif %}
+                                  name="offpeakEnabled"
+                                  id="offpeakEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
                               </td>
                             </tr>
                             <tr>
@@ -1755,10 +1774,27 @@
                           <tbody>
                             {% if (energydevicemodel is not none) %}
                             <tr>
+                              <td class="text-dark">Actief:</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if energydevicemodel.device_enabled %}checked{% endif %}
+                                  id="energyDeviceEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
                               <td class="text-dark">Device interface:</td>
                               <td class="text-primary">Modbus</td>
                             </tr>
-                            <tr>
+                            <tr>{{ energydevicemodel.port_name }}
                               <td class="text-dark">Port name:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
@@ -1906,6 +1942,18 @@
                                 value="{{ oppleosystemconfig.httpPort }}"
                                 validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
                                 info="HTTP port waarop de Oppleo service beschikbaar is."
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">HTTP outbound timeout:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="httpTimeout"
+                                suffix=" seconden" 
+                                value="{{ oppleosystemconfig.httpTimeout }}"
+                                validation="^[1-9][0-9]{0,2}$"
+                                info="Timeout voor outbound HTTP connecties naar de Prowl en Tesla API's."
                                 />
                               </td>
                             </tr>
@@ -2146,8 +2194,27 @@
                                 />
                               </td>
                             </tr>
+
                             <tr>
-                              <td class="text-dark">Red Led:</td>
+                              <td class="text-dark"><span class="text-danger">R</span><span class="text-success">G</span><span class="text-primary">B</span> Led aangesloten op GPIO:</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if oppleosystemconfig.oppleoLedEnabled %}checked{% endif %}
+                                  name="oppleoLedEnabled"
+                                  id="oppleoLedEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> <span class="text-danger">Rode</span> Led of rode pin van RGB led:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                 id="pinLedRed"
@@ -2159,7 +2226,7 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Green Led:</td>
+                              <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> <span class="text-success">Groene</span> Led of groene pin van RGB led:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                 id="pinLedGreen"
@@ -2171,7 +2238,7 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Blue Led:</td>
+                              <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> <span class="text-primary">Blauwe</span> Led of blauwe pin van RGB led:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                 id="pinLedBlue"
@@ -2183,30 +2250,84 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Buzzer:</td>
+                              <td class="text-dark">Buzzer aangesloten op GPIO:</td>
                               <td class="text-primary">
-                                <oppleo-edit-str 
-                                id="pinBuzzer"
-                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
-                                value="{{ oppleoconfig.pinBuzzer }}"
-                                validation="^[0-9]+$"
-                                info="BCM GPIO Mode GPIO23"
+                                <input type="checkbox" 
+                                  {% if oppleosystemconfig.buzzerEnabled %}checked{% endif %}
+                                  name="buzzerEnabled"
+                                  id="buzzerEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
                                 />
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">EVSE Switch:</td>
+                              <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> Buzzer pin:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str
+                                  id="pinBuzzer"
+                                  prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                  value="{{ oppleoconfig.pinBuzzer }}"
+                                  validation="^[0-9]+$"
+                                  info="BCM GPIO Mode GPIO23"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">EVSE switch pin aangesloten op GPIO:</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if oppleosystemconfig.evseSwitchEnabled %}checked{% endif %}
+                                  name="evseSwitchEnabled"
+                                  id="evseSwitchEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> EVSE switch pin:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="pinEvseSwitch"
-                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
-                                value="{{ oppleoconfig.pinEvseSwitch }}"
-                                validation="^[0-9]+$"
-                                info="BCM GPIO Mode GPIO5"
+                                  id="pinEvseSwitch"
+                                  prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                  value="{{ oppleoconfig.pinEvseSwitch }}"
+                                  validation="^[0-9]+$"
+                                  info="BCM GPIO Mode GPIO5"
                                 />
                             </tr>
                             <tr>
-                              <td class="text-dark">EVSE Led:</td>
+                              <td class="text-dark">EVSE Led output aangesloten op GPIO:</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if oppleosystemconfig.evseLedReaderEnabled %}checked{% endif %}
+                                  name="evseLedReaderEnabled"
+                                  id="evseLedReaderEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> EVSE Led output GPIO pin nummer:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                 id="pinEvseLed"
@@ -2215,6 +2336,24 @@
                                 validation="^[0-9]+$"
                                 info="BCM GPIO Mode GPIO6"
                                 />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">RFID reader aangesloten op SPI via de GPIO:</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if oppleosystemconfig.rfidEnabled %}checked{% endif %}
+                                  name="rfidEnabled"
+                                  id="rfidEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -2259,21 +2398,19 @@
                             <tr>
                               <td class="text-dark">Ingeschakeld:</td>
                               <td class="text-primary">
-                                <form id="peak-hours-off-peak-enabled-form">
-                                  <input type="checkbox" 
-                                    {% if oppleoconfig.autoSessionEnabled %}checked{% endif %}
-                                    name="autoSessionEnabled"
-                                    id="autoSessionEnabled"
-                                    data-toggle="toggle"
-                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
-                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
-                                    data-onstyle="primary"
-                                    data-offstyle="dark"
-                                    data-size="sm"
-                                    data-height="30"
-                                    data-width="70"
-                                  />
-                                </form>
+                                <input type="checkbox" 
+                                  {% if oppleoconfig.autoSessionEnabled %}checked{% endif %}
+                                  name="autoSessionEnabled"
+                                  id="autoSessionEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
                               </td>
                             </tr>
                             <tr>
@@ -2303,21 +2440,19 @@
                             <tr>
                               <td class="text-dark">Condense sessies:</td>
                               <td class="text-primary">
-                                <form id="peak-hours-off-peak-enabled-form">
-                                  <input type="checkbox" 
-                                    {% if oppleoconfig.autoSessionCondenseSameOdometer %}checked{% endif %}
-                                    name="autoSessionCondenseSameOdometer"
-                                    id="autoSessionCondenseSameOdometer"
-                                    data-toggle="toggle"
-                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
-                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
-                                    data-onstyle="primary"
-                                    data-offstyle="dark"
-                                    data-size="sm"
-                                    data-height="30"
-                                    data-width="70"
-                                  />
-                                </form>
+                                <input type="checkbox" 
+                                  {% if oppleoconfig.autoSessionCondenseSameOdometer %}checked{% endif %}
+                                  name="autoSessionCondenseSameOdometer"
+                                  id="autoSessionCondenseSameOdometer"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
                               </td>
                             </tr>
                                                         
@@ -2414,7 +2549,7 @@
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                 id="logFile"
-                                value="{{ oppleoconfig.logFile }}"
+                                value="{{ oppleosystemconfig.logFile }}"
                                 validation="^((/)+[a-zA-Z0-9\\-_/ ]*(.log))$"
                                 info="Default locatie is in /tmp/Oppleo.log en de extensie moet .log zijn. De applicatie moet worden herstart na het wijzigen van de log file om wijzigingen in gebruik te nemen."
                                 />
@@ -2426,26 +2561,8 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">ENV:</td>
-                              <td class="text-primary">
-                                <oppleo-edit-select 
-                                id="ENV"
-                                options='[ { "text": "Development", "id": "Development"{% if "Development" == oppleosystemconfig.ENV %}, "selected": "true"{% endif %} }, 
-                                           { "text": "Production", "id": "Production"{% if "Production" == oppleosystemconfig.ENV %}, "selected": "true"{% endif %} }
-                                         ]'
-                                placeholder="Maak een keuze..."
-                                info="Bij Production worden Threads gestart om o.a. de kWh meter uit te lezen en wijzigingen op te slaan in de database, en worde de EVSE aangestuurd. In Development worden hiervoor stubs gebruikt."
-                                />
-                              </td>
-                            </tr>
-                            <tr>
                               <td class="text-dark">DEBUG:</td>
                               <td class="text-primary">{{ oppleosystemconfig.DEBUG }}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">TESTING:</td>
-                              <td class="text-primary">{{ oppleosystemconfig.TESTING }}
                               </td>
                             </tr>
                             <tr>

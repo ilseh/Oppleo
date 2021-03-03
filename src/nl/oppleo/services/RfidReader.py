@@ -1,19 +1,22 @@
 
 import logging
 import time
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
+oppleoSystemConfig = OppleoSystemConfig()
+oppleoConfig = OppleoConfig()
+
 LOGGER_PATH = "nl.oppleo.service.RfidReader"
 logger = logging.getLogger(LOGGER_PATH)
-oppleoConfig = OppleoConfig()
 
 try:
     from mfrc522 import SimpleMFRC522
-except RuntimeError:
-    logger.debug('Assuming dev env')
-except ModuleNotFoundError:
-    logger.debug('Assuming dev env')
+except RuntimeError as re:
+    logger.debug('RuntimeError {} importing SimpleMFRC522. Probably not installed.'.format(str(re)))
+except ModuleNotFoundError as mnfe:
+    logger.debug('ModuleNotFoundError {} importing SimpleMFRC522. Probably not installed.'.format(str(mnfe)))
 
 
 class RfidReaderDev(object):
@@ -23,9 +26,11 @@ class RfidReaderDev(object):
 
 
 
-class RfidReaderProd(object):
+class SimpleMFRC522RfidReader(object):
 
     def __init__(self):
+        self.logger = logging.getLogger('nl.oppleo.services.SimpleMFRC522RfidReader')
+        # Raises NameError if package is not installed
         self.reader = SimpleMFRC522()
 
 
@@ -44,24 +49,26 @@ class RfidReaderProd(object):
         return id, text
 
 
-
-
-
-
-
-
 class RfidReader(object):
+    simpleMFRC522RfidReader = None
 
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
-        if GenericUtil.isProd():
-            self.logger.debug("Using production rfid reader")
-            self.reader = RfidReaderProd()
+        if oppleoSystemConfig.rfidEnabled:
+            self.logger.debug("Enabling MFRC522 RFID reader")
+            try:
+                self.simpleMFRC522RfidReader = SimpleMFRC522RfidReader()
+            except NameError as ne:
+                self.logger.warn("NameError {} - Enabling MFRC522 RFID reader failed (not installed). Most likely a configuration error.".format(str(ne)))
         else:
-            self.logger.debug("Using fake rfid reader")
-            self.reader = RfidReaderDev()
-
+            self.logger.debug("Not enabling rfid reader")
+            self.simpleMFRC522RfidReader = None
 
     def read(self):
-        return self.reader.read()
-
+        if self.simpleMFRC522RfidReader is None:
+            # block the read, do not return
+            while True:
+                # Sleep for just a little to yield for other threads
+                oppleoConfig.appSocketIO.sleep(0.7)
+        # if there is a reader, use it
+        return self.simpleMFRC522RfidReader.read()

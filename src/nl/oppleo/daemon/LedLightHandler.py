@@ -10,16 +10,14 @@ from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException,
                                              OtherRfidHasOpenSessionException, 
                                              ExpiredException)
 
+from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.services.Buzzer import Buzzer
-from nl.oppleo.services.Charger import Charger
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReader import EvseReader
 from nl.oppleo.services.EvseReaderProd import EvseState
-from nl.oppleo.services.LedLighter import LedLighter
 from nl.oppleo.services.RfidReader import RfidReader
-from nl.oppleo.utils.EnergyUtil import EnergyUtil
 from nl.oppleo.utils.GenericUtil import GenericUtil
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 
@@ -37,12 +35,11 @@ SECONDS_IN_HOUR = 60 * 60
 class LedLightHandler(Service):
 
     @inject
-    def __init__(self, energy_util: EnergyUtil, charger: Charger, ledlighter: LedLighter, buzzer: Buzzer, evse: Evse,
-                 evse_reader: EvseReader, tesla_util: UpdateOdometerTeslaUtil):
+    def __init__(self, energy_util, ledlighter, buzzer, evse,
+                 evse_reader, tesla_util):
         super(LedLightHandler, self).__init__(PROCESS_NAME, pid_dir=PID_DIR)
 
         self.energy_util = energy_util
-        self.charger = charger
         self.ledlighter = ledlighter
         self.buzzer = buzzer
         self.evse = evse
@@ -52,7 +49,8 @@ class LedLightHandler(Service):
 
     def run(self):
 
-        device = GenericUtil.getMeasurementDevice()
+        oppleoConfig = OppleoConfig()
+        device = oppleoConfig.chargerName
 
         try:
             self.start_evse_reader_loop_in_thread()

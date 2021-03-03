@@ -14,13 +14,10 @@ from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.services.Buzzer import Buzzer
-from nl.oppleo.services.Charger import Charger
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReader import EvseReader
 from nl.oppleo.services.EvseReaderProd import EvseState
-from nl.oppleo.services.LedLighter import LedLighter
 from nl.oppleo.services.RfidReader import RfidReader
-from nl.oppleo.utils.EnergyUtil import EnergyUtil
 from nl.oppleo.utils.GenericUtil import GenericUtil
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
@@ -41,7 +38,6 @@ class ChargerHandlerThread(object):
     evse_reader_thread = None
     rfid_reader_thread = None
     stop_event = None
-    energy_util = None
     charger = None
     ledlighter = None
     buzzer = None
@@ -51,24 +47,13 @@ class ChargerHandlerThread(object):
     device = None
     counter = 0
 
-    def __init__(self, 
-                device: device,
-                energy_util: EnergyUtil, 
-                charger: Charger, 
-                ledlighter: LedLighter, 
-                buzzer: Buzzer, 
-                evse: Evse,
-                evse_reader: EvseReader, 
-                appSocketIO: appSocketIO
-                ):
+    def __init__(self, device, ledlighter, buzzer, evse, evse_reader, appSocketIO):
         self.threadLock = threading.Lock()
         self.logger = logging.getLogger('nl.oppleo.daemon.ChargerHandlerThread')
         self.logger.setLevel(logging.DEBUG)
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()
-        self.energy_util = energy_util
-        self.charger = charger
         self.ledlighter = ledlighter
         self.buzzer = buzzer
         self.evse = evse
@@ -105,18 +90,10 @@ class ChargerHandlerThread(object):
     def evseReaderLoop(self):
         # Redirect stdout to logfile
         try:
-            # Assume first logger handler is the correct file to route stdout to.
-#            sys.stdout = open(self.logger.handlers[0].baseFilename, 'a')
-            sys.stdout = open('/tmp/stdout.log', 'a')
-#            sys.stdout = open('/home/pi/stdout.log', 'a')
-
             self.evse_reader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
-
         except Exception as e:
             self.logger.exception('Could not start evse reader loop')
             self.ledlighter.error()
-        finally:
-            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> flushing stdout', flush=True)
 
 
     # rfid_reader_thread
@@ -243,10 +220,18 @@ class ChargerHandlerThread(object):
     # rfid_reader_thread
     # main thread (though web)
     def start_charge_session(self, rfid, trigger=ChargeSessionModel.TRIGGER_RFID, condense=False):
+        global oppleoConfig
+
         self.logger.debug("start_charge_session() new charging session for rfid %s" % rfid)
 
         # Optimize: maybe get this from the latest db value rather than from the energy meter directly
-        start_value = self.energy_util.getTotalKWHHValue()
+
+        start_value = 0
+        if (oppleoConfig.energyDevice is not None and 
+            oppleoConfig.energyDevice.enabled and
+            oppleoConfig.energyDevice.energyModbusReader is not None):
+            start_value = oppleoConfig.energyDevice.energyModbusReader.getTotalKWHHValue()
+            self.logger.debug("start_value from energyModbusReader: {}".format(start_value))
 
         data_for_session = {
             "rfid"              : rfid, 
@@ -288,7 +273,17 @@ class ChargerHandlerThread(object):
     # rfid_reader_thread
     # lock threads before calling this
     def end_charge_session(self, charge_session, detect=False):
-        charge_session.end_value = self.energy_util.getTotalKWHHValue()
+        global oppleoConfig
+
+        charge_session.end_value = 0
+
+        start_value = 0
+        if (oppleoConfig.energyDevice is not None and 
+            oppleoConfig.energyDevice.enabled and
+            oppleoConfig.energyDevice.energyModbusReader is not None):
+            charge_session.end_value = oppleoConfig.energyDevice.energyModbusReader.getTotalKWHHValue()
+            self.logger.debug("end_value from energyModbusReader: {}".format(end_value))
+
         if detect:
             # end_time is the time the kWh was updated to this value, and the current went to 0
             end_time = EnergyDeviceMeasureModel.get_time_of_kwh(

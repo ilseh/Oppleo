@@ -5,6 +5,7 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.utils.GenericUtil import GenericUtil
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.EnergyModbusReader import EnergyModbusReader
 
 oppleoConfig = OppleoConfig()
 
@@ -14,21 +15,37 @@ class EnergyDevice():
     counter = 0
     logger = None
     energy_device_id = None
-    energyUtil = None
+    enabled = False
+    energyModbusReader = None
     modbusInterval = 10 # default value
     lastRun = 0
     appSocketIO = None
     callbackList = []
 
-
-    def __init__(self, energy_device_id=None, modbusInterval=10, energyUtil=None, appSocketIO=None):
+    def __init__(self, energy_device_id=None, modbusInterval=10, enabled=False, appSocketIO=None):
         self.logger = logging.getLogger('nl.oppleo.daemon.EnergyDevice')
-        self.logger.setLevel(logging.DEBUG)
         self.energy_device_id = energy_device_id
         self.modbusInterval = modbusInterval
-        self.energyUtil = energyUtil
         self.appSocketIO = appSocketIO
-        
+        self.enabled = enabled
+        self.createEnergyModbusReader()
+
+
+    def createEnergyModbusReader(self):
+        self.logger.debug("createEnergyModbusReader()")
+        self.energyModbusReader = None
+        if not self.enabled:
+            self.logger.debug("createEnergyModbusReader() not enabled, not starting energyModbusReader for {}".format(self.energy_device_id))
+            return
+
+        try:
+            self.energyModbusReader = EnergyModbusReader(
+                                            energy_device_id=self.energy_device_id,
+                                            appSocketIO=self.appSocketIO
+                                            )
+        except Exception as e:
+            self.logger.warn("Could not start energyModbusReader for {} - {}".format(self.energy_device_id, str(e)))
+
 
     def handleIfTimeTo(self):
         # self.logger.debug(f'handleIfTimeTo() {self.energy_device_id}')
@@ -44,10 +61,25 @@ class EnergyDevice():
             # self.logger.debug(f'handleIfTimeTo() - not yet time to handle {self.energy_device_id}')
             pass
 
+
     def handle(self):
         self.logger.debug("Start measure %s" % self.energy_device_id)
 
-        data = self.energyUtil.getMeasurementValue()
+        if not self.enabled:
+            self.energyModbusReader = None
+            self.logger.debug("Skip measure {} (enabled=False)".format(self.energy_device_id))
+            return
+
+        if self.energyModbusReader is None and self.enabled:
+            # Try to create it
+            self.createEnergyModbusReader()
+            if self.energyModbusReader is None:
+                # still nothing
+                self.logger.warn("Cannot read energy device. No workinig modbus reader for {}".format(self.energy_device_id))
+                return
+
+        data = self.energyModbusReader.getMeasurementValue()
+
         self.logger.debug('Measurement returned %s' % str(data))
         device_measurement = EnergyDeviceMeasureModel()
         device_measurement.set(data)
@@ -67,10 +99,9 @@ class EnergyDevice():
         if last_save_measurement is None or self.is_a_value_changed(last_save_measurement, device_measurement) \
                 or self.is_measurement_older_than_1hour(last_save_measurement, device_measurement):
             self.logger.debug('Measurement has changed or old one is older than 1 hour, saving it to db (if env=Production)')
-            if GenericUtil.isProd():
-                device_measurement.save()
-                self.logger.debug("value saved %s %s %s" %
-                        (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
+            device_measurement.save()
+            self.logger.debug("value saved %s %s %s" %
+                    (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
             if self.appSocketIO is not None:
                 # Emit as web socket update
                 self.counter += 1
@@ -117,3 +148,7 @@ class EnergyDevice():
             self.logger.debug('EnergyDevice.callback() calling')
             callbackFn(device_measurement)
 
+
+    def enable(self, enabled=True):
+        self.logger.debug('EnergyDevice.enable(enabled={})'.format(enabled))
+        self.enabled = enabled

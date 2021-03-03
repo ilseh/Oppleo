@@ -40,11 +40,21 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_DATABASE_URL = 'DATABASE_URL'
     __INI_SQLALCHEMY_TRACK_MODIFICATIONS = 'SQLALCHEMY_TRACK_MODIFICATIONS'
 
-    __INI_ENV = 'ENV'
+    ''' The Enable/Disable EVSE GPIO output '''
+    __INI_EVSE_SWITCH = 'EVSE_SWITCH'
+    ''' The EVSE Status LED blink interpreter via GPIO '''
+    __INI_EVSE_LED_READER = 'EVSE_LED_READER'
+    ''' The Buzzer GPIO output '''
+    __INI_BUZZER = 'BUZZER'
+    ''' The Oppleo status LED GPIO output '''
+    __INI_OPPLEO_LED = 'OPPLEO_LED'
+    ''' The MFRC522 Rfid Reader on SPI via GPIO output '''
+    __INI_RFID = 'MFRC522_RFID_READER'
+
     __INI_HTTP_HOST = 'http_host'
     __INI_HTTP_PORT = 'http_port'
+    __INI_HTTP_TIMEOUT = 'http_timeout'
     __INI_DEBUG = 'DEBUG'
-    __INI_TESTING = 'TESTING'
 
     __INI_PYTHONPATH = 'PYTHONPATH'
     __INI_EXPLAIN_TEMPLATE_LOADING = 'EXPLAIN_TEMPLATE_LOADING'
@@ -70,11 +80,21 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     __LOG_FILE = '/tmp/%s.log' % __PROCESS_NAME
 
-    __ENV = 'Development'
+    ''' The Enable/Disable EVSE GPIO output '''
+    __EVSE_SWITCH_ENABLED = False
+    ''' The EVSE Status LED blink interpreter via GPIO '''
+    __EVSE_LED_READER_ENABLED = False
+    ''' The Buzzer GPIO output '''
+    __BUZZER_ENABLED = False
+    ''' The Oppleo status LED GPIO output '''
+    __OPPLEO_LED_ENABLED = False
+    ''' The MFRC522 Rfid Reader on SPI via GPIO output '''
+    __RFID_ENABLED = False
+
     __HTTP_HOST = '0.0.0.0'
     __HTTP_PORT = 80
+    __HTTP_TIMEOUT = 5
     __DEBUG = True
-    __TESTING = False
 
     __PYTHONPATH = ''
     __EXPLAIN_TEMPLATE_LOADING = False
@@ -160,15 +180,21 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
         self.__SIGNATURE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_SIGNATURE, log=log)
 
-        self.__LOG_FILE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_FILE, log=log)
+        self.__LOG_FILE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_FILE, default=self.__LOG_FILE, log=log)
         self.__DATABASE_URL = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_DATABASE_URL, log=log)
         self.__SQLALCHEMY_TRACK_MODIFICATIONS = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS, log=log)
 
-        self.__ENV = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_ENV, log=log)
+        self.__EVSE_SWITCH_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_EVSE_SWITCH, default=self.__EVSE_SWITCH_ENABLED, log=log)
+        self.__EVSE_LED_READER_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_EVSE_LED_READER, default=self.__EVSE_LED_READER_ENABLED, log=log)
+        self.__BUZZER_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_BUZZER, default=self.__BUZZER_ENABLED, log=log)
+        self.__OPPLEO_LED_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_OPPLEO_LED, default=self.__OPPLEO_LED_ENABLED, log=log)
+        self.__RFID_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_RFID, default=self.__RFID_ENABLED, log=log)
+
         self.__HTTP_HOST = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HTTP_HOST, default=self.__HTTP_HOST, log=log)
         self.__HTTP_PORT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_HTTP_PORT, default=self.__HTTP_PORT, log=log)
+        self.__HTTP_TIMEOUT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_HTTP_TIMEOUT, default=self.__HTTP_TIMEOUT, log=log)
+
         self.__DEBUG = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_DEBUG, log=log)
-        self.__TESTING = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_TESTING, log=log)
 
         self.__PYTHONPATH = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PYTHONPATH, log=log)
         self.__EXPLAIN_TEMPLATE_LOADING = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_EXPLAIN_TEMPLATE_LOADING, log=log)
@@ -217,11 +243,17 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_DATABASE_URL] = self.__DATABASE_URL
             self.__ini_settings[self.__INI_MAIN][self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS] = 'True' if self.__SQLALCHEMY_TRACK_MODIFICATIONS else 'False'
 
-            self.__ini_settings[self.__INI_MAIN][self.__INI_ENV] = self.__ENV
+            self.__ini_settings[self.__INI_MAIN][self.__INI_EVSE_SWITCH] = 'True' if self.__EVSE_SWITCH_ENABLED else 'False'
+            self.__ini_settings[self.__INI_MAIN][self.__INI_EVSE_LED_READER] = 'True' if self.__EVSE_LED_READER_ENABLED else 'False'
+            self.__ini_settings[self.__INI_MAIN][self.__INI_BUZZER] = 'True' if self.__BUZZER_ENABLED else 'False'
+            self.__ini_settings[self.__INI_MAIN][self.__INI_OPPLEO_LED] = 'True' if self.__OPPLEO_LED_ENABLED else 'False'
+            self.__ini_settings[self.__INI_MAIN][self.__INI_RFID] = 'True' if self.__RFID_ENABLED else 'False'
+
             self.__ini_settings[self.__INI_MAIN][self.__INI_HTTP_HOST] = self.__HTTP_HOST
             self.__ini_settings[self.__INI_MAIN][self.__INI_HTTP_PORT] = str(self.__HTTP_PORT)
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HTTP_TIMEOUT] = str(self.__HTTP_TIMEOUT)
+
             self.__ini_settings[self.__INI_MAIN][self.__INI_DEBUG] = 'True' if self.__DEBUG else 'False'
-            self.__ini_settings[self.__INI_MAIN][self.__INI_TESTING] = 'True' if self.__TESTING else 'False'
 
             self.__ini_settings[self.__INI_MAIN][self.__INI_PYTHONPATH] = self.__PYTHONPATH
             self.__ini_settings[self.__INI_MAIN][self.__INI_EXPLAIN_TEMPLATE_LOADING] = 'True' if self.__EXPLAIN_TEMPLATE_LOADING else 'False'
@@ -363,31 +395,87 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         raise NotImplementedError('PROCESS_NAME set in code.')
 
     """
-        LOG_FILE
+        logFile -> LOG_FILE
     """
     @property
-    def LOG_FILE(self):
+    def logFile(self):
         return self.__LOG_FILE
 
-    @LOG_FILE.setter
-    def LOG_FILE(self, value):
+    @logFile.setter
+    def logFile(self, value):
         self.__LOG_FILE = value
         self.__writeConfig__()
         self.restartRequired = True
 
     """
-        ENV
+        evseSwitchEnabled
+        The Enable/Disable EVSE GPIO output
     """
     @property
-    def ENV(self):
-        return self.__ENV
+    def evseSwitchEnabled(self):
+        return self.__EVSE_SWITCH_ENABLED
 
-    @ENV.setter
-    def ENV(self, value):
-        self.__ENV = value
+    @evseSwitchEnabled.setter
+    def evseSwitchEnabled(self, value):
+        self.__EVSE_SWITCH_ENABLED = value
         self.__writeConfig__()
         self.restartRequired = True
 
+    """
+        evseLedReaderEnabled
+        The EVSE Status LED blink interpreter via GPIO
+    """
+    @property
+    def evseLedReaderEnabled(self):
+        return self.__EVSE_LED_READER_ENABLED
+
+    @evseLedReaderEnabled.setter
+    def evseLedReaderEnabled(self, value):
+        self.__EVSE_LED_READER_ENABLED = value
+        self.__writeConfig__()
+        self.restartRequired = True
+
+    """
+        buzzerEnabled
+        The Buzzer GPIO output
+    """
+    @property
+    def buzzerEnabled(self):
+        return self.__BUZZER_ENABLED
+
+    @buzzerEnabled.setter
+    def buzzerEnabled(self, value):
+        self.__BUZZER_ENABLED = value
+        self.__writeConfig__()
+        self.restartRequired = True
+
+    """
+        oppleoLedEnabled
+        The Oppleo status LED GPIO output
+    """
+    @property
+    def oppleoLedEnabled(self):
+        return self.__OPPLEO_LED_ENABLED
+
+    @oppleoLedEnabled.setter
+    def oppleoLedEnabled(self, value):
+        self.__OPPLEO_LED_ENABLED = value
+        self.__writeConfig__()
+        self.restartRequired = True
+
+    """
+        rfidEnabled
+        The MFRC522 Rfid Reader on SPI via GPIO output
+    """
+    @property
+    def rfidEnabled(self):
+        return self.__RFID_ENABLED
+
+    @rfidEnabled.setter
+    def rfidEnabled(self, value):
+        self.__RFID_ENABLED = value
+        self.__writeConfig__()
+        self.restartRequired = True
 
     """
         httpHost -> __HTTP_HOST
@@ -415,6 +503,18 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__writeConfig__()
         self.restartRequired = True
 
+    """
+        httpTimeout -> __HTTP_TIMEOUT
+    """
+    @property
+    def httpTimeout(self):
+        return self.__HTTP_TIMEOUT
+
+    @httpTimeout.setter
+    def httpTimeout(self, value:int):
+        self.__HTTP_TIMEOUT = value
+        self.__writeConfig__()
+
 
     """
         DEBUG
@@ -426,19 +526,6 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     @DEBUG.setter
     def DEBUG(self, value):
         self.__DEBUG = value
-        self.__writeConfig__()
-        self.restartRequired = True
-
-    """
-        TESTING
-    """
-    @property
-    def TESTING(self):
-        return self.__TESTING
-
-    @TESTING.setter
-    def TESTING(self, value):
-        self.__TESTING = value
         self.__writeConfig__()
         self.restartRequired = True
 

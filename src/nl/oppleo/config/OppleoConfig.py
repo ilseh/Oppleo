@@ -35,7 +35,6 @@ class OppleoConfig(object, metaclass=Singleton):
     # INI params
     # PRODUCTION = False
     # DEBUG = True
-    # TESTING = False
 
     # useReloader = False
     # Factor to calculate km/h equivalent of Wh per km
@@ -135,6 +134,8 @@ class OppleoConfig(object, metaclass=Singleton):
 
     wsEmitQueue = None
 
+    energyDevice = None
+    
     """
         Global location to store kWh meter serial number
     """

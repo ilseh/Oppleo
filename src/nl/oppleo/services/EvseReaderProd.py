@@ -101,6 +101,15 @@ class EvseReaderProd:
         self.logger.debug('In loop, doing setup GPIO')
         # set GPIO mode globally (to BCM)
         # GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
+
+        if GPIO is None:
+            self.logger.warn("EVSE LED Reader is enabled but GPIO is not loaded (config error).")
+            cb_result(EvseState.EVSE_STATE_UNKNOWN)
+            while not cb_until():
+                # Loop here untill done
+                oppleoConfig.appSocketIO.sleep(1)
+            return
+
         GPIO.setup(oppleoConfig.pinEvseLed, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         pigpio_pi = pigpio.pi()
@@ -111,14 +120,14 @@ class EvseReaderProd:
         evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
 
         """
-         if the Duty Cycle is changing, assume it is charging
+        if the Duty Cycle is changing, assume it is charging
             detect the speed, is it too high, then it must be an error
-         if the Duty Cycle is constant, check if it is 10  (CONNECTED), or lower (INACTIVE)
+        if the Duty Cycle is constant, check if it is 10  (CONNECTED), or lower (INACTIVE)
     
-         possible required improvements
-         - CONNECTED when 90 or higher?
-         - when initially charging starts the freq can be measured as 22k and dc going from 0-2-0-1-1 (5x) -2-3-4 etc
-           this triggers ERROR state. Place a filter on this.
+        possible required improvements
+        - CONNECTED when 90 or higher?
+        - when initially charging starts the freq can be measured as 22k and dc going from 0-2-0-1-1 (5x) -2-3-4 etc
+        this triggers ERROR state. Place a filter on this.
         """
 
         # Overall direction of the measured pulse. If current measure is equal to previous measure (EvseDirection.NONE)
@@ -213,3 +222,4 @@ class EvseReaderProd:
         evse_reader.cancel()
 
         pigpio_pi.stop()
+

@@ -16,14 +16,6 @@ class GenericUtil(object):
         # env_name = os.getenv('oppleo_ENV')
         # return env_name.lower() == PROD
 
-    # deprecated - use OppleoConfig.chargerName directly
-    @staticmethod
-    def getMeasurementDevice():
-        # Configured in nl.cargarging.config.carcharger.ini file
-        oppleoConfig = OppleoConfig()
-        return oppleoConfig.chargerName
-        #return os.getenv('ENERGY_DEVICE_ID')
-
     @staticmethod
     def importGpio():
         GPIO = None

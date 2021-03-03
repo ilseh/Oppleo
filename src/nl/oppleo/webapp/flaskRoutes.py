@@ -45,7 +45,7 @@ from nl.oppleo.services.EvseReaderProd import EvseState
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.GitUtil import GitUtil
 
-from nl.oppleo.utils.EnergyUtil import modbusConfigOptions
+from nl.oppleo.utils.EnergyModbusReader import modbusConfigOptions
 from nl.oppleo.utils.BackupUtil import BackupUtil
 
 # https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
@@ -1285,16 +1285,14 @@ def update_settings(param=None, value=None):
             return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.modbus_config })
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
 
-
-    # The USB port for the modbus interface
-    if param == 'port_name':
+    # Enable/ disable the modbus interface
+    if param == 'energyDeviceEnabled':
         edm = EnergyDeviceModel.get()
-        if value != edm.port_name:
-            edm.port_name = value
-            edm.save()
-            oppleoConfig.restartRequired = True
-            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
+        edm.device_enabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        edm.save()
+        if oppleoConfig.energyDevice is not None:
+            oppleoConfig.energyDevice.enable( edm.device_enabled )
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
 
     # With an open charge session, there params are not allowed to change
     if param in ['chargerName', 'chargerTariff'] and \
@@ -1378,9 +1376,19 @@ def update_settings(param=None, value=None):
         oppleoConfig.chargerTariff = float(value)
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
+    # Enable/ disable the RFID Reader via SPI on the GPIO
+    if (param == 'rfidEnabled') and isinstance(value, str):
+        oppleoSystemConfig.rfidEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
     # gpioMode
     if (param == 'gpioMode') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.gpioMode = int(value)
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # Enable/ disable the oppleo LED via GPIO
+    if (param == 'oppleoLedEnabled') and isinstance(value, str):
+        oppleoSystemConfig.oppleoLedEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinLedRed
@@ -1398,9 +1406,19 @@ def update_settings(param=None, value=None):
         oppleoConfig.pinLedBlue = int(value)
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
+    # Enable/ disable the oppleo buzzer via GPIO
+    if (param == 'buzzerEnabled') and isinstance(value, str):
+        oppleoSystemConfig.buzzerEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
     # pinBuzzer
     if (param == 'pinBuzzer') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinBuzzer = int(value)
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # Enable/ disable the EVSE Switch via GPIO
+    if (param == 'evseSwitchEnabled') and isinstance(value, str):
+        oppleoSystemConfig.evseSwitchEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pinEvseSwitch
@@ -1408,14 +1426,14 @@ def update_settings(param=None, value=None):
         oppleoConfig.pinEvseSwitch = int(value)
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
+    # Enable/ disable the EVSE Led Reader via GPIO
+    if (param == 'evseLedReaderEnabled') and isinstance(value, str):
+        oppleoSystemConfig.evseLedReaderEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
     # pinEvseLed
     if (param == 'pinEvseLed') and (isinstance(value, int) or RepresentsInt(value)):
         oppleoConfig.pinEvseLed = int(value)
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
-
-    # ENV
-    if (param == 'ENV') and isinstance(value, str) and value in ['Development', 'Production']:
-        oppleoSystemConfig.ENV = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # DATABASE_URL
@@ -1446,7 +1464,7 @@ def update_settings(param=None, value=None):
 
     # logFile
     if (param == 'logFile') and isinstance(value, str) and len(value) > 0:
-        oppleoSystemConfig.LOG_FILE = value
+        oppleoSystemConfig.logFile = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # logFile
@@ -1557,6 +1575,12 @@ def update_settings(param=None, value=None):
     if (param == 'httpPort') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.httpPort = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpPort })
+
+    # httpTimeout 0-999
+    validation="^[1-9][0-9]{0,2}$"
+    if (param == 'httpTimeout') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.httpTimeout = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpTimeout })
 
     # backupEnabled
     if (param == 'backupEnabled'):

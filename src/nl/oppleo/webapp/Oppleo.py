@@ -79,8 +79,6 @@ try:
     from nl.oppleo.daemon.MeasureElectricityUsageThread import MeasureElectricityUsageThread
     from nl.oppleo.daemon.ChargerHandlerThread import ChargerHandlerThread
     from nl.oppleo.daemon.PeakHoursMonitorThread import PeakHoursMonitorThread
-    from nl.oppleo.utils.EnergyUtil import EnergyUtil
-    from nl.oppleo.services.Charger import Charger
     from nl.oppleo.services.LedLighter import LedLighter
     from nl.oppleo.services.Buzzer import Buzzer
     from nl.oppleo.services.Evse import Evse
@@ -229,8 +227,6 @@ try:
         try:
             chThread = ChargerHandlerThread(
                         device=oppleoConfig.chargerName,
-                        energy_util=meuThread.energyDevice.energyUtil, 
-                        charger=Charger(), 
                         ledlighter=LedLighter(), 
                         buzzer=Buzzer(), 
                         evse=Evse(),
@@ -261,17 +257,16 @@ try:
                 wsEmitQueue=wsEmitQueue
                 )
 
-        if GenericUtil.isProd():
-            # Start the Energy Device Monitor
-            if meuThread is not None:
-                meuThread.start()
-            else:
-                oppleoLogger.warning("MeasureElectricityUsageThread not started.")
-            # Start the RFID Monitor
-            if chThread is not None:
-                chThread.start()
-            else:
-                oppleoLogger.warning("ChargerHandlerThread not started.")
+        # Start the Energy Device Monitor
+        if meuThread is not None:
+            meuThread.start()
+        else:
+            oppleoLogger.warning("MeasureElectricityUsageThread not started.")
+        # Start the RFID Monitor
+        if chThread is not None:
+            chThread.start()
+        else:
+            oppleoLogger.warning("ChargerHandlerThread not started.")
 
         # Start the Peak Hours Monitor
         phmThread.start()

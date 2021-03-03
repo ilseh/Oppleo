@@ -4,11 +4,13 @@ import os
 import sys
 import traceback
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.EvseReaderProd import EvseReaderProd, EvseState
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
 LOGGER_PATH = "nl.oppleo.service.EvseReader"
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 logger = logging.getLogger(LOGGER_PATH)
 
@@ -27,17 +29,18 @@ class EvseReaderDev(object):
 
     def loop(self, cb_until, cb_result):
         global oppleoConfig
+
+        cb_result(EvseState.EVSE_STATE_UNKNOWN)
+        self.logger.debug('Fake run Evse Read loop')
         while not cb_until():
-            self.logger.debug('Fake run Evse Read loop')
-            oppleoConfig.appSocketIO.sleep(0.5)
-            cb_result(EvseState.EVSE_STATE_UNKNOWN)
+            oppleoConfig.appSocketIO.sleep(0.8)
 
 
 class EvseReader(object):
 
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
-        if GenericUtil.isProd():
+        if oppleoSystemConfig.evseLedReaderEnabled:
             self.logger.debug("Using production Evse reader")
             self.reader = EvseReaderProd()
         else:
@@ -47,5 +50,5 @@ class EvseReader(object):
     def loop(self, cb_until, cb_result):
         try:
             self.reader.loop(cb_until, cb_result)
-        except Exception as ex:
-            self.logger.exception('Could not start EvseReader loop')
+        except Exception as e:
+            self.logger.error('Could not start EvseReader loop ({})'.format(str(e)))

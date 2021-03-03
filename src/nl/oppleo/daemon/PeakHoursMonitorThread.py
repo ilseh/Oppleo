@@ -23,9 +23,7 @@ class PeakHoursMonitorThread(object):
 
     sleepInterval = 0.25
 
-    def __init__(self, \
-                appSocketIO: appSocketIO \
-                ):
+    def __init__(self, appSocketIO ):
         self.threadLock = threading.Lock()
         self.stop_event = threading.Event()
         self.logger = logging.getLogger('nl.oppleo.daemon.PeakHoursMonitorThread')
@@ -87,8 +85,8 @@ class PeakHoursMonitorThread(object):
                                 namespace='/charge_session',
                                 public=True
                                 )
-                    self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( \
-                                    wasOffPeak, \
+                    self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( 
+                                    wasOffPeak, 
                                     evse.isOffPeak
                                     )
                                 )
