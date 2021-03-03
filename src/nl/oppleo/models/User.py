@@ -41,7 +41,7 @@ class User(Base):
                             .filter(User.username == username) \
                             .first()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, User.__class__.__name__)
+            User.__cleanupDbSession(db_session, User.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
             User.__logger.error("Could not query {} table in database".format(User.__tablename__ ), exc_info=True)

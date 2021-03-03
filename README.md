@@ -228,34 +228,26 @@ ask again next time (default "S"):
 
 ---
 ## Oppleo should now be running. 
-Check http://localhost/ or the IP address of the raspberry.
-
+Check http://localhost/ or the IP address of the raspberry. To login create a user (description below).
 
 ___
 ### After install
 
 * What to do once Oppleo is running:
   * First create a default admin user and change the default password. 
-    * Creating the admin user can be done directly in the database (1) or from the Raspbian command line through a reset utility (2).
-      1. Directly into the database
+    * Creating the admin user can be done directly in the database (2) or from the Raspbian command line through the `createuser.py` utility (1).
+      1. You can use the `createuser.py` utility. This command line utility is interactive and can remove all existing users from the database and create users with Administrative rights (only role Oppleo supports).
+        * Go to the Oppleo directory
+          > `cd /home/pi/Oppleo`
+        * Run the utility
+        > `python3 src/createuser.py`
+
+      2. Directly into the database
         * Start a postgress command line
           > `psql -U <dbuser> -d <dbname> -h <ipaddress>`
         * Enter the user into the `users` table. You can change the username if desired.
           > `insert into users (username, password, authenticated) values ('admin', 'pbkdf2:sha256:150000$mclLAqwB$2e8744c20410984c9a448b4bb2ceb9b8f0d913cfce9dcee24e775f138b91ab54', false);`
-          This is the hash for the default `admin` password. You can create a different hash, but it is easier changing the password through the web front.
-      2. You can use the reset_users utility. This utility will remove all users from the database and create one single user with username `admin` and password `admin`.
-        * Go to the Oppleo directory
-          > `cd /home/pi/Oppleo`
-        * Launch the python virtual environment
-          > `source venv/bin/activate`
-        * Run the utility
-        > `python3 src/reset_users.py`
-        * Exit from the python virtual environmet
-        > `deactivate`
-    * After creating the default user, change the password!
-      * open the web front using a browser to `http://localhost/` or the ip address of your raspberry.
-      * login (Account - Aanmelden) and use `admin` as username (or the alternate you entered) and `admin` as password.
-      * change the password Account - Beheer - Wijzig wachtwoord)
+          This is the hash for the default `admin` password. You can create a the hash for any password using the `python3 src/createpw.py` utility.
 
 
   * go to settings in the webfront and change them. Not all settings are changeable in the web front, for some you'll have to update the database. Tables:
