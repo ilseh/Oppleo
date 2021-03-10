@@ -18,14 +18,11 @@ from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReader import EvseReader
 from nl.oppleo.services.EvseReaderProd import EvseState
 from nl.oppleo.services.RfidReader import RfidReader
-from nl.oppleo.utils.GenericUtil import GenericUtil
+from nl.oppleo.utils.ModulePresence import ModulePresence
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
 oppleoConfig = OppleoConfig()
-
-GenericUtil.importGpio()
-GenericUtil.importMfrc522()
 
 
 SECONDS_IN_HOUR = 60 * 60
@@ -82,6 +79,8 @@ class ChargerHandlerThread(object):
         #   Therefore use standard threads
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
         self.rfid_reader_thread.start()
+        # TODO
+#        self.rfidReaderLoop()
 
         self.logger.debug('Done starting rfid reader and evse reader backgroubd tasks')
 

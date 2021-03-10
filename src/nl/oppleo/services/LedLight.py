@@ -5,38 +5,45 @@ import logging
 from nl.oppleo.services.LedLightDev import LedLightDev
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
-from nl.oppleo.utils.GenericUtil import GenericUtil
+from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.services.LedLightPulseProd import LedLightPulseProd
+from nl.oppleo.services.LedLightProd import LedLightProd
 
 oppleoSystemConfig = OppleoSystemConfig()
-try:
-    from nl.oppleo.services.LedLightProd import LedLightProd
-except NameError:
-    print('Assuming dev env')
 
 
 class LedLight(object):
+    __logger = None
+    __services = None
+    __combinedColorName = "Unknown"
 
-    def __init__(self, *colors, intensity, pulse=False, services=[]):
-        self.logger = logging.getLogger('nl.oppleo.services.LedLight')
-        self.services = services
+    def __init__(self, *pinDefinitions, combinedColorName, intensity, pulse=False, services=[]):
+        self.__logger = logging.getLogger('nl.oppleo.services.LedLight')
+        self.__services = services
+        self.__combinedColorName = combinedColorName
 
-        for color in colors:
+        for pinDefinition in pinDefinitions:
             if oppleoSystemConfig.oppleoLedEnabled:
-                self.services.append(LedLightPulseProd(color, intensity=intensity) if pulse else LedLightProd(color, intensity=intensity))
+                self.__services.append(
+                    LedLightPulseProd(pinDefinition=pinDefinition, intensity=intensity) if pulse else 
+                        LedLightProd(pinDefinition=pinDefinition, intensity=intensity)
+                    )
             else:
-                self.services.append(LedLightDev(color, intensity=intensity))
+                self.__services.append(LedLightDev(pinDefinition, intensity=intensity))
 
-        self.logger.debug('Initialize with %d ledlights %s' % (len(self.services), "to pulse" if pulse else "no pulse"))
+        self.__logger.debug('LedLight.init() - Initialize with %d ledlights %s' % (len(self.__services), "to pulse" if pulse else "no pulse"))
 
     def on(self):
-        for service in self.services:
+        self.__logger.debug("LedLight.on() {}".format(self.__combinedColorName))
+        for service in self.__services:
             service.on()
 
     def off(self):
-        for service in self.services:
+        self.__logger.debug("LedLight.off() {}".format(self.__combinedColorName))
+        for service in self.__services:
             service.off()
 
     def cleanup(self):
-        for service in self.services:
+        self.__logger.debug("LedLight.cleanup() {}".format(self.__combinedColorName))
+        for service in self.__services:
             service.cleanup()

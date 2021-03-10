@@ -1,51 +1,58 @@
 import logging
 import threading
 
-from nl.oppleo.utils.GenericUtil import GenericUtil
-
-GPIO = GenericUtil.importGpio()
+from nl.oppleo.utils.ModulePresence import modulePresence
+from nl.oppleo.services.LedPinDefinition import LedPinDefinition
 
 
 class LedLightProdHardware(object):
+    __logger = None
+    __ = None
+    __pinDefinition:LedPinDefinition = 0
 
-    def __init__(self, color):
-        self.logger = logging.getLogger('nl.oppleo.services.LedLightProdHardware')
+    def __init__(self, pinDefinition:LedPinDefinition):
+        self.__logger = logging.getLogger('nl.oppleo.services.LedLightProdHardware')
         # TODO: check if this lock mechanism is still necessary.
-        self.threadLock = threading.Lock()
-        self.color = color
-
-    def color_desc(self):
-        return {13: 'red', 12: 'green', 16: 'blue'}.get(self.color)
+        self.__ = threading.Lock()
+        self.__pinDefinition = pinDefinition
+        self.__logger.debug("LedLightProdHardware.init() pin:{} color:{}".format(str(pinDefinition.pin), pinDefinition.color))
+        
 
     def init_gpio_pwm(self):
+        self.__logger.debug("LedLightProdHardware.init_gpio_pwm() for pin:{} color:{}".format(str(self.__pinDefinition.pin), self.__pinDefinition.color))
 
-        with self.threadLock:
+        with self.__:
 
             pwm = None
-            if GPIO is None:
-                self.logger.warn("Oppleo LED is enabled but GPIO is not loaded (config error).")
+
+            if not modulePresence.gpioAvailable():
+                self.__logger.warn("init_gpio_pwm() - Oppleo LED is enabled but GPIO is not loaded (config error).")
                 return None
 
+            GPIO = modulePresence.GPIO
             for i in range(2):
                 try:
-                    GPIO.setup(self.color, GPIO.OUT)
-                    pwm = GPIO.PWM(self.color, 100)
+                    GPIO.setup(self.__pinDefinition.pin, GPIO.OUT)
+                    pwm = GPIO.PWM(self.__pinDefinition.pin, 100)
                 except Exception as e:
-                    self.logger.warning("Could not initialize GPIO %s, retrying" % e)
-                    try:
-                        GPIO.cleanup()
-                    except Exception as e2:
-                        pass # tried to clean
-                if pwm:
-                    self.logger.debug('pwm initialized')
+                    self.__logger.warning("init_gpio_pwm() - Could not initialize GPIO {}, retrying".format(str(e)))
+                if pwm is not None:
+                    self.__logger.debug('init_gpio_pwm() - pwm initialized')
                     break
 
             return pwm
 
 
     def cleanup(self):
+        self.__logger.debug("LedLightProdHardware.cleanup() for pin:{} color:{}".format(str(self.__pinDefinition.pin), self.__pinDefinition.color))
 
-        with self.threadLock:
-            # Cleanup resets all ports, also for other still running processes, so don't do that here!
-            # GPIO.cleanup()
-            pass
+        if not modulePresence.gpioAvailable():
+            self.__logger.warn("cleanup() - No GPIO, nothing to cleanup.")
+            return None
+
+        # Plain Cleanup resets all ports, also for other still running processes, so don't do that!
+        # GPIO.cleanup()
+
+        # TODO
+        # this cleanup screws up all other settings for this pin
+        modulePresence.GPIO.cleanup(self.__pinDefinition.pin)

@@ -8,6 +8,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+
+
 """
  First init the Logger, then load the config
 """
@@ -27,6 +30,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __logger = None
     __ini_settings = None
     __restartRequired = False
+
+    """ Libraries installed """
+    __mfrc522 = False
+    __rpigpio = False
 
     """
         Ini file parameter keys
@@ -148,6 +155,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
         if iniFileNotFound:
             self.__logger.debug('System configuration file not found! (Creating with defaults)')
+
+
 
 
     """

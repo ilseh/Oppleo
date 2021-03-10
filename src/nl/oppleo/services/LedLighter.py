@@ -3,6 +3,7 @@ import time
 import logging
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.services.LedPinDefinition import LedPinDefinition
 from nl.oppleo.utils.GenericUtil import GenericUtil
 
 oppleoConfig = OppleoConfig()
@@ -21,14 +22,32 @@ class LedLighter(object):
     def __init__(self):
         global oppleoConfig
 
-        # self.ledlightAvailable = LedLight(LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
-        self.ledlightAvailable = LedLight(oppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
-        # self.ledlightReady = LedLight(LedLight.LED_RED, LedLight.LED_GREEN, intensity=LIGHT_INTENSITY_LOW)
-        self.ledlightReady = LedLight(oppleoConfig.pinLedRed, oppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
-        # self.ledlightCharging = LedLight(LedLight.LED_BLUE, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
-        self.ledlightCharging = LedLight(oppleoConfig.pinLedBlue, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
-        # self.ledlightError = LedLight(LedLight.LED_RED, intensity=LIGHT_INTENSITY_HIGH)
-        self.ledlightError = LedLight(oppleoConfig.pinLedRed, intensity=LIGHT_INTENSITY_HIGH)
+#        self.ledlightAvailable = LedLight(oppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
+        self.ledlightAvailable = LedLight(
+                                    LedPinDefinition(pin=oppleoConfig.pinLedGreen, color="Green"),
+                                    combinedColorName="Green",
+                                    intensity=LIGHT_INTENSITY_LOW
+                                    )
+#        self.ledlightReady = LedLight(oppleoConfig.pinLedRed, oppleoConfig.pinLedGreen, intensity=LIGHT_INTENSITY_LOW)
+        self.ledlightReady = LedLight(
+                                LedPinDefinition(pin=oppleoConfig.pinLedRed, color="Red"),
+                                LedPinDefinition(pin=oppleoConfig.pinLedGreen, color="Green"),
+                                combinedColorName="Yellow",
+                                intensity=LIGHT_INTENSITY_LOW
+                                )
+#        self.ledlightCharging = LedLight(oppleoConfig.pinLedBlue, pulse=True, intensity=LIGHT_INTENSITY_HIGH)
+        self.ledlightCharging = LedLight(
+                                    LedPinDefinition(pin=oppleoConfig.pinLedBlue, color="Blue"),
+                                    combinedColorName="Blue",
+                                    pulse=True, 
+                                    intensity=LIGHT_INTENSITY_HIGH
+                                    )
+#        self.ledlightError = LedLight(oppleoConfig.pinLedRed, intensity=LIGHT_INTENSITY_HIGH)
+        self.ledlightError = LedLight(
+                                LedPinDefinition(pin=oppleoConfig.pinLedRed, color="Red"),
+                                combinedColorName="Red",
+                                intensity=LIGHT_INTENSITY_HIGH
+                                )
 
         # self.ledlight_configs = [self.ledlightAvailable, self.ledlightReady, self.ledlightCharging, self.ledlightError]
 
@@ -57,11 +76,11 @@ class LedLighter(object):
 
     def switch_to_light(self, light):
         self.logger.debug("LedLighter.switch_to_light()")
-        self.lock.acquire()
-        self.save_state()
-        self.current_light = light
-        self.current_light.on()
-        self.lock.release()
+        with self.lock:
+            self.save_state()
+            self.current_light = light
+            self.current_light.on()
+
 
     def save_state(self):
         self.logger.debug("save state, start comparing")
@@ -98,15 +117,15 @@ class LedLighter(object):
 
     def temp_switch_on(self, light, duration):
         self.logger.debug("LedLighter.temp_switch_on()")
-        self.lock.acquire()
-        self.save_state()
-        self.current_light = light
-        self.current_light.on()
-        time.sleep(duration)
-        self.current_light.off()
-        self.current_light = self.previous_light
-        self.current_light.on()
-        self.lock.release()
+        with self.lock:
+            self.save_state()
+            self.current_light = light
+            self.current_light.on()
+            time.sleep(duration)
+            self.current_light.off()
+            self.current_light = self.previous_light
+            self.current_light.on()
+
 
     def stop(self):
         self.logger.debug("LedLighter.stop()")

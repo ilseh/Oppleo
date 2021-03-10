@@ -18,11 +18,8 @@ from nl.oppleo.services.Evse import Evse
 from nl.oppleo.services.EvseReader import EvseReader
 from nl.oppleo.services.EvseReaderProd import EvseState
 from nl.oppleo.services.RfidReader import RfidReader
-from nl.oppleo.utils.GenericUtil import GenericUtil
+from nl.oppleo.utils.ModulePresence import ModulePresence
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
-
-GenericUtil.importGpio()
-GenericUtil.importMfrc522()
 
 
 PROCESS_NAME = 'rfid_reader'

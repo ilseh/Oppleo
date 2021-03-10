@@ -4,11 +4,11 @@ import logging
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.utils.GenericUtil import GenericUtil
+from nl.oppleo.utils.ModulePresence import ModulePresence
 
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
-GPIO = GenericUtil.importGpio()
+modulePresence = ModulePresence()
 
 
 class BuzzerDev(object):
@@ -34,8 +34,13 @@ class BuzzerProd(object):
     def buzz(self, buzz_duration_s, iterations=1):
         global oppleoConfig
 
-        self.logger.debug("Buzzing. Iteration %d, duration %.2f" % (iterations, buzz_duration_s))
+        self.logger.debug("BuzzerProd - Buzzing. Iteration %d, duration %.2f" % (iterations, buzz_duration_s))
 
+        if not modulePresence.gpioAvailable():
+            self.logger.debug("BuzzerProd - Buzz - no GPIO module")
+            return
+
+        GPIO = modulePresence.GPIO
         GPIO.setup(oppleoConfig.pinBuzzer, GPIO.OUT, initial=GPIO.LOW)
 
         for i in range(iterations):
@@ -47,8 +52,12 @@ class BuzzerProd(object):
     def cleanup(self):
         global oppleoConfig
 
+        if not modulePresence.gpioAvailable():
+            self.logger.debug("BuzzerProd - cleanup - no GPIO module")
+            return
+        GPIO = modulePresence.GPIO
         GPIO.output(oppleoConfig.pinBuzzer, GPIO.LOW)  # Turn off
-        self.logger.debug("GPIO cleanup done for %s" % self.color_desc())
+        self.logger.debug("GPIO cleanup done for {}")
 
 
     def buzz_other_thread(self, buzz_duration_s, iterations=1):

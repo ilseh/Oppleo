@@ -64,6 +64,19 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     * Exit the psql tool using
       > `\q`
     * For the next steps yo need to have an empty database ready, with a user with the proper read-write rights to that database, and know the password. Oppleo will create the tables and required content, not the database itself.
+
+  * Install __PIGPIO__ for interfacing with the GPIO (I/O pins) devices. This is required to attache hardware such as the LED, EVSE Switch, Buzzer etc.
+    * Install PIGPIO
+	    > `cd /home/pi`
+      > `wget https://github.com/joan2937/pigpio/archive/master.zip`
+      > `unzip master.zip`
+      > `cd pigpio-master`
+      > `make`
+      > `sudo make install`
+    * The initial part of the make, the compilation of pigpio.c, can take >100 seconds on early model Pis. Be patient. The overall install takes just over 3 minutes.
+    * If the Python part of the install fails it may be because you need the setup tools.
+      > `sudo apt install python-setuptools python3-setuptools`
+    * More details on pigpio install on the [abyz.me.uk](http://abyz.me.uk/rpi/pigpio/) website.
   * Install __spidev__ for interfacing with SPI devices. This is required to interface with the RFID reader which uses the SPI bus.
     * Install the C library
       > `cd /home/pi`  
@@ -298,14 +311,26 @@ You can use [Postgres.app](https://postgresapp.com/)
 Create the database using
   > `/usr/local/opt/postgres/bin/createdb <dbname>`
 
+### threads
+The greenlets or eventlets are light threads withing a thread. There is no real concurrency.
 
 ### pkg-resources==0.0.0
 Running `pip freeze > requirements_raspberry.txt` can add a line `pkg-resources==0.0.0` which in term can cause errors installing the dependencies. This line can be removed from the requirements files.
   > `pip freeze | grep -v "pkg-resources" > requirements_raspberry.txt"`
 excludes pkg-resources from the file when generating it.
 
+### GPIO
+The raspberry GPIO has internal pull-up and pull-down resistors. They need to be enabled though if required. The EVSE status led is pulled up by the GPIO to allow proper high voltages on the pin. The EVSE only pulls it down when switching.
+  `GPIO.setup(port_or_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)`
+[More info](https://raspi.tv/2013/rpi-gpio-basics-6-using-inputs-and-outputs-together-with-rpi-gpio-pull-ups-and-pull-downs)
 
+### PWM
+PWM read using pigpio
+[examples](http://abyz.me.uk/rpi/pigpio/examples.html)
 
-
-
-
+# Raspberry revision
+To check what revision pi you have use `cat /proc/cpuinfo` or in Pyhton `GPIO.RPI_REVISION`. 0 = Compute Module, 1 = Rev 1, 2 = Rev 2, 3 = Model B+/A+
+import RPi.GPIO as GPIO loads the RPi.GPIO library so we can use it
+GPIO.VERSION this returns the version number of RPi.GPIO
+[raspi.tv](https://raspi.tv/2013/rpi-gpio-basics-1-how-to-check-what-rpi-gpio-version-you-have)
+[raspi.tv](https://raspi.tv/2013/rpi-gpio-basics-2-how-to-check-what-pi-board-revision-you-have)

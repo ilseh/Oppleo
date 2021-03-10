@@ -1,15 +1,14 @@
 import logging
 import threading
 
-from nl.oppleo.utils.GenericUtil import GenericUtil
+from nl.oppleo.utils.ModulePresence import ModulePresence
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
-
-GPIO = GenericUtil.importGpio()
+modulePresence = ModulePresence()
 
 class Singleton(type):
     _instances = {}
@@ -19,60 +18,83 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-
 class EvseProd(object):
     logger = logging.getLogger('nl.oppleo.services.EvseProd')
     threadLock = None
-    try:
-        # GPIO.setmode(GPIO.BCM) # Use physical pin numbering
-        GPIO.setup(oppleoConfig.pinEvseSwitch, GPIO.OUT, initial=GPIO.HIGH)
-    except Exception as ex:
-        logger.debug("Could not setmode GPIO, assuming dev env")
 
     def __init__(self):
+        global oppleoConfig, modulePresence
+
         self.threadLock = threading.Lock()
+        if not modulePresence.gpioAvailable():
+            self.logger.debug("EvseProd.__init__() - GPIO not loaded")
+        else:
+            GPIO = modulePresence.GPIO
+            try:
+                # GPIO.setmode(GPIO.BCM) # Use physical pin numbering
+                GPIO.setup(oppleoConfig.pinEvseSwitch, GPIO.OUT, initial=GPIO.HIGH)
+            except Exception as e:
+                self.logger.debug("EvseProd.__init__() - Could not set pin {} to {} with initial {}".format(
+                    oppleoConfig.pinEvseSwitch, GPIO.OUT, GPIO.HIGH
+                ))
 
 
     def switch_on(self):
-        global oppleoConfig
+        global oppleoConfig, modulePresence
+
+        if not modulePresence.gpioAvailable():
+            self.logger.debug("EvseProd.switch_on() - GPIO not loaded")
+            return
 
         with self.threadLock:
-            self.logger.debug("Product evse on")
+
+            GPIO = modulePresence.GPIO
+            self.logger.debug("EvseProd.switch_on() - on")
             # Setting the output to LOW enables the charging. Keep low.
             try:
                 GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.LOW)
             except Exception as e:
-                self.logger.debug("Could not setmode GPIO, assuming dev env")
-
-
+                self.logger.debug("EvseProd.switch_on() - Could not set pin {} output to {}".format(
+                    oppleoConfig.pinEvseSwitch, GPIO.LOW
+                ))
 
 
 
     def switch_off(self):
-        global oppleoConfig
+        global oppleoConfig, modulePresence
+
+        if not modulePresence.gpioAvailable():
+            self.logger.debug("EvseProd.switch_off() - GPIO not loaded")
+            return
 
         with self.threadLock:
-            self.logger.debug("Product Evse off")
+            GPIO = modulePresence.GPIO
+            self.logger.debug("EvseProd.switch_off() - off")
             try:
                 # Setting the output to HIGH disables the charging. Keep high.
                 GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.HIGH)
             except Exception as e:
-                self.logger.debug("Could not set GPIO, assuming dev env")
+                self.logger.debug("EvseProd.switch_off() - Could not set pin {} output to {}".format(
+                    oppleoConfig.pinEvseSwitch, GPIO.HIGH
+                ))
+
 
     # Read the state
-    def is_enabled(self):
-        global oppleoConfig, GPIO
+    def is_enabled(self) -> bool:
+        global oppleoConfig, modulePresence
+
+        if not modulePresence.gpioAvailable():
+            self.logger.debug("EvseProd.is_enabled() - GPIO not loaded")
+            return False
 
         with self.threadLock:
-            if GPIO is None:
-                # Assume dev env
-                self.logger.debug("Evse.is_enabled() - false as GPIO is None (on dev)")
-                return False
+            GPIO = modulePresence.GPIO
+            self.logger.debug("EvseProd.is_enabled()")
 
             # Note: LOW is ON, and HIGH is OFF
             state = GPIO.input(oppleoConfig.pinEvseSwitch)
-            self.logger.debug("Product Evse read state {} (return {})".format(state, (not state)))
-            return not GPIO.input(oppleoConfig.pinEvseSwitch)
+            self.logger.debug("EvseProd.is_enabled() - Evse read state {} (return {})".format(state, (not state)))
+            return not state
 
 
 class EvseDev(object):

@@ -53,7 +53,7 @@ class RfidReader(object):
     simpleMFRC522RfidReader = None
 
     def __init__(self):
-        self.logger = logging.getLogger(LOGGER_PATH)
+        self.logger = logging.getLogger("nl.oppleo.service.RfidReader")
         if oppleoSystemConfig.rfidEnabled:
             self.logger.debug("Enabling MFRC522 RFID reader")
             try:

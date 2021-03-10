@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = None
@@ -25,16 +26,19 @@ try:
     from nl.oppleo.services.PushMessage import PushMessage
 
     from nl.oppleo.utils.GenericUtil import GenericUtil
-    try:
-        GPIO = GenericUtil.importGpio()
-        if oppleoConfig.gpioMode == "BOARD":
-            oppleoLogger.info("Setting GPIO MODE to BOARD")
-            GPIO.setmode(GPIO.BOARD) if oppleoConfig.gpioMode == "BOARD" else GPIO.setmode(GPIO.BCM)
-        else:
-            oppleoLogger.info("Setting GPIO MODE to BCM")
-            GPIO.setmode(GPIO.BCM)
-    except Exception as ex:
-        oppleoLogger.debug("Could not setmode of GPIO, assuming dev env")
+    if modulePresence.gpioAvailable():
+        GPIO = modulePresence.GPIO
+        try:
+            if oppleoConfig.gpioMode == "BOARD":
+                oppleoLogger.info("Setting GPIO MODE to BOARD")
+                GPIO.setmode(GPIO.BOARD)
+            else:
+                oppleoLogger.info("Setting GPIO MODE to BCM")
+                GPIO.setmode(GPIO.BCM)
+            # No warnings
+            GPIO.setwarnings(False)
+        except Exception as e:
+            oppleoLogger.debug("Could not setmode of GPIO, assuming dev env")
 
     from flask import Flask, render_template, jsonify, redirect, request, url_for, session, current_app
 

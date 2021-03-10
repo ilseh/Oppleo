@@ -7,19 +7,12 @@ import traceback
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.EvseReaderProd import EvseReaderProd, EvseState
-from nl.oppleo.utils.GenericUtil import GenericUtil
+from nl.oppleo.utils.ModulePresence import modulePresence
 
 LOGGER_PATH = "nl.oppleo.service.EvseReader"
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 logger = logging.getLogger(LOGGER_PATH)
-
-try:
-    from mfrc522 import SimpleMFRC522
-except RuntimeError:
-    logger.debug('Assuming dev env')
-except ModuleNotFoundError:
-    logger.debug('Assuming dev env')
 
 
 

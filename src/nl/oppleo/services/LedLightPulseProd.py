@@ -3,28 +3,32 @@ import threading
 import time
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.services.LedPinDefinition import LedPinDefinition
 from nl.oppleo.services.LedLightProdHardware import LedLightProdHardware
-from nl.oppleo.utils.GenericUtil import GenericUtil
 
 oppleoConfig = OppleoConfig()
-GenericUtil.importGpio()
 
 # Interval in ms to update led light
 FREQ_MS_TO_UPDATE_LED = 10
 
 class LedLightPulseProd(object):
+    __logger = None
+    __thread_for_pulse = None
+    __pinDefinition:LedPinDefinition = 0
+    colorName = "Unknown"
+    pwm = None
+    intensity = 0
+    hardware = None
 
-    def __init__(self, color, intensity, pwm=None):
-        self.thread_for_pulse = threading.Thread(target=self._pulse, name="LedPulseThread")
-        self.color = color
-        self.logger = logging.getLogger('nl.oppleo.services.LedLightPulseProd')
-        self.logger.setLevel(logging.WARNING)
+    def __init__(self, pinDefinition:LedPinDefinition, intensity:int=0, pwm=None):
+        self.__logger = logging.getLogger('nl.oppleo.services.LedLightPulseProd')
+        self.__thread_for_pulse = threading.Thread(target=self._pulse, name="LedPulseThread")
+        self.__pinDefinition = pinDefinition
         self.pwm = pwm
         # For pulse intensity is not used yet.
         self.intensity = intensity
-        self.hardware = LedLightProdHardware(self.color)
+        self.hardware = LedLightProdHardware(pinDefinition=pinDefinition)
 
-    # TODO: move to a more generic utility class?
     def millis(self):
         return int(round(time.time() * 1000))
 
@@ -37,7 +41,7 @@ class LedLightPulseProd(object):
         self.pwm = self.hardware.init_gpio_pwm()
         try:
             self.pwm.start(0)
-            self.logger.debug('Starting led pulse')
+            self.__logger.debug('LedLightPulseProd._pulse() - Starting led pulse')
             t = threading.currentThread()
             while getattr(t, "do_run", True):
                 if self.millis() > (pulse_led_millis + FREQ_MS_TO_UPDATE_LED):
@@ -49,37 +53,38 @@ class LedLightPulseProd(object):
                     else:
                         pulse_led_value -= 1
                     self.pwm.ChangeDutyCycle(pulse_led_value)
-                    self.logger.debug("pulseLedValue = {}".format(str(pulse_led_value)))
+                    self.__logger.debug("LedLightPulseProd._pulse() - pulseLedValue = {}".format(str(pulse_led_value)))
                     pulse_led_millis = self.millis()
                 # Short sleep to fix issue rfid reader was not working anymore. Sleep to free some resource?
                 time.sleep(.001)
 
-        except Exception as ex:
-            self.logger.error('Exception pulsing %s' % ex)
+        except Exception as e:
+            self.__logger.error('LedLightPulseProd._pulse() - Exception pulsing {}'.format(str(e)))
 
         finally:
             self._pwm_off()
 
     def _pwm_off(self):
-        self.logger.debug('Stopping led light %s' % self.hardware.color_desc())
+        self.__logger.debug('LedLightPulseProd._pwm_off() - Stopping led light {} (intensity {})'.format(self.__pinDefinition.color))
         try:
             self.pwm.stop()
-        except Exception as ex:
-            self.logger.debug("Could not stop pwm, assume not running %s" % ex)
+        except Exception as e:
+            self.__logger.debug("LedLightPulseProd._pwm_off() - Could not stop pwm, assume not running {}".format(str(e)))
 
     def cleanup(self):
         self.hardware.cleanup()
 
     def on(self):
-        self.thread_for_pulse = threading.Thread(target=self._pulse, name="LedPulseThread")
-        self.logger.debug('Attempt to start pulse in thread')
+        self.__thread_for_pulse = threading.Thread(target=self._pulse, name="LedPulseThread")
+        self.__logger.debug('LedLightPulseProd.on() - Attempt to start pulse in thread')
         try:
-            self.thread_for_pulse.start()
-        except Exception as ex:
-            self.logger.warning("Could not start pulsing in thread: %s" % ex)
-        self.logger.debug('Pulse started in thread')
+            self.__thread_for_pulse.start()
+        except Exception as e:
+            self.__logger.warning("LedLightPulseProd.on() - Could not start pulsing in thread: {}".format(str(e)))
+        self.__logger.debug('LedLightPulseProd.on() - Pulse started in thread')
 
     def off(self):
-        self.thread_for_pulse.do_run = False
-        self.thread_for_pulse.join()
-        self.logger.debug('Pulse %s stopped' % self.hardware.color_desc())
+        self.__logger.debug("LedLightPulseProd.off()")
+        self.__thread_for_pulse.do_run = False
+        self.__thread_for_pulse.join()
+        self.__logger.debug("LedLightPulseProd.off() - Pulse {} stopped".format(self.__pinDefinition.color))
