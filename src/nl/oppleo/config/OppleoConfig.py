@@ -146,6 +146,7 @@ class OppleoConfig(object, metaclass=Singleton):
         self.___logger.debug('Initializing Oppleo...')
         self.__chargerConfigModel = ChargerConfigModel.get_config()
 
+
     """
         chargerName --> charger_name
     """

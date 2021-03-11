@@ -47,11 +47,10 @@ def init_db():
         Base.metadata.create_all(bind=engine)
         oppleoSystemConfig.dbAvailable = True
     except:
-        logger.error('COULD NOT CONNECT TO DATABASE!!! Exiting...')
-        print('COULD NOT CONNECT TO DATABASE!!! Exiting...')
+        logger.error('COULD NOT CONNECT TO DATABASE!!!')
+        print('COULD NOT CONNECT TO DATABASE!!!')
         raise DbException('Database connection failed')
-        # sys.exit() triggers Exception, os._exit() immediately exists
-        #os._exit(1)
+
 
 init_db()
 

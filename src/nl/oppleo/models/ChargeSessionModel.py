@@ -602,14 +602,14 @@ class ChargeSessionModel(Base):
     """
     @staticmethod
     def __cleanupDbSession(db_session=None, cn=None):
-        logger = logging.getLogger('nl.oppleo.models.Base cleanupSession()')
-        logger.debug("Trying to cleanup database session, called from {}".format(cn))
+        logger = logging.getLogger('nl.oppleo.models.ChargeSessionModel')
+        logger.debug(".__cleanupDbSession() - Trying to cleanup database session, called from {}".format(cn))
         try:
             db_session.remove()
             if db_session.is_active:
                 db_session.rollback()
         except Exception as e:
-            logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
+            logger.debug(".__cleanupDbSession() - Exception trying to cleanup database session from {}".format(cn), exc_info=True)
 
 
 class ChargeSessionSchema(Schema):

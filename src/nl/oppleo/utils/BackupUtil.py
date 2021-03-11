@@ -150,6 +150,7 @@ class BackupUtil(object, metaclass=Singleton):
             return False
         self.singleBackupThread = threading.Thread(target=self.createBackup, name='SingleBackupThread')
         self.singleBackupThread.start()
+
         return True
 
 
@@ -197,9 +198,7 @@ class BackupUtil(object, metaclass=Singleton):
 
             remoteBackup = None
             if localBackup['success']:
-                wsData.update({'localBackupSuccess': True,
-                            'filename': localBackup['filename']
-                            })
+                wsData.update({'localBackupSuccess': True, 'filename': localBackup['filename']})
                 if self.oppleoConfig.osBackupEnabled:
                     self.logger.debug('createBackup() - offsite backup enabled')
                     # Create offsite backup

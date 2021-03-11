@@ -10,6 +10,10 @@ from sqlalchemy.exc import InvalidRequestError
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
+""" 
+    The charger config model refers to a single charger config, represented by a single database row.
+"""
+
 class ChargerConfigModel(Base):
     logger = logging.getLogger('nl.oppleo.models.ChargerConfigModel')
     __tablename__ = 'charger_config'
@@ -75,28 +79,34 @@ class ChargerConfigModel(Base):
 
 
     def __init__(self):
-        pass
-
+        self.logger.debug('.init()')
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
     def init_on_load(self):
+        self.logger.debug('.init_on_load()')
         self.__init__()
 
-    def set(self, data):
+    def set(self, data:dict):
+        self.logger.debug('.set()')
         for key in data:
+            self.logger.debug('.set() key:{} value:{}'.format(key, data.get(key)))
             setattr(self, key, data.get(key))
         self.modified_at = datetime.datetime.now()
+        self.logger.debug('.set() modified_at:{}'.format(self.modified_at))
 
     """
         Set a single variable
     """
     def setAndSave(self, key, value, allowed=None):
+        self.logger.debug('.setAndSave() key:{} value:{} range:{}'.format(key, value, allowed))
         curVal = getattr(self, key)
         if not isinstance(value, type(curVal)):
+            self.logger.debug(".setAndSave() {} TypeError: {} must be type {}".format(key, type(curVal)))
             raise TypeError("{} must be type {}".format(key, type(curVal)))
         if allowed is not None and value not in allowed:
-            raise ValueError("{} value {} not within range {}".format(key, value, allowed))
+            self.logger.debug(".setAndSave() {} ValueError: value {} of key {} not within range {}".format(value, key, allowed))
+            raise ValueError("{} value {} of key {} not within range {}".format(value, key, allowed))
         setattr(self, key, value)
         if curVal != getattr(self, key):
             # Value changed
@@ -104,15 +114,18 @@ class ChargerConfigModel(Base):
             self.save()
 
     def save(self):
+        self.logger.debug(".save()")
         db_session = DbSession()
         try:
-            db_session.add(self)
+            # No need to 'add', committing this class
+#            db_session.add(self)
             db_session.commit()
         except InvalidRequestError as e:
+            self.logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not commit to {} table in database".format(self.__tablename__ ))
 
 
@@ -165,14 +178,15 @@ class ChargerConfigModel(Base):
     """
     @staticmethod
     def __cleanupDbSession(db_session=None, cn=None):
-        logger = logging.getLogger('nl.oppleo.models.Base cleanupSession()')
-        logger.debug("Trying to cleanup database session, called from {}".format(cn))
+        logger = logging.getLogger('nl.oppleo.models.ChargerConfigModel')
+        logger.debug(".__cleanupDbSession() - Trying to cleanup database session, called from {}".format(cn))
         try:
             db_session.remove()
             if db_session.is_active:
                 db_session.rollback()
         except Exception as e:
-            logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
+            logger.debug(".__cleanupDbSession() - Exception trying to cleanup database session from {}".format(cn), exc_info=True)
+
 
 
 class ChargerConfigSchema(Schema):

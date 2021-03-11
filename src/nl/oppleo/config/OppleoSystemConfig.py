@@ -219,7 +219,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.load_completed = True
         
         lt = 'System configuration loaded'
-        self.__logger.debug(lt) if self.__logger is not None else log.append({ 'type': 'error', 'entry': lt })
+        self.__logger.debug(lt) if self.__logger is not None else log.append({ 'type': 'debug', 'entry': lt })
 
         if log is not None and len(log) > 0:
             return log

@@ -74,7 +74,13 @@ class WebSocketQueueReaderBackgroundTask(object):
                     else:
                         # Emit to authenticated clients
                         # room is the request.sid of the specific client
-                        for sid, connectedClient in oppleoConfig.connectedClients.items():
+                        # connectedClients can change at any time. Iterating can cause issues. list() creates a copy of the keys
+                        for sid in list(oppleoConfig.connectedClients):
+                            # oppleoConfig.connectedClients[sid] raises KeyError is key does not exist. Get does not.
+                            connectedClient = oppleoConfig.connectedClients.get(sid, None)
+                            if connectedClient is None:
+                                # pass this sid, no longer connected
+                                continue
                             if 'auth' in connectedClient and connectedClient['auth']:
                                 # Authenticated client, emit data
                                 self.logger.debug('Sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
