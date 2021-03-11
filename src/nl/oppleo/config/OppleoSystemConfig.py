@@ -714,6 +714,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         if value.lower() in self.logLevelOptions:
             self.__LOG_LEVEL_STR = value.lower()
             self.__writeConfig__()
+            self.__initLogger__()
 
     """
         logMaxBytes -> __LOG_MAX_BYTES
@@ -726,6 +727,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     def logMaxBytes(self, value:int):
         self.__LOG_MAX_BYTES = value
         self.__writeConfig__()
+        self.__initLogger__()
 
     """
         logBackupCount -> __LOG_BACKUP_COUNT
@@ -738,6 +740,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     def logBackupCount(self, value:int):
         self.__LOG_BACKUP_COUNT = value
         self.__writeConfig__()
+        self.__initLogger__()
 
     @property
     def logLevelOptions(self) -> list:

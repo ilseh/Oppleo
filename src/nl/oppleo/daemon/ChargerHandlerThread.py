@@ -78,8 +78,6 @@ class ChargerHandlerThread(object):
         #   Therefore use standard threads
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
         self.rfid_reader_thread.start()
-        # TODO
-#        self.rfidReaderLoop()
 
         self.logger.debug('.start() - Done starting rfid reader and evse reader background tasks')
 
