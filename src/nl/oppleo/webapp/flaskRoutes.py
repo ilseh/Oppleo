@@ -102,10 +102,20 @@ def config_dashboard_access_restriction(function):
         # request.remote_addr - returns remote address, or IP of reverse proxy
         # request.headers.get('X-Forwarded-For') - returns router address (router is behind the reverse proxy)
 
+        flaskRoutesLogger.debug('config_dashboard_access_restriction() restrictDashboardAccess:{} allowLocalDashboardAccess{} request.remote_addr={} oppleoConfig.routerIPAddress={} current_user.is_authenticated={}'.format(
+            oppleoConfig.restrictDashboardAccess, 
+            oppleoConfig.allowLocalDashboardAccess,
+            request.remote_addr,
+            oppleoConfig.routerIPAddress,
+            current_user.is_authenticated
+            ))
+
         if (not oppleoConfig.restrictDashboardAccess or \
             ( oppleoConfig.allowLocalDashboardAccess and request.remote_addr != oppleoConfig.routerIPAddress ) or \
             current_user.is_authenticated):
+            flaskRoutesLogger.debug('config_dashboard_access_restriction() access allowed')
             return function(*args, **kwargs)
+        flaskRoutesLogger.debug('config_dashboard_access_restriction() access denied')
         # return abort(403) # unauthenticated
         # Not allowed.
         # delete old - never used - cookie

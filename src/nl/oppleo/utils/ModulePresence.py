@@ -48,7 +48,7 @@ class ModulePresence(object, metaclass=Singleton):
             self.logger.debug('GPIO (RPi) not installed.')
 
         if self.__enable_GPIO_stub and not self.__rpigpio:
-            self.logger.debug('GPIO_stub enabled (GPIO not installed)')
+            self.logger.warning('GPIO_stub enabled (GPIO not installed)')
             self.__rpigpio = True
             self.__GPIO = GPIO_stub()
 
