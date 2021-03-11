@@ -114,8 +114,9 @@ class SMBClient:
         return None
 
 
-    def download(self, service_name:str=None, local_path:str=None, remote_path:str=None, files:list=[]):
+    def download(self, service_name:str=None, local_path:str=None, remote_path:str=None, files=None):
         """ Download files from the remote share. """
+        files = [] if files is None else files
         for file in files:
             with open(os.path.join(local_path, file) if local_path is not None else file, 'rb') as file_obj:
                 self._server.retrieveFile(service_name=self._service_name,
@@ -123,8 +124,9 @@ class SMBClient:
                                           file_obj=file_obj
                                           )
 
-    def upload(self, service_name:str=None, local_path:str=None, remote_path:str=None, files:list=[], timeout:int=UPLOAD_TIMEOUT) -> dict:
+    def upload(self, service_name:str=None, local_path:str=None, remote_path:str=None, files=None, timeout:int=UPLOAD_TIMEOUT) -> dict:
         """ Upload files to the remote share. """
+        files = [] if files is None else files
         try:
             for file in files:
                 with open(os.path.join(local_path, file) if local_path is not None else file, 'rb') as file_obj:
@@ -138,8 +140,9 @@ class SMBClient:
         return { 'success': True }
 
 
-    def deleteFiles(self, service_name:str=None, remote_path:str=None, files:list=[], delete_matching_folders:bool=False, timeout:int=UPLOAD_TIMEOUT) -> dict:
+    def deleteFiles(self, service_name:str=None, remote_path:str=None, files=None, delete_matching_folders:bool=False, timeout:int=UPLOAD_TIMEOUT) -> dict:
         """ Remove files from the remote share. """
+        files = [] if files is None else files
         try:
             for file in files:
                 self._server.deleteFiles(service_name=service_name if service_name is not None else self._service_name, 

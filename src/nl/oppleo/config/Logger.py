@@ -2,11 +2,13 @@ import logging
 import sys
 import os
 
-def init_log(process_name, log_file, daemons=[]):
+def init_log(process_name, log_file, daemons=None):
     logger_process = logging.getLogger(process_name)
     logger_package = logging.getLogger('nl.oppleo')
     logger_process.setLevel(logging.DEBUG)
     logger_package.setLevel(logging.DEBUG)
+
+    daemons = [] if daemons is None else daemons
 
     # create file handler which logs even debug messages
     try:

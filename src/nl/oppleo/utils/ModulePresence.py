@@ -1,5 +1,5 @@
 import logging
-from nl.oppleo.utils.DummyGPIO import DummyGPIO
+from nl.oppleo.utils.GPIO_stub import GPIO_stub
 
 """
 """
@@ -18,7 +18,7 @@ class ModulePresence(object, metaclass=Singleton):
     """
     __logger = None
 
-    __dummyGPIO = True
+    __enable_GPIO_stub = True
 
 
     """ Libraries installed """
@@ -47,10 +47,10 @@ class ModulePresence(object, metaclass=Singleton):
         except ModuleNotFoundError:
             self.logger.debug('GPIO (RPi) not installed.')
 
-        if self.__dummyGPIO and not self.__rpigpio:
-            self.logger.debug('DummyGPIO enabled (not installed)')
+        if self.__enable_GPIO_stub and not self.__rpigpio:
+            self.logger.debug('GPIO_stub enabled (GPIO not installed)')
             self.__rpigpio = True
-            self.__GPIO = DummyGPIO()
+            self.__GPIO = GPIO_stub()
 
 
     """

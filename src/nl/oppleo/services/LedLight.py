@@ -17,9 +17,10 @@ class LedLight(object):
     __services = None
     __combinedColorName = "Unknown"
 
-    def __init__(self, *pinDefinitions, combinedColorName, intensity, pulse=False, services=[]):
+    def __init__(self, *pinDefinitions, combinedColorName, intensity, pulse=False, services=None):
         self.__logger = logging.getLogger('nl.oppleo.services.LedLight')
-        self.__services = services
+        # NOTE: Make copy, just referencing self.__services = service links by reference all objects together!
+        self.__services = [] if services is None else services
         self.__combinedColorName = combinedColorName
 
         for pinDefinition in pinDefinitions:
@@ -31,19 +32,19 @@ class LedLight(object):
             else:
                 self.__services.append(LedLightDev(pinDefinition, intensity=intensity))
 
-        self.__logger.debug('LedLight.init() - Initialize with %d ledlights %s' % (len(self.__services), "to pulse" if pulse else "no pulse"))
+        self.__logger.debug('.init() - Initialize with %d ledlights %s' % (len(self.__services), "to pulse" if pulse else "no pulse"))
 
     def on(self):
-        self.__logger.debug("LedLight.on() {}".format(self.__combinedColorName))
+        self.__logger.debug(".on() {}".format(self.__combinedColorName))
         for service in self.__services:
             service.on()
 
     def off(self):
-        self.__logger.debug("LedLight.off() {}".format(self.__combinedColorName))
+        self.__logger.debug(".off() {}".format(self.__combinedColorName))
         for service in self.__services:
             service.off()
 
     def cleanup(self):
-        self.__logger.debug("LedLight.cleanup() {}".format(self.__combinedColorName))
+        self.__logger.debug(".cleanup() {}".format(self.__combinedColorName))
         for service in self.__services:
             service.cleanup()
