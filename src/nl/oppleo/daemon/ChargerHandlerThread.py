@@ -279,7 +279,7 @@ class ChargerHandlerThread(object):
             oppleoConfig.energyDevice.enabled and
             oppleoConfig.energyDevice.energyModbusReader is not None):
             charge_session.end_value = oppleoConfig.energyDevice.energyModbusReader.getTotalKWHHValue()
-            self.logger.debug(".end_charge_session() - end_value from energyModbusReader: {}".format(end_value))
+            self.logger.debug(".end_charge_session() - end_value from energyModbusReader: {}".format(charge_session.end_value))
 
         if detect:
             # end_time is the time the kWh was updated to this value, and the current went to 0
