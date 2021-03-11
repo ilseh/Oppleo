@@ -1872,10 +1872,10 @@
                               <td class="text-dark">Modbus register configuration:</td>
                               <td class="text-primary">
                                 <oppleo-edit-select 
-                                id="modbusConfig"
-                                options='[ {% for mco in diag['modbusConfigOptions'] %}{ "text": "{{ mco.short }}", "id": "{{ mco.name }}"{% if mco.name == energydevicemodel.modbus_config %}, "selected": "true" {% endif %}}{% if mco.name != (diag['modbusConfigOptions'] | last).name %}, {% endif %}{% endfor %} ]'
-                                placeholder="Maak een keuze..."
-                                info="Modbus register definitie, kan verschillen per energiemeter type en versie."
+                                  id="modbusConfig"
+                                  options='[ {% for mco in diag['modbusConfigOptions'] %}{ "text": "{{ mco.short }}", "id": "{{ mco.name }}"{% if mco.name == energydevicemodel.modbus_config %}, "selected": "true" {% endif %}}{% if mco.name != (diag['modbusConfigOptions'] | last).name %}, {% endif %}{% endfor %} ]'
+                                  placeholder="Maak een keuze..."
+                                  info="Modbus register definitie, kan verschillen per energiemeter type en versie."
                                 />
                               </td>
                             </tr>
@@ -1883,11 +1883,11 @@
                               <td class="text-dark">kWh meter uitleesinterval:</td>
                               <td class="text-primary">                                
                                 <oppleo-edit-str 
-                                id="modbusInterval"
-                                value="{{ oppleoconfig.modbusInterval }}"
-                                suffix=" seconden"
-                                validation="^([1-9]|[1-5][0-9]|60)$"
-                                info="Interval in seconden tussen achtereenvolgende kWh meter uitlezingen (1-60 seconden). Een kortere periode geeft veranderingen sneller weer op de web interface en maakt een meer ganulaire log bij wijzigingen, maar zorgt ook voor meer log entries."
+                                  id="modbusInterval"
+                                  value="{{ oppleoconfig.modbusInterval }}"
+                                  suffix=" seconden"
+                                  validation="^([1-9]|[1-5][0-9]|60)$"
+                                  info="Interval in seconden tussen achtereenvolgende kWh meter uitlezingen (1-60 seconden). Een kortere periode geeft veranderingen sneller weer op de web interface en maakt een meer ganulaire log bij wijzigingen, maar zorgt ook voor meer log entries."
                                 />
                                 </td>
                             </tr>
@@ -1937,11 +1937,11 @@
                               <td class="text-dark">HTTP Port:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="httpPort"
-                                prefix="" 
-                                value="{{ oppleosystemconfig.httpPort }}"
-                                validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
-                                info="HTTP port waarop de Oppleo service beschikbaar is."
+                                  id="httpPort"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.httpPort }}"
+                                  validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+                                  info="HTTP port waarop de Oppleo service beschikbaar is."
                                 />
                               </td>
                             </tr>
@@ -1949,11 +1949,11 @@
                               <td class="text-dark">HTTP outbound timeout:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="httpTimeout"
-                                suffix=" seconden" 
-                                value="{{ oppleosystemconfig.httpTimeout }}"
-                                validation="^[1-9][0-9]{0,2}$"
-                                info="Timeout voor outbound HTTP connecties naar de Prowl en Tesla API's."
+                                  id="httpTimeout"
+                                  suffix=" seconden" 
+                                  value="{{ oppleosystemconfig.httpTimeout }}"
+                                  validation="^[1-9][0-9]{0,2}$"
+                                  info="Timeout voor outbound HTTP connecties naar de Prowl en Tesla API's."
                                 />
                               </td>
                             </tr>
@@ -2026,13 +2026,13 @@
                               <td class="text-dark">Magic Password:<br />(herstart autorisatie)</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="onDbFailureMagicPassword"
-                                prefix=""
-                                value=""
-                                hide="[hashed]"
-                                hideEdit=true
-                                validation="^[a-zA-Z0-9]{8,}$"
-                                info="Wanneer de database niet beschikbaar is zijn alle instellingen onbekend en is inloggen niet mogelijk. Dit wachtwoord geeft alleen dan autorisatie om de applicatie te herstarten, en eventueel de database URL opnieuw in te stellen."
+                                  id="onDbFailureMagicPassword"
+                                  prefix=""
+                                  value=""
+                                  hide="[hashed]"
+                                  hideEdit=true
+                                  validation="^[a-zA-Z0-9]{8,}$"
+                                  info="Wanneer de database niet beschikbaar is zijn alle instellingen onbekend en is inloggen niet mogelijk. Dit wachtwoord geeft alleen dan autorisatie om de applicatie te herstarten, en eventueel de database URL opnieuw in te stellen."
                                 />
                             </td>
                             </tr>
@@ -2217,11 +2217,11 @@
                               <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> <span class="text-danger">Rode</span> Led of rode pin van RGB led:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="pinLedRed"
-                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
-                                value="{{ oppleoconfig.pinLedRed }}"
-                                validation="^[0-9]+$"
-                                info="BCM GPIO Mode GPIO13"
+                                  id="pinLedRed"
+                                  prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                  value="{{ oppleoconfig.pinLedRed }}"
+                                  validation="^[0-9]+$"
+                                  info="BCM GPIO Mode GPIO13"
                                 />
                               </td>
                             </tr>
@@ -2229,11 +2229,11 @@
                               <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> <span class="text-success">Groene</span> Led of groene pin van RGB led:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="pinLedGreen"
-                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
-                                value="{{ oppleoconfig.pinLedGreen }}"
-                                validation="^[0-9]+$"
-                                info="BCM GPIO Mode GPIO12"
+                                  id="pinLedGreen"
+                                  prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                  value="{{ oppleoconfig.pinLedGreen }}"
+                                  validation="^[0-9]+$"
+                                  info="BCM GPIO Mode GPIO12"
                                 />
                               </td>
                             </tr>
@@ -2241,11 +2241,11 @@
                               <td class="text-dark pl-3"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> <span class="text-primary">Blauwe</span> Led of blauwe pin van RGB led:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
-                                id="pinLedBlue"
-                                prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
-                                value="{{ oppleoconfig.pinLedBlue }}"
-                                validation="^[0-9]+$"
-                                info="BCM GPIO Mode GPIO16"
+                                  id="pinLedBlue"
+                                  prefix="{% if oppleoconfig.gpioMode == 'BCM' %}GPIO{% else %}Pin {% endif %} " 
+                                  value="{{ oppleoconfig.pinLedBlue }}"
+                                  validation="^[0-9]+$"
+                                  info="BCM GPIO Mode GPIO16"
                                 />
                               </td>
                             </tr>
@@ -2555,6 +2555,51 @@
                                 />
                               </td>
                             </tr>
+
+
+
+
+
+                            <tr>
+                              <td class="text-dark">Log level:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select
+                                  id="logLevel"
+                                  options='[ {% for level in oppleosystemconfig.logLevelOptions %} { "text": "{{ level }}", "id": "{{ level }}"{% if oppleosystemconfig.logLevel == level %}, "selected": "true"{% endif %} }{{ ", " if not loop.last else "" }} {% endfor %} ]'
+                                  placeholder="Maak een keuze..."
+                                  info="Het loglevel bepaald het aantal berichten in de oppleo log file."
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Maximale logfile grootte:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="logMaxBytes"
+                                  value="{{ oppleosystemconfig.logMaxBytes }}"
+                                  suffix=" Bytes"
+                                  validation="^[1-9]\d*$"
+                                  info="Maximale logfile bestandsgrootte in bytes. Hierna wordt de logfile geroteeerd (overschreven). Grootte &gt;0."
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Aantal logfiles:</td>
+                                <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="logBackupCount"
+                                  value="{{ oppleosystemconfig.logBackupCount }}"
+                                  suffix=" file(s)"
+                                  validation="^\d*$"
+                                  info="Aantal te bewaren logfiles na rotatie. Het totaal is dit aantal historie plus de actieve logfile."
+                                />
+                              </td>
+                            </tr>
+
+
+
+
+
                             <tr>
                               <td class="text-dark">SQLALCHEMY_TRACK_MODIFICATIONS:</td>
                               <td class="text-primary">{{ oppleosystemconfig.SQLALCHEMY_TRACK_MODIFICATIONS }}

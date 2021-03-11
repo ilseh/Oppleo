@@ -44,6 +44,11 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     # Params are all read as lowercase by ConfigParser (!)
     __INI_SIGNATURE = 'SIGNATURE'
     __INI_LOG_FILE = 'LOG_FILE'
+
+    __INI_LOG_LEVEL = 'LOG_LEVEL'
+    __INI_LOG_MAX_BYTES = 'LOG_MAX_FILESIZE'
+    __INI_LOG_BACKUP_COUNT = 'LOG_FILE_BACKUP_COUNT'
+
     __INI_DATABASE_URL = 'DATABASE_URL'
     __INI_SQLALCHEMY_TRACK_MODIFICATIONS = 'SQLALCHEMY_TRACK_MODIFICATIONS'
 
@@ -67,7 +72,6 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_EXPLAIN_TEMPLATE_LOADING = 'EXPLAIN_TEMPLATE_LOADING'
 
     __INI_MAGIC_PASSWORD = 'MAGIC_PASSWORD'
-    __INI_MAGIC_PASSWORD = 'MAGIC_PASSWORD'
 
     __INI_ON_DB_FAILURE_ALLOW_RESTART = 'on_db_failure_allow_restart'
     __INI_ON_DB_FAILURE_MAGIC_PASSWORD = 'on_db_failure_magic_password'
@@ -86,6 +90,9 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __SQLALCHEMY_TRACK_MODIFICATIONS = True
 
     __LOG_FILE = '/tmp/%s.log' % __PROCESS_NAME
+    __LOG_LEVEL_STR = 'warning'
+    __LOG_MAX_BYTES = 524288
+    __LOG_BACKUP_COUNT = 5
 
     ''' The Enable/Disable EVSE GPIO output '''
     __EVSE_SWITCH_ENABLED = False
@@ -190,6 +197,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__SIGNATURE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_SIGNATURE, log=log)
 
         self.__LOG_FILE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_FILE, default=self.__LOG_FILE, log=log)
+        self.__LOG_LEVEL_STR = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL, default=self.__LOG_LEVEL_STR, log=log)
+        self.__LOG_MAX_BYTES = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_LOG_MAX_BYTES, default=self.__LOG_MAX_BYTES, log=log)
+        self.__LOG_BACKUP_COUNT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_LOG_BACKUP_COUNT, default=self.__LOG_BACKUP_COUNT, log=log)
+
         self.__DATABASE_URL = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_DATABASE_URL, log=log)
         self.__SQLALCHEMY_TRACK_MODIFICATIONS = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS, log=log)
 
@@ -249,6 +260,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_SIGNATURE] = self.__SIGNATURE
 
             self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_FILE] = self.__LOG_FILE
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL] = self.__LOG_LEVEL_STR
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_MAX_BYTES] = str(self.__LOG_MAX_BYTES)
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_BACKUP_COUNT] = str(self.__LOG_BACKUP_COUNT)
+
             self.__ini_settings[self.__INI_MAIN][self.__INI_DATABASE_URL] = self.__DATABASE_URL
             self.__ini_settings[self.__INI_MAIN][self.__INI_SQLALCHEMY_TRACK_MODIFICATIONS] = 'True' if self.__SQLALCHEMY_TRACK_MODIFICATIONS else 'False'
 
@@ -339,7 +354,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
 
     def __initLogger__(self):
-        Logger.init_log(self.__PROCESS_NAME, self.__LOG_FILE)
+        Logger.init_log(process_name=self.__PROCESS_NAME,
+                        log_file=self.__LOG_FILE,
+                        loglevel=self.intoLogLevel(self.__LOG_LEVEL_STR),
+                        maxBytes=self.__LOG_MAX_BYTES,
+                        backupCount=self.__LOG_BACKUP_COUNT
+                        )
         self.__logger = logging.getLogger('nl.oppleo.config.OppleoSystemConfig')
 
 
@@ -348,10 +368,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         if self.sqlalchemy_engine is None or \
            self.sqlalchemy_engine.pool is None:
             self.__logger.warning('sqlAlchemyPoolStatus() - no engine or pool (None)')
-            return "Geen informatie"
+            return {}
         else:
             pool_status = self.sqlalchemy_engine.pool.status()
-            self.__logger.info('sqlAlchemyPoolStatus() - %s' % pool_status)
+            self.__logger.info('sqlAlchemyPoolStatus() - {}'.format(pool_status))
             return pool_status
 
     """
@@ -604,7 +624,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
                     )
 
         except ValueError:
-            self.___logger.warning("Value {} could not be interpreted as bool".format(value), exc_info=True)
+            self.__logger.warning("Value {} could not be interpreted as bool".format(value), exc_info=True)
 
 
     """
@@ -682,5 +702,74 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__PROWL_API_KEY = value
         self.__writeConfig__()
 
+    """
+        logLevel -> __LOG_LEVEL_STR
+    """
+    @property
+    def logLevel(self):
+        return self.__LOG_LEVEL_STR
 
+    @logLevel.setter
+    def logLevel(self, value:str):
+        if value.lower() in self.logLevelOptions:
+            self.__LOG_LEVEL_STR = value.lower()
+            self.__writeConfig__()
 
+    """
+        logMaxBytes -> __LOG_MAX_BYTES
+    """
+    @property
+    def logMaxBytes(self):
+        return self.__LOG_MAX_BYTES
+
+    @logMaxBytes.setter
+    def logMaxBytes(self, value:int):
+        self.__LOG_MAX_BYTES = value
+        self.__writeConfig__()
+
+    """
+        logBackupCount -> __LOG_BACKUP_COUNT
+    """
+    @property
+    def logBackupCount(self):
+        return self.__LOG_BACKUP_COUNT
+
+    @logBackupCount.setter
+    def logBackupCount(self, value:int):
+        self.__LOG_BACKUP_COUNT = value
+        self.__writeConfig__()
+
+    @property
+    def logLevelOptions(self) -> list:
+        return ['debug', 'info', 'error', 'critical', 'fatal']
+
+    def intoLogLevel(self, level:str=None) -> int:
+        if not isinstance(level, str):
+            return logging.WARNING
+        level = level.lower()
+        if level == 'debug':
+            return logging.DEBUG
+        if level == 'info':
+            return logging.INFO
+        if level == 'error':
+            return logging.ERROR
+        if level == 'critical':
+            return logging.CRITICAL
+        if level == 'fatal':
+            return logging.FATAL
+        return logging.WARNING
+
+    def intoLogLevelStr(self, level:int=logging.WARNING) -> str:
+        if not isinstance(level, int):
+            return 'warning'
+        if level == logging.DEBUG:
+            return 'debug'
+        if level == logging.INFO:
+            return 'info'
+        if level == logging.ERROR:
+            return 'error'
+        if level == logging.CRITICAL:
+            return 'critical'
+        if level == logging.FATAL:
+            return 'fatal'
+        return 'warning'

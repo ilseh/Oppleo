@@ -47,7 +47,6 @@ class ChargerHandlerThread(object):
     def __init__(self, device, ledlighter, buzzer, evse, evse_reader, appSocketIO):
         self.threadLock = threading.Lock()
         self.logger = logging.getLogger('nl.oppleo.daemon.ChargerHandlerThread')
-        self.logger.setLevel(logging.DEBUG)
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()

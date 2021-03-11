@@ -1467,7 +1467,34 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.logFile = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
-    # logFile
+    # logLevel
+    if (param == 'logLevel') and isinstance(value, str) and len(value) > 0:
+        oppleoSystemConfig.logLevel = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # logMaxBytes
+    validation=r'^[1-9]\d*$'
+    if (param == 'logMaxBytes') and isinstance(value, str) and re.match(validation, value):
+        try:
+            value = int(value)
+        except ValueError as e:
+            # Conditions not met
+            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'reason': 'No valid integer value' })
+        oppleoSystemConfig.logMaxBytes = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # logBackupCount
+    validation=r'^\d*$'
+    if (param == 'logBackupCount') and isinstance(value, str) and re.match(validation, value):
+        try:
+            value = int(value)
+        except ValueError as e:
+            # Conditions not met
+            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'reason': 'No valid integer value' })
+        oppleoSystemConfig.logBackupCount = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # Python path
     if (param == 'PYTHONPATH') and isinstance(value, str):
         oppleoSystemConfig.PYTHONPATH = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
@@ -1506,7 +1533,7 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' })
+            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'reason': 'No valid integer value' })
         energyDeviceModel = EnergyDeviceModel.get()
         energyDeviceModel.slave_address = value
         energyDeviceModel.save()
