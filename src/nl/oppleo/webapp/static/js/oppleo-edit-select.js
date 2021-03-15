@@ -193,7 +193,7 @@ class OppleoEditSelect extends HTMLElement {
         var lois = $(this.$select).select2('data').map( (el) => { return el.id } )
         let loc = this.options  // Local copy from attribute
         loc.forEach( (el) => { (lois.includes(el.id) ? el.selected = true : delete el.selected) }, loc)  // in place
-        this.options = loc  // Set the attrbute and the prevOptions
+        this.options = loc  // Set the attribute and the prevOptions
 
         // Value actually changed?
         if (evDetail.newValue !== evDetail.oldValue) {

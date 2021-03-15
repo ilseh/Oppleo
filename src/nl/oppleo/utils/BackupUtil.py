@@ -199,6 +199,8 @@ class BackupUtil(object, metaclass=Singleton):
             remoteBackup = None
             if localBackup['success']:
                 wsData.update({'localBackupSuccess': True, 'filename': localBackup['filename']})
+                # Purge excess backups
+                self.purgeLocalBackups(n=self.oppleoConfig.backupLocalHistory)
                 if self.oppleoConfig.osBackupEnabled:
                     self.logger.debug('createBackup() - offsite backup enabled')
                     # Create offsite backup
@@ -206,6 +208,9 @@ class BackupUtil(object, metaclass=Singleton):
                         self.logger.debug('createBackup() - remoteBackup type {}'.format(self.oppleoConfig.OS_BACKUP_TYPE_SMB_STR))
                         wsData.update({'osBackupType': self.oppleoConfig.OS_BACKUP_TYPE_SMB})
                         remoteBackup = self.__storeBackupToSmbShare__(filename=localBackup['filename'], localpath=localBackup['path'])
+                        if remoteBackup['success']:
+                            # Purge excess SMB backups
+                            self.__purgeBackupSmbShare__(n=self.oppleoConfig.osBackupHistory)
                         self.logger.debug('createBackup() - offsite backup created (success={})'.format(remoteBackup['success']))
                         wsData.update({'osBackupSuccess': remoteBackup['success']})
                         if not remoteBackup['success']:
@@ -228,7 +233,7 @@ class BackupUtil(object, metaclass=Singleton):
                     (not self.oppleoConfig.osBackupEnabled or 
                             (self.oppleoConfig.osBackupEnabled and remoteBackup['success'])
                     )
-            ):
+                ):
                 # Full success
                 self.oppleoConfig.backupSuccessTimestamp = startTime
                 wsEvent = 'backup_completed'
@@ -534,7 +539,7 @@ class BackupUtil(object, metaclass=Singleton):
             directory = self.oppleoConfig.localBackupDirectory
         files = []
         for filename in os.listdir(directory):
-            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+'\.zip$', filename):
+            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+r'\.zip$', filename):
                 filesize = None
                 try: 
                     filesize = os.path.getsize(os.path.join(directory, filename))
@@ -550,15 +555,31 @@ class BackupUtil(object, metaclass=Singleton):
     """
         Returns the list of files in the backup directory, ignoring sub directories
     """
-    def purgeLocalBackups(self, n:int=5):
+    def purgeLocalBackups(self, n:int=99):
+        self.logger.debug('purgeLocalBackups() n={}'.format(n))
+        if n >= 99:
+            self.logger.debug('purgeLocalBackups() no purge')
+            return
 
-        directory, files = self.listLocalBackups()
-        # TODO return is dict now
+        localBackups = self.listLocalBackups()
         # note: the list is sorted
-        purgelist = files[0:(-1*n)] 
+        purgelist = localBackups['files'][0:(-1*n)] 
+        self.logger.debug('purgeLocalBackups() purging {} of {} backups'.format(str(len(purgelist)), str(len(localBackups['files']))))
+
         for file in purgelist:
-            filename = os.path.join(directory, file)
+            filename = os.path.join(localBackups['directory'], file['filename'])
             os.remove(filename)
+
+        WebSocketUtil.emit(
+                    wsEmitQueue=self.oppleoConfig.wsEmitQueue,
+                    event='local_backup_purged',
+                    id=self.oppleoConfig.chargerName,
+                    data=localBackups['files'][0:(-1*n)],
+                    namespace='/backup',
+                    public=False
+                )
+
+
 
     """
         Removes a local backup
@@ -678,7 +699,7 @@ class BackupUtil(object, metaclass=Singleton):
                    }
         files = []
         for smbf in smbfilelist:
-            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+'\.zip$', smbf.filename):
+            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+r'\.zip$', smbf.filename):
                 files.append({ 'filename'   : smbf.filename,
                                'filesize'   : smbf.file_size,
                                'timestamp'  : smbf.filename[7:26].replace('_', ' ')
@@ -807,6 +828,49 @@ class BackupUtil(object, metaclass=Singleton):
         smb_client.close()
 
         return response
+
+
+    """
+        Returns the list of files in the backup directory, ignoring sub directories
+    """
+    def __purgeBackupSmbShare__(self, n:int=99):
+        self.logger.debug('__purgeBackupSmbShare__() n={}'.format(n))
+        if n >= 99:
+            self.logger.debug('__purgeBackupSmbShare__() no purge')
+            return
+        
+        smb_client = SMBClient(serverOrIP=self.oppleoConfig.smbBackupServerNameOrIPAddress,
+                               username=self.oppleoConfig.smbBackupUsername, 
+                               password=self.oppleoConfig.smbBackupPassword, 
+                               service_name=self.oppleoConfig.smbBackupServiceName, 
+                               )
+
+        smb_client.connect()
+
+        smbBackups = self.listSMBBackups()
+        if not smbBackups['success']:
+            self.logger.debug('__purgeBackupSmbShare__() no purge, could not get file list - {}'.format(smbBackups['reason']))
+            return
+        # Sorted and filtered - now limit and get the filenames       
+        purgelist = []
+        for file in smbBackups['files'][0:(-1*n)]:
+            purgelist.append(file['filename'])
+        self.logger.debug('__purgeBackupSmbShare__() purging {} of {} backups'.format(str(len(purgelist)), str(len(smbBackups['files']))))
+        result = smb_client.deleteFiles(service_name=self.oppleoConfig.smbBackupServiceName,
+                                        remote_path=smbBackups['directory'],
+                                        files=purgelist
+                                       )
+        smb_client.close()
+        # Send message to front end
+        WebSocketUtil.emit(
+                    wsEmitQueue=self.oppleoConfig.wsEmitQueue,
+                    event='os_backup_purged',
+                    id=self.oppleoConfig.chargerName,
+                    data=smbBackups['files'][0:(-1*n)],
+                    namespace='/backup',
+                    public=False
+                )
+        return result
 
 
     """

@@ -1,97 +1,98 @@
 # Eastron SDM120-Modbus MID, 1 Fase kWh meter met Modbus RS485 45A   € 50
+import nl.oppleo.utils.modbus.MB as MB
 
 SDM120 = {
-        "name"          : "SDM120",
-        "short"         : "Eastron SDM120 1 fase",
-        "description"   : "Eastron SDM120-Modbus MID, 1 Fase kWh meter met Modbus RS485 45A",
+        MB.NAME         : "SDM120",
+        MB.SHORT        : "Eastron SDM120 1 fase",
+        MB.DESC         : "Eastron SDM120-Modbus MID, 1 Fase kWh meter met Modbus RS485 45A",
 
         # read_register(registeraddress, number_of_decimals=0, functioncode=3, signed=False)
-        "serialNumber"  : {
-            "enabled"   : False # NOT IMPLEMENTED
+        MB.SN: {
+            MB.ENABLED      : False # NOT IMPLEMENTED
         },
 
         # read_float(registeraddress, functioncode, number_of_registers, byteorder)
-        "L1"            : {
+        MB.L1: {
             # 30013 Phase 1 power. [W]
-            "P": {
-                "enabled"   : True,
-                "type"      : "float",
-                "ra"        : 12,   # registeraddress
-                "fc"        : 4,    # functioncode,
-                "nor"       : 2,    # number_of_registers
-                "bo"        : 0     # byteorder
+            MB.POWER: {
+                MB.ENABLED              : True,
+                MB.TYPE                 : MB.TYPE_FLOAT,
+                MB.REGISTER_ADDRESS     : 12,   # registeraddress
+                MB.FUNCTION_CODE        : 4,    # functioncode,
+                MB.NUMBER_OF_REGISTERS  : 2,    # number_of_registers
+                MB.BYTE_ORDER           : 0     # byteorder
             },
             # 30001     0   0  Phase 1 line to neutral volts. [V]
-            "V": {
-                "enabled"   : True,
-                "type"      : "float",
-                "ra"        : 0,    # registeraddress
-                "fc"        : 4,    # functioncode,
-                "nor"       : 2,    # number_of_registers
-                "bo"        : 0     # byteorder
+            MB.VOLT: {
+                MB.ENABLED              : True,
+                MB.TYPE                 : MB.TYPE_FLOAT,
+                MB.REGISTER_ADDRESS     : 0,    # registeraddress
+                MB.FUNCTION_CODE        : 4,    # functioncode,
+                MB.NUMBER_OF_REGISTERS  : 2,    # number_of_registers
+                MB.BYTE_ORDER           : 0     # byteorder
             },
             # 30007 Phase 1 current. [A]
-            "A": {
-                "enabled"   : True,
-                "type"      : "float",
-                "ra"        : 6,    # registeraddress
-                "fc"        : 4,    # functioncode,
-                "nor"       : 2,    # number_of_registers
-                "bo"        : 0     # byteorder
+            MB.AMP: {
+                MB.ENABLED              : True,
+                MB.TYPE                 : MB.TYPE_FLOAT,
+                MB.REGISTER_ADDRESS     : 6,    # registeraddress
+                MB.FUNCTION_CODE        : 4,    # functioncode,
+                MB.NUMBER_OF_REGISTERS  : 2,    # number_of_registers
+                MB.BYTE_ORDER           : 0     # byteorder
             },
-            "kWh": {
-                "enabled"   : False,
+            MB.ENERGY: {
+                MB.ENABLED   : False,
             }
         },
 
-        "L2": {
-            "P": {
-                "enabled"   : False
+        MB.L2: {
+            MB.POWER: {
+                MB.ENABLED   : False
             },
-            "V": {
-                "enabled"   : False
+            MB.VOLT: {
+                MB.ENABLED   : False
             },
-            "A": {
-                "enabled"   : False
+            MB.AMP: {
+                MB.ENABLED   : False
             },
-            "kWh": {
-                "enabled"   : False,
+            MB.ENERGY: {
+                MB.ENABLED   : False,
             }
         },
 
-        "L3": {
-            "P": {
-                "enabled"   : False
+        MB.L3: {
+            MB.POWER: {
+                MB.ENABLED   : False
             },
-            "V": {
-                "enabled"   : False
+            MB.VOLT: {
+                MB.ENABLED   : False
             },
-            "A": {
-                "enabled"   : False
+            MB.AMP: {
+                MB.ENABLED   : False
             },
-            "kWh": {
-                "enabled"   : False,
+            MB.ENERGY: {
+                MB.ENABLED   : False,
             }
         },
 
         # 30071 Frequency of supply voltages. [Hz]
-        "Hz": {
-            "enabled"   : True,
-            "type"      : "float",
-            "ra"        : 70,   # registeraddress
-            "fc"        : 4,    # functioncode,
-            "nor"       : 2,    # number_of_registers
-            "bo"        : 0     # byteorder
+        MB.FREQ: {
+            MB.ENABLED                  : True,
+            MB.TYPE                     : MB.TYPE_FLOAT,
+            MB.REGISTER_ADDRESS         : 70,   # registeraddress
+            MB.FUNCTION_CODE            : 4,    # functioncode,
+            MB.NUMBER_OF_REGISTERS      : 2,    # number_of_registers
+            MB.BYTE_ORDER               : 0     # byteorder
         },
 
         # 30343   1   56   Total kWh. [kWh]
-        "total_kWh": {
-            "enabled"   : True,
-            "type"      : "float",
-            "ra"        : 342,  # registeraddress
-            "fc"        : 4,    # functioncode,
-            "nor"       : 2,    # number_of_registers
-            "bo"        : 0     # byteorder
+        MB.TOTAL_ENERGY: {
+            MB.ENABLED                  : True,
+            MB.TYPE                     : MB.TYPE_FLOAT,
+            MB.REGISTER_ADDRESS         : 342,  # registeraddress
+            MB.FUNCTION_CODE            : 4,    # functioncode,
+            MB.NUMBER_OF_REGISTERS      : 2,    # number_of_registers
+            MB.BYTE_ORDER               : 0     # byteorder
         }
 
     }

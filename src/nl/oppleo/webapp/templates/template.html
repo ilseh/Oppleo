@@ -56,7 +56,7 @@
 
         <script>
             var factor_Whkm = {% if oppleoconfig is not none %}{{ oppleoconfig.factorWhkm }}{% else %}162{% endif %}
-            var kWhMeter_serial = {% if oppleoconfig is not none and oppleoconfig.kWhMeter_serial is not none %}{{ oppleoconfig.kWhMeter_serial }}{% else %}'Onbekend'{% endif %}
+            var kWhMeterSerial = {% if oppleoconfig is not none and oppleoconfig.kWhMeterSerial is not none %}{{ oppleoconfig.kWhMeterSerial }}{% else %}'Onbekend'{% endif %}
             var EVSE_STATE_UNKNOWN    = 0  // Initial
             var EVSE_STATE_INACTIVE   = 1  // SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
             var EVSE_STATE_CONNECTED  = 2  // SmartEVSE State B: LED ON full brightness, Car connected

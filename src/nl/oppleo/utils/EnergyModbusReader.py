@@ -2,8 +2,7 @@ import minimalmodbus
 import threading
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-
-from nl.oppleo.utils.GenericUtil import GenericUtil
+import nl.oppleo.utils.modbus.MB as MB
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 import logging
 
@@ -20,6 +19,7 @@ from nl.oppleo.utils.modbus.SDM120 import SDM120
 modbusConfigOptions = [ SDM630v2, SDM120 ]
 
 
+
 class EnergyModbusReader:
     energy_device_id = None
     instrument = None
@@ -27,10 +27,10 @@ class EnergyModbusReader:
     modbusConfig = None
  
     def __init__(self, energy_device_id, appSocketIO=None):
-        self.logger = logging.getLogger('nl.oppleo.services.EnergyUtil')
+        self.logger = logging.getLogger('nl.oppleo.services.EnergyModbusReader')
         self.energy_device_id = energy_device_id
         self.appSocketIO = appSocketIO
-        self.oppleoConfig = OppleoConfig()
+        self.oppleoConfig:OppleoConfig = OppleoConfig()
         self.logger.debug('Production environment, calling initInstrument()')
         self.initInstrument()
         self.threadLock = threading.Lock()
@@ -65,9 +65,9 @@ class EnergyModbusReader:
 
         self.modbusConfig = SDM630v2
         for i in range(len(modbusConfigOptions)): 
-            if energy_device_data.modbus_config == modbusConfigOptions[i]['name']:
+            if energy_device_data.modbus_config == modbusConfigOptions[i][MB.NAME]:
                 self.modbusConfig = modbusConfigOptions[i]
-        self.logger.debug("Modbus config {} selected (default: {}).".format(self.modbusConfig['name'], SDM630v2['name']))
+        self.logger.debug("Modbus config {} selected (default: {}).".format(self.modbusConfig[MB.NAME], SDM630v2[MB.NAME]))
 
         self.readSerialNumber(energy_device_data.port_name, energy_device_data.slave_address)
 
@@ -75,35 +75,35 @@ class EnergyModbusReader:
     def readSerialNumber(self, port_name=None, slave_address=None):
         self.logger.debug('readSerialNumber()')
 
-        if self.modbusConfig['serialNumber']['enabled']:
-            if self.modbusConfig['serialNumber']['type'] == "register":
+        if self.modbusConfig[MB.SN][MB.ENABLED]:
+            if self.modbusConfig[MB.SN][MB.TYPE] == MB.TYPE_REGISTER:
                 serial_Hi = self.instrument.read_register(  \
-                                self.modbusConfig['serialNumber']['Hi']['ra'],  \
-                                self.modbusConfig['serialNumber']['Hi']['nod'], \
-                                self.modbusConfig['serialNumber']['Hi']['fc'],  \
-                                self.modbusConfig['serialNumber']['Hi']['s']    \
+                                self.modbusConfig[MB.SN][MB.HI][MB.REGISTER_ADDRESS],  \
+                                self.modbusConfig[MB.SN][MB.HI][MB.NUMBER_OF_DECIMALS], \
+                                self.modbusConfig[MB.SN][MB.HI][MB.FUNCTION_CODE],  \
+                                self.modbusConfig[MB.SN][MB.HI][MB.SIGNED]    \
                                 )
                 serial_Lo = self.instrument.read_register(  \
-                                self.modbusConfig['serialNumber']['Lo']['ra'],  \
-                                self.modbusConfig['serialNumber']['Lo']['nod'], \
-                                self.modbusConfig['serialNumber']['Lo']['fc'],  \
-                                self.modbusConfig['serialNumber']['Lo']['s']    \
+                                self.modbusConfig[MB.SN][MB.LO][MB.REGISTER_ADDRESS],  \
+                                self.modbusConfig[MB.SN][MB.LO][MB.NUMBER_OF_DECIMALS], \
+                                self.modbusConfig[MB.SN][MB.LO][MB.FUNCTION_CODE],  \
+                                self.modbusConfig[MB.SN][MB.LO][MB.SIGNED]    \
                                 )
                 self.logger.debug('readSerialNumber() serial_Hi:{} serial_Lo:{}'.format(serial_Hi, serial_Lo))     
-                self.oppleoConfig.kWhMeter_serial = str((serial_Hi * 65536 ) + serial_Lo)
+                self.oppleoConfig.kWhMeterSerial = str((serial_Hi * 65536 ) + serial_Lo)
                 self.logger.info('kWh meter serial number: {} (port:{}, address:{})'.format(
-                        self.oppleoConfig.kWhMeter_serial,
+                        self.oppleoConfig.kWhMeterSerial,
                         port_name,
                         slave_address
                         )
                     )     
             else:
-                self.logger.warn('modbusConfig serialNumber type {} not supported!'.format(self.modbusConfig['serialNumber']['type']))
-                self.oppleoConfig.kWhMeter_serial = 99999999
+                self.logger.warn('modbusConfig serialNumber type {} not supported!'.format(self.modbusConfig[MB.SN][MB.TYPE]))
+                self.oppleoConfig.kWhMeterSerial = 99999999
         else:
-            self.oppleoConfig.kWhMeter_serial = 99999999
+            self.oppleoConfig.kWhMeterSerial = 99999999
 
-        return self.oppleoConfig.kWhMeter_serial
+        return self.oppleoConfig.kWhMeterSerial
 
  
     def readSerialNumber_OLD(self, port_name=None, slave_address=None):
@@ -115,14 +115,14 @@ class EnergyModbusReader:
         # 40045 Serial Number Lo  00  2C  Read the second product serial number.
         serial_Lo = self.instrument.read_register(44, 0, MODBUS_FUNCTION_CODE_HOLDING, False)
         self.logger.debug('readSerialNumber() serial_Hi:{} serial_Lo:{}'.format(serial_Hi, serial_Lo))     
-        self.oppleoConfig.kWhMeter_serial = str((serial_Hi * 65536 ) + serial_Lo)
+        self.oppleoConfig.kWhMeterSerial = str((serial_Hi * 65536 ) + serial_Lo)
         self.logger.info('kWh meter serial number: {} (port:{}, address:{})'.format(
-                self.oppleoConfig.kWhMeter_serial,
+                self.oppleoConfig.kWhMeterSerial,
                 port_name,
                 slave_address
                 )
             )     
-        return self.oppleoConfig.kWhMeter_serial
+        return self.oppleoConfig.kWhMeterSerial
 
 
     def getTotalKWHHValue(self):
@@ -135,58 +135,61 @@ class EnergyModbusReader:
 
 
     def getProdTotalKWHHValue(self):
-        if self.modbusConfig['total_kWh']['type'] == "float":
-            return round(                               \
-                self.try_read_float(                    \
-                    'kwh',                              \
-                    self.modbusConfig['total_kWh']['ra'],     \
-                    self.modbusConfig['total_kWh']['fc'],     \
-                    self.modbusConfig['total_kWh']['nor'],    \
-                    self.modbusConfig['total_kWh']['bo']      \
-                    ),                                  \
-                1                                       \
+        if self.modbusConfig[MB.TOTAL_ENERGY][MB.TYPE] == MB.TYPE_FLOAT:
+            return round(
+                self.try_read_float(
+                    value_desc='kwh',
+                    registeraddress=self.modbusConfig[MB.TOTAL_ENERGY][MB.REGISTER_ADDRESS],
+                    functioncode=self.modbusConfig[MB.TOTAL_ENERGY][MB.FUNCTION_CODE],
+                    number_of_registers=self.modbusConfig[MB.TOTAL_ENERGY][MB.NUMBER_OF_REGISTERS],
+                    byteorder=self.modbusConfig[MB.TOTAL_ENERGY][MB.BYTE_ORDER]
+                    ),
+                1
                 )
         else:
-            self.logger.warn('modbusConfig total_kWh type {} not supported!'.format(self.modbusConfig['total_kWh']['type']))
+            self.logger.warn('modbusConfig total_kWh type {} not supported!'.format(self.modbusConfig[MB.TOTAL_ENERGY][MB.TYPE]))
             return 0
-
-
-    def getProdTotalKWHHValue_OLD(self):
-        return round(self.try_read_float('kwh', 342, 4, MODBUS_FUNCTION_CODE_DISCRETE, 0), 1)       # 30343 Total kWh. [kWh]
-
 
 
     def try_read_float_from_config(self, name, el):
         # self.logger.debug("try_read_float_from_config name:{} el:{}".format(name, str(el)))
 
-        if not el['enabled']:
+        if not el[MB.ENABLED]:
             self.logger.debug("Modbus element {} not enabled".format(name))
             return 0
-        if el['type'] != "float":
-            self.logger.warn("Type {} for modbus element {} not supported (must be float)".format(el['type'], name))
+        if el[MB.TYPE] != MB.TYPE_FLOAT:
+            self.logger.warn("Type {} for modbus element {} not supported (must be {})".format(el[MB.TYPE], name, MB.TYPE_FLOAT))
             return 0
-        return round( self.try_read_float( name, el['ra'], el['fc'], el['nor'], el['bo'] ), 1 )
+        return round(self.try_read_float( 
+                        value_desc=name, 
+                        registeraddress=el[MB.REGISTER_ADDRESS], 
+                        functioncode=el[MB.FUNCTION_CODE], 
+                        number_of_registers=el[MB.NUMBER_OF_REGISTERS], 
+                        byteorder=el[MB.BYTE_ORDER] 
+                    ),
+                    1 
+                )
         
 
     def getProdMeasurementValue(self):
 
-        L1_P = self.try_read_float_from_config( 'l1_p', self.modbusConfig['L1']['P'] )
-        L1_V = self.try_read_float_from_config( 'l1_v', self.modbusConfig['L1']['V'] )
-        L1_A = self.try_read_float_from_config( 'l1_a', self.modbusConfig['L1']['A'] )
-        L1_kWh = self.try_read_float_from_config( 'l1_kWh', self.modbusConfig['L1']['kWh'] )
+        L1_P = self.try_read_float_from_config( 'l1_p', self.modbusConfig[MB.L1][MB.POWER] )
+        L1_V = self.try_read_float_from_config( 'l1_v', self.modbusConfig[MB.L1][MB.VOLT] )
+        L1_A = self.try_read_float_from_config( 'l1_a', self.modbusConfig[MB.L1][MB.AMP] )
+        L1_kWh = self.try_read_float_from_config( 'l1_kWh', self.modbusConfig[MB.L1][MB.ENERGY] )
 
-        L2_P = self.try_read_float_from_config( 'l2_p', self.modbusConfig['L2']['P'] )
-        L2_V = self.try_read_float_from_config( 'l2_v', self.modbusConfig['L2']['V'] )
-        L2_A = self.try_read_float_from_config( 'l2_a', self.modbusConfig['L2']['A'] )
-        L2_kWh = self.try_read_float_from_config( 'l2_kWh', self.modbusConfig['L2']['kWh'] )
+        L2_P = self.try_read_float_from_config( 'l2_p', self.modbusConfig[MB.L2][MB.POWER] )
+        L2_V = self.try_read_float_from_config( 'l2_v', self.modbusConfig[MB.L2][MB.VOLT] )
+        L2_A = self.try_read_float_from_config( 'l2_a', self.modbusConfig[MB.L2][MB.AMP] )
+        L2_kWh = self.try_read_float_from_config( 'l2_kWh', self.modbusConfig[MB.L2][MB.ENERGY] )
 
-        L3_P = self.try_read_float_from_config( 'l3_p', self.modbusConfig['L3']['P'] )
-        L3_V = self.try_read_float_from_config( 'l3_v', self.modbusConfig['L3']['V'] )
-        L3_A = self.try_read_float_from_config( 'l3_a', self.modbusConfig['L3']['A'] )
-        L3_kWh = self.try_read_float_from_config( 'l3_kWh', self.modbusConfig['L3']['kWh'] )
+        L3_P = self.try_read_float_from_config( 'l3_p', self.modbusConfig[MB.L3][MB.POWER] )
+        L3_V = self.try_read_float_from_config( 'l3_v', self.modbusConfig[MB.L3][MB.VOLT] )
+        L3_A = self.try_read_float_from_config( 'l3_a', self.modbusConfig[MB.L3][MB.AMP] )
+        L3_kWh = self.try_read_float_from_config( 'l3_kWh', self.modbusConfig[MB.L3][MB.ENERGY] )
 
-        kWh = self.try_read_float_from_config( 'kWh', self.modbusConfig['total_kWh'] )
-        Hz = self.try_read_float_from_config( 'hz', self.modbusConfig['Hz'] )
+        kWh = self.try_read_float_from_config( 'kWh', self.modbusConfig[MB.TOTAL_ENERGY] )
+        Hz = self.try_read_float_from_config( 'hz', self.modbusConfig[MB.FREQ] )
 
         return {
             "energy_device_id": self.energy_device_id,
@@ -207,7 +210,7 @@ class EnergyModbusReader:
         }
 
     def try_read_float(self, value_desc, registeraddress, functioncode, number_of_registers, byteorder):
-        value = -1
+        value = 0
         # Used by MeasureElectricityUsageThread and ChargerHandlerThread
         with self.threadLock:
             try:

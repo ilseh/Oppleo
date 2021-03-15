@@ -1696,11 +1696,6 @@ def update_settings(param=None, value=None):
         oppleoConfig.osBackupType = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
-    # smbBackupServerName
-    if (param == 'smbBackupServerName') and isinstance(value, str):
-        oppleoConfig.smbBackupServerName = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
-
     # osBackupHistory
     validation="^(0?[1-9]|[1-9][0-9])$"
     if (param == 'osBackupHistory') and isinstance(value, str) and re.match(validation, value):
@@ -1723,6 +1718,9 @@ def update_settings(param=None, value=None):
         if not all([True for key in ['serverOrIP', 'username', 'password', 'serviceName', 'remotePath'] if key in jsonD.keys()]):
             # Not all required parameters
             return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value, 'reason' : 'Missing variables' })
+
+        if 'osBackupType' in jsonD.keys():
+            oppleoConfig.osBackupType = jsonD['osBackupType']
 
         oppleoConfig.smbBackupServerNameOrIPAddress = jsonD['serverOrIP']
         oppleoConfig.smbBackupUsername              = jsonD['username']

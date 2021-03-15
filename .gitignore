@@ -2,6 +2,7 @@
 __pycache__
 venv
 env
+.env
 .DS_Store
 .pytest_cache
 .coverage

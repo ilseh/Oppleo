@@ -162,6 +162,7 @@ class OppleoConfig(object, metaclass=Singleton):
         energyDeviceModel.save()
         self.restartRequired = True
 
+
     """
         chargerTariff --> charger_tariff
     """
@@ -236,6 +237,18 @@ class OppleoConfig(object, metaclass=Singleton):
     @factorWhkm.setter
     def factorWhkm(self, value):
         self.__chargerConfigModel.setAndSave('factor_whkm', value)
+
+    """
+        kWhMeterSerial --> kWhMeter_serial
+    """
+    @property
+    def kWhMeterSerial(self):
+        return self.kWhMeter_serial
+
+    @kWhMeterSerial.setter
+    def kWhMeterSerial(self, value):
+        self.kWhMeter_serial = value
+
 
     """
         modbusInterval --> modbus_interval

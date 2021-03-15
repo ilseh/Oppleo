@@ -36,7 +36,7 @@
     .paginate_button {
         padding: 0px !important;
     }
-    .XXtbody td {
+    .tbody td {
       padding: 2px 2px !important;
       text-align: center;
       background-color: #36404a;
@@ -339,6 +339,28 @@
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Offsite backup instellingen aangepast.')
                 // Now update the fields
                 let dObj = JSON.parse(data.value)
+
+// if XXXXXX
+                if (dObj.hasOwnProperty('osBackupType')) {
+                  switch(dObj.osBackupType) {
+                    case '{{ oppleoconfig.OS_BACKUP_TYPE_SMB }}':
+                      $('td#osBackupTypeDisplay').text('{{ oppleoconfig.OS_BACKUP_TYPE_SMB_STR }}')
+                      break
+                    case '{{ oppleoconfig.OS_BACKUP_TYPE_AFP }}':
+                      $('td#osBackupTypeDisplay').text('{{ oppleoconfig.OS_BACKUP_TYPE_AFP_STR }}')
+                      break
+                    case '{{ oppleoconfig.OS_BACKUP_TYPE_ONEDRIVE }}':
+                      $('td#osBackupTypeDisplay').text('{{ oppleoconfig.OS_BACKUP_TYPE_ONEDRIVE_STR }}')
+                      break
+                    case '{{ oppleoconfig.OS_BACKUP_TYPE_ICLOUD }}':
+                      $('td#osBackupTypeDisplay').text('{{ oppleoconfig.OS_BACKUP_TYPE_ICLOUD_STR }}')
+                      break
+                    case '{{ oppleoconfig.OS_BACKUP_TYPE_UNKNOWN }}':
+                    deafult:
+                      $('td#osBackupTypeDisplay').text('{{ oppleoconfig.OS_BACKUP_TYPE_UNKNOWN_STR }}')
+                      break
+                  }
+                }
                 $('td#smbBackupServerNameOrIPAddress').text(dObj.serverOrIP)
                 $('td#smbBackupUsername').text(dObj.username)
                 $('td#smbBackupPassword').attr('value', dObj.password)
@@ -372,6 +394,11 @@
           case 405:
             switch (data.param) {
               case 'osBackupEnabled':
+                // Simple toggling $('#osBackupEnabled').bootstrapToggle('off') triggers change event (and submit)
+                // Thus destroy, update, and recreate.              
+                $('#osBackupEnabled').bootstrapToggle('destroy')
+                $('#osBackupEnabled').prop("checked", false)
+                $('#osBackupEnabled').bootstrapToggle()
                 autoHideNotify('warning','top-left', 'Niet toegestaan', 'Activeren offsite backup alleen toegestaan met werkende instellingen (405). Configureer eerst de Offsite Backup instellingen.')
                 break
               default:
@@ -600,7 +627,7 @@
     var diag_data = {{ diag_json | safe }}
     var backupOffsiteDialog = null
 
-    function updateSmbBackupSettings() {
+    function updateSmbBackupSettings(includeType=false) {
       // Succesful ending, Keep on/off enabled
 //      $('td#smbBackupServerNameOrIPAddress').text($('#offsiteBackupServerOrIP')[0].$input.value)
 //      $('td#smbBackupPassword').attr('value', $('#offsiteBackupUsername')[0].$input.value)
@@ -619,13 +646,17 @@
       let remotePath = $('#smbBackupRemotePathList ul li').map( (i, el) => {return el.innerText.trim() }).toArray().join('')
 //      $('span#smbBackupRemotePath').text(remotePath)
       // - Submit to server
-      updateSettings( 'smbBackupSettings', JSON.stringify({ 
-                                              serverOrIP      : $('#offsiteBackupServerOrIP')[0].$input.value, 
-                                              username        : $('#offsiteBackupUsername')[0].$input.value, 
-                                              password        : $('#offsiteBackupPassword')[0].$input.value,
-                                              serviceName     : serviceName,
-                                              remotePath      : remotePath
-                                            }) )
+      let smbSetttings = { 
+              serverOrIP      : $('#offsiteBackupServerOrIP')[0].$input.value, 
+              username        : $('#offsiteBackupUsername')[0].$input.value, 
+              password        : $('#offsiteBackupPassword')[0].$input.value,
+              serviceName     : serviceName,
+              remotePath      : remotePath
+      }
+      if (includeType) {
+        smbSetttings['osBackupType'] = '{{ oppleoconfig.OS_BACKUP_TYPE_SMB }}'
+      }
+      updateSettings( 'smbBackupSettings', JSON.stringify(smbSetttings) )
       // Close modal dialog
       backupOffsiteDialog.modal('hide')
     }
@@ -716,6 +747,42 @@
         console.log('Received: ' + JSON.stringify(msg))
         if (msg.id == '{{ oppleoconfig.chargerName }}') {
           $('#backupNowStatusText').html('<span class="text-danger">Backup mislukt! (' + msg.data.reason + ')</span>')
+        }
+      })
+
+      backupStatusSocket.on('local_backup_purged', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+          msg.data.forEach( (dbEl, i) => {                    // iterate over deleted backup
+            let rows = $('tbody#backupLocalList tr')
+            rows.each( (i, vbEl) => {                       // check each row
+              let vbElt1 = $(vbEl).find("td:eq(3)").text()  // 3rd column
+              if (vbElt1 == dbEl.filename) {
+                // remove deleted 
+                vbEl.remove()
+              }
+            })
+          })
+          let cnt = parseInt($('#backupLocalCount').text().split(' backups')[0]) - msg.data.length
+          $('#backupLocalCount').html(cnt + ' backups')
+        }
+      })
+      backupStatusSocket.on('os_backup_purged', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+          msg.data.forEach( (dbEl, i) => {                    // iterate over deleted backup
+            let rows = $('tbody#backupOffsiteList tr')
+            rows.each( (i, vbEl) => {                       // check each row
+              let vbElt1 = $(vbEl).find("td:eq(3)").text()  // 3rd column
+              if (vbElt1 == dbEl.filename) {
+                // remove deleted 
+                vbEl.remove()
+              }
+            })
+          })
+          let cnt = parseInt($('#backupOffsiteCount').text().split(' backups')[0]) - msg.data.length
+          $('#backupOffsiteCount').html(cnt + ' backups')
+          // TODO xxxxx
         }
       })
     }    
@@ -1047,6 +1114,13 @@
 
 
         }, function(result) {
+          switch(result.status) {
+            case 404:
+              autoHideNotify('warning','top-left', 'Onbekend', 'Fout bij het ophalen van de gegevens.')
+              break
+            default:
+              autoHideNotify('error','top-left', 'Onbekend', 'Fout bij het ophalen van de gegevens.')
+          }
           // Fail
           $('button#backup-offsite-showinfo').prop('disabled', false)
           $('button#backup-offsite-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens ophalen')
@@ -1222,11 +1296,25 @@
 
             break
           case '#bm-step4':
-            updateSmbBackupSettings()
-            $('button#modal-footer-nextaction').html(' <i class="fas fa-flag-checkered"></i> ')
-            // Close all select2's
-            $('oppleo-edit-select').each( (i, el) => el.close() )
-            break
+            // Next action on 4 is submit
+            let osBackupType = $($('#osBackupType')[0].$select).select2('data').pop().id
+            
+            switch(osBackupType) {
+              case '{{ oppleoconfig.OS_BACKUP_TYPE_SMB }}':
+                updateSmbBackupSettings(true)
+                $('button#modal-footer-nextaction').html(' <i class="fas fa-flag-checkered"></i> ')
+                // Close all select2's
+                $('oppleo-edit-select').each( (i, el) => el.close() )
+                break
+              case '{{ oppleoconfig.OS_BACKUP_TYPE_AFP }}':
+              case '{{ oppleoconfig.OS_BACKUP_TYPE_ONEDRIVE }}':
+              case '{{ oppleoconfig.OS_BACKUP_TYPE_ICLOUD }}':
+              case '{{ oppleoconfig.OS_BACKUP_TYPE_UNKNOWN }}':
+              default:
+                autoHideNotify('error','top-left', 'Niet mogelijk', 'Dit offsite backup type wordt (nog) niet ondersteund.')
+                $('button#modal-footer-nextaction').html(' <i class="fas fa-flag-checkered"></i> ')
+                break
+            }
         }          
 
       })
@@ -2555,11 +2643,6 @@
                                 />
                               </td>
                             </tr>
-
-
-
-
-
                             <tr>
                               <td class="text-dark">Log level:</td>
                               <td class="text-primary">
@@ -2595,11 +2678,6 @@
                                 />
                               </td>
                             </tr>
-
-
-
-
-
                             <tr>
                               <td class="text-dark">SQLALCHEMY_TRACK_MODIFICATIONS:</td>
                               <td class="text-primary">{{ oppleosystemconfig.SQLALCHEMY_TRACK_MODIFICATIONS }}
@@ -2695,6 +2773,18 @@
                                     </tbody>
                                   </table>
                                 </div>
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Aantal lokale backups behouden:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="backupLocalHistory"
+                                value="{% if oppleoconfig.backupLocalHistory is not none %}{{ oppleoconfig.backupLocalHistory }}{% endif %}"
+                                validation="^(0?[1-9]|[1-9][0-9])$"
+                                info="Aantal lokaal te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
+                                />
                               </td>
                             </tr>
 
@@ -2995,18 +3085,6 @@
                             </tr>
 
                             <tr>
-                              <td class="text-dark">Aantal lokale backups behouden:</td>
-                              <td class="text-primary">
-                                <oppleo-edit-str 
-                                id="backupLocalHistory"
-                                value="{% if oppleoconfig.backupLocalHistory is not none %}{{ oppleoconfig.backupLocalHistory }}{% endif %}"
-                                validation="^(0?[1-9]|[1-9][0-9])$"
-                                info="Aantal lokaal te behouden backups (1-99). De oudste backup wordt verwijderd. Voer 99 in voor een onbeperkt aantal backups, er worden dan geen backups verwijderd."
-                                />
-                              </td>
-                            </tr>
-
-                            <tr>
                               <th colspan="2">&nbsp;</th>
                             </tr>
                             <tr>
@@ -3049,7 +3127,7 @@
                             </tr>
                             <tr>
                               <td class="text-dark"><span class="block-highlight">&nbsp;</span>Type:</td>
-                              <td class="text-primary">
+                              <td class="text-primary" id="osBackupTypeDisplay">
                                 {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_SMB %}{{ oppleoconfig.OS_BACKUP_TYPE_SMB_STR }}{% endif %}
                                 {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_AFP %}{{ oppleoconfig.OS_BACKUP_TYPE_AFP_STR }}{% endif %}
                                 {% if oppleoconfig.osBackupType == oppleoconfig.OS_BACKUP_TYPE_ONEDRIVE %}{{ oppleoconfig.OS_BACKUP_TYPE_ONEDRIVE_STR }}{% endif %}
