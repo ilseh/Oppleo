@@ -493,6 +493,11 @@
           "searching": false
         })
 
+        // Make sure tooltips are initialized on each draw
+        $('table#charge_sessions').on('draw.dt', function() {
+          $('[data-toggle="tooltip"]').tooltip()
+        })
+
         // Filter table when filter selected
         $('select[id="filterReport"]').on('change', function() {
           if (this.value != "-") {
