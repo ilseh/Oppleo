@@ -47,6 +47,7 @@ class ModulePresence(object, metaclass=Singleton):
         try:
             import pigpio
             self.__pigpio_installed = True
+            self.__pigpio = pigpio
         except ModuleNotFoundError:
             self.logger.debug('PiGPIO not installed.')
 
