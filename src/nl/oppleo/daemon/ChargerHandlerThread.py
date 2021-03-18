@@ -9,6 +9,7 @@ from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException,
                                              ExpiredException)
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.services.led.RGBLedControllerThread import RGBLedControllerThread
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
@@ -36,7 +37,6 @@ class ChargerHandlerThread(object):
     rfid_reader_thread = None
     stop_event = None
     charger = None
-    ledlighter = None
     buzzer = None
     evse = None
     evse_reader = None
@@ -44,13 +44,12 @@ class ChargerHandlerThread(object):
     device = None
     counter = 0
 
-    def __init__(self, device, ledlighter, buzzer, evse, evse_reader, appSocketIO):
+    def __init__(self, device, buzzer, evse, evse_reader, appSocketIO):
         self.threadLock = threading.Lock()
         self.logger = logging.getLogger('nl.oppleo.daemon.ChargerHandlerThread')
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()
-        self.ledlighter = ledlighter
         self.buzzer = buzzer
         self.evse = evse
         self.evse_reader = evse_reader
@@ -71,6 +70,10 @@ class ChargerHandlerThread(object):
         self.evse_reader_thread = threading.Thread(target=self.evseReaderLoop, name='EvseLedReaderThread')
         self.evse_reader_thread.start()
 
+        self.logger.debug('.start() - start RGBLedControllerThread')
+        oppleoConfig.rgblcThread = RGBLedControllerThread()
+        oppleoConfig.rgblcThread.start()
+
         self.logger.debug('.start() start_background_task - rfidReaderLoop')
         # self.rfid_reader_thread = self.appSocketIO.start_background_task(self.rfidReaderLoop)
         #   appSocketIO.start_background_task launches a background_task
@@ -84,12 +87,13 @@ class ChargerHandlerThread(object):
 
     # evse_reader_thread
     def evseReaderLoop(self):
+        global oppleoConfig
         # Redirect stdout to logfile
         try:
             self.evse_reader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
         except Exception as e:
             self.logger.exception('.evseReaderLoop() - Could not start evse reader loop {}'.format(str(e)))
-            self.ledlighter.error()
+            oppleoConfig.rgblcThread.error = True
 
 
     # rfid_reader_thread
@@ -156,7 +160,8 @@ class ChargerHandlerThread(object):
             except Exception as e:
                 self.logger.error(".rfidReaderLoop() - Could not execute run_read_rfid: {}".format(str(e)))
                 self.buzz_error()
-                self.ledlighter.error(duration=.6)
+                oppleoConfig.rgblcThread.errorFlash = True
+
             # Sleep to prevent re-reading the same tag twice
             # time.sleep(0.25)
             oppleoConfig.appSocketIO.sleep(0.75)
@@ -334,15 +339,16 @@ class ChargerHandlerThread(object):
     def update_charger_and_led(self, start_session):
         if start_session:
             self.evse.switch_on()
-            self.ledlighter.ready()
+            oppleoConfig.rgblcThread.openSession = True
         else:
             self.evse.switch_off()
-            self.ledlighter.available()
+            oppleoConfig.rgblcThread.openSession = False
 
 
     def stop(self, block=False):
         self.logger.debug('.stop() - Requested to stop')
-        self.ledlighter.stop()
+        if oppleoConfig.rgblcThread is not None:
+            oppleoConfig.rgblcThread.stop()
         self.stop_event.set()
 
 
@@ -352,7 +358,8 @@ class ChargerHandlerThread(object):
             self.handle_charging(evse_state)
         except Exception as e:
             self.logger.error(".try_handle_charging() - Error handle charging: %s", e, exc_info=True)
-            self.ledlighter.error()
+            oppleoConfig.rgblcThread.error = True
+
 
 
     # evse_reader_thread
@@ -380,9 +387,9 @@ class ChargerHandlerThread(object):
                             namespace='/charge_session',
                             public=True
                         )
-            if not self.ledlighter.is_charging_light_on():
-                self.logger.debug('.handle_charging() - Start charging light pulse')
-                self.ledlighter.charging()
+            self.logger.debug('.handle_charging() - Start charging light pulse')
+            oppleoConfig.rgblcThread.charging = True
+
         else:
             # self.logger.debug("Not charging")
             # Not charging. If it was charging, set light back to previous (before charging) light
@@ -400,8 +407,12 @@ class ChargerHandlerThread(object):
                             namespace='/charge_session',
                             public=True
                         )
-                if self.ledlighter.is_charging_light_on():
-                    self.ledlighter.back_to_previous_light()
+
+        if oppleoConfig.rgblcThread.charging != (evse_state == EvseState.EVSE_STATE_CHARGING):
+            # Only the change
+            self.logger.debug('.handle_charging() - Charging light pulse to {}'.format(str(evse_state == EvseState.EVSE_STATE_CHARGING)))
+            oppleoConfig.rgblcThread.charging = (evse_state == EvseState.EVSE_STATE_CHARGING)
+
 
 
     # Auto Session starts a new session when the EVSE starts charging and during the set amount of minutes less

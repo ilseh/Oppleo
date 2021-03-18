@@ -481,6 +481,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     """
         oppleoLedEnabled
         The Oppleo status LED GPIO output
+        - if this is moved to the database and OppleoConfig, resetting the RGBLedControllerThread becomes possible.
     """
     @property
     def oppleoLedEnabled(self):

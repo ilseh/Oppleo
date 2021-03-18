@@ -3,7 +3,6 @@ import logging
 import time
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.utils.GenericUtil import GenericUtil
 
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()

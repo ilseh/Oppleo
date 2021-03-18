@@ -25,7 +25,6 @@ try:
 
     from nl.oppleo.services.PushMessage import PushMessage
 
-    from nl.oppleo.utils.GenericUtil import GenericUtil
     if modulePresence.gpioAvailable():
         GPIO = modulePresence.GPIO
         try:
@@ -83,7 +82,6 @@ try:
     from nl.oppleo.daemon.MeasureElectricityUsageThread import MeasureElectricityUsageThread
     from nl.oppleo.daemon.ChargerHandlerThread import ChargerHandlerThread
     from nl.oppleo.daemon.PeakHoursMonitorThread import PeakHoursMonitorThread
-    from nl.oppleo.services.LedLighter import LedLighter
     from nl.oppleo.services.Buzzer import Buzzer
     from nl.oppleo.services.Evse import Evse
     from nl.oppleo.services.EvseReader import EvseReader
@@ -195,12 +193,12 @@ try:
 
     # 404 Not Found - The server can not find requested resource.
     @app.errorhandler(404)
-    def page_not_found(e):
+    def app_page_not_found(e):
         return render_template('errorpages/404.html'), 404
 
     # 409 Conflict - This response is sent when a request conflicts with the current state of the server.
     @app.errorhandler(409)
-    def page_not_found(e):
+    def app_conflict(e):
         return render_template('errorpages/409.html'), 409
 
     @event.listens_for(EnergyDeviceMeasureModel, 'after_update')
@@ -231,7 +229,6 @@ try:
         try:
             chThread = ChargerHandlerThread(
                         device=oppleoConfig.chargerName,
-                        ledlighter=LedLighter(), 
                         buzzer=Buzzer(), 
                         evse=Evse(),
                         evse_reader=EvseReader(), 
@@ -355,30 +352,30 @@ except DbException as dbe:
         CSRFProtect(limpApp)
 
         @limpApp.errorhandler(400)
-        def page_not_found(e):
+        def limp_page_not_found(e):
             oppleoLogger.debug('400 bad request error handler')
             return render_template('errorpages/400.html'), 400
 
         @limpApp.errorhandler(404)
-        def bad_request(e):
+        def limp_bad_request(e):
             oppleoLogger.debug('404 page not found error handler')
             return render_template('errorpages/404.html'), 404
 
         @limpApp.errorhandler(500)
-        def internal_server_error(e):
+        def limp_internal_server_error(e):
             oppleoLogger.debug('500 internal_server_error error handler')
             return render_template('errorpages/500.html'), 500
 
         # Standard return error 500 - Internal Server Error
         @limpApp.route("/")
-        def index():
+        def limp_index():
             return render_template('errorpages/503-DbException.html',
                 restart_allowed=True if oppleoSystemConfig.onDbFailureAllowRestart else False
                 ), 503
 
         from nl.oppleo.webapp.AuthorizeForm import AuthorizeForm
         @limpApp.route("/restart", methods=["GET", "POST"])
-        def restart():
+        def limp_restart():
             global oppleoSystemConfig, oppleoLogger
             oppleoLogger.debug('/restart {}'.format(request.method))
 

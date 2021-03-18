@@ -3,7 +3,6 @@ import logging
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-from nl.oppleo.utils.GenericUtil import GenericUtil
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.EnergyModbusReader import EnergyModbusReader
 
@@ -122,7 +121,15 @@ class EnergyDevice():
 
 
     def is_a_value_changed(self, old_measurement, new_measurement):
-        measurements_of_interest = {'kwh_l1', 'kwh_l2', 'kwh_l3', 'p_l1', 'p_l2', 'p_l3', 'a_l1', 'a_l2', 'a_l3',
+        measurements_of_interest = {'kwh_l1', 
+                                    'kwh_l2', 
+                                    'kwh_l3', 
+                                    'p_l1', 
+                                    'p_l2', 
+                                    'p_l3', 
+                                    'a_l1', 
+                                    'a_l2', 
+                                    'a_l3',
                                     'kw_total'}
 
         for measurement in measurements_of_interest:

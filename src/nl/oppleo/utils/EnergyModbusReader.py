@@ -2,7 +2,6 @@ import minimalmodbus
 import threading
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-import nl.oppleo.utils.modbus.MB as MB
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 import logging
 
@@ -11,6 +10,8 @@ MODBUS_FUNCTION_CODE_DISCRETE = 2
 MODBUS_FUNCTION_CODE_HOLDING  = 3
 MODBUS_FUNCTION_CODE_INPUT    = 4
 
+
+import nl.oppleo.utils.modbus.MB as MB
 # Eastron SDM630-Modbus MID V2, 3 Fase kWh meter met Modbus RS485 100A   € 139
 from nl.oppleo.utils.modbus.SDM360v2 import SDM630v2
 # Eastron SDM120-Modbus MID, 1 Fase kWh energie meter 45A LCD MID        €  52
@@ -106,23 +107,6 @@ class EnergyModbusReader:
         return self.oppleoConfig.kWhMeterSerial
 
  
-    def readSerialNumber_OLD(self, port_name=None, slave_address=None):
-        self.logger.debug('readSerialNumber()')
-        # registeraddress, number_of_decimals=0, functioncode=3, signed=False
-        # Register                Hi  Lo  byte
-        # 40043 Serial Number Hi  00  2A  Read the first product serial number.
-        serial_Hi = self.instrument.read_register(42, 0, MODBUS_FUNCTION_CODE_HOLDING, False)
-        # 40045 Serial Number Lo  00  2C  Read the second product serial number.
-        serial_Lo = self.instrument.read_register(44, 0, MODBUS_FUNCTION_CODE_HOLDING, False)
-        self.logger.debug('readSerialNumber() serial_Hi:{} serial_Lo:{}'.format(serial_Hi, serial_Lo))     
-        self.oppleoConfig.kWhMeterSerial = str((serial_Hi * 65536 ) + serial_Lo)
-        self.logger.info('kWh meter serial number: {} (port:{}, address:{})'.format(
-                self.oppleoConfig.kWhMeterSerial,
-                port_name,
-                slave_address
-                )
-            )     
-        return self.oppleoConfig.kWhMeterSerial
 
 
     def getTotalKWHHValue(self):
@@ -161,14 +145,14 @@ class EnergyModbusReader:
             self.logger.warn("Type {} for modbus element {} not supported (must be {})".format(el[MB.TYPE], name, MB.TYPE_FLOAT))
             return 0
         return round(self.try_read_float( 
-                        value_desc=name, 
-                        registeraddress=el[MB.REGISTER_ADDRESS], 
-                        functioncode=el[MB.FUNCTION_CODE], 
-                        number_of_registers=el[MB.NUMBER_OF_REGISTERS], 
-                        byteorder=el[MB.BYTE_ORDER] 
-                    ),
-                    1 
-                )
+                            value_desc=name, 
+                            registeraddress=el[MB.REGISTER_ADDRESS], 
+                            functioncode=el[MB.FUNCTION_CODE], 
+                            number_of_registers=el[MB.NUMBER_OF_REGISTERS], 
+                            byteorder=el[MB.BYTE_ORDER] 
+                        ),
+                        1 
+                    )
         
 
     def getProdMeasurementValue(self):

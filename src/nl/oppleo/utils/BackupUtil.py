@@ -12,7 +12,6 @@ from shutil import which
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
-from nl.oppleo.utils.GenericUtil import GenericUtil
 
 from nl.oppleo.utils.formatFilesize import formatFilesize
 from nl.oppleo.utils.SMBClient import SMBClient

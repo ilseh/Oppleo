@@ -128,9 +128,10 @@ class OppleoConfig(object, metaclass=Singleton):
     app = None  
     appSocketIO = None
 
-    meuThread = None
-    chThread = None
-    phmThread = None
+    meuThread = None        # MeasureElectricityUsageThread
+    chThread = None         # ChargerHandlerThread
+    phmThread = None        # PeakHoursMonitorThread
+    rgblcThread = None      # RGBLedControllerThread
 
     wsEmitQueue = None
 

@@ -1,5 +1,7 @@
 # Oppleo
 
+![Oppleo Dashboard](src/nl/oppleo/webapp/static/images/about_dashboard.png)
+
 The Oppleo software package aims to provide additional functionality to extend a basic SmartEVSE based car charger adding RFID tags, a buzzer and LED, an online web front with basic authentication, kWh meter loggin to a database, off-peak charging, and Excel and PDF charge reports.
 
 Combined with some additional components like a relais, cabling and proper connections, a SmartEVSE can be used to charge an electric vehicle from your one or three phase mains. It can do so while balancing the total power consumption. SmartEVSE allows control through a switch, which is used by Oppleo to control access and off peak charging. SmartEVSE also reports charge status through a PWM pin, which is read by Oppleo to provide LED and online charge status.
@@ -323,6 +325,7 @@ excludes pkg-resources from the file when generating it.
 The raspberry GPIO has internal pull-up and pull-down resistors. They need to be enabled though if required. The EVSE status led is pulled up by the GPIO to allow proper high voltages on the pin. The EVSE only pulls it down when switching.
   `GPIO.setup(port_or_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)`
 [More info](https://raspi.tv/2013/rpi-gpio-basics-6-using-inputs-and-outputs-together-with-rpi-gpio-pull-ups-and-pull-downs)
+More GPIO info on the RPi.GPIO Python Module on [pypi.org]](https://pypi.org/project/RPi.GPIO/) and on [SourceForge](https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/).
 
 ### PWM
 PWM read using pigpio

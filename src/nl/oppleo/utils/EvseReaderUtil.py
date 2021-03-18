@@ -2,11 +2,7 @@ import enum
 import logging
 
 from nl.oppleo.config import Logger
-
-try:
-    import pigpio
-except ModuleNotFoundError:
-    pass # Dev environment
+from nl.oppleo.utils.ModulePresence import modulePresence
 
 
 class EvseReaderUtil:
@@ -17,7 +13,7 @@ class EvseReaderUtil:
    pulse high time per cycle.
    """
 
-    def __init__(self, pi, gpio, weighting=0.0):
+    def __init__(self, pigpio, pi, pin, weighting=0.0):
         """
       Instantiate with the Pi and gpio of the PWM signal
       to monitor.
@@ -29,8 +25,9 @@ class EvseReaderUtil:
       smooth the data.
       """
         self.logger = logging.getLogger('nl.oppleo.utils.EvseReaderUtil')
+        self.pigpio = pigpio
         self.pi = pi
-        self.gpio = gpio
+        self.pin = pin
 
         if weighting < 0.0:
             weighting = 0.0
@@ -44,9 +41,9 @@ class EvseReaderUtil:
         self._pwm_frequency = None
         self._pwm_pulse_width_microseconds = None
 
-        self._cb = pi.callback(gpio, pigpio.EITHER_EDGE, self._cbf)
+        self._cb = pi.callback(pin, self.pigpio.EITHER_EDGE, self._cbf)
 
-    def _cbf(self, gpio, level, tick):
+    def _cbf(self, pin, level, tick):
 
         # 1 = change to high (a rising edge)
         if level == 1:
@@ -60,7 +57,7 @@ class EvseReaderUtil:
     def _do_something_with_pulse(self, old_value_of_interest, tick):
         new_value_of_interest = old_value_of_interest
         if self._high_tick is not None:
-            t = pigpio.tickDiff(self._high_tick, tick)
+            t = self.pigpio.tickDiff(self._high_tick, tick)
 
             if old_value_of_interest is not None and self._old_weighting is not None and self._new_weighting is not None:
                 new_value_of_interest = (self._old_weighting * old_value_of_interest) + (self._new_weighting * t)

@@ -2,22 +2,13 @@ import time
 from enum import Enum, IntEnum
 import logging
 
-from nl.oppleo.utils.EvseReaderUtil import EvseReaderUtil
-from nl.oppleo.utils.GenericUtil import GenericUtil
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.utils.ModulePresence import modulePresence
+from nl.oppleo.utils.EvseReaderUtil import EvseReaderUtil
 
 LOGGER_PATH = "nl.oppleo.services.EvseReaderProd"
 
 oppleoConfig = OppleoConfig()
-
-try:
-    import pigpio
-except ModuleNotFoundError:
-    evseProdLogger = logging.getLogger(LOGGER_PATH)
-    evseProdLogger.debug('EvseReaderProd: import pigpio caused ModuleNotFoundError!!!')
-
-
-GPIO = GenericUtil.importGpio()
 
 
 class EvseDirection(Enum):
@@ -96,11 +87,10 @@ class EvseReaderProd:
         self.logger.setLevel(logging.WARNING)
 
     def loop(self, cb_until, cb_result):
-        global oppleoConfig
+        global oppleoConfig, modulePresence
 
         self.logger.debug('In loop, doing setup GPIO')
-        # set GPIO mode globally (to BCM)
-        # GPIO.setmode(GPIO.BCM)  # BCM / GIO mode
+        GPIO = modulePresence.GPIO
 
         if GPIO is None:
             self.logger.warn("EVSE LED Reader is enabled but GPIO is not loaded (config error).")
@@ -112,9 +102,9 @@ class EvseReaderProd:
 
         GPIO.setup(oppleoConfig.pinEvseLed, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        pigpio_pi = pigpio.pi()
+        pigpio_pi = modulePresence.pigpio.pi()
 
-        evse_reader = EvseReaderUtil(pigpio_pi, oppleoConfig.pinEvseLed)
+        evse_reader = EvseReaderUtil(pigpio=modulePresence.pigpio, pi=pigpio_pi, pin=oppleoConfig.pinEvseLed)
         self.logger.debug('Init EvseReaderUtil done')
 
         evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
