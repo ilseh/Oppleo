@@ -77,7 +77,7 @@ class RGBLedControllerThread(object):
     MAX_SLEEP_TIME = .2                 # Check 5x per second for status updates, including short error pulse
     CHARGE_LED_PULSE_FREQUENCY = 2      # Frequency of led pulses
     ERROR_LED_SWITCH_FREQUENCY = 2      # Frequency of led pulses
-    ERROR_FLASH_DURATION_MILLIS = 600   # Duration in millisec of an Error Flash (card rejected etc.)
+    ERROR_FLASH_DURATION_MILLIS = 300   # Duration in millisec of an Error Flash (card rejected etc.)
 
     logger = None
     threadLock = None
