@@ -230,21 +230,13 @@ class RGBLedControllerThread(object):
     def __updateDutyCycle__(self, pwmLed, ledPinBehaviour:Optional[LedPinBehaviour], dutyCyclePercentage:int):
         if pwmLed is None:
             return
-        dcRed = (ledPinBehaviour.low_intensity +
-                    (dutyCyclePercentage * 
-                        ((ledPinBehaviour.high_intensity - ledPinBehaviour.low_intensity) /100)
+        dutyCycle = (ledPinBehaviour.low_intensity +
+                        (dutyCyclePercentage * 
+                            ((ledPinBehaviour.high_intensity - ledPinBehaviour.low_intensity) /100)
+                        )
                     )
-                )
-
-        print("Pin:{}  dc:{}  low_intensity:{}  high_intensity:{}  dutyCyclePercentage:{}".format(
-                ledPinBehaviour.pin, 
-                dcRed,
-                ledPinBehaviour.low_intensity,
-                ledPinBehaviour.high_intensity,
-                dutyCyclePercentage
-                ))
-
-        pwmLed.ChangeDutyCycle(dcRed)
+        # self.logger.debug("Pin:{}  dc:{} ".format(ledPinBehaviour.pin, dutyCycle))
+        pwmLed.ChangeDutyCycle(dutyCycle)
 
 
     """
