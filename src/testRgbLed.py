@@ -24,7 +24,7 @@ run = True
 while run:
 
     try:
-        option = input("Please state 'open', 'close', 'charge', 'error' or 'flash' or 'stop':")
+        option = input("Please state 'open', 'close', 'charge', 'nocharge', 'error' or 'flash' or 'stop':")
         if option.upper() in ['OPEN', 'CLOSE', 'CHARGE', 'ERROR', 'NOERROR', 'FLASH', 'STOP']:
             if option.upper() == 'STOP':
                 print("Stopping...")
@@ -44,6 +44,9 @@ while run:
                     oppleoConfig.rgblcThread.openSession = True
                 print("Start charging...")
                 oppleoConfig.rgblcThread.charging = True
+            if option.upper() == 'NOCHARGE':
+                print("Stop charging...")
+                oppleoConfig.rgblcThread.charging = False
             if option.upper() == 'ERROR':
                 print("Setting error...")
                 oppleoConfig.rgblcThread.error = True
