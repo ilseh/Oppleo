@@ -10,9 +10,9 @@ led_green = 12
 led_blue = 13
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(led_red, GPIO.OUT, initial=GPIO.LOW))
-GPIO.setup(led_green, GPIO.OUT, initial=GPIO.LOW))
-GPIO.setup(led_blue, GPIO.OUT, initial=GPIO.LOW))
+GPIO.setup(led_red, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(led_green, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(led_blue, GPIO.OUT, initial=GPIO.LOW)
 
 pwm_red = GPIO.PWM(led_red, 100)
 pwm_green = GPIO.PWM(led_green, 100)
