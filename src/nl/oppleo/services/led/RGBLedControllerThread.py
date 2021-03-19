@@ -276,6 +276,7 @@ class RGBLedControllerThread(object):
                         self.__updateDutyCycle__(self.__pwmRed, activeLightEffect.red, 100)
                         self.__updateDutyCycle__(self.__pwmGreen, activeLightEffect.green, 100)
                         self.__updateDutyCycle__(self.__pwmBlue, activeLightEffect.blue, 100)
+                        dutyCyclePercentageIncrement = 0
                     if activeLightEffect.switching:
                         # Interval is time in ms for pulse, delay is half pulse in ms (1Hz => 500ms timeDelay)
                         timeDelay = activeLightEffect.frequency /2
@@ -291,6 +292,8 @@ class RGBLedControllerThread(object):
                         timeDelay = timeDelay /2
                         timeDelayDivider = timeDelayDivider *2
                     timeDelayDividerCounter = 0
+
+                self.logger.debug("run() dutyCyclePercentage:{}".format(dutyCyclePercentage))
 
                 # Run effect if due, skip if divider
                 if timeDelayDividerCounter == 0:

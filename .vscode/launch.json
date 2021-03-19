@@ -10,7 +10,10 @@
             "request": "launch",
             "program": "${file}",
             "python": "${command:python.interpreterPath}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "./src"
+            }
         },
         {
             "name": "Python: Flask Websocket",
