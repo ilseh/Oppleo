@@ -25,7 +25,7 @@ from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
 oppleoConfig = OppleoConfig()
 
-
+ 
 SECONDS_IN_HOUR = 60 * 60
 
 
