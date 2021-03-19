@@ -232,7 +232,7 @@ class RGBLedControllerThread(object):
             return
         dcRed = (ledPinBehaviour.low_intensity +
                     (dutyCyclePercentage * 
-                        (ledPinBehaviour.high_intensity - ledPinBehaviour.low_intensity)
+                        ((ledPinBehaviour.high_intensity - ledPinBehaviour.low_intensity) /100)
                     )
                 )
 
