@@ -25,7 +25,7 @@ while run:
 
     try:
         option = input("Please state 'open', 'close', 'charge', 'nocharge', 'error' or 'flash' or 'stop':")
-        if option.upper() in ['OPEN', 'CLOSE', 'CHARGE', 'ERROR', 'NOERROR', 'FLASH', 'STOP']:
+        if option.upper() in ['OPEN', 'CLOSE', 'CHARGE', 'NOCHARGE', 'ERROR', 'NOERROR', 'FLASH', 'STOP']:
             if option.upper() == 'STOP':
                 print("Stopping...")
                 run = False
