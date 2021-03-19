@@ -235,6 +235,7 @@ class RGBLedControllerThread(object):
                         (ledPinBehaviour.high_intensity - ledPinBehaviour.low_intensity)
                     )
                 )
+        print("Pin:{}  dc:{}".format(ledPinBehaviour.pin, dcRed))
         pwmLed.ChangeDutyCycle(dcRed)
 
 
