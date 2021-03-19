@@ -44,8 +44,6 @@ while run:
             brightness_blue = brightness
             pwm_blue.ChangeDutyCycle(brightness_blue)
             
-      pwm_red.start(0)
-
    except KeyboardInterrupt:
       run = False
 
