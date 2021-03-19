@@ -19,7 +19,7 @@ oppleoConfig = OppleoConfig()
                     green   - on    100%
                     blue    - off
         Ready:      red     - on    100%
-                    green   - on    100%
+                    green   - on     40%
                     blue    - off
         Charging:   red     - off
                     green   - off
@@ -115,8 +115,8 @@ class RGBLedControllerThread(object):
                                                 high_intensity=100
                                                 ),
                                 green=LedPinBehaviour(pin=oppleoConfig.pinLedGreen, 
-                                                low_intensity=100, 
-                                                high_intensity=100
+                                                low_intensity=40, 
+                                                high_intensity=40
                                                 ),
                                 blue=LedPinBehaviour(pin=oppleoConfig.pinLedBlue),
                                 effect=RGBLedEffect.EFFECT_STATIC,
