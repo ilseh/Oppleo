@@ -5,9 +5,9 @@ import random, time
 import RPi.GPIO as GPIO
 
 print("RGB Led Color tester")
-led_red = 16
+led_red = 13
 led_green = 12
-led_blue = 13
+led_blue = 16
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(led_red, GPIO.OUT, initial=GPIO.LOW)
