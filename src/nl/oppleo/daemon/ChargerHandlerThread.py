@@ -80,7 +80,10 @@ class ChargerHandlerThread(object):
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
-        self.rfid_reader_thread.start()
+        #self.rfid_reader_thread.start()
+
+        # TODO
+        self.rfidReaderLoop()
 
         self.logger.debug('.start() - Done starting rfid reader and evse reader background tasks')
 
@@ -97,7 +100,7 @@ class ChargerHandlerThread(object):
 
 
     # rfid_reader_thread
-    def is_expired(self, from_date, until_date):
+    def isExpired(self, from_date, until_date):
         expired = False
         if from_date:
             expired = datetime.now() < from_date
@@ -107,64 +110,52 @@ class ChargerHandlerThread(object):
 
 
     # rfid_reader_thread
-    def authorize(self, rfid):
+    def rfidAuthorized(self, rfid:str) -> bool:
+        self.logger.debug(".rfidAuthorized() - rfid:{}".format(rfid))
 
-        is_authorized = False
-        is_expired = False
-        rfid_data:RfidModel = {}
-        try:
-            rfid_data = RfidModel.get_one(rfid)
-            if rfid_data is None:
-                self.logger.warn(".authorize() - Unknown rfid offered. Access denied and rfid value saved in db.")
-                new_rfid_entry = RfidModel()
-                new_rfid_entry.set({"rfid": rfid})
-                new_rfid_entry.save()
-            else:
-                is_authorized = rfid_data.enabled
-                is_expired = self.is_expired(rfid_data.valid_from, rfid_data.valid_until)
-                rfid_data.last_used_at = datetime.now()
-                rfid_data.save()
-        except Exception as e:
-            self.logger.error(".authorize() - Could not authorize %s %s" % (rfid, e))
+        rfidData = RfidModel.get_one(rfid)
+        if rfidData is None:
+            self.logger.warn("Unknown rfid offered ({}). Access denied and rfid value saved in db.".format(rfid))
+            newRfid = RfidModel()
+            newRfid.set({"rfid": rfid})
+            newRfid.save()
+            return False
 
-        if not is_authorized:
-            raise NotAuthorizedException(".authorize() - Unauthorized rfid %s" % rfid)
-        if is_expired:
-            raise ExpiredException(".authorize() - Rfid isn't valid yet/anymore. Valid from {} to {}".format(
-                                    rfid_data.valid_from, rfid_data.valid_until
-                                  ))
+        # Update last seen date
+        rfidData.last_used_at = datetime.now()
+        rfidData.save()
+
+        # Valid rfid card?
+        return rfidData.enabled and not self.isExpired(rfidData.valid_from, rfidData.valid_until)
 
 
     # rfid_reader_thread
     def resume_session_if_applicable(self):
         self.logger.debug(".resume_session_if_applicable()")
-        # Check if there was a session active when this daemon was stopped.
-        last_saved_session = ChargeSessionModel.get_latest_charge_session(self.device)
 
-        if last_saved_session and last_saved_session.end_time is None:
-            self.logger.info("After startup continuing an active session for rfid %s" % last_saved_session.rfid)
-            resume_session = True
+        # Check if there was a charge session active when Oppleo was stopped.
+        openChargeSession = ChargeSessionModel.getOpenChargeSession(self.device)
+        if openChargeSession is None:
+            self.logger.info("No open charge session to resume.")
         else:
-            self.logger.info(".resume_session_if_applicable - After startup no active session detected.")
-            resume_session = False
-        self.update_charger_and_led(resume_session)
+            self.logger.info("Resume charge session {} for rfid {}".format(openChargeSession.id, openChargeSession.rfid))
+        self.update_charger_and_led(openChargeSession is not None)
 
 
     # rfid_reader_thread
     def rfidReaderLoop(self):
         self.resume_session_if_applicable()
-        reader = RfidReader()
+        rfidReader = RfidReader()
         while not self.stop_event.is_set():
-            try:
-                self.read_rfid(reader)
-            except Exception as e:
-                self.logger.error(".rfidReaderLoop() - Could not execute run_read_rfid: {}".format(str(e)))
-                self.buzz_error()
-                oppleoConfig.rgblcThread.errorFlash = True
+
+            rfid, text = rfidReader.read()
+            self.logger.info("rfid:{} text:{}".format(rfid, text))
+            self.handleOfferedRfid(rfid)
 
             # Sleep to prevent re-reading the same tag twice
             # time.sleep(0.25)
             oppleoConfig.appSocketIO.sleep(0.75)
+
         self.logger.info(".rfidReaderLoop() - Stopping RfidReader")
 
 
@@ -175,47 +166,55 @@ class ChargerHandlerThread(object):
 
 
     # rfid_reader_thread
-    def read_rfid(self, reader):
-        self.logger.info(".read_rfid() - Starting rfid reader for device %s" % self.device)
+    def handleOfferedRfid(self, rfid:str):
+        self.logger.debug(".handleOfferedRfid() - rfid {}".format(rfid))
         """
         TODO - hand callback function to check off-peak from the thread
         """
-        rfid, text = reader.read()
-        self.logger.debug(".read_rfid() - Rfid id and text: %d - %s" % (rfid, text))
 
         # An RFID tag was read, lock to prevent thread mixing
         with self.threadLock:
-            rfid_latest_session = ChargeSessionModel.get_latest_charge_session(self.device, rfid)
 
-            start_session = False
-            # If rfid has open session, no need to authorize, let it end the session.
-            # If no open session, authorize rfid.
-            if self.has_rfid_open_session(rfid_latest_session):
-                self.buzz_ok()
-                self.logger.debug(".read_rfid() - Stopping charging session for rfid %s" % rfid)
-                # Set end-time to now (when RFID was presented)
-                self.end_charge_session(rfid_latest_session, False)
+            """
+                Case 1: open session. only the rfid used for this session can deactivate it.
+                Case 2: no open session. only a valid rfid can open the session
+            """
+            openSession = ChargeSessionModel.getOpenChargeSession(self.device)
+
+            if openSession is not None:
+                # Case 1
+                if openSession.rfid != rfid:
+                    # No go (Case 1)
+                    self.logger.info("Rfid {} cannot stop charge session started by rfid {}".format(rfid, openSession.rfid))
+                    self.buzz_error()
+                    oppleoConfig.rgblcThread.errorFlash = True
+                    return
+                else:
+                    # Correct rfid, close session (Case 1)
+                    self.logger.info("Rfid {} stop charge session".format(rfid))
+                    self.buzz_ok()
+                    # Set end-time to now (when RFID was presented)
+                    self.end_charge_session(charge_session=openSession, detect=False)
+                    self.update_charger_and_led(openSession is not None)
+
             else:
-                self.authorize(rfid)
-                self.buzz_ok()
-
-                # If there is an open session for another rfid, raise error.
-                last_saved_session = ChargeSessionModel.get_latest_charge_session(self.device)
-                if self.is_other_session_active(last_saved_session, rfid):
-                    raise OtherRfidHasOpenSessionException(
-                        "Rfid {} was offered but rfid {} has an open session".format(rfid, last_saved_session.rfid)
-                        )
-
-                self.logger.debug(".read_rfid() - Starting new charging session for rfid {}".format(rfid))
-                # Do not condense, an actual RFID was presented
-                self.start_charge_session(
-                        rfid=rfid,
-                        trigger=ChargeSessionModel.TRIGGER_RFID,
-                        condense=False
-                        )
-                start_session = True
-
-            self.update_charger_and_led(start_session)
+                # Case 2
+                if self.rfidAuthorized(rfid):
+                    # Valid rfid, open charge session (Case 2)
+                    self.logger.info("Starting new charging session for rfid {}".format(rfid))
+                    self.buzz_ok()
+                    # Do not condense, an actual RFID was presented
+                    self.start_charge_session(
+                            rfid=rfid,
+                            trigger=ChargeSessionModel.TRIGGER_RFID,
+                            condense=False
+                            )
+                    self.update_charger_and_led(True)
+                else:
+                    # Invalid rfid, no new charge session (Case 2)
+                    self.buzz_error()
+                    oppleoConfig.rgblcThread.errorFlash = True
+                    return
 
 
     # evse_reader_thread
@@ -224,7 +223,7 @@ class ChargerHandlerThread(object):
     def start_charge_session(self, rfid, trigger=ChargeSessionModel.TRIGGER_RFID, condense=False):
         global oppleoConfig
 
-        self.logger.debug(".start_charge_session() new charging session for rfid %s" % rfid)
+        self.logger.debug(".start_charge_session() new charging session for rfid {}".format(rfid))
 
         # Optimize: maybe get this from the latest db value rather than from the energy meter directly
 
@@ -331,18 +330,12 @@ class ChargerHandlerThread(object):
 
 
     # rfid_reader_thread
-    def has_rfid_open_session(self, rfid_latest_session):
-        return (rfid_latest_session is not None and rfid_latest_session.end_time is None)
-
-
-    # rfid_reader_thread
     def update_charger_and_led(self, start_session):
         if start_session:
             self.evse.switch_on()
-            oppleoConfig.rgblcThread.openSession = True
         else:
             self.evse.switch_off()
-            oppleoConfig.rgblcThread.openSession = False
+        oppleoConfig.rgblcThread.openSession = start_session
 
 
     def stop(self, block=False):

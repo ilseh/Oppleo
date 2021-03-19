@@ -199,6 +199,48 @@ class ChargeSessionModel(Base):
         return latest_charge_session
 
 
+
+    @staticmethod
+    def getOpenChargeSession(device=None) -> ChargeSessionModel | None:
+        db_session = DbSession()
+
+        if device is None:
+            return None
+
+        # Build query to get the latest chargeSession for this device and rfid tag, mits open.
+        try:
+            id = db_session.query(func.max(ChargeSessionModel.id))                          \
+                                  .filter(ChargeSessionModel.energy_device_id == device)    \
+                                  .filter(ChargeSessionModel.end_value == None)
+        except InvalidRequestError as e:
+            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
+            return None
+        except Exception as e:
+            # Nothing to roll back
+            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
+
+        if id is None:
+            # No open charge session
+            return None
+
+        #  Now query the ChargeSession that we're interested in (latest for device).
+        openChargeSessionForRfid = None
+        try:
+            openChargeSessionForRfid = db_session.query(ChargeSessionModel)             \
+                                              .filter(ChargeSessionModel.id == id)      \
+                                              .first()
+        except InvalidRequestError as e:
+            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
+        except Exception as e:
+            # Nothing to roll back
+            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
+        return openChargeSessionForRfid
+
+
     @staticmethod
     def get_open_charge_session_for_device(device) -> ChargeSessionModel | None:
         db_session = DbSession()

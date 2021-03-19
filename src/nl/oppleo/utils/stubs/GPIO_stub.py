@@ -58,10 +58,12 @@ class GPIO_stub(object):
     VERSION = 'stub'
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.GPIO_stub')
+        self.__logger = logging.getLogger('nl.oppleo.utils.stubs.GPIO_stub')
         self.__logger.debug("GPIO_stub.init()")
 
-    def __format(self, params):
+    def __format(self, params=None):
+        if params is None:
+            return ''
         s = None
         for param in params:
             s = str(param) if s is None else s + ',' + str(param)

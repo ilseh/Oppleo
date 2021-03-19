@@ -1,6 +1,7 @@
 import logging
-from nl.oppleo.utils.GPIO_stub import GPIO_stub
-from nl.oppleo.utils.pigpio_stub import pigpio_stub
+from nl.oppleo.utils.stubs.GPIO_stub import GPIO_stub
+from nl.oppleo.utils.stubs.pigpio_stub import pigpio_stub
+from nl.oppleo.utils.stubs.SimpleMFRC522_stub import SimpleMFRC522_stub
 
 """
 """
@@ -19,8 +20,9 @@ class ModulePresence(object, metaclass=Singleton):
     """
     __logger = None
 
-    __enable_GPIO_stub = True
-    __enable_pigpio_stub = True
+    __enable_GPIO_stub          = True
+    __enable_pigpio_stub        = True
+    __enable_SimpleMFRC522_stub = True
 
 
     """ Libraries installed """
@@ -30,6 +32,7 @@ class ModulePresence(object, metaclass=Singleton):
     """ Modules or stubs """
     __GPIO              = None
     __pigpio            = None
+    __SimpleMFRC522     = None
 
 
     def __init__(self):
@@ -38,10 +41,16 @@ class ModulePresence(object, metaclass=Singleton):
         try:
             from mfrc522 import SimpleMFRC522
             self.__mfrc522_installed = True
+            self.__SimpleMFRC522 = SimpleMFRC522
         except RuntimeError as re:
             self.logger.warning('SimpleMFRC522 (mfrc522) RuntimeError - possible privilege issue.')
         except ModuleNotFoundError as mnfe:
             self.logger.warning('SimpleMFRC522 (mfrc522) not installed.')
+
+        if self.__enable_SimpleMFRC522_stub and not self.__mfrc522_installed:
+            self.logger.warning('SimpleMFRC522_stub enabled (SimpleMFRC522 not installed)')
+            self.__mfrc522_installed = True
+            self.__SimpleMFRC522 = SimpleMFRC522_stub()
 
 
         try:
@@ -73,16 +82,29 @@ class ModulePresence(object, metaclass=Singleton):
 
 
 
+    """
+        mfrc522
+    """
+    def SimpleMFRC522Available(self):
+        return self.__mfrc522_installed
 
     """
         mfrc522
     """
-    def simpleMFRC522Available(self):
-        return self.__mfrc522_installed
+    @property
+    def SimpleMFRC522(self):
+        return self.__SimpleMFRC522
+
+    """
+        mfrc522
+    """
+    @property
+    def SimpleMFRC522_IsStub(self) -> bool:
+        return isinstance(self.__SimpleMFRC522, SimpleMFRC522_stub)
 
 
     """
-        rpigpio
+        GPIO
     """
     def gpioAvailable(self):
         return self.__rgpio_installed and self.__GPIO is not None
@@ -93,7 +115,6 @@ class ModulePresence(object, metaclass=Singleton):
     @property
     def GPIO(self):
         return self.__GPIO
-
 
     """
         GPIO
@@ -109,14 +130,12 @@ class ModulePresence(object, metaclass=Singleton):
     def pigpioAvailable(self):
         return self.__pigpio_installed and self.__pigpio is not None
 
-
     """
         pigpio
     """
     @property
     def pigpio(self):
         return self.__pigpio
-
 
     """
         pigpio
