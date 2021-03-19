@@ -1,6 +1,7 @@
 import logging
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.services.led.RGBLedControllerThread import RGBLedControllerThread
 
 oppleoSystemConfig = OppleoSystemConfig()
@@ -8,6 +9,8 @@ oppleoConfig = OppleoConfig()
 
 print("RGB Led simulator")
 
+GPIO = modulePresence.GPIO
+GPIO.setmode(GPIO.BCM)
 
 oppleoConfig.rgblcThread = RGBLedControllerThread()
 
