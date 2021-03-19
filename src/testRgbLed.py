@@ -10,6 +10,9 @@ oppleoConfig = OppleoConfig()
 print("RGB Led simulator")
 
 GPIO = modulePresence.GPIO
+# We are the only GPIO user, ignore warnings
+GPIO.setwarnings(False)
+# Set pin mode to BCM. Normally done in Oppleo.py main file
 GPIO.setmode(GPIO.BCM)
 
 oppleoConfig.rgblcThread = RGBLedControllerThread()
