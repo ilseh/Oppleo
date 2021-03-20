@@ -18,14 +18,18 @@ class RfidReader(object):
         global oppleoConfig, modulePresence
         
         if modulePresence.SimpleMFRC522_IsStub:
-            self.logger.warn("read() - Reading from stub (don't expect reading any values)")
+            self.logger.warn("Reading from stub (don't expect reading any values)")
 
         # SimpleMFRC522() read() blocks other threads, call read_no_block() instead to yield to other threads.
         while True:
-            # This call returns every time, with id is None when no rfid tag was detected
-            id, text = modulePresence.SimpleMFRC522.read_no_block()
-            if id is not None:
-                return id, text
+            if oppleoSystemConfig.rfidEnabled:
+                # This call returns every time, with id is None when no rfid tag was detected
+                id, text = modulePresence.SimpleMFRC522.read_no_block()
+                if id is not None:
+                    return id, text
+            # else:
+                # RFID SPI Not enabled.
+                # pass
             # Sleep for just a little to yield for other threads
             if oppleoConfig.appSocketIO is not None:
                 oppleoConfig.appSocketIO.sleep(0.05)
