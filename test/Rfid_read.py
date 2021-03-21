@@ -23,6 +23,8 @@ while run:
                 id, text = reader.read()
                 print("  ID:", id)
                 print("  Text:", text)
+                print(" Sleep 0.8s to prevent re-read...")
+                time.sleep(0.8)
 
         except KeyboardInterrupt:
                 run = False

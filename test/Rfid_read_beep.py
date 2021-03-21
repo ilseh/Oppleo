@@ -31,6 +31,8 @@ while run:
                 GPIO.output(buzzer, GPIO.HIGH) # Turn on
                 time.sleep(0.05)
                 GPIO.output(buzzer, GPIO.LOW) # Turn off
+                print(" Sleep 0.8s to prevent re-read...")
+                time.sleep(0.8)
 
         except KeyboardInterrupt:
                 run = False
