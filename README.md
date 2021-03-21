@@ -154,6 +154,7 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
        > `url: jdbc:postgresql://<ipaddress>:5432/<dbname>`
        > `username: <dbuser>`
        > `password: <dbpassword>`
+     * There is a jdbc file included (postgresql-42.2.14.jar or a newer version). If the included version is not compatible with the installed Postgres either copy the jar from the Postgres install (share/java directory) or download a different version from the [PostgreSQL JDBC Driver](https://jdbc.postgresql.org/) website.
 
 
  #### Installation
@@ -300,18 +301,26 @@ If there are gcc errors when installing the non-raspberry dependencies on MacOS,
 before running
   > `pip install -r requirements_non_raspberry.txt`
 
+### wget on macos
+Install wget through brew `brew install wget`
+
 ### postgres on macos
-If `psql -U postgres` returns `psql: error: could not connect to server: FATAL:  role "postgres" does not exist` create the postgres user. This can occur when installed through homebrew.
-  > `/usr/local/opt/postgres/bin/createuser -s postgres`
+Install using `brew install postgresql` (more info [here](https://www.codementor.io/@engineerapart/getting-started-with-postgresql-on-mac-osx-are8jcopb) and [here](
+https://www.postgresql.org/files/documentation/pdf/12/postgresql-12-A4.pdf)).
 Start server using
   > `pg_ctl -D /usr/local/var/postgres start`
 Stop using
   > `pg_ctl -D /usr/local/var/postgres stop`
 Start automatically and have launchd start postgresql now and restart at login
   > `brew services start postgresql`
+If `psql -U postgres` returns `psql: error: could not connect to server: FATAL:  role "postgres" does not exist` create the postgres user. This can occur when installed through homebrew.
+  > `/usr/local/opt/postgres/bin/createuser -s postgres`
 You can use [Postgres.app](https://postgresapp.com/)
 Create the database using
   > `/usr/local/opt/postgres/bin/createdb <dbname>`
+To delete or drop a database use
+  > `/usr/local/opt/postgres/bin/dropdb <dbname>`
+The `pg_hba.conf` file to configure access over network to the postgres database is located in `/usr/local/var/postgres/pg_hba.conf`. Possibly the method should be updated from trust to md5.
 
 ### threads
 The greenlets or eventlets are light threads withing a thread. There is no real concurrency.

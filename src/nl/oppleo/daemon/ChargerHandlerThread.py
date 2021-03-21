@@ -62,6 +62,10 @@ class ChargerHandlerThread(object):
         self.stop_event.clear()
         self.logger.debug('Launching Threads...')
 
+        self.logger.debug('.start() - start RGBLedControllerThread')
+        oppleoConfig.rgblcThread = RGBLedControllerThread()
+        oppleoConfig.rgblcThread.start()
+
         self.logger.debug('.start() - start_background_task - evseReaderLoop')
         # self.evse_reader_thread = self.appSocketIO.start_background_task(self.evse_reader_thread)
         #   appSocketIO.start_background_task launches a background_task
@@ -70,20 +74,13 @@ class ChargerHandlerThread(object):
         self.evse_reader_thread = threading.Thread(target=self.evseReaderLoop, name='EvseLedReaderThread')
         self.evse_reader_thread.start()
 
-        self.logger.debug('.start() - start RGBLedControllerThread')
-        oppleoConfig.rgblcThread = RGBLedControllerThread()
-        oppleoConfig.rgblcThread.start()
-
         self.logger.debug('.start() start_background_task - rfidReaderLoop')
         # self.rfid_reader_thread = self.appSocketIO.start_background_task(self.rfidReaderLoop)
         #   appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
-        #self.rfid_reader_thread.start()
-
-        # TODO
-        self.rfidReaderLoop()
+        self.rfid_reader_thread.start()
 
         self.logger.debug('.start() - Done starting rfid reader and evse reader background tasks')
 
