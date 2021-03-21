@@ -16,18 +16,25 @@ GPIO.setup(buzzer, GPIO.OUT, initial=GPIO.LOW)
 
 reader = SimpleMFRC522()
 
-print ("ready to read...")
+print ("RFID Blocking Read checker (stop using CRTL-C)")
+cnt = 0
 
-try:
-        id, text = reader.read()
-        print("ID:", id)
-        print("Text:", text)
+run = True
+while run:
+        cnt = cnt +1
+        try:
+                print (" calling SimpleMFRC522().read() [{}]".format(cnt))
+                id, text = reader.read()
+                print("  ID:", id)
+                print("  Text:", text)
 
-        GPIO.output(buzzer, GPIO.HIGH) # Turn on
-        time.sleep(0.05)
-        GPIO.output(buzzer, GPIO.LOW) # Turn off
+                GPIO.output(buzzer, GPIO.HIGH) # Turn on
+                time.sleep(0.05)
+                GPIO.output(buzzer, GPIO.LOW) # Turn off
 
-finally:
-        GPIO.cleanup()
+        except KeyboardInterrupt:
+                run = False
 
+GPIO.cleanup(buzzer)
 
+print("Done.")

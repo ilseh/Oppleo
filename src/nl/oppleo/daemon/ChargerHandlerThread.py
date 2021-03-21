@@ -88,7 +88,7 @@ class ChargerHandlerThread(object):
     # evse_reader_thread
     def evseReaderLoop(self):
         global oppleoConfig
-        # Redirect stdout to logfile
+
         try:
             self.evse_reader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
         except Exception as e:
