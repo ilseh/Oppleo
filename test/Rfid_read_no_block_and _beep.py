@@ -33,7 +33,6 @@ while run:
                         time.sleep(0.05)
                         GPIO.output(buzzer, GPIO.LOW) # Turn off
                         time.sleep(0.8)
-                        return id, text
                 time.sleep(0.05)
             
         except KeyboardInterrupt:
