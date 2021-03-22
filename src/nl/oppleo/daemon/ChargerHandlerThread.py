@@ -79,7 +79,9 @@ class ChargerHandlerThread(object):
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
-        self.rfid_reader_thread.start()
+#        self.rfid_reader_thread.start()
+        # TODO
+        self.rfidReaderLoop()
 
         self.logger.debug('.start() - Done starting rfid reader and evse reader background tasks')
 
@@ -182,13 +184,16 @@ class ChargerHandlerThread(object):
                 # Case 1
                 if openSession.rfid != rfid:
                     # No go (Case 1)
-                    self.logger.info("Rfid {} cannot stop charge session started by rfid {}".format(rfid, openSession.rfid))
+                    self.logger.info("Rfid [id={}][type={}] cannot stop charge session started by rfid [id={}][type={}]".format(
+                        rfid, type(rfid), openSession.rfid, type(openSession.rfid)))
                     self.buzz_error()
                     oppleoConfig.rgblcThread.errorFlash = True
                     return
                 else:
                     # Correct rfid, close session (Case 1)
-                    self.logger.info("Rfid {} stop charge session".format(rfid))
+                    self.logger.info("Rfid [id={}][type={}] stop charge session started by rfid [id={}][type={}]".format(
+                        rfid, type(rfid), openSession.rfid, type(openSession.rfid)))
+#                    self.logger.info("Rfid {} stop charge session".format(rfid))
                     self.buzz_ok()
                     # Set end-time to now (when RFID was presented)
                     self.end_charge_session(charge_session=openSession, detect=False)
