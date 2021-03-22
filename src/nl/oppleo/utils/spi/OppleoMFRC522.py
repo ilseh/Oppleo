@@ -4,7 +4,6 @@ import spidev
 import signal
 import time
 import logging
-import warnings
 
 """
     Small improvements on the MFRC522 class in https://github.com/pimylifeup/MFRC522-python/blob/master/mfrc522/MFRC522.py
@@ -61,18 +60,7 @@ class OppleoMFRC522(MFRC522):
             else:
                 self.SPI_RST = self.SPI_RST_DEFAULT_BOARD
             
-        warnings.filterwarnings('error')            
-        with warnings.catch_warnings():     # Catch the RuntimeWarning on channel (pin) already being in use
-            try:
-                GPIO.setup(self.SPI_RST, GPIO.OUT)
-            except Warning as rtw:
-                # Already in use. Cleanup first - TODO
-                self.logger.debug('__init__() - Warning GPIO.setup reset pin {} to output - RuntimeWarning, pin already in use'.format(self.SPI_RST))
-            except Exception as rtw:
-                # Already in use. Cleanup first - TODO
-                self.logger.debug('__init__() - Exception GPIO.setup reset pin {} to output - RuntimeWarning, pin already in use'.format(self.SPI_RST))
-        warnings.resetwarnings()
-
+        GPIO.setup(self.SPI_RST, GPIO.OUT)
         GPIO.output(self.SPI_RST, 1)
         self.MFRC522_Init(boostAntenna=True)
 
