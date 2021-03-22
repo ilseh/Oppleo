@@ -60,7 +60,12 @@ class OppleoMFRC522(MFRC522):
             else:
                 self.SPI_RST = self.SPI_RST_DEFAULT_BOARD
             
-        GPIO.setup(self.SPI_RST, GPIO.OUT)
+        try:
+            GPIO.setup(self.SPI_RST, GPIO.OUT)
+        except RuntimeWarning as rtw:
+            # Already in use. Cleanup first - TODO
+            pass
+
         GPIO.output(self.SPI_RST, 1)
         self.MFRC522_Init(boostAntenna=True)
 
