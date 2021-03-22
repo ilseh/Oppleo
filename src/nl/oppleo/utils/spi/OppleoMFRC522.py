@@ -84,6 +84,7 @@ class OppleoMFRC522(MFRC522):
         (status, TagType) = self.MFRC522_Request(self.PICC_REQIDL)
         self.logger.debug('read_no_block() - status={}, TagType={}'.format(status, TagType))
         if status != self.MI_OK:
+            # No card read, return id=None, text=None
             self.logger.debug('read_no_block() - return None, None [1]')
             return None, None
         self.logger.debug('read_no_block() - MFRC522_Anticoll()')
@@ -159,9 +160,11 @@ class OppleoMFRC522(MFRC522):
         self.logger.debug('MFRC522_Request() - status={}, backData={}, backBits={} (MI_OK={} MI_ERR={})'.format(status, backData, backBits, self.MI_OK, self.MI_ERR))
 
         if ((status != self.MI_OK) | (backBits != 0x10)):
+            self.logger.debug('MFRC522_Request() - status=MI_ERR')
             status = self.MI_ERR
 
         return (status, backBits)
+
 
     def Close_MFRC522(self):
         self.spi.close()
