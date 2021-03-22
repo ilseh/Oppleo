@@ -88,7 +88,7 @@
       gaugeOnePower = (Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l2)+parseFloat(data.p_l3))*10)/10)
       gaugeOnePower = formatSizePower(gaugeOnePower)
       updateGauger( 'gauger_1',       // id
-                    gaugeOneStatus + ' ' + gaugeOnePower,   // title
+                    gaugeOneStatus + (gaugeOneStatus=='Geen sessie'?'':' ' + gaugeOnePower),   // title
                     gaugeOneSession,  // subtitle
                     '0km/u',          // scale min
                     '100km/u',        // scale max
