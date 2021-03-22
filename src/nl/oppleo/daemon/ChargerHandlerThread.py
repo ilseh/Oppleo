@@ -79,9 +79,7 @@ class ChargerHandlerThread(object):
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
-#        self.rfid_reader_thread.start()
-        # TODO
-        self.rfidReaderLoop()
+        self.rfid_reader_thread.start()
 
         self.logger.debug('.start() - Done starting rfid reader and evse reader background tasks')
 
@@ -147,9 +145,10 @@ class ChargerHandlerThread(object):
         while not self.stop_event.is_set():
 
             if oppleoSystemConfig.rfidEnabled:
+                # Returns [int, str]
                 rfid, text = rfidReader.read()
                 self.logger.info("Handle rfid:{} text:{}".format(rfid, text))
-                self.handleOfferedRfid(rfid)
+                self.handleOfferedRfid(str(rfid))
 
             # Sleep to prevent re-reading the same tag twice
             # time.sleep(0.25)

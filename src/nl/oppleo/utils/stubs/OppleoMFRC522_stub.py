@@ -29,9 +29,7 @@ class OppleoMFRC522_stub(object):
         self.__logger.debug("OppleoMFRC522_stub.read({}, select={}, auth={})".format(self.__format(param), select, auth))
         # For now, never return from this read action
         while True:
-            time.sleep(5)
-            return '584190412223', ''
-#            time.sleep(.5)
+            time.sleep(.5)
 
     def read_no_block(self, *param, select=False, auth=False):
         self.__logger.debug("OppleoMFRC522_stub.read_no_block({}, select={}, auth={})".format(self.__format(param), select, auth))

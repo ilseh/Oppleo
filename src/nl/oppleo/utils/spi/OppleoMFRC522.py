@@ -195,7 +195,7 @@ class OppleoMFRC522(MFRC522):
         self.AntennaOn()
 
 
-    def uid_to_num(self, uid):
+    def uid_to_num(self, uid) -> int:
         n = 0
         for i in range(0, 5):
             n = n * 256 + uid[i]
