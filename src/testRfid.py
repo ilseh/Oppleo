@@ -10,7 +10,13 @@ oppleoConfig = OppleoConfig()
 
 print("RFID Tag Reader")
 
-oppleoMFRC522 = OppleoMFRC522()
+oppleoMFRC522 = OppleoMFRC522(bus=0, 
+                              device=0,
+                              speed=1000000,
+                              GPIO=modulePresence.GPIO,
+                              pin_rst=OppleoMFRC522.SPI_RST_DEFAULT_BCM
+                              )
+
 init_log('RFIDTagReader', './RFIDTagReader.log', daemons=None, loglevel=logging.DEBUG, maxBytes=524288, backupCount=5)
 oppleoMFRC522.logger.setLevel(logging.DEBUG)
 
