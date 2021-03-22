@@ -36,6 +36,10 @@ import logging
     same size as in the 1K with eight more that are quadruple size sectors. MIFARE Classic mini offers 320 bytes
     split into five sectors.
 
+
+    !!! If GPIO Pins which are also SPI Pins (GPIO8,9,10,11) are cleaned using GPIO.cleanup() the SPI connection
+        fails until Raspberry Pi restart!
+
 """
 
 class OppleoMFRC522(MFRC522):
@@ -61,15 +65,18 @@ class OppleoMFRC522(MFRC522):
 
     antennaBoost = False
 
-
-    def __init__(self, bus=-1, 
-                       device=-1,
-                       speed=-1,
-                       GPIO=None,
-                       pin_rst=-1,
-                       antennaBoost:bool=False
-                       ):
+    def __init__(self):
         self.logger = logging.getLogger('nl.oppleo.utils.spi.OppleoMFRC522')
+        # Don't call MFRC522 default init
+
+
+    def setup(self, bus=-1, 
+                    device=-1,
+                    speed=-1,
+                    GPIO=None,
+                    pin_rst=-1,
+                    antennaBoost:bool=False
+                    ):
 
         self.spi = spidev.SpiDev()
         self.spi.open(bus if bus != -1 else self.SPI_BUS, 

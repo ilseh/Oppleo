@@ -62,9 +62,9 @@ class OppleoConfig(object, metaclass=Singleton):
     #   -1 if GPIO.setmode() is not set
     #   11 if GPIO.setmode(GPIO.BCM) is active
     #   10 if GPIO.setmode(GPIO.BOARD) is active
-    # Once you’ve set the mode, you can only change it once you’ve done a GPIO.cleanup(). But you can only do 
-    # GPIO.cleanup() once you’ve configured a port. You can’t flick between GPIO modes without first setting up 
-    # a port, then cleaning up.
+    # Once you’ve set the mode, you can only change it after a GPIO.cleanup(). You can only GPIO.cleanup() 
+    # after configuring at least one port. You can’t flick between GPIO modes without first setting up a port.
+    # GPIO.cleanup() also resets SPI ports, disabling the SPI untill reboot.
     # gpioMode = 'BCM'
     # Pulsing LED values
     # pulseLedMin = 3
