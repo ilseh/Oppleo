@@ -22,6 +22,10 @@ import logging
 
 class OppleoMFRC522(MFRC522):
     logger = None
+
+    KEY = [0xFF,0xFF,0xFF,0xFF,0xFF,0xFF]
+    BLOCK_ADDRS = [8, 9, 10]
+
     SPI_BUS = 0
     SPI_DEVICE = 0
     SPI_SPEED = 1000000
@@ -37,11 +41,14 @@ class OppleoMFRC522(MFRC522):
     SPI_RST_DEFAULT_BOARD = 22
     SPI_RST = 22        # SPI Reset Pin
 
+    antennaBoost = False
+
     def __init__(self, bus=-1, 
                        device=-1,
                        speed=-1,
                        GPIO=None,
-                       pin_rst=-1
+                       pin_rst=-1,
+                       antennaBoost:bool=False
                        ):
         self.logger = logging.getLogger('nl.oppleo.utils.spi.OppleoMFRC522')
 
@@ -62,7 +69,9 @@ class OppleoMFRC522(MFRC522):
             
         GPIO.setup(self.SPI_RST, GPIO.OUT)
         GPIO.output(self.SPI_RST, 1)
-        self.MFRC522_Init(boostAntenna=True)
+
+        self.antennaBoost = antennaBoost
+        self.MFRC522_Init(antennaBoost=antennaBoost)
 
 
     def read(self):
@@ -166,7 +175,7 @@ class OppleoMFRC522(MFRC522):
         self.GPIO.cleanup(self.SPI_RST)
 
 
-    def MFRC522_Init(self, boostAntenna=False):
+    def MFRC522_Init(self, antennaBoost=False):
         self.MFRC522_Reset()
 
         self.Write_MFRC522(self.TModeReg, 0x8D)
@@ -178,7 +187,7 @@ class OppleoMFRC522(MFRC522):
         self.Write_MFRC522(self.ModeReg, 0x3D)
 
         # Improve range - comment Tremayne Sargeant (2.5cm -> 5.5cm) by set RFCfgReg to 48db gain
-        if boostAntenna:
+        if antennaBoost:
             self.Write_MFRC522(self.RFCfgReg, 0x06<<4)
 
         self.AntennaOn()
