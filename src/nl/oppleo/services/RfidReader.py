@@ -30,23 +30,14 @@ class RfidReader(object):
         This function as the issue of loosing connection after a while resulting in no longer reading the RFID tags.
     """
     def read(self):
-        global oppleoConfig, modulePresence
+        global modulePresence
         
         if modulePresence.OppleoMFRC522_IsStub:
             self.logger.warn("Reading from stub (don't expect reading any values)")
 
         # OppleoMFRC522() read() does not lock other threads, no need to call read_no_block() instead to yield
-        if oppleoSystemConfig.rfidEnabled:
-            # This call returns every time, with id is None when no rfid tag was detected
-            id, text = modulePresence.OppleoMFRC522.read_no_block()
-            return id, text
-
-        # Sleep for just a little to yield for other threads
-        if oppleoConfig.appSocketIO is not None:
-            oppleoConfig.appSocketIO.sleep(0.05)
-        else:
-            time.sleep(0.05)
-
+        # This call returns with id when an rfid tag was detected
+        return modulePresence.OppleoMFRC522.read() # return id, text
       
     """
         Read function using the pimylifeup SimpleMFRC522 class to access MFRC522 class.

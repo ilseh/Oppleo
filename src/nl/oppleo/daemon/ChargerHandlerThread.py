@@ -8,6 +8,7 @@ from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException,
                                              OtherRfidHasOpenSessionException, 
                                              ExpiredException)
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.led.RGBLedControllerThread import RGBLedControllerThread
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
@@ -23,12 +24,10 @@ from nl.oppleo.utils.ModulePresence import ModulePresence
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
  
-SECONDS_IN_HOUR = 60 * 60
-
-
 class ChargerHandlerThread(object):
     threadLock = None
     appSocketIO = None
@@ -145,13 +144,14 @@ class ChargerHandlerThread(object):
         rfidReader = RfidReader()
         while not self.stop_event.is_set():
 
-            rfid, text = rfidReader.read()
-            self.logger.info("rfid:{} text:{}".format(rfid, text))
-            self.handleOfferedRfid(rfid)
+            if oppleoSystemConfig.rfidEnabled:
+                rfid, text = rfidReader.read()
+                self.logger.info("Handle rfid:{} text:{}".format(rfid, text))
+                self.handleOfferedRfid(rfid)
 
             # Sleep to prevent re-reading the same tag twice
             # time.sleep(0.25)
-            oppleoConfig.appSocketIO.sleep(0.75)
+            time.sleep(0.75)
 
         self.logger.info(".rfidReaderLoop() - Stopping RfidReader")
 
