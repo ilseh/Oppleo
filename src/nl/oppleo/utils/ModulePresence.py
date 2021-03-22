@@ -1,7 +1,6 @@
 import logging
 from nl.oppleo.utils.stubs.GPIO_stub import GPIO_stub
 from nl.oppleo.utils.stubs.pigpio_stub import pigpio_stub
-from nl.oppleo.utils.stubs.SimpleMFRC522_stub import SimpleMFRC522_stub
 from nl.oppleo.utils.stubs.OppleoMFRC522_stub import OppleoMFRC522_stub
 
 """
