@@ -17,4 +17,4 @@ GPIO.output(switch_pin, GPIO.HIGH)
 print(" Done.")
 
 # Don't do cleanup, messes with the output so it doesn't stay high!
-#GPIO.cleanup()
+# GPIO.cleanup(switch_pin)

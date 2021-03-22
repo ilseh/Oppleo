@@ -16,5 +16,5 @@ GPIO.output(switch_pin, GPIO.LOW)
 
 print(" Done.")
 
-# Don't do cleanup, messes with the output so it doesn't stay low!
-#GPIO.cleanup()
+# Don't do cleanup, messes with the output (float) so it doesn't stay low!
+# GPIO.cleanup(switch_pin)
