@@ -37,7 +37,7 @@ class RfidReader(object):
 
         # OppleoMFRC522() read() does not lock other threads, no need to call read_no_block() instead to yield
         # This call returns with id when an rfid tag was detected
-        return modulePresence.OppleoMFRC522.read() # return id, text
+        return modulePresence.OppleoMFRC522.read(select=False, auth=False) # return id, text
       
     """
         Read function using the pimylifeup SimpleMFRC522 class to access MFRC522 class.

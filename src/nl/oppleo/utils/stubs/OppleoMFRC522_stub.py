@@ -21,18 +21,18 @@ class OppleoMFRC522_stub(object):
             s = str(param) if s is None else s + ',' + str(param)
         return s
 
-    def setup(self, *param):
-        self.__logger.debug("OppleoMFRC522_stub.setup({})".format(self.__format(param)))
+    def setup(self, *param, bus=-1, device=-1, speed=-1, GPIO=None, pin_rst=-1, antennaBoost=False):
+        self.__logger.debug("OppleoMFRC522_stub.setup({}, bus={}, device={}, speed={}, GPIO={}, pin_rst={}, antennaBoost={})".format(
+            self.__format(param), bus, device, speed, GPIO, pin_rst, antennaBoost))
 
-
-    def read(self, *param):
-        self.__logger.debug("OppleoMFRC522_stub.read({})".format(self.__format(param)))
+    def read(self, *param, select=False, auth=False):
+        self.__logger.debug("OppleoMFRC522_stub.read({}, select={}, auth={})".format(self.__format(param), select, auth))
         # For now, never return from this read action
         while True:
             time.sleep(.5)
 
-    def read_no_block(self, *param):
-        self.__logger.debug("OppleoMFRC522_stub.read_no_block({})".format(self.__format(param)))
+    def read_no_block(self, *param, select=False, auth=False):
+        self.__logger.debug("OppleoMFRC522_stub.read_no_block({}, select={}, auth={})".format(self.__format(param), select, auth))
         # Return empty values from this read action
 
         return None, ''

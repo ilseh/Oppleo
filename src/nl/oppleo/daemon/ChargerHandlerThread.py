@@ -104,7 +104,7 @@ class ChargerHandlerThread(object):
             expired = datetime.now() > until_date
         return expired
 
-
+    # webapp thread
     # rfid_reader_thread
     def rfidAuthorized(self, rfid:str) -> bool:
         self.logger.debug(".rfidAuthorized() - rfid:{}".format(rfid))

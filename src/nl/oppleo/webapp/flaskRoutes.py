@@ -599,8 +599,7 @@ def start_charge_session(token=None):
         with threadLock:
             charge_session = ChargeSessionModel.get_open_charge_session_for_device(oppleoConfig.chargerName)
             if charge_session is None:
-                try:
-                    oppleoConfig.chThread.authorize(token)
+                if oppleoConfig.chThread.rfidAuthorized(token):
                     oppleoConfig.chThread.start_charge_session(
                                     rfid=token,
                                     trigger=ChargeSessionModel.TRIGGER_WEB,
@@ -608,22 +607,27 @@ def start_charge_session(token=None):
                                 )
                     oppleoConfig.chThread.buzz_ok()
                     oppleoConfig.chThread.update_charger_and_led(True)
-                except NotAuthorizedException as e:
+                else:
                     rfidToken = RfidModel.get_one(token)
-                    flaskRoutesLogger.warn('Could not start charge session for rfid {} [{}], NotAuthorized!'.format(rfidToken.name, token))
-                    return render_template("errorpages/405-NotAuthorizedException.html",
-                            requesttitle=str("RFID token niet actief!"),
-                            buttontitle="Terug",
-                            errormsg="RFID token \"" + str(rfidToken.name) + "\" [" + str(token) + "] is niet geautoriseerd om een laadsessie te starten."
-                            )
-                except ExpiredException as e:
-                    rfidToken = RfidModel.get_one(token)
-                    flaskRoutesLogger.warn('Could not start charge session for rfid {}. Expired!'.format(token))
-                    return render_template("errorpages/401-ExpiredException.html", 
-                            requesttitle=str("RFID token niet geldig!"),
-                            buttontitle="Start laadsessie",
-                            errormsg="De geldigheid van RFID token \"" + str(rfidToken.name) + "\" [" + str(token) + "] is verlopen."
-                            )
+
+                    if not rfidToken.enabled:
+                        flaskRoutesLogger.warn('Could not start charge session for rfid {} [{}], NotAuthorized!'.format(rfidToken.name, token))
+                        return render_template("errorpages/405-NotAuthorizedException.html",
+                                requesttitle=str("RFID token niet actief!"),
+                                buttontitle="Terug",
+                                errormsg="RFID token \"" + str(rfidToken.name) + "\" [" + str(token) + "] is niet geautoriseerd om een laadsessie te starten."
+                                )
+                   
+                    if oppleoConfig.chThread.isExpired(rfidToken.valid_from, rfidToken.valid_until):
+                        rfidToken = RfidModel.get_one(token)
+                        flaskRoutesLogger.warn('Could not start charge session for rfid {}. Expired!'.format(token))
+                        return render_template("errorpages/401-ExpiredException.html", 
+                                requesttitle=str("RFID token niet geldig!"),
+                                buttontitle="Start laadsessie",
+                                errormsg="De geldigheid van RFID token \"" + str(rfidToken.name) + "\" [" + str(token) + "] is verlopen."
+                                )
+                    # No other option
+                    return render_template('errorpages/500.html'), HTTP_CODE_500_INTERNAL_SERVER_ERROR
             else:
                 # A charge session was started elsewhere, fail
                 flaskRoutesLogger.warn('Could not start charge session for rfid {}, already session active!'.format(token))
