@@ -18,6 +18,24 @@ import logging
     - GPIO via modulePresence/init call
     - Don't set GPIO mode
 
+    MFRC522 Data sheet, including register description
+    https://www.nxp.com/docs/en/data-sheet/MFRC522.pdf
+
+
+        self.Read_MFRC522(self.Status2Reg) & 0x08) != 0
+    Bit 3 on Status2Reg register indicates MFCrypto1On (encryption on). Card data cannot be read without AUTH, the
+    id however can be read. Oppleo does not use data one the MiFare cards, only the ID itself.
+
+    According thedocumentation (Fig. 4 of https://www.nxp.com/docs/en/application-note/AN10834.pdf) the Mifare
+    card needs to be selected before interaction can take place. As Oppleo isn't interacting with the cards,
+
+    https://diy.waziup.io/assets/src/sketch/libraries/MFRC522/doc/rfidmifare.pdf
+    The MIFARE Classic 1K offers 1024 bytes of data storage, split into 16 sectors; each sector is protected by 
+    two different keys, called A and B. Each key can be programmed to allow operations such as reading, writing, 
+    increasing valueblocks, etc. MIFARE Classic 4K offers 4096 bytes split into forty sectors, of which 32 are 
+    same size as in the 1K with eight more that are quadruple size sectors. MIFARE Classic mini offers 320 bytes
+    split into five sectors.
+
 """
 
 class OppleoMFRC522(MFRC522):
@@ -42,6 +60,7 @@ class OppleoMFRC522(MFRC522):
     SPI_RST = 22        # SPI Reset Pin
 
     antennaBoost = False
+
 
     def __init__(self, bus=-1, 
                        device=-1,
@@ -74,49 +93,45 @@ class OppleoMFRC522(MFRC522):
         self.MFRC522_Init(antennaBoost=antennaBoost)
 
 
-    def read(self):
+    def read(self, select:bool=True, auth:bool=True):
         id, text = self.read_no_block()
         while not id:
-            id, text = self.read_no_block()
+            id, text = self.read_no_block(select=select, auth=auth)
             # yield
             time.sleep(1)
         return id, text
 
 
-    def read_no_block(self):
-        self.logger.debug('read_no_block()')
+    def read_no_block(self, select:bool=True, auth:bool=True):
+        self.logger.debug('read_no_block() select={}, auth={}'.format(select, auth))
         (status, TagType) = self.MFRC522_Request(self.PICC_REQIDL)
-        self.logger.debug('read_no_block() - status={}, TagType={}'.format(status, TagType))
+        # TagType 16 (cc, mtc)
+        if status == self.MI_OK:
+            self.logger.info('Detected rfid tag (type={})'.format(TagType))
         if status != self.MI_OK:
             # No card read, return id=None, text=None
-            self.logger.debug('read_no_block() - return None, None [1]')
             return None, None
-        self.logger.debug('read_no_block() - MFRC522_Anticoll()')
         (status, uid) = self.MFRC522_Anticoll()
-        self.logger.debug('read_no_block() - status={}, uid={}'.format(status, uid))
         if status != self.MI_OK:
-            self.logger.debug('read_no_block() - return None, None [2]')
+            self.logger.info('Collision reading rfid tag, skipping')
             return None, None
         id = self.uid_to_num(uid)
-        self.logger.debug('read_no_block() - id={}'.format(id))
-        self.logger.debug('read_no_block() - MFRC522_SelectTag()')
-        self.MFRC522_SelectTag(uid)
-        self.logger.debug('read_no_block() - MFRC522_Auth({}, {}, {}, {})'.format(self.PICC_AUTHENT1A, 11, self.KEY, uid))
-        status = self.MFRC522_Auth(self.PICC_AUTHENT1A, 11, self.KEY, uid)
-        self.logger.debug('read_no_block() - status={}'.format(status))
-        data = []
+        self.logger.info('Read rfid tag (id={})'.format(id))
         text_read = ''
-        if status == self.MI_OK:
-            for block_num in self.BLOCK_ADDRS:
-                block = self.MFRC522_Read(block_num) 
-                if block:
-                        data += block
-            if data:
-                text_read = ''.join(chr(i) for i in data)
-        self.logger.debug('read_no_block() - text_read={}'.format(text_read))
-        self.logger.debug('read_no_block() - MFRC522_StopCrypto1()')
-        self.MFRC522_StopCrypto1()
-        self.logger.debug('read_no_block() - return id={} text_read={}'.format(id, text_read))
+        if select:
+            self.MFRC522_SelectTag(uid)
+            if auth:
+                # Selection and Authentication required for reading text
+                status = self.MFRC522_Auth(self.PICC_AUTHENT1A, 11, self.KEY, uid)
+                data = []
+                if status == self.MI_OK:
+                    for block_num in self.BLOCK_ADDRS:
+                        block = self.MFRC522_Read(block_num) 
+                        if block:
+                                data += block
+                    if data:
+                        text_read = ''.join(chr(i) for i in data)
+                self.MFRC522_StopCrypto1()
         return id, text_read
 
 
@@ -141,10 +156,9 @@ class OppleoMFRC522(MFRC522):
         (status, backData, backLen) = self.MFRC522_ToCard(self.PCD_AUTHENT, buff)
 
         # Check if an error occurred
-        if not (status == self.MI_OK):
-            self.logger.error("AUTH ERROR!!")
-        if not (self.Read_MFRC522(self.Status2Reg) & 0x08) != 0:
-            self.logger.error("AUTH ERROR(status2reg & 0x08) != 0")
+        if (not (status == self.MI_OK) or
+            not (self.Read_MFRC522(self.Status2Reg) & 0x08) != 0):
+                self.logger.error("Rfid tag authentication failed")
 
         # Return the status
         return status
