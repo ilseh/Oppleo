@@ -182,3 +182,10 @@ class OppleoMFRC522(MFRC522):
             self.Write_MFRC522(self.RFCfgReg, 0x06<<4)
 
         self.AntennaOn()
+
+
+    def uid_to_num(self, uid):
+        n = 0
+        for i in range(0, 5):
+            n = n * 256 + uid[i]
+        return n
