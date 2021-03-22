@@ -892,6 +892,7 @@ class BackupUtil(object, metaclass=Singleton):
 
     def isBackupDue(self) -> bool:
         lastBackup = self.oppleoConfig.backupSuccessTimestamp
+        self.logger.info('lastBackup: {}'.format(str(lastBackup)))
         now = datetime.now()
 
         """
