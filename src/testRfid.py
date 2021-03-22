@@ -10,6 +10,9 @@ oppleoConfig = OppleoConfig()
 
 print("RFID Tag Reader")
 
+GPIO = modulePresence.GPIO
+GPIO.setmode(GPIO.BCM)
+
 oppleoMFRC522 = OppleoMFRC522(bus=0, 
                               device=0,
                               speed=1000000,
