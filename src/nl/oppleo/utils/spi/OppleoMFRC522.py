@@ -65,9 +65,12 @@ class OppleoMFRC522(MFRC522):
         with warnings.catch_warnings():     # Catch the RuntimeWarning on channel (pin) already being in use
             try:
                 GPIO.setup(self.SPI_RST, GPIO.OUT)
-            except RuntimeWarning as rtw:
+            except Warning as rtw:
                 # Already in use. Cleanup first - TODO
-                self.logger.debug('__init__() - GPIO.setup reset pin {} to output - RuntimeWarning, pin already in use'.format(self.SPI_RST))
+                self.logger.debug('__init__() - Warning GPIO.setup reset pin {} to output - RuntimeWarning, pin already in use'.format(self.SPI_RST))
+            except Exception as rtw:
+                # Already in use. Cleanup first - TODO
+                self.logger.debug('__init__() - Exception GPIO.setup reset pin {} to output - RuntimeWarning, pin already in use'.format(self.SPI_RST))
         warnings.resetwarnings()
 
         GPIO.output(self.SPI_RST, 1)
