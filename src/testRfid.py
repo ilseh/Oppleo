@@ -11,7 +11,7 @@ oppleoConfig = OppleoConfig()
 print("RFID Tag Reader")
 
 oppleoMFRC522 = OppleoMFRC522()
-init_log('RFIDTagReader', './RFIDTagReader.log', daemons=None, loglevel=logging.DEBUG, maxBytes=524288, backupCount=5):
+init_log('RFIDTagReader', './RFIDTagReader.log', daemons=None, loglevel=logging.DEBUG, maxBytes=524288, backupCount=5)
 oppleoMFRC522.logger.setLevel(logging.DEBUG)
 
 run = True
@@ -20,7 +20,7 @@ while run:
     try:
         id, text = oppleoMFRC522.read()
         print(" ID:{} Text:{}".format(id, text))
-        
+
     except KeyboardInterrupt as kbi:
         # CTRL-C
         print("Stopping...")
