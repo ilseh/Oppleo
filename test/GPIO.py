@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 
 print("GPIO.BCM: {}".format(GPIO.BCM))
-print("GPIO.BOARD: {}".format(GPIO.BCM))
+print("GPIO.BOARD: {}".format(GPIO.BOARD))
 
 print("GPIO.IN: {}".format(GPIO.IN))
 print("GPIO.OUT: {}".format(GPIO.OUT))
