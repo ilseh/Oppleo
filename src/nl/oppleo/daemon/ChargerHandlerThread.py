@@ -196,8 +196,8 @@ class ChargerHandlerThread(object):
                     self.buzz_ok()
                     # Set end-time to now (when RFID was presented)
                     self.end_charge_session(charge_session=openSession, detect=False)
-                    self.update_charger_and_led(openSession is not None)
-
+                    self.update_charger_and_led(False)
+                    return
             else:
                 # Case 2
                 if self.rfidAuthorized(rfid):
@@ -211,6 +211,7 @@ class ChargerHandlerThread(object):
                             condense=False
                             )
                     self.update_charger_and_led(True)
+                    return
                 else:
                     # Invalid rfid, no new charge session (Case 2)
                     self.buzz_error()
