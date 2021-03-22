@@ -463,6 +463,7 @@
             }
           })
         // Force gauge update
+        getChargeSessionStatus()
         getUsageData(1)
       })
       chargeSessionSocket.on('charge_session_status_update', function(msg) {
@@ -480,6 +481,7 @@
           chargeSession: false
           })
         // Force gauge update
+        getChargeSessionStatus()
         getUsageData(1)
       })
       chargeSessionSocket.on('off_peak_status_update', function(msg) {
