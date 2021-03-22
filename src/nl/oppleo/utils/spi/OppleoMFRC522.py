@@ -64,7 +64,7 @@ class OppleoMFRC522(MFRC522):
             GPIO.setup(self.SPI_RST, GPIO.OUT)
         except RuntimeWarning as rtw:
             # Already in use. Cleanup first - TODO
-            pass
+            self.logger.debug('__init__() - GPIO.setup reset pin {} to output - RuntimeWarning, pin already in use'.format(self.SPI_RST))
 
         GPIO.output(self.SPI_RST, 1)
         self.MFRC522_Init(boostAntenna=True)
