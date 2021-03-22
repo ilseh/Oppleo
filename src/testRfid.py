@@ -37,7 +37,7 @@ while run:
 
 
 print("Stopping RFID Tag Reader...")
-oppleoMFRC522.Close_MFRC522()
+#oppleoMFRC522.Close_MFRC522()
 
 print("Done.")
 
