@@ -41,7 +41,7 @@ class ModulePresence(object, metaclass=Singleton):
         try:
             from mfrc522 import SimpleMFRC522
             self.__mfrc522_installed = True
-            self.__SimpleMFRC522 = SimpleMFRC522()
+#            self.__SimpleMFRC522 = SimpleMFRC522()
         except RuntimeError as re:
             self.logger.warning('SimpleMFRC522 (mfrc522) RuntimeError - possible privilege issue.')
         except ModuleNotFoundError as mnfe:
