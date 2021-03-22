@@ -164,25 +164,6 @@ class OppleoMFRC522(MFRC522):
         return status
 
 
-    def MFRC522_Request(self, reqMode):
-        status = None
-        backBits = None
-        TagType = []
-
-        self.logger.debug('MFRC522_Request() - Write_MFRC522()')
-        self.Write_MFRC522(self.BitFramingReg, 0x07)
-
-        TagType.append(reqMode)
-        self.logger.debug('MFRC522_Request() - MFRC522_ToCard({}, {})'.format(self.PCD_TRANSCEIVE, TagType))
-        (status, backData, backBits) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE, TagType)
-        self.logger.debug('MFRC522_Request() - status={}, backData={}, backBits={} (MI_OK={} MI_ERR={})'.format(status, backData, backBits, self.MI_OK, self.MI_ERR))
-
-        if ((status != self.MI_OK) | (backBits != 0x10)):
-            self.logger.debug('MFRC522_Request() - status=MI_ERR')
-            status = self.MI_ERR
-
-        return (status, backBits)
-
 
     def Close_MFRC522(self):
         self.spi.close()
