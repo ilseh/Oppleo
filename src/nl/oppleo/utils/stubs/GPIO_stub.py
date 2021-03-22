@@ -30,14 +30,14 @@ class GPIOPWM_stub(object):
 
 class GPIO_stub(object):
     __logger = None
-    BOARD = 0
-    BCM = 1
+    BOARD = 10
+    BCM = 11
 
-    OUT = 0
     IN = 1
+    OUT = 0
 
-    HIGH = 5
-    LOW = 6
+    HIGH = 1
+    LOW = 0
 
     SERIAL = 40
     SPI = 41
@@ -45,17 +45,19 @@ class GPIO_stub(object):
     HARD_PWM = 43
     UNKNOWN = -1
 
-    PUD_DOWN = 12
-    PUD_UP = 13
+    PUD_DOWN = 21
+    PUD_UP = 22
    
-    RISING = 14
-    FALLING = 15
-    BOTH = 16
+    RISING = 31
+    FALLING = 32
+    BOTH = 33
 
-
+    # GPIO.RPI_INFO: {'P1_REVISION': 3, 'REVISION': 'b03111', 'TYPE': 'Pi 4 Model B', 'MANUFACTURER': 'Sony', 'PROCESSOR': 'BCM2711', 'RAM': '2G'}
     RPI_INFO = { 'P1_REVISION': 'stub', 'RAM': '0M', 'REVISION': 'stub', 'TYPE': 'stub', 'PROCESSOR': 'stub', 'MANUFACTURER': 'stub'}
-    RPI_REVISION = 'stub'
-    VERSION = 'stub'
+    # GPIO.RPI_REVISION: 3
+    RPI_REVISION = 0
+    # GPIO.VERSION: 0.7.0
+    VERSION = '0.0.0'
 
     def __init__(self):
         self.__logger = logging.getLogger('nl.oppleo.utils.stubs.GPIO_stub')

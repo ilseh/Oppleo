@@ -11,10 +11,31 @@ oppleoConfig = OppleoConfig()
 
 class RfidReader(object):
 
+
+    READER = None
+
+    KEY = [0xFF,0xFF,0xFF,0xFF,0xFF,0xFF]
+    BLOCK_ADDRS = [8, 9, 10]
+
     def __init__(self):
         self.logger = logging.getLogger("nl.oppleo.service.RfidReader")
+        # TODO: get from modulePresence
+        from mfrc522 import MFRC522
+        GPIO = modulePresence.GPIO
+        self.READER = MFRC522(bus=self.SPI_BUS, 
+                              device=self.SPI_DEVICE,
+                              spd=self.SPI_SPEED,
+                              pin_mode=GPIO.BCM,
+                              pin_rst=-1, 
+                              debugLevel='WARNING'
+                              )
 
-    def read(self):
+    """
+        Read function using the pimylifeup SimpleMFRC522 class to access MFRC522 class.
+        Note that the read() call on the SimpleMFRC522 basically implements this function without yield (sleep).
+        This function as the issue of loosing connection after a while resulting in no longer reading the RFID tags.
+    """
+    def read_SimpleMFRC522(self):
         global oppleoConfig, modulePresence
         
         if modulePresence.SimpleMFRC522_IsStub:
@@ -36,3 +57,4 @@ class RfidReader(object):
             else:
                 time.sleep(0.05)
 
+      
