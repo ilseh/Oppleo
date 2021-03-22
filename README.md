@@ -100,12 +100,13 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
         > `spidev                 20480  0`  
         > `spi_bcm2835            20480  0`
   * Install mfrc522, the interface module for the RFID reader.
-    * Install the SimpleMFRC522 library
+    * Install the PiMyLifeUp.com MFRC522 library.
       > `cd /home/pi`  
       > `git clone https://github.com/pimylifeup/MFRC522-python`  
       > `sudo python3 setup.py install`
-    * Install SimpleMFRC522 from PyPi (same package as listed above)  
+    * Install MFRC522 from PiMyLifeUp (same package as listed above)  
       > `sudo pip3 install mfrc522`
+    * Make sure to enable SPI on the Pi using `raspi-config`. More details on the [pimylifeup](https://pimylifeup.com/raspberry-pi-rfid-rc522/) page.
   * Install RPi.GPIO, a PyPi python module for interfacing with the Raspberry Gneral Purpose IO (GPPIO) pins. This is required to interface with the RTC, LED, the Buzzer, and the SmartEVSE.
     > `cd /home/pi`
     > `sudo pip install RPi.GPIO`
