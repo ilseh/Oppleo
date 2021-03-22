@@ -1,4 +1,5 @@
 import logging
+import time
 from nl.oppleo.config.Logger import init_log
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
@@ -30,7 +31,12 @@ run = True
 while run:
 
     try:
-        id, text = oppleoMFRC522.read()
+        id = None
+        text = None
+        while not id:
+            id, text = oppleoMFRC522.read_no_block(select=False, auth=False)
+            # yield
+            time.sleep(1)
         print(" ID:{} Text:{}".format(id, text))
 
     except KeyboardInterrupt as kbi:

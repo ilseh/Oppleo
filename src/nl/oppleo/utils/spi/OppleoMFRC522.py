@@ -98,7 +98,7 @@ class OppleoMFRC522(MFRC522):
         while not id:
             id, text = self.read_no_block(select=select, auth=auth)
             # yield
-            time.sleep(1)
+            time.sleep(.05)
         return id, text
 
 
