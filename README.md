@@ -20,9 +20,17 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 * `ssh` enabled on the Raspberry.
   * Add an empty file named `ssh` (no extension) to the root of the sdcard to enable ssh after boot on the Raspberry. You'll probably need ssh to install Python and Postgres anyway.
 * Make sure __apt-get__ is up to date  
-  > `sudo apt-get update && sudo apt-get upgrade`
+  >
+  ```bash
+  sudo apt-get update && sudo apt-get upgrade
+  ```
+
 * git installed on your Raspberry
-  > `sudo apt-get install git`
+  >
+  ```bash
+  sudo apt-get install git
+  ```
+
 * __RFID reader, mult-color LED, Buzzer, and Real-Time Clock__. Technically not needed, but makes for better experience. Make sure they are on the GPIO PINs as per diagram, or change the configuration accordingly.
   * A Raspberry does not come with a Real-Time Clock (RTC). [Read up](https://thepihut.com/blogs/raspberry-pi-tutorials/17209332-adding-a-real-time-clock-to-your-raspberry-pi) to understand if you want one.
     * Install [RasClock](https://afterthoughtsoftware.com/products/rasclock) (Real Time Clock)
@@ -55,21 +63,45 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     ```
 
   * As user postgres, create a database. Choose your own databasecname and replace `<dbname>`.
-    > `createdb <dbname>`
+    >
+    ```bash
+    createdb <dbname>
+    ```
+
   * As user postgres, start psql, the postgres cmd line tool.
-    > `psql`
+    >
+    ```bash
+    psql
+    ```
+
   * On the psql command line, change the postgres user to allow access to the database.
-    > `alter user <dbuser> with encrypted password '<dbpassword>';`
+    >
+    ```sql
+    ALTER USER <dbuser> WITH ENCRYPTED PASSWORD '<dbpassword>';
+    ```
+
   * Granting privileges on the created database to the created user
-    > `grant all privileges on database <dbname> to <dbuser>;`
+    >
+    ```sql
+    GRANT ALL PRIVILEGES ON DATABASE <dbname> TO <dbuser>;
+    ```
+
   * Exit from the psql shell and again from the Postgres user by pressing Ctrl+D twice.
 
   * You can setup postgres to use Raspbian OS users. This can simplify local postgres usage, but isn't required for Oppleo. I noticed that the default config in `/etc/postgresql/11/main/pg_hba.conf` (the 11 is the version, yours may differ) shows peer as password hast type, referring to the Raspbian user. If you set a non-OS user like I do here, you can either change `peer` to `md5` as default method in the pg_hba.conf file, or simply add `-h localhost` to the psql command line to use md5 configured for network access as done below. Also if you want to allow access to the database from your local 10.0.x.x network you can add a line `host  all   all  10.0.0.0/16  md5` to the pg_hba.conf file.
 
   * To verify the postgres install, start psql, the postgres cmd line tool, with the username created above. I noticed that the default config in `/etc/postgresql/11/main/pg_hba.conf`.
-    > `psql -U <dbuser> -d <dbname> -h <ipaddress>`
-  * Create a table
-    > `create table people (name text, company text);`
+    >
+    ```bash
+    psql -U <dbuser> -d <dbname> -h <ipaddress>
+    ```
+
+  * Create a table (_people_ here used as example)
+    >
+    ```sql
+    CREATE TABLE people (name TEXT, company TEXT);
+    ```
+
   * Get info on the table using
     >
     ```sql
@@ -105,7 +137,11 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 
   * The initial part of the make, the compilation of pigpio.c, can take >100 seconds on early model Pis. Be patient. The overall install takes just over 3 minutes.
   * If the Python part of the install fails it may be because you need the setup tools.
-    > `sudo apt install python-setuptools python3-setuptools`
+    >
+    ```bash
+    sudo apt install python-setuptools python3-setuptools
+    ```
+
   * More details on pigpio install on the [abyz.me.uk](http://abyz.me.uk/rpi/pigpio/) website.
 * Install __spidev__ for interfacing with SPI devices. This is required to interface with the RFID reader which uses the SPI bus.
   * Install the C library
@@ -118,10 +154,18 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     ```
 
   * Install the pyhton module
-    > `sudo pip3 install spidev`  
+    >
+    ```bash
+    sudo pip3 install spidev
+    ```
+
   * Enable SPI and the PCM at boot.
     * Edit /boot/config.txt
-      > `sudo nano /boot/config.txt`
+      >
+      ```bash
+      sudo nano /boot/config.txt
+      ```
+
     * Add these lines
       >
       ```ini
@@ -131,7 +175,11 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 
       Make sure to save the file :)
   * Check if properly instaled
-    > `lsmod | grep spi`
+    >
+    ```bash
+    lsmod | grep spi
+    ```
+
     * should return something like
       >
       ```ini
@@ -149,7 +197,11 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     ```
 
   * Install MFRC522 from PiMyLifeUp (same package as listed above)  
-    > `sudo pip3 install mfrc522`
+    >
+    ```bash
+    sudo pip3 install mfrc522
+    ```
+
   * Make sure to enable SPI on the Pi using `raspi-config`. More details on the [pimylifeup](https://pimylifeup.com/raspberry-pi-rfid-rc522/) page.
 * Install RPi.GPIO, a PyPi python module for interfacing with the Raspberry Gneral Purpose IO (GPPIO) pins. This is required to interface with the RTC, LED, the Buzzer, and the SmartEVSE.
   >
@@ -159,11 +211,21 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
   ```
 
 * Install openssl
+  >
+  ```bash
   > `sudo apt-get install libssl-dev`
 * Install mimimalmodbus, used to communicate with the kWh meter
-  > `pip3 install -U minimalmodbus`
+  >
+  ```bash
+  pip3 install -U minimalmodbus
+  ```
+
   * reboot
-    > `sudo reboot`
+    >
+    ```bash
+    sudo reboot
+    ```
+
   * and check if the modbus interface is foundShow USB devices. Use `lsusb` to check the USB hub, and `usb-devices` to get a list of USB devices. Use `ls /dev/ttyUSB*` to see the device dev path. Also the command `find /sys/bus/usb/devices/usb*/ -name dev` helps to see the USB devices connected.
 
   * Install [liquibase](https://docs.liquibase.com/concepts/installation/installation-linux-unix-mac.html). You can follow the guidelines on the liquibase website, below is an example install.
@@ -175,9 +237,16 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
       ```
 
     * Add the directory to the PATH by running
-      > `export PATH=$PATH:/usr/apps/liquibase`
+      >
+      ```bash
+      export PATH=$PATH:/usr/apps/liquibase
+      ```
+
     * Make the updated PATH permanent. Note that this line must be in .bashrc as the install script gets the liquibase path from here.
-      > `echo 'export PATH=$PATH:/usr/apps/liquibase' >> ~/.bashrc`
+      >
+      ```bash
+      echo 'export PATH=$PATH:/usr/apps/liquibase' >> ~/.bashrc
+      ```
 
     * Extract the downloaded content to the directory
       >
@@ -187,12 +256,23 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
       ```
 
     * Unpack it
-      > `sudo tar -xzf liquibase-4.3.1.tar.gz`
+      >
+      ```bash
+      sudo tar -xzf liquibase-4.3.1.tar.gz
+      ```
+
     * Remove the download
-      > `sudo rm liquibase-4.3.1.tar.gz`
+      >
+      ```bash
+      sudo rm liquibase-4.3.1.tar.gz
+      ```
 
     * For Liquibase to run correctly, Java must be installed on the raspberry pi. To verify that Java is installed
-      > `java -version`
+      >
+      ```bash
+      java -version
+      ```
+
       * If you see the error: -bash: java: command not found, then you need to either install Java, or you need to add the location of the Java executable to your PATH. To install Java on your computer navigate to <https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html> and install the Java JDK, and add the location of the Java executable to your PATH.
 
   * To verify liquibase
@@ -206,10 +286,18 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 
   * Create the Oppleo specific `liquibase.properties`
     * Create a local copy of the example liquibase properties:
-      > `cp /home/pi/Oppleo/db/liquibase.properties.example /home/pi/Oppleo/db/liquibase.properties`
+      >
+      ```bash
+      cp /home/pi/Oppleo/db/liquibase.properties.example /home/pi/Oppleo/db/liquibase.properties
+      ```
+
     * Edit this local copy using any text editor, like `nano` for example
+      >
+      ```bash
       > `nano /home/pi/Oppleo/db/liquibase.properties`
     * Configure the Oppleo specific liquibase properties in `/home/pi/Oppleo/db/liquibase.properties` using any text editor like `nano` for example
+      >
+      ```bash
       > `nano /home/pi/Oppleo/db/liquibase.properties`
     * Update the url replacing `<ipaddress>` for the ip or localhost, and `<dbname>` with the database name created earlier. Also update `<dbuser>` and `<dbpassword>` (replace also the angle brackets, they are not part of the syntax).  
       >
@@ -226,19 +314,47 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 Oppleo is not a nicely packaged resource. Basically you'll pull the developer code and run that. Use ssh to login to the Raspberry. You'' end up in `/home/pi`
 
 * Clone the __Oppleo__ repo in the `/home/pi` folder (note: get the URL from the Clone or Download button above!)
-  > `git clone https://github.com/ilseh/Oppleo.git`
+  >
+  ```bash
+  git clone https://github.com/ilseh/Oppleo.git
+  ```
+
 * Move into the Oppleo directory
-  > `cd Oppleo`
+  >
+  ```bash
+  cd Oppleo
+  ```
+
 * Create a virtual environment for Oppleo
-  > `python3 -m venv venv`
+  >
+  ```bash
+  python3 -m venv venv
+  ```
+
 * Activate it
-  > `source venv/bin/activate`
+  >
+  ```bash
+  source venv/bin/activate
+  ```
+
 * Upgrade pip (if required)
-  > `pip install --upgrade pip`
+  >
+  ```bash
+  pip install --upgrade pip
+  ```
+
 * Install all dependencies from the requirements_raspberry.txt file
-  > `pip install -r requirements_raspberry.txt`
+  >
+  ```bash
+  pip install -r requirements_raspberry.txt
+  ```
+
 * Create an Oppleo ini file
-  > `cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini`
+  >
+  ```bash
+  cp /home/pi/Oppleo/src/nl/oppleo/config/oppleo.example.ini /home/pi/Oppleo/src/nl/oppleo/config/oppleo.ini
+  ```
+
 * Edit the oppleo.ini file to reflect your local installation. The oppleo.example.ini file has comments to help. Note that the local copied oppleo.ini file is completely overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost. Make changes using any text editor like `vi` or `nano` when Oppleo is not running.
   * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalizine the first letter is required.
   * `log_file` is the log file location. Default `/tmp/Oppleo.log`
@@ -261,7 +377,10 @@ Oppleo is not a nicely packaged resource. Basically you'll pull the developer co
     * `on_db_failure_show_current_url` shows the database URL through the web front even if no connection could be made. Shows your database username and password when `True`, so be carefull.
 
   * Install Oppleo as a service (creates a Oppleo.service file in /etc/systemd/system/ and reloads systemctl)
-   > `install/install.sh`
+   >
+   ```bash
+   install/install.sh
+   ```
 
 * Note that liquibase will prompt for changes to be registered in Liquibase Hub.
 
@@ -295,15 +414,34 @@ If you know you what that go ahead and configure it, otherwise you want to set t
 
 * NOTE: If not running on a Raspberry Pi, detected in the install script by checking `cat /proc/cpuinfo`, the system service file is created but not installed and the service is not enabled and started. If running on another system or VM this can be done manually.
   * Install the Oppleo service file
-    > `sudo cp /home/pi/Oppleo/install/Oppleo.service /etc/systemd/system/Oppleo.service`
+    >
+    ```bash
+    sudo cp /home/pi/Oppleo/install/Oppleo.service /etc/systemd/system/Oppleo.service
+    ```
+
   * Reload the daemon config...
-    > `sudo systemctl daemon-reload`
+    >
+    ```bash
+    sudo systemctl daemon-reload
+    ```
+
   * Start the service
-    > `sudo systemctl start Oppleo.service`
+    >
+    ```bash
+    sudo systemctl start Oppleo.service
+    ```
+
   * Check the status
-    > `sudo systemctl status Oppleo.service`
+    >
+    ```bash
+    sudo systemctl status Oppleo.service
+    ```
+
   * Enable the service (restart after boot)
-    > `sudo systemctl enable Oppleo.service`
+    >
+    ```bash
+    sudo systemctl enable Oppleo.service
+    ```
 
 ---
 
@@ -364,41 +502,58 @@ Oppleo has backup functionality. Each backup contains 5 items:
 
 ### Unzip the backup file into its onw directory
 
-  > `unzip -d restore backup_2021-03-23_05.00.01_laadpaal_noord.zip`
+  >
+  ```bash
+  unzip -d restore backup_2021-03-23_05.00.01_laadpaal_noord.zip
+  ```
 
 ### Database restore
 
 #### Find database_url from the oppleo.ini config file to use in the restore command
 
-  > `cat src/nl/oppleo/config/oppleo.ini | grep database_url | cut -d'=' -f2`
-should return something in the format `postgresql://<user>:<password>@<ipaddress>:5432/<database>`
+  >
+  ```bash
+  cat src/nl/oppleo/config/oppleo.ini | grep database_url | cut -d'=' -f2
+  ```
+
+  should return something in the format `postgresql://<user>:<password>@<ipaddress>:5432/<database>`
 
 #### Restore database
 
 1. Provide a clean database to restore into, to prevent existing row id problems
-    > `psql -U <user> -h <ip address> -d <dbname>`
     >
     ```bash
-    drop table charge_session ;
-    drop table charger_config ;
-    drop table databasechangelog ;
-    drop table databasechangeloglock ;
-    drop table energy_device_measures ;
-    drop table energy_device ;
-    drop table off_peak_hours ;
-    drop table rfid ;
-    drop table users ;
+    psql -U <user> -h <ip address> -d <dbname>
+    ```
+
+    >
+    ```sql
+    DROP TABLE charge_session;
+    DROP TABLE charger_config;
+    DROP TABLE databasechangelog;
+    DROP TABLE databasechangeloglock;
+    DROP TABLE energy_device_measures;
+    DROP TABLE energy_device;
+    DROP TABLE off_peak_hours;
+    DROP TABLE rfid;
+    DROP TABLE users;
     ```
 
 #### 2. Restore the dump into the database
 
 The database backup is the pg_dump file. Use --no-owner option to stop pg_restore trying to set the ownership of the objects to the original owner. Specify the user by --role
-  > `pg_restore -d '<database_url>' --no-owner --role=<user> -Fc postgres_YYYY-MM-DD_HH.mm.ss.pg_dump`
+  >
+  ```bash
+  pg_restore -d '<database_url>' --no-owner --role=<user> -Fc postgres_YYYY-MM-DD_HH.mm.ss.pg_dump
+  ```
 
 #### 3. Update the charger name (if desired)
 
 Again use the postgress command line
-  > `psql -U <user> -h <ip address> -d <dbname>`
+  >
+  ```bash
+  psql -U <user> -h <ip address> -d <dbname>
+  ```
 
 #### 3a. create a new charger name entry in the database
 
@@ -409,10 +564,10 @@ Again use the postgress command line
       stopbits, serial_timeout, debug, mode, close_port_after_each_call,
       modbus_timeout, modbus_config, device_enabled 
   )
-  SELECT 'laadpaal_macos', port_name, slave_address, baudrate, bytesize, parity,
+  SELECT '<new name>', port_name, slave_address, baudrate, bytesize, parity,
       stopbits, serial_timeout, debug, mode, close_port_after_each_call,
       modbus_timeout, modbus_config, device_enabled 
-  FROM energy_device WHERE energy_device_id='laadpaal_noord';
+  FROM energy_device WHERE energy_device_id='<old name>';
   ```
 
 #### 3b. update all entries to the new chargername
@@ -426,19 +581,31 @@ Again use the postgress command line
 
 #### 3c. delete the old charger name
 
-  > `DELETE FROM energy_device WHERE energy_device_id = '<old name>';`
+  >
+  ```sql
+  DELETE FROM energy_device WHERE energy_device_id = '<old name>';
+  ```
 
 #### 4. Update the admin user (if required)
 
-  > `python3 src/createuser.py`
+  >
+  ```bash
+  python3 src/createuser.py
+  ```
 
 ### Restore Oppleo ini file
 
-  > `cp oppleo_YYYY-MM-DD_HH.mm.ss.ini src/nl/oppleo/config/oppleo.ini`
+  >
+  ```bash
+  cp oppleo_YYYY-MM-DD_HH.mm.ss.ini src/nl/oppleo/config/oppleo.ini
+  ```
 
 ### Restore liquibase properties
 
-  > `cp liquibase_YYYY-MM-DD_HH.mm.ss.properties db/liquibase.properties`
+  >
+  ```bash
+  cp liquibase_YYYY-MM-DD_HH.mm.ss.properties db/liquibase.properties
+  ```
 
 ### Restore Oppleo.service file
 
@@ -473,9 +640,16 @@ sudo apt-get install build-essential
 ### gcc errors installing requirements_non_raspberry.txt on MacOS
 
 If there are gcc errors when installing the non-raspberry dependencies on MacOS, add
-  > `export LDFLAGS="-L/usr/local/opt/openssl/lib"`
+  >
+  ```ini
+  export LDFLAGS="-L/usr/local/opt/openssl/lib"
+  ```
+
 before running
-  > `pip install -r requirements_non_raspberry.txt`
+  >
+  ```bash
+  pip install -r requirements_non_raspberry.txt
+  ```
 
 ### wget on macos
 
@@ -486,40 +660,72 @@ Install wget through brew `brew install wget`
 Install using `brew install postgresql` (more info [here](https://www.codementor.io/@engineerapart/getting-started-with-postgresql-on-mac-osx-are8jcopb) and [here](
 https://www.postgresql.org/files/documentation/pdf/12/postgresql-12-A4.pdf)).
 Start server using
-  > `pg_ctl -D /usr/local/var/postgres start`
+  >
+  ```bash
+  pg_ctl -D /usr/local/var/postgres start
+  ```
+
 Stop using
-  > `pg_ctl -D /usr/local/var/postgres stop`
+  >
+  ```bash
+  pg_ctl -D /usr/local/var/postgres stop
+  ```
+
 Start automatically and have launchd start postgresql now and restart at login
-  > `brew services start postgresql`
+  >
+  ```bash
+  brew services start postgresql
+  ```
+
 If `psql -U postgres` returns `psql: error: could not connect to server: FATAL:  role "postgres" does not exist` create the postgres user. This can occur when installed through homebrew.
-  > `/usr/local/opt/postgres/bin/createuser -s postgres`
+  >
+  ```bash
+  /usr/local/opt/postgres/bin/createuser -s postgres
+  ```
+
 You can use [Postgres.app](https://postgresapp.com/)
 Create the database using
-  > `/usr/local/opt/postgres/bin/createdb <dbname>`
+  >
+  ```bash
+  /usr/local/opt/postgres/bin/createdb <dbname>
+  ```
+
 To delete or drop a database use
-  > `/usr/local/opt/postgres/bin/dropdb <dbname>`
+  >
+  ```bash
+  /usr/local/opt/postgres/bin/dropdb <dbname>
+  ```
+
 The `pg_hba.conf` file to configure access over network to the postgres database is located in `/usr/local/var/postgres/pg_hba.conf`. Possibly the method should be updated from trust to md5.
 
 ### threads
 
-The greenlets or eventlets are light threads withing a thread. There is no real concurrency.
+Python Flash SocketIO uses Greenlet or Eventlet lightweight threads. These are light threads withing an OS thread.There is no real concurrency, if one halts they all do. SocketIO is using front end events, in-between there is no activity. Oppleo needs to manage the charger even without front end activity, therefore Oppleo uses real python threads.
 
 ### pkg-resources==0.0.0
 
 Running `pip freeze > requirements_raspberry.txt` can add a line `pkg-resources==0.0.0` which in term can cause errors installing the dependencies. This line can be removed from the requirements files.
-  > `pip freeze | grep -v "pkg-resources" > requirements_raspberry.txt"`
+  >
+  ```bash
+  pip freeze | grep -v "pkg-resources" > requirements_raspberry.txt"
+  ```
+
 excludes pkg-resources from the file when generating it.
 
 ### GPIO
 
 The raspberry GPIO has internal pull-up and pull-down resistors. They need to be enabled though if required. The EVSE status led is pulled up by the GPIO to allow proper high voltages on the pin. The EVSE only pulls it down when switching.
-  `GPIO.setup(port_or_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)`
+  >
+  ```python
+  GPIO.setup(port_or_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+  ```
+
 [More info](https://raspi.tv/2013/rpi-gpio-basics-6-using-inputs-and-outputs-together-with-rpi-gpio-pull-ups-and-pull-downs)
 More GPIO info on the RPi.GPIO Python Module on [pypi.org](https://pypi.org/project/RPi.GPIO/) and on [SourceForge](https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/).
 
 ### PWM
 
-PWM read using pigpio
+Oppleo uses pigpio to read the pulse-width of the EVSE LED output.
 [examples](http://abyz.me.uk/rpi/pigpio/examples.html)
 
 ## Raspberry revision
