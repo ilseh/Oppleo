@@ -28,10 +28,18 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     * Install [RasClock](https://afterthoughtsoftware.com/products/rasclock) (Real Time Clock)
     * Check it it is installed using `sudo hwclock -r`
     * Start after boot `sudo nano /boot/config.txt` add
-      > `# RasClock RealTime Clock`  
-      > `dtoverlay=i2c-rtc,pcf2127`
+      >
+      ```bash
+      # RasClock RealTime Clock
+      dtoverlay=i2c-rtc,pcf2127
+      ```
+
       * Reboot your Raspberry
-      > `sudo reboot`
+      >
+      ```bash
+      sudo reboot
+      ```
+
 * __Pyhton3__ and __pip__ installed on the Raspberry
   > `sudo apt-get install python3-dev python3-pip`
 * __Postgres__ database installed on your Raspberry
@@ -40,8 +48,12 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
   * Basic steps involve installing postgresql
     > `sudo apt install postgresql libpq-dev postgresql-client postgresql-client-common -y`
   * Creating a user (no superuser, can be useful to be allowed to create databases, no need to be allowed to create more new roles. Choose your own database username and replace `<dbuser>` (also replace the angle brackets). Make sure you remember the password (`<dbpassword>`).
-    > `sudo su postgres`
-    > `createuser <dbuser> -P`
+    >
+    ```bash
+    sudo su postgres
+    createuser <dbuser> -P
+    ```
+
   * As user postgres, create a database. Choose your own databasecname and replace `<dbname>`.
     > `createdb <dbname>`
   * As user postgres, start psql, the postgres cmd line tool.
@@ -59,57 +71,93 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
   * Create a table
     > `create table people (name text, company text);`
   * Get info on the table using
-    > `\d`
-    > `\dt people`
+    >
+    ```sql
+    \d
+    \dt people
+    ```
+
   * Drop the table again using
-    > `drop table people;`
+    >
+    ```sql
+    drop table people;
+    ```
+
   * Exit the psql tool using
-    > `\q`
+    >
+    ```sql
+    \q
+    ```
+
   * For the next steps yo need to have an empty database ready, with a user with the proper read-write rights to that database, and know the password. Oppleo will create the tables and required content, not the database itself.
 
 * Install __PIGPIO__ for interfacing with the GPIO (I/O pins) devices. This is required to attache hardware such as the LED, EVSE Switch, Buzzer etc.
   * Install PIGPIO
-    > `cd /home/pi`
-    > `wget https://github.com/joan2937/pigpio/archive/master.zip`
-    > `unzip master.zip`
-    > `cd pigpio-master`
-    > `make`
-    > `sudo make install`
+    >
+    ```bash
+    cd /home/pi
+    wget https://github.com/joan2937/pigpio/archive/master.zip
+    unzip master.zip
+    cd pigpio-master
+    make
+    sudo make install
+    ```
+
   * The initial part of the make, the compilation of pigpio.c, can take >100 seconds on early model Pis. Be patient. The overall install takes just over 3 minutes.
   * If the Python part of the install fails it may be because you need the setup tools.
     > `sudo apt install python-setuptools python3-setuptools`
   * More details on pigpio install on the [abyz.me.uk](http://abyz.me.uk/rpi/pigpio/) website.
 * Install __spidev__ for interfacing with SPI devices. This is required to interface with the RFID reader which uses the SPI bus.
   * Install the C library
-    > `cd /home/pi`  
-    > `git clone https://github.com/lthiery/SPI-Py.git`
-    > `cd SPI-Py`  
-    > `sudo python3 setup.py install`
+    >
+    ```bash
+    cd /home/pi
+    git clone https://github.com/lthiery/SPI-Py.git
+    cd SPI-Py
+    sudo python3 setup.py install
+    ```
+
   * Install the pyhton module
     > `sudo pip3 install spidev`  
   * Enable SPI and the PCM at boot.
     * Edit /boot/config.txt
       > `sudo nano /boot/config.txt`
     * Add these lines
-      > `dtparam=spi=on`
-      > `dtoverlay=spi-bcm2708`
+      >
+      ```ini
+      dtparam=spi=on
+      dtoverlay=spi-bcm2708
+      ```
+
       Make sure to save the file :)
   * Check if properly instaled
     > `lsmod | grep spi`
     * should return something like
-      > `spidev                 20480  0`  
-      > `spi_bcm2835            20480  0`
+      >
+      ```ini
+      spidev                 20480  0
+      spi_bcm2835            20480  0
+      ```
+
 * Install mfrc522, the interface module for the RFID reader.
   * Install the PiMyLifeUp.com MFRC522 library.
-    > `cd /home/pi`  
-    > `git clone https://github.com/pimylifeup/MFRC522-python`  
-    > `sudo python3 setup.py install`
+    >
+    ```bash
+    cd /home/pi
+    git clone https://github.com/pimylifeup/MFRC522-python
+    sudo python3 setup.py install
+    ```
+
   * Install MFRC522 from PiMyLifeUp (same package as listed above)  
     > `sudo pip3 install mfrc522`
   * Make sure to enable SPI on the Pi using `raspi-config`. More details on the [pimylifeup](https://pimylifeup.com/raspberry-pi-rfid-rc522/) page.
 * Install RPi.GPIO, a PyPi python module for interfacing with the Raspberry Gneral Purpose IO (GPPIO) pins. This is required to interface with the RTC, LED, the Buzzer, and the SmartEVSE.
-  > `cd /home/pi`
-  > `sudo pip install RPi.GPIO`
+  >
+  ```bash
+  cd /home/pi
+  sudo pip install RPi.GPIO
+  ```
+
 * Install openssl
   > `sudo apt-get install libssl-dev`
 * Install mimimalmodbus, used to communicate with the kWh meter
@@ -120,16 +168,24 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
 
   * Install [liquibase](https://docs.liquibase.com/concepts/installation/installation-linux-unix-mac.html). You can follow the guidelines on the liquibase website, below is an example install.
     * Create a directory for liquibase
-      > `sudo mkdir /usr/apps/`
-      > `sudo mkdir /usr/apps/liquibase`
+      >
+      ```bash
+      sudo mkdir /usr/apps/
+      sudo mkdir /usr/apps/liquibase
+      ```
+
     * Add the directory to the PATH by running
       > `export PATH=$PATH:/usr/apps/liquibase`
     * Make the updated PATH permanent. Note that this line must be in .bashrc as the install script gets the liquibase path from here.
       > `echo 'export PATH=$PATH:/usr/apps/liquibase' >> ~/.bashrc`
 
     * Extract the downloaded content to the directory
-      > `cd /usr/apps/liquibase`
-      > `wget https://github.com/liquibase/liquibase/releases/download/v4.3.1/liquibase-4.3.1.tar.gz`
+      >
+      ```bash
+      cd /usr/apps/liquibase
+      wget https://github.com/liquibase/liquibase/releases/download/v4.3.1/liquibase-4.3.1.tar.gz
+      ```
+
     * Unpack it
       > `sudo tar -xzf liquibase-4.3.1.tar.gz`
     * Remove the download
@@ -140,8 +196,12 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
       * If you see the error: -bash: java: command not found, then you need to either install Java, or you need to add the location of the Java executable to your PATH. To install Java on your computer navigate to <https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html> and install the Java JDK, and add the location of the Java executable to your PATH.
 
   * To verify liquibase
-    > `cd /hope/pi/oppleo`
-    > `liquibase --help`
+    >
+    ```bash
+    cd /hope/pi/oppleo
+    liquibase --help
+    ```
+
     The help page should be visible.
 
   * Create the Oppleo specific `liquibase.properties`
@@ -152,9 +212,13 @@ Oppleo is build using Python3/Flask and runs on a Raspberry Pi (4). You'll need 
     * Configure the Oppleo specific liquibase properties in `/home/pi/Oppleo/db/liquibase.properties` using any text editor like `nano` for example
       > `nano /home/pi/Oppleo/db/liquibase.properties`
     * Update the url replacing `<ipaddress>` for the ip or localhost, and `<dbname>` with the database name created earlier. Also update `<dbuser>` and `<dbpassword>` (replace also the angle brackets, they are not part of the syntax).  
-      > `url: jdbc:postgresql://<ipaddress>:5432/<dbname>`
-      > `username: <dbuser>`
-      > `password: <dbpassword>`
+      >
+      ```ini
+      url: jdbc:postgresql://<ipaddress>:5432/<dbname>
+      username: <dbuser>
+      password: <dbpassword>
+      ```
+
     * There is a jdbc file included (postgresql-42.2.14.jar or a newer version). If the included version is not compatible with the installed Postgres either copy the jar from the Postgres install (share/java directory) or download a different version from the [PostgreSQL JDBC Driver](https://jdbc.postgresql.org/) website.
 
 #### Installation
