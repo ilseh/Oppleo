@@ -292,13 +292,14 @@ Oppleo has backup functionality. Each backup contains 5 items:
 ### Database restore
 #### Find database_url from the oppleo.ini config file to use in the restore command
   > `cat src/nl/oppleo/config/oppleo.ini | grep database_url | cut -d'=' -f2`
-  should return something in the format `postgresql://<user>:<password>@<ipaddress>:5432/<database>`
+should return something in the format `postgresql://<user>:<password>@<ipaddress>:5432/<database>`
 
 #### Restore database
 1. Provide a clean database to restore into, to prevent existing row id problems
   > `psql -U <user> -h <ip address> -d <dbname>`
 
-  > ```
+  > 
+  ```
   drop table charge_session ;
   drop table charger_config ;
   drop table databasechangelog ;
@@ -319,7 +320,8 @@ Again use the postgress command line
   > `psql -U <user> -h <ip address> -d <dbname>`
 
 #### 3a. create a new charger name entry in the database
-  > ```
+  > 
+  ```
   INSERT INTO energy_device( 
       energy_device_id, port_name, slave_address, baudrate, bytesize, parity,
       stopbits, serial_timeout, debug, mode, close_port_after_each_call,
@@ -332,7 +334,8 @@ Again use the postgress command line
   ```
 
 #### 3b. update all entries to the new chargername
-  > ```
+  > 
+  ```
   UPDATE charger_config SET charger_name = '<new name>';
   UPDATE charge_session SET energy_device_id = '<new name>';
   UPDATE energy_device SET energy_device_id = '<new name>';
