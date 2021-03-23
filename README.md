@@ -275,6 +275,80 @@ ___
   * Oppleo logs to `/tmp/Oppleo.log`
 
 ___
+### Restoring a backup
+
+Oppleo has backup functionality. Each backup contains 5 items:
+1. a dump of the database, 
+2. a copy of the ini config file, 
+3. a copy of the liquibase.properties file, 
+4. a copy of the Oppleo.service file, and 
+5. a zipped fiel containing the update log files.
+
+# Unzip the backup file into its onw directory. 
+  > `unzip -d restore backup_2021-03-23_05.00.01_laadpaal_noord.zip`
+
+## Database restore
+# Find database_url from the oppleo.ini config file to use in the restore command
+  > `cat src/nl/oppleo/config/oppleo.ini | grep database_url | cut -d'=' -f2`
+  postgresql://<user>:<password>@<ipaddress>:5432/<database>
+
+# Restore database
+* 1. Provide a clean database to restore into, to prevent existing row id problems
+  > `psql -U <user> -h <ip address> -d <dbname>`
+
+  > `drop table charge_session ;`
+  > `drop table charger_config ;`
+  > `drop table databasechangelog ;`
+  > `drop table databasechangeloglock ;`
+  > `drop table energy_device_measures ;`
+  > `drop table energy_device ;`
+  > `drop table off_peak_hours ;`
+  > `drop table rfid ;`
+  > `drop table users ;`
+
+# 2. Restore the dump into the database
+* The database backup is the pg_dump file. Use --no-owner option to stop pg_restore trying to set the ownership of 
+  the objects to the original owner. Specify the user by --role
+  > `pg_restore -d '<database_url>' --no-owner --role=<user> -Fc postgres_YYYY-MM-DD_HH.mm.ss.pg_dump`
+
+# 3. Update the charger name (if desired)
+* Again use the postgress command line
+  > `psql -U <user> -h <ip address> -d <dbname>`
+
+# 3a. create a new charger name entry in the database
+  > `INSERT INTO energy_device( 
+          energy_device_id, port_name, slave_address, baudrate, bytesize, parity,
+          stopbits, serial_timeout, debug, mode, close_port_after_each_call,
+          modbus_timeout, modbus_config, device_enabled 
+      )
+      SELECT 'laadpaal_macos', port_name, slave_address, baudrate, bytesize, parity,
+          stopbits, serial_timeout, debug, mode, close_port_after_each_call,
+          modbus_timeout, modbus_config, device_enabled 
+      FROM energy_device WHERE energy_device_id='laadpaal_noord';`
+
+# 3b. update all entries to the new chargername
+  > `UPDATE charger_config SET charger_name = '<new name>';`
+  > `UPDATE charge_session SET energy_device_id = '<new name>';`
+  > `UPDATE energy_device SET energy_device_id = '<new name>';`
+  > `UPDATE energy_device_measures SET energy_device_id = '<new name>';`
+
+# 3c. delete the old charger name
+  > `DELETE FROM energy_device WHERE energy_device_id = '<old name>';`
+
+# 4. Update the admin user (if required)
+  > `python3 src/createuser.py`
+
+## Restore Oppleo ini file
+  > `cp oppleo_YYYY-MM-DD_HH.mm.ss.ini src/nl/oppleo/config/oppleo.ini`
+
+## Restore liquibase properties
+  > `cp liquibase_YYYY-MM-DD_HH.mm.ss.properties db/liquibase.properties`
+
+## Restore Oppleo.service file 
+* This is mostly for reference to a working situation. Create a new Oppleo.service file using the `install/install.sh` script.
+
+
+___
 ### BOM
 
 Oppleo works with 
