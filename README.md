@@ -325,12 +325,15 @@ Check <http://localhost/> or the IP address of the raspberry. To login create a 
           python3 src/createuser.py
           ```
 
-      2. Directly update the database. Start a postgress command line and enter the user into the `users` table. You can change the username if desired.
+          This is an interactive utility.
+
+      2. Directly update the database. Start a postgress command line:
           >
           ```bash
           psql -U <dbuser> -d <dbname> -h <ipaddress>
           ```
 
+          Enter the user into the `users` table. You can change the username if desired.
           >
           ```sql
           insert into users (username, password, authenticated) values ('admin', 'pbkdf2:sha256:150000$mclLAqwB$2e8744c20410984c9a448b4bb2ceb9b8f0d913cfce9dcee24e775f138b91ab54', false);
