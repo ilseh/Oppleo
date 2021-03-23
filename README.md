@@ -721,6 +721,7 @@ The raspberry GPIO has internal pull-up and pull-down resistors. They need to be
   ```
 
 [More info](https://raspi.tv/2013/rpi-gpio-basics-6-using-inputs-and-outputs-together-with-rpi-gpio-pull-ups-and-pull-downs)
+
 More GPIO info on the RPi.GPIO Python Module on [pypi.org](https://pypi.org/project/RPi.GPIO/) and on [SourceForge](https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/).
 
 ### PWM
