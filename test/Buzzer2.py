@@ -35,4 +35,4 @@ GPIO.output(buzzer, GPIO.HIGH) # Turn on
 time.sleep(0.05)
 GPIO.output(buzzer, GPIO.LOW) # Turn off
 
-GPIO.cleanup()
+GPIO.cleanup(buzzer)

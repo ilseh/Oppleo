@@ -35,4 +35,4 @@ except KeyboardInterrupt:
 
 finally:
    pwm.stop()
-   GPIO.cleanup()
+   GPIO.cleanup(led)

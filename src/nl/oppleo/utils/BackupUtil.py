@@ -892,6 +892,7 @@ class BackupUtil(object, metaclass=Singleton):
 
     def isBackupDue(self) -> bool:
         lastBackup = self.oppleoConfig.backupSuccessTimestamp
+        # self.logger.info('lastBackup: {}'.format(str(lastBackup)))
         now = datetime.now()
 
         """
@@ -923,8 +924,11 @@ class BackupUtil(object, metaclass=Singleton):
                              )
                   )
 
+            #self.logger.info('Backup due: {} != 8 and {} < {} and {} > {}'.format(
+            #    daysPast, str(lastBackup), due, now, due))
+
             # Backup due? (daysPast=8 indicates no active days)
-            return daysPast != 8 and lastBackup < due  and now > due
+            return daysPast != 8 and lastBackup < due and now > due
 
 
         if self.oppleoConfig.backupInterval == self.oppleoConfig.BACKUP_INTERVAL_CALDAY:

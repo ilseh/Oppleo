@@ -199,6 +199,37 @@ class ChargeSessionModel(Base):
         return latest_charge_session
 
 
+
+    @staticmethod
+    def getOpenChargeSession(device=None) -> ChargeSessionModel | None:
+        db_session = DbSession()
+
+        if device is None:
+            return None
+
+        #  Now query the ChargeSession that we're interested in (latest for device).
+        try:
+            latest = db_session.query(ChargeSessionModel)   \
+                        .filter(ChargeSessionModel.energy_device_id == device)    \
+                        .order_by(ChargeSessionModel.id.desc()) \
+                        .first()
+
+        except InvalidRequestError as e:
+            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
+            return None
+        except Exception as e:
+            # Nothing to roll back
+            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
+
+        if (latest is None or latest.end_time != None):
+            # No recent open charge session
+            return None
+
+        return latest
+
+
     @staticmethod
     def get_open_charge_session_for_device(device) -> ChargeSessionModel | None:
         db_session = DbSession()

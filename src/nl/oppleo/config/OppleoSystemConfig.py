@@ -505,7 +505,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     def rfidEnabled(self, value):
         self.__RFID_ENABLED = value
         self.__writeConfig__()
-        self.restartRequired = True
+        # No restart required if module is present
 
     """
         httpHost -> __HTTP_HOST

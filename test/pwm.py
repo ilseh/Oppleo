@@ -9,7 +9,7 @@ led_blue = 13
 pin = led_red
 
 gpio_functions = { GPIO.IN:'Input',
-   	           GPIO.OUT:'Output',
+   	               GPIO.OUT:'Output',
                    GPIO.I2C:'I2C',
                    GPIO.SPI:'SPI',
                    GPIO.HARD_PWM:'HARD_PWM',

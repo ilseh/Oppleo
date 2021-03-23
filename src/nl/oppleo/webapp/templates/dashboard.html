@@ -88,7 +88,7 @@
       gaugeOnePower = (Math.round((parseFloat(data.p_l1)+parseFloat(data.p_l2)+parseFloat(data.p_l3))*10)/10)
       gaugeOnePower = formatSizePower(gaugeOnePower)
       updateGauger( 'gauger_1',       // id
-                    gaugeOneStatus + ' ' + gaugeOnePower,   // title
+                    gaugeOneStatus + (gaugeOneStatus=='Geen sessie'?'':' ' + gaugeOnePower),   // title
                     gaugeOneSession,  // subtitle
                     '0km/u',          // scale min
                     '100km/u',        // scale max
@@ -462,6 +462,9 @@
             rfid: msg.data.rfid
             }
           })
+        // Force gauge update
+        getChargeSessionStatus()
+        getUsageData(1)
       })
       chargeSessionSocket.on('charge_session_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
@@ -477,6 +480,9 @@
         setActiveChargeSession( {
           chargeSession: false
           })
+        // Force gauge update
+        getChargeSessionStatus()
+        getUsageData(1)
       })
       chargeSessionSocket.on('off_peak_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))

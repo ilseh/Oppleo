@@ -8,10 +8,12 @@ class pi_stub(object):
     __logger = None
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.pi_stub')
+        self.__logger = logging.getLogger('nl.oppleo.utils.stubs.pi_stub')
         self.__logger.debug("pi_stub.init()")
 
-    def __format(self, params):
+    def __format(self, params=None):
+        if params is None:
+            return ''
         s = None
         for param in params:
             s = str(param) if s is None else s + ',' + str(param)

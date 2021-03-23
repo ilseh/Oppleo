@@ -11,6 +11,8 @@ try:
         reader.write(text)
         print("Written")
 finally:
-        GPIO.cleanup()
+        pass
+        # Don't cleanup all pins. Breaks SPI.
+        # GPIO.cleanup()
 
 
