@@ -30,6 +30,7 @@ import urllib.parse
 """
 
 class TeslaAPI:
+    HTTP_TIMEOUT = 30
     # defining the api-endpoint  
     API_BASE = 'https://owner-api.teslamotors.com'
     API_AUTHENTICATION = '/oauth/token'  # POST
@@ -42,6 +43,14 @@ class TeslaAPI:
     API_VEHICLES = '/api/1/vehicles'  # GET
     API_WAKE_UP = '/api/1/vehicles/{id}/wake_up'  # POST
     API_VEHICLE_STATE = '/api/1/vehicles/{id}/data_request/vehicle_state'  # GET
+    API_CHARGE_STATE = '/api/1/vehicles/{id}/data_request/charge_state'  # GET
+    API_CLIMATE_STATE = '/api/1/vehicles/{id}/data_request/climate_state'  # GET
+    API_DRIVE_STATE = '/api/1/vehicles/{id}/data_request/drive_state'  # GET
+    API_GUI_SETTINGS = '/api/1/vehicles/{id}/data_request/gui_settings'  # GET
+    API_VEHICLE_CONFIG = '/api/1/vehicles/{id}/data_request/vehicle_config'  # GET
+    API_MOBILE_ENABLED = '/api/1/vehicles/{id}/data_request/mobile_enabled'  # GET
+
+    
     API_REVOKE = '/oauth/revoke'  # POST
     # All requests require a User-Agent header with any value provided.
 
@@ -79,7 +88,10 @@ class TeslaAPI:
 
     VEHICLE_DETAILS_ODOMETER_PARAM = 'odometer'
 
-    VEHICLE_DETAILS_TOKEN = 'DETAILS_FROM_API_CALL'
+    VEHICLE_STATE_TOKEN = 'VEHICLE_STATE'
+    CHARGE_STATE_TOKEN = 'CHARGE_STATE'
+    CLIMATE_STATE_TOKEN = 'CLIMATE_STATE'
+    DRIVE_STATE_TOKEN = 'DRIVE_STATE'
 
     access_token = None
     token_type = None
@@ -141,7 +153,7 @@ class TeslaAPI:
     """ 
         Step 2: Get any hidden params from the session form, including session cookie, transaction_id and csrf
     """
-    def authenticate_v3_getform(self, challenge, state):
+    def authenticate_v3_getform(self, challenge, state, email):
         payload = {
             'client_id'             : 'ownerapi',
             'code_challenge'        : challenge,
@@ -149,7 +161,8 @@ class TeslaAPI:
             'redirect_uri'          : self.API_AUTH_V3_REDIRECT_URI,
             'response_type'         : 'code',
             'scope'                 : 'openid email offline_access',
-            'state'                 : state
+            'state'                 : state,
+            'login_hint'            : email
         }
         session = requests.Session()
         r = session.get(
@@ -164,7 +177,7 @@ class TeslaAPI:
         self.logger.debug("TeslaAPI.authenticate_v3_getform(): status code {} text: {}".format(r.status_code, r.text))
 
         session_params = {}
-        soup = BeautifulSoup(r.text)
+        soup = BeautifulSoup(r.text, features="html.parser")
         # Known tags
         for tag in ['_csrf', '_phase', '_process', 'transaction_id', 'cancel']:
             # Cannot find for the name directly, as name is the key for the tag itself (input here)
@@ -175,7 +188,13 @@ class TeslaAPI:
         # Hidden tags (includes the known)
         hidden_tags = soup.find_all("input", type="hidden")
         for tag in hidden_tags:
-            session_params[tag.name] = tag.value
+            # tag.name refers to input, not the name attribute of the input field
+            # therefor session_params[tag.name] = tag.value doesn't work
+            # also for some reason checking if ('name' in tag) returns False, while tag exist. Hence Exception catch.
+            try:
+                session_params[tag['name']] = tag['value']
+            except KeyError as ke:
+                pass
 
         return session, session_params
 
@@ -216,9 +235,11 @@ class TeslaAPI:
         Step 3: Login and obtain authorization code
     """
     def authorization_v3_get_auth_code(self, challenge, session_params, session, state):
-        headers = {
-            'User-Agent' : 'PowerwallDarwinManager' 
-        }
+        # Untill march 2021 this header should be included. After it no longer is required and now the POST requests times out when 
+        # using this header
+        # headers = {
+        #     'User-Agent' : 'PowerwallDarwinManager' 
+        # }
         hdrform = {
             'client_id'             : 'ownerapi',
             'code_challenge'        : challenge,
@@ -228,21 +249,27 @@ class TeslaAPI:
             'scope'                 : 'openid email offline_access',
             'state'                 : state
         }
-        r = session.post(
-            url=self.API_AUTH_V3 +
-                self.API_AUTH_V3_AUTHORIZE +
-                '?' +
-                urllib.parse.urlencode(hdrform),
-            headers=headers,
-            data=session_params,
-            allow_redirects=False
-        )
+        try:
+            r = session.post(
+                url=self.API_AUTH_V3 +
+                    self.API_AUTH_V3_AUTHORIZE +
+                    '?' +
+                    urllib.parse.urlencode(hdrform),
+                # headers=headers,
+                data=session_params,
+                allow_redirects=False,
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.authorization_v3_get_auth_code(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
         # HTTP 302 Found is returned if correct username/password is given (don't follow the redirect).
         # HTTP 200 OK is returned if no username/password is given.
         # HTTP 401 Unauthorized is returned if incorrect username/password is given.
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_302_FOUND:
-            self.logger.warn("TeslaAPI.new_auth_token(): status code {}".format(r.status_code))
+            self.logger.warn("TeslaAPI.authorization_v3_get_auth_code(): status code {}".format(r.status_code))
             if r.status_code == self.HTTP_401_UNAUTHORIZED:
                 self.got401Unauthorized = True
             return None
@@ -264,12 +291,11 @@ class TeslaAPI:
         Step 4: Get bearer token using authentication code
     """
     def authorization_v3_get_bearer_token(self, session, auth_code, code_verifier):
-        headers = {
-            'User-Agent' : 'PowerwallDarwinManager' 
-        }
-#        headers = { 
-#            'Accept': 'application/json' 
-#        }
+        # Untill march 2021 this header should be included. After it no longer is required and now the POST requests times out when 
+        # using this header
+        # headers = {
+        #     'User-Agent' : 'PowerwallDarwinManager' 
+        # }
         payload = {
             'grant_type'    : 'authorization_code',
             'client_id'     : 'ownerapi',
@@ -280,7 +306,7 @@ class TeslaAPI:
         r = session.post(
             url=self.API_AUTH_V3 +
                 self.API_AUTH_V3_TOKEN,
-            headers=headers,
+            # headers=headers,
             data=payload
         )
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
@@ -303,8 +329,10 @@ class TeslaAPI:
         Step 5: Get an access_token with expiry date etc using bearer token
     """
     def authorization_v3_get_access_token(self, session, bearer_token) -> bool:
+        # Untill march 2021 the 'PowerwallDarwinManager' User-Agent header should be included. After it no longer is required and 
+        # now the POST requests times out when using this header
         headers = {
-            'User-Agent' : 'PowerwallDarwinManager',
+            # 'User-Agent' : 'PowerwallDarwinManager',
             'authorization' : 'bearer ' + bearer_token
         }
         payload = {
@@ -351,7 +379,7 @@ class TeslaAPI:
         code_verifier, challenge = self.generate_challenge()
 
         # Step 2: Get any hidden params from the session form, including session cookie, transaction_id and csrf
-        session, session_params = self.authenticate_v3_getform(challenge=challenge, state=state)
+        session, session_params = self.authenticate_v3_getform(challenge=challenge, state=state, email=email)
 
         # Step 3: Login and obtain authorization code
         # Add credentials
@@ -515,23 +543,23 @@ class TeslaAPI:
         return vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP
 
 
-    def getVehicleDetailsWithId(self, id=None, update=False):
-        self.logger.debug("getVehicleDetailsWithId() id={} update={}".format(id, str(update)))
+    def getVehicleStateWithId(self, id=None, update=False):
+        self.logger.debug("getVehicleStateWithId() id={} update={}".format(id, str(update)))
         vehicle = self.getVehicleWithId(id)
         if id is None or vehicle is None:
-            self.logger.debug("getVehicleDetailsWithId() id={}  return None (1)".format(id))
+            self.logger.debug("getVehicleStateWithId() id={}  return None (1)".format(id))
             return None
         # Existing?
-        if (self.VEHICLE_DETAILS_TOKEN in vehicle) and (vehicle[self.VEHICLE_DETAILS_TOKEN] != None) and (not update):
-            return vehicle[self.VEHICLE_DETAILS_TOKEN]
+        if (self.VEHICLE_STATE_TOKEN in vehicle) and (vehicle[self.VEHICLE_STATE_TOKEN] != None) and (not update):
+            return vehicle[self.VEHICLE_STATE_TOKEN]
         # Needs to be awake
         if (self.vehicleWithIdIsAsleep(id) and
                 not self.wakeUpVehicleWithId(id)):
-            self.logger.debug("getVehicleDetailsWithId() id={}  return None (2)".format(id))
+            self.logger.debug("getVehicleStateWithId() id={}  return None (2)".format(id))
             return None
-        self.logger.debug("getVehicleDetailsWithId() - awake")
+        self.logger.debug("getVehicleStateWithId() - awake")
         url = self.API_BASE + self.API_VEHICLE_STATE.replace('{id}', id)
-        self.logger.debug("getVehicleDetailsWithId() - %s" % url)
+        self.logger.debug("getVehicleStateWithId() - %s" % url)
         # 04 Get the milage
         r = requests.get(
             url=url,
@@ -539,7 +567,7 @@ class TeslaAPI:
         )
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
-            self.logger.warn("TeslaAPI.getVehicleDetailsWithId(): status code {}".format(r.status_code))
+            self.logger.warn("TeslaAPI.getVehicleStateWithId(): status code {}".format(r.status_code))
             if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
                 response_dict = json.loads(r.text)
                 self.logger.warning("Error: %s" % response_dict['error'])
@@ -549,16 +577,55 @@ class TeslaAPI:
         self.got401Unauthorized = False
 
         response_dict = json.loads(r.text)
-        vehicle[self.VEHICLE_DETAILS_TOKEN] = response_dict['response']
+        vehicle[self.VEHICLE_STATE_TOKEN] = response_dict['response']
         self.logger.debug("Odometer : %s [miles]" % response_dict['response'][self.VEHICLE_DETAILS_ODOMETER_PARAM])
         return response_dict['response']
+
+
+    def getChargeStateWithId(self, id=None, update=False):
+        self.logger.debug("getChargeStateWithId() id={} update={}".format(id, str(update)))
+        vehicle = self.getVehicleWithId(id)
+        if id is None or vehicle is None:
+            self.logger.debug("getChargeStateWithId() id={}  return None (1)".format(id))
+            return None
+        # Existing?
+        if (self.CHARGE_STATE_TOKEN in vehicle) and (vehicle[self.CHARGE_STATE_TOKEN] != None) and (not update):
+            return vehicle[self.CHARGE_STATE_TOKEN]
+        # Needs to be awake
+        if (self.vehicleWithIdIsAsleep(id) and
+                not self.wakeUpVehicleWithId(id)):
+            self.logger.debug("getChargeStateWithId() id={}  return None (2)".format(id))
+            return None
+        self.logger.debug("getChargeStateWithId() - awake")
+        url = self.API_BASE + self.API_CHARGE_STATE.replace('{id}', id)
+        self.logger.debug("getChargeStateWithId() - %s" % url)
+        # 04 Get the milage
+        r = requests.get(
+            url=url,
+            headers={'Authorization': self.token_type + ' ' + self.access_token}
+        )
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.getChargeStateWithId(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
+                response_dict = json.loads(r.text)
+                self.logger.warning("Error: %s" % response_dict['error'])
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
+            return None
+        self.got401Unauthorized = False
+
+        response_dict = json.loads(r.text)
+        vehicle[self.CHARGE_STATE_TOKEN] = response_dict['response']
+        return response_dict['response']
+
 
     def getOdometerWithId(self, id=None):
         self.logger.debug("getOdometerWithId() id={}".format(id))
         if id is None:
             self.logger.debug("getOdometerWithId() return None (1)")
             return None
-        vehicle_details = self.getVehicleDetailsWithId(id)
+        vehicle_details = self.getVehicleStateWithId(id)
         if vehicle_details is None:
             self.logger.debug("getOdometerWithId() return None (2)")
             return None
