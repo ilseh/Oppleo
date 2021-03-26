@@ -11,7 +11,8 @@ password = getpass('Password (typing not shown):')
 
 t_auth = t_api.authenticate(username, password)
 valid = t_api.hasValidToken()
-exp = t_api.tokenRefreshCheck()
+requiresRefresh = t_api.tokenRequiresRefresh()
+# refreshed = t_api.refreshTokenIfRequired()
 v_list = t_api.getVehicleList()
 if v_list is None:
     print('No vehicles found')

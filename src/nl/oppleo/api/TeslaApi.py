@@ -750,19 +750,40 @@ class TeslaAPI:
 
 
     # Token valid for 45 days, refresh if token is valid for less than 31 days
-    def tokenRefreshCheck(self):
-        self.logger.debug("token_refresh_check()")
+    # Does not refresh token!
+    def tokenRequiresRefresh(self):
+        self.logger.debug("tokenRequiresRefresh()")
         if not self.hasValidToken():
-            self.logger.debug("token is not valid")
+            self.logger.debug("tokenRequiresRefresh() token is not valid")
             # Report update if there is an invalid access_token
-            return self.access_token is not None
+            return False
         token_date = datetime.datetime.fromtimestamp(
             int(self.created_at) + int(self.expires_in)
         )  # / 1e3
         today = datetime.datetime.now()
         delta = datetime.timedelta(days=31)
         if today > (token_date - delta):
-            self.logger.debug("Needs refresh")
+            self.logger.debug("tokenRequiresRefresh() - Needs refresh")
+            return True
+        self.logger.debug("tokenRequiresRefresh() - Token does not need refreshing yet")
+        return False
+
+
+    # Token valid for 45 days, refresh if token is valid for less than 31 days
+    # returns True if token was refreshed
+    def refreshTokenIfRequired(self):
+        self.logger.debug("refreshTokenIfRequired()")
+        if not self.hasValidToken():
+            self.logger.debug("refreshTokenIfRequired() - token is not valid")
+            # Report update if there is an invalid access_token
+            return False
+        token_date = datetime.datetime.fromtimestamp(
+            int(self.created_at) + int(self.expires_in)
+        )  # / 1e3
+        today = datetime.datetime.now()
+        delta = datetime.timedelta(days=31)
+        if today > (token_date - delta):
+            self.logger.debug("refreshTokenIfRequired() - Needs refresh")
             return self.refreshToken()
-        self.logger.debug("Token does not need refreshing yet")
+        self.logger.debug("refreshTokenIfRequired() - Token does not need refreshing yet")
         return False

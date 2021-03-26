@@ -1,73 +1,61 @@
 from getpass import getpass
 import pprint
+from datetime import datetime
 from nl.oppleo.api.TeslaApi import TeslaAPI
+from nl.oppleo.daemon.VehicleChargeStatusMonitorThread import VehicleChargeStatusMonitorThread
 
 vehicle_index = 0
 
 t_api = TeslaAPI()
 
-print('Enter username: ')
-username = input()
-password = getpass('Password (typing not shown):')
+username = input('Enter username: ')
+password = getpass('Password (typing not shown): ')
 
 t_auth = t_api.authenticate_v3(username, password)
-valid = t_api.hasValidToken()
-exp = t_api.tokenRefreshCheck()
+requiresRefresh = t_api.tokenRequiresRefresh()
+# refreshed = t_api.refreshTokenIfRequired()
 v_list = t_api.getVehicleList()
 if v_list is None:
     print('No vehicles found')
 else:
     cs = t_api.getChargeStateWithId(v_list[vehicle_index]['id_s'])
+
+    try:
+        dt_object = datetime.fromtimestamp(cs['timestamp']/1000)
+        print("timestamp=", dt_object)
+    except Exception:
+        print("No timestamp value")
+
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(cs)
-    # print(cs)
 
     """
-    {
-        'battery_heater_on': False, 
-        'battery_level': 90, 
-        'battery_range': 260.15, 
-        'charge_current_request': 16, 
-        'charge_current_request_max': 16, 
-        'charge_enable_request': True, 
-        'charge_energy_added': 48.35, 
-        'charge_limit_soc': 90, 
-        'charge_limit_soc_max': 100, 
-        'charge_limit_soc_min': 50, 
-        'charge_limit_soc_std': 90, 
-        'charge_miles_added_ideal': 197.5, 
-        'charge_miles_added_rated': 197.5, 
-        'charge_port_cold_weather_mode': False, 
-        'charge_port_door_open': True, 
-        'charge_port_latch': 'Engaged', 
-        'charge_rate': 0.0, 
-        'charge_to_max_range': False, 
-        'charger_actual_current': 0, 
-        'charger_phases': 2, 
-        'charger_pilot_current': 16, 
-        'charger_power': 0, 
-        'charger_voltage': 2, 
-        'charging_state': 'Stopped', 
-        'conn_charge_cable': 'IEC', 
-        'est_battery_range': 238.44, 
-        'fast_charger_brand': '<invalid>', 
-        'fast_charger_present': False, 
-        'fast_charger_type': '<invalid>', 
-        'ideal_battery_range': 260.15, 
-        'managed_charging_active': False, 
-        'managed_charging_start_time': None, 
-        'managed_charging_user_canceled': False, 
-        'max_range_charge_counter': 0, 
-        'minutes_to_full_charge': 0, 
-        'not_enough_power_to_heat': None, 
-        'scheduled_charging_pending': False, 
-        'scheduled_charging_start_time': None, 
-        'time_to_full_charge': 0.0, 
-        'timestamp': 1616683790233, 
-        'trip_charging': False, 
-        'usable_battery_level': 89, 
-        'user_charge_enable_request': None
-        }
+
+    'battery_level': 74,                    --- percentage vol
+    'battery_range': 215.28,                - vertaald naar range (74=215,28 90=262,29 - miles denk ik)
+
+    'charge_energy_added': 11.41,           --> dit is wat de auto denkt te hebben geladen
+                                                lader zegt 12,4 getal gaat van 11,41 naar 11,31 - schatting?
+    'charge_limit_soc': 90,                 - huidige charge limiet in de app
+    'charge_limit_soc_max': 100,            - max 468km in app
+
+    'charge_port_door_open': True,
+    'charge_port_latch': 'Engaged',
+
+    'charge_rate': 43.4,                    - @ 70kmh, 3x 16A  ~48A, 0.0 bij niet laden
+
+    'charger_actual_current': 0,            - is per fase denk ik, max 16A hier
+    'charger_phases': 2,                    - ja drie dus. Nul based???
+    'charger_power': 11,                    - kW
+    'charger_voltage': 235,                 - V
+
+    'charging_state': 'Charging',           - Charging, Stopped, Complete, andere statussen?
+
+    'minutes_to_full_charge': 70,                   - 70min
+    'time_to_full_charge': 1.17,                    - 1u 17min (77min)
+
+    'timestamp': 1616709968595,
+
     """
 
     odo = t_api.getOdometerWithId(v_list[vehicle_index]['id_s'])
@@ -78,4 +66,10 @@ else:
             odo
             )
         )
+
+    vcsmt = VehicleChargeStatusMonitorThread()
+    fvcs = vcsmt.formatChargeState(cs)
+
+    pp.pprint(fvcs)
+
 pass

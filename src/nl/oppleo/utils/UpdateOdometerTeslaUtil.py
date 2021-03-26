@@ -148,7 +148,7 @@ class UpdateOdometerTeslaUtil:
                     )
                 )
 
-        if t_api.tokenRefreshCheck():
+        if t_api.refreshTokenIfRequired():
             # Token refreshed, store in rfid
             self.logger.debug("Token refreshed")
             UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(t_api, rfid_model)
