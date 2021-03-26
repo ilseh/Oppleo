@@ -31,6 +31,7 @@ import urllib.parse
 
 class TeslaAPI:
     HTTP_TIMEOUT = 30
+
     # defining the api-endpoint  
     API_BASE = 'https://owner-api.teslamotors.com'
     API_AUTHENTICATION = '/oauth/token'  # POST
@@ -165,11 +166,17 @@ class TeslaAPI:
             'login_hint'            : email
         }
         session = requests.Session()
-        r = session.get(
-            url=self.API_AUTH_V3 +
-                self.API_AUTH_V3_AUTHORIZE,
-            params=payload
-        )
+        try:
+            r = session.get(
+                url=self.API_AUTH_V3 +
+                    self.API_AUTH_V3_AUTHORIZE,
+                params=payload,
+                timeout=self.HTTP_TIMEOUT
+                )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.authenticate_v3_getform(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None, None
+
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.authenticate_v3_getform(): status code {}".format(r.status_code))
@@ -199,14 +206,20 @@ class TeslaAPI:
         return session, session_params
 
 
-    def auth_post(self, data, grant_type_param_value):
-        r = requests.post(
-            url=self.API_BASE +
-                self.API_AUTHENTICATION + '?' +
-                self.API_AUTHENTICATION_GRANT_TYPE_PARAM + '=' +
-                grant_type_param_value,
-            data=data
-        )
+    def auth_post(self, data, grant_type_param_value) -> bool:
+        try:
+            r = requests.post(
+                url=self.API_BASE +
+                    self.API_AUTHENTICATION + '?' +
+                    self.API_AUTHENTICATION_GRANT_TYPE_PARAM + '=' +
+                    grant_type_param_value,
+                data=data,
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.auth_post(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return False
+
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.auth_post(): status code {}".format(r.status_code))
@@ -303,12 +316,18 @@ class TeslaAPI:
             'code_verifier' : self.generate_rnd(108), # code_verifier
             'redirect_uri'  : self.API_AUTH_V3_REDIRECT_URI
         }
-        r = session.post(
-            url=self.API_AUTH_V3 +
-                self.API_AUTH_V3_TOKEN,
-            # headers=headers,
-            data=payload
-        )
+        try:
+            r = session.post(
+                url=self.API_AUTH_V3 +
+                    self.API_AUTH_V3_TOKEN,
+                # headers=headers,
+                data=payload,
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.authorization_v3_get_bearer_token(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.new_bearer_token(): status code {}".format(r.status_code))
@@ -339,12 +358,17 @@ class TeslaAPI:
             "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
             "client_id": self.TESLA_CLIENT_ID,
         }
-        r = session.post(
-            url=self.API_BASE +
-                self.API_AUTHENTICATION,
-            headers=headers,
-            data=payload
-        )
+        try:
+            r = session.post(
+                url=self.API_BASE +
+                    self.API_AUTHENTICATION,
+                headers=headers,
+                data=payload,
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.authorization_v3_get_access_token(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return False
 
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
@@ -440,11 +464,17 @@ class TeslaAPI:
         self.vehicle_list = None
         # 02 - Vehicles [GET]
         # If >1 then show list and select, otherwise pick the vehicle  
-        # sending post request and saving response as response object 
-        r = requests.get(
-            url=self.API_BASE + self.API_VEHICLES,
-            headers={'Authorization': self.token_type + ' ' + self.access_token}
-        )
+        # sending post request and saving response as response object
+        try:
+            r = requests.get(
+                url=self.API_BASE + self.API_VEHICLES,
+                headers={'Authorization': self.token_type + ' ' + self.access_token},
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.getVehicleList(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.getVehicleList(): status code {}".format(r.status_code))
@@ -505,26 +535,31 @@ class TeslaAPI:
                (wake_up_tries < self.MAX_WAKE_UP_TRIES)):
             wake_up_tries += 1
             # 03 Wake it up, otherwise the STATE call will timeout
-            r = requests.post(
-                url=self.API_BASE + self.API_WAKE_UP.replace('{id}', vehicle[self.VEHICLE_LIST_ID_PARAM]),
-                headers={'Authorization': self.token_type + ' ' + self.access_token}
-            )
-            self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
-            if r.status_code != self.HTTP_200_OK:
-                self.logger.warn("TeslaAPI.wakeUpVehicleWithId(): status code {}".format(r.status_code))
-                if r.status_code == self.HTTP_401_UNAUTHORIZED:
-                    self.got401Unauthorized = True
-                return False
-            self.got401Unauthorized = False
+            try:
+                r = requests.post(
+                    url=self.API_BASE + self.API_WAKE_UP.replace('{id}', vehicle[self.VEHICLE_LIST_ID_PARAM]),
+                    headers={'Authorization': self.token_type + ' ' + self.access_token},
+                    timeout=self.HTTP_TIMEOUT
+                )
+                self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+                if r.status_code != self.HTTP_200_OK:
+                    self.logger.warn("TeslaAPI.wakeUpVehicleWithId(): status code {}".format(r.status_code))
+                    if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                        self.got401Unauthorized = True
+                    return False
+                self.got401Unauthorized = False
 
-            response_dict = json.loads(r.text)
-            vehicle[self.VEHICLE_LIST_STATE_PARAM] = response_dict['response'][self.VEHICLE_LIST_STATE_PARAM]
-            self.logger.debug(
-                "On try %d the state is now %s " % (wake_up_tries, vehicle[self.VEHICLE_LIST_STATE_PARAM]))
-            if vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_AWAKE:
-                return True
-            self.logger.debug("Wait 5 seconds to try again...")
-            time.sleep(5)
+                response_dict = json.loads(r.text)
+                vehicle[self.VEHICLE_LIST_STATE_PARAM] = response_dict['response'][self.VEHICLE_LIST_STATE_PARAM]
+                self.logger.debug(
+                    "On try %d the state is now %s " % (wake_up_tries, vehicle[self.VEHICLE_LIST_STATE_PARAM]))
+                if vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_AWAKE:
+                    return True
+                self.logger.debug("Wait 5 seconds to try again...")
+                time.sleep(5)
+            except requests.ReadTimeout as rt:
+                self.logger.warn("TeslaAPI.wakeUpVehicleWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+                # Continue loop
 
         if ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and
                 (wake_up_tries >= self.MAX_WAKE_UP_TRIES)):
@@ -561,10 +596,16 @@ class TeslaAPI:
         url = self.API_BASE + self.API_VEHICLE_STATE.replace('{id}', id)
         self.logger.debug("getVehicleStateWithId() - %s" % url)
         # 04 Get the milage
-        r = requests.get(
-            url=url,
-            headers={'Authorization': self.token_type + ' ' + self.access_token}
-        )
+        try:
+            r = requests.get(
+                url=url,
+                headers={'Authorization': self.token_type + ' ' + self.access_token},
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.getVehicleStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.getVehicleStateWithId(): status code {}".format(r.status_code))
@@ -600,10 +641,16 @@ class TeslaAPI:
         url = self.API_BASE + self.API_CHARGE_STATE.replace('{id}', id)
         self.logger.debug("getChargeStateWithId() - %s" % url)
         # 04 Get the milage
-        r = requests.get(
-            url=url,
-            headers={'Authorization': self.token_type + ' ' + self.access_token}
-        )
+        try:
+            r = requests.get(
+                url=url,
+                headers={'Authorization': self.token_type + ' ' + self.access_token},
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.getChargeStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.getChargeStateWithId(): status code {}".format(r.status_code))
@@ -650,7 +697,7 @@ class TeslaAPI:
         # sending post request and saving response as response object
         return self.auth_post(data, self.API_AUTHENTICATION_GRANT_TYPE_REFRESH_TOKEN)
 
-    def revokeToken(self):
+    def revokeToken(self) -> bool:
         self.logger.debug("revokeToken()")
 
         if self.access_token is None:
@@ -660,10 +707,16 @@ class TeslaAPI:
         data = {
             "token": self.access_token
         }
-        r = requests.post(
-            url=self.API_BASE + self.API_REVOKE,
-            data=data
-        )
+        try:
+            r = requests.post(
+                url=self.API_BASE + self.API_REVOKE,
+                data=data,
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.revokeToken(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return False
+
         self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.revokeToken(): status code {}, NOT successfull REVOKING TOKEN".format(r.status_code))
@@ -674,6 +727,7 @@ class TeslaAPI:
 
         self.reset()
         return True
+
 
     # Token can expire, but apparently the token can also just become invalid.
     # Not sure if the refresh token in that case will still work.
