@@ -58,6 +58,9 @@ else:
 
     """
 
+
+    vehicle_config = t_api.getVehicleConfigWithId(v_list[vehicle_index]['id_s'])
+
     odo = t_api.getOdometerWithId(v_list[vehicle_index]['id_s'])
     print('Odometer for vehicle {} (id:{} vin:{}) is {}km'.format(
             v_list[vehicle_index]['display_name'],

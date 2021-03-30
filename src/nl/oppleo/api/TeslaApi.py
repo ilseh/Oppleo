@@ -93,6 +93,7 @@ class TeslaAPI:
     CHARGE_STATE_TOKEN = 'CHARGE_STATE'
     CLIMATE_STATE_TOKEN = 'CLIMATE_STATE'
     DRIVE_STATE_TOKEN = 'DRIVE_STATE'
+    VEHICLE_CONFIG_TOKEN = 'VEHICLE_CONFIG'
 
     access_token = None
     token_type = None
@@ -665,6 +666,140 @@ class TeslaAPI:
         response_dict = json.loads(r.text)
         vehicle[self.CHARGE_STATE_TOKEN] = response_dict['response']
         return response_dict['response']
+
+
+    def getClimateStateWithId(self, id=None, update=False):
+        self.logger.debug("getClimateStateWithId() id={} update={}".format(id, str(update)))
+        vehicle = self.getVehicleWithId(id)
+        if id is None or vehicle is None:
+            self.logger.debug("getClimateStateWithId() id={}  return None (1)".format(id))
+            return None
+        # Existing?
+        if (self.CLIMATE_STATE_TOKEN in vehicle) and (vehicle[self.CLIMATE_STATE_TOKEN] != None) and (not update):
+            return vehicle[self.CLIMATE_STATE_TOKEN]
+        # Needs to be awake
+        if (self.vehicleWithIdIsAsleep(id) and
+                not self.wakeUpVehicleWithId(id)):
+            self.logger.debug("getClimateStateWithId() id={}  return None (2)".format(id))
+            return None
+        self.logger.debug("getClimateStateWithId() - awake")
+        url = self.API_BASE + self.API_CLIMATE_STATE.replace('{id}', id)
+        self.logger.debug("getClimateStateWithId() - %s" % url)
+        # 04 Get the milage
+        try:
+            r = requests.get(
+                url=url,
+                headers={'Authorization': self.token_type + ' ' + self.access_token},
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.getClimateStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.getClimateStateWithId(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
+                response_dict = json.loads(r.text)
+                self.logger.warning("Error: %s" % response_dict['error'])
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
+            return None
+        self.got401Unauthorized = False
+
+        response_dict = json.loads(r.text)
+        vehicle[self.CLIMATE_STATE_TOKEN] = response_dict['response']
+        return response_dict['response']
+
+
+    def getDriveStateWithId(self, id=None, update=False):
+        self.logger.debug("getDriveStateWithId() id={} update={}".format(id, str(update)))
+        vehicle = self.getVehicleWithId(id)
+        if id is None or vehicle is None:
+            self.logger.debug("getDriveStateWithId() id={}  return None (1)".format(id))
+            return None
+        # Existing?
+        if (self.DRIVE_STATE_TOKEN in vehicle) and (vehicle[self.DRIVE_STATE_TOKEN] != None) and (not update):
+            return vehicle[self.DRIVE_STATE_TOKEN]
+        # Needs to be awake
+        if (self.vehicleWithIdIsAsleep(id) and
+                not self.wakeUpVehicleWithId(id)):
+            self.logger.debug("getDriveStateWithId() id={}  return None (2)".format(id))
+            return None
+        self.logger.debug("getDriveStateWithId() - awake")
+        url = self.API_BASE + self.API_DRIVE_STATE.replace('{id}', id)
+        self.logger.debug("getDriveStateWithId() - %s" % url)
+        # 04 Get the milage
+        try:
+            r = requests.get(
+                url=url,
+                headers={'Authorization': self.token_type + ' ' + self.access_token},
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.getDriveStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.getDriveStateWithId(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
+                response_dict = json.loads(r.text)
+                self.logger.warning("Error: %s" % response_dict['error'])
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
+            return None
+        self.got401Unauthorized = False
+
+        response_dict = json.loads(r.text)
+        vehicle[self.DRIVE_STATE_TOKEN] = response_dict['response']
+        return response_dict['response']
+
+
+    def getVehicleConfigWithId(self, id=None, update=False):
+        self.logger.debug("getVehicleConfigWithId() id={} update={}".format(id, str(update)))
+        vehicle = self.getVehicleWithId(id)
+        if id is None or vehicle is None:
+            self.logger.debug("getVehicleConfigWithId() id={}  return None (1)".format(id))
+            return None
+        # Existing?
+        if (self.VEHICLE_CONFIG_TOKEN in vehicle) and (vehicle[self.VEHICLE_CONFIG_TOKEN] != None) and (not update):
+            return vehicle[self.VEHICLE_CONFIG_TOKEN]
+        # Needs to be awake
+        if (self.vehicleWithIdIsAsleep(id) and
+                not self.wakeUpVehicleWithId(id)):
+            self.logger.debug("getVehicleConfigWithId() id={}  return None (2)".format(id))
+            return None
+        self.logger.debug("getVehicleConfigWithId() - awake")
+        url = self.API_BASE + self.API_VEHICLE_CONFIG.replace('{id}', id)
+        self.logger.debug("getVehicleConfigWithId() - %s" % url)
+        # 04 Get the milage
+        try:
+            r = requests.get(
+                url=url,
+                headers={'Authorization': self.token_type + ' ' + self.access_token},
+                timeout=self.HTTP_TIMEOUT
+            )
+        except requests.ReadTimeout as rt:
+            self.logger.warn("TeslaAPI.getVehicleConfigWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
+
+        self.logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+        if r.status_code != self.HTTP_200_OK:
+            self.logger.warn("TeslaAPI.getVehicleConfigWithId(): status code {}".format(r.status_code))
+            if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
+                response_dict = json.loads(r.text)
+                self.logger.warning("Error: %s" % response_dict['error'])
+            if r.status_code == self.HTTP_401_UNAUTHORIZED:
+                self.got401Unauthorized = True
+            return None
+        self.got401Unauthorized = False
+
+        response_dict = json.loads(r.text)
+        vehicle[self.VEHICLE_CONFIG_TOKEN] = response_dict['response']
+        return response_dict['response']
+
+
 
 
     def getOdometerWithId(self, id=None):

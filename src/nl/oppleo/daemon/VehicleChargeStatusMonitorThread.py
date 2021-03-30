@@ -6,9 +6,9 @@ import re
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.api.TeslaApi import TeslaAPI
-from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
-from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
+from nl.oppleo.utils.FormatChargeState import formatChargeState
+
 
 oppleoConfig = OppleoConfig()
 
@@ -17,6 +17,8 @@ class VehicleChargeStatusMonitorThread(object):
     threadLock = None
     logger = None
     stop_event = None
+
+    rfidTag = None
 
     # Check every minute [60 seconds]
     vehicleMonitorInterval = 60
@@ -29,95 +31,72 @@ class VehicleChargeStatusMonitorThread(object):
         self.logger = logging.getLogger('nl.oppleo.daemon.VehicleChargeStatusMonitorThread')
 
 
-    def toCamelcase(self, s):
-        return re.sub(r'(?!^)_([a-zA-Z])', lambda m: m.group(1).upper(), s)
+    @property
+    def rfid(self, rfidValue = None):
+        if self.thread is not None:
+            if self.thread.is_alive():
+                self.logger.error('Cannot set RFID after Thread is started!')
+            else:
+                self.logger.error('Cannot set RFID after Thread is finished!')
+            return
+        if rfidValue is None:
+            self.logger.error('Cannot set RFID to None!')
+        self.rfidTag = rfidValue
 
 
-    def formatChargeStateParam(self, chargeState:dict=None, param:str=None):
-        if chargeState is None or param is None:
-            return chargeState
-        try:
-            return chargeState[param]
-        except:
-            return None
-
-    def milesToKm(self, miles:float=0, acc:int=0):
-        return round(miles * 1.609344 * pow(10, acc)) / pow(10, acc)
-
-
-    """
-        battery_level               battery percentage charged [int]
-        battery_range               range in miles with current battery level [int]
-        charge_energy_added         enery added in the charge session of the vehicle, in kWh [int]
-        charge_limit_soc            charge limit percentage set [int]
-        charge_limit_soc_max        max charge limit [int]
-        charge_port_door_open       [True | False],
-        charge_rate                 miles per hout [float]
-        charger_actual_current      amps
-        charger_phases              2 for three phases? [int]
-        charger_power               in kW 
-        charger_voltage             [Volts]
-        charging_state              [Charging, Stopped, Complete, Disconnected]
-        minutes_to_full_charge      70 [int] 
-        time_to_full_charge         A value of 1.17 indicates 1.17 * 60min = 1u 10min = 70min [float]
-        timestamp                   in millis
-    """
-    def formatChargeState(self, chargeState:dict=None):
-        csEl = ['battery_level', 'battery_range', 'charge_energy_added', 'charge_limit_soc', 'charge_limit_soc_max', 
-                'charge_miles_added_rated', 'charge_port_door_open', 'charge_port_latch', 'charge_rate', 'charger_actual_current', 'charger_phases',
-                'charger_power', 'charger_voltage', 'charging_state', 'minutes_to_full_charge', 'time_to_full_charge', 
-                'timestamp']
-        # Which ones are in miles
-        csElMiles = ['charge_miles_added_rated', 'charge_rate']
-        csElKm = ['charge_km_added_rated', 'charge_rate']
-        if chargeState is None:
-            return {}
-
-        csDict = {}
-        for el in csEl:
-            csDict[self.toCamelcase(el)] = self.formatChargeStateParam(chargeState, el)
-            if el in csElMiles:
-                # Convert
-                csDict[self.toCamelcase(csElKm[csElMiles.index(el)])] = self.milesToKm(csDict[self.toCamelcase(el)], 1)
-                if el != csElKm[csElMiles.index(el)]:
-                    # Only delete if it was stored on a different key
-                    del csDict[self.toCamelcase(el)]
-
-        return csDict
 
 
 
     # VehicleChargeStatusMonitorThread
+    """
+        This Thread is started when a session is opened (EVSE Enabled), 
+        so in this Thread there is no check for an active charge session!
+        The RFID Tag is set prior to starting the Thread
+        - Creates TeslaAPI 
+        - If there is a token, load Token from RFID Tag
+        - If the number of Online clients present in list(oppleoConfig.connectedClients) 
+            - Get charge state
+        - Interval 60 sec (ophalen info kost ~10 sec met TeslaAPI)
+        When the session is stopped this Thread is destroyed. With a new session a new Thread is started.
+    """
     def monitor(self):
-        """
-            if open charge session and vehicle information, send updates
-        """
+        self.logger.debug('monitor()')
+
         teslaApi = TeslaAPI()
 
+        if self.rfidTag is None:
+            self.logger.error('monitor() Cannot run Thread for RFID None!')
+
         while not self.stop_event.is_set():
-            openSession = ChargeSessionModel.getOpenChargeSession(oppleoConfig.chargerName)
-            if openSession is not None:
-                # skip
-                rfidTag = RfidModel().get_one(openSession.rfid)
-                if rfidTag != None:
-                    UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfidTag, teslaApi)
-                    if teslaApi.hasValidToken():
-                        # Refresh if required (check once per day)
-                        if teslaApi.refreshTokenIfRequired():
-                            UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(teslaApi, rfidTag)
-                            rfidTag.save()
+            if len(oppleoConfig.connectedClients) > 0:
+                # See if something changes (could be added or retracted)
+                UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(self.rfidTag, teslaApi)
 
-                        chargeState = teslaApi.getChargeStateWithId(rfidTag.vehicle_id)
+                if teslaApi.hasValidToken():
+                    # Refresh if required (check once per day)
+                    if teslaApi.refreshTokenIfRequired():
+                        UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(teslaApi, self.rfidTag)
+                        self.rfidTag.save()
 
+                    chargeState = teslaApi.getChargeStateWithId(self.rfidTag.vehicle_id)
+
+                    if chargeState is not None:
                         # Send change notification
                         WebSocketUtil.emit(
-                                wsEmitQueue=oppleoConfig.wsEmitQueue,
-                                event='vehicle_status_update', 
-                                id=oppleoConfig.chargerName,
-                                data=self.formatChargeState(chargeState),
-                                namespace='/charge_session',
-                                public=True
-                                )
+                            wsEmitQueue=oppleoConfig.wsEmitQueue,
+                            event='vehicle_charge_status_update', 
+                            id=oppleoConfig.chargerName,
+                            data=formatChargeState(chargeState),
+                            namespace='/charge_session',
+                            public=True
+                            )
+                        # len(oppleoConfig.connectedClients) == 0
+                    else:
+                        self.logger.debug('monitor() - could not get charge state (None)')
+
+            else: 
+                # len(oppleoConfig.connectedClients) == 0
+                self.logger.debug('monitor() no connectedClients to report chargeState to. Skip and go directly to sleep.')
 
             # Sleep for quite a while, and yield for other threads
             time.sleep(self.sleepInterval)

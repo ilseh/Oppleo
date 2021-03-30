@@ -40,6 +40,7 @@ from nl.oppleo.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
+from nl.oppleo.utils.FormatChargeState import formatChargeState
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.GitUtil import GitUtil
@@ -69,6 +70,23 @@ flaskRoutesLogger = logging.getLogger('nl.oppleo.webapp.flaskRoutes')
 flaskRoutesLogger.debug('Initializing routes')
 
 threadLock = threading.Lock()
+
+
+
+def RepresentsInt(s):
+    try: 
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+def RepresentsFloat(s):
+    try: 
+        float(s)
+        return True
+    except ValueError:
+        return False
+
 
 
 # Resource is only served for logged in user
@@ -1992,6 +2010,69 @@ def getBackupInfo(cmd=None, data=None):
 
 
 # Always returns json
+@flaskRoutes.route("/vehicle_charge_state", methods=["GET"])
+@flaskRoutes.route("/vehicle_charge_state/", methods=["GET"])
+@authenticated_resource  # CSRF Token is valid
+def getVehicleChargeStatus():
+    global flaskRoutesLogger, oppleoConfig
+    
+    # Only if existing charge session, with rfid with token
+    openChargeSession = ChargeSessionModel.getOpenChargeSession(oppleoConfig.chargerName)
+    if openChargeSession is None:
+        return jsonify({ 
+            'status'        : HTTP_CODE_404_NOT_FOUND, 
+            'id'            : oppleoConfig.chargerName, 
+            'reason'        : 'No existing charge session'
+            })
+    rfidTag = RfidModel.get_one(openChargeSession.rfid)
+    if rfidTag is None:
+        return jsonify({ 
+            'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 
+            'id'            : oppleoConfig.chargerName, 
+            'reason'        : 'No RFID for charge session'
+            })
+    teslaApi = TeslaAPI()
+    UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfidTag, teslaApi)
+    if not teslaApi.hasValidToken():
+        return jsonify({ 
+            'status'        : HTTP_CODE_404_NOT_FOUND, 
+            'id'            : oppleoConfig.chargerName, 
+            'reason'        : 'No token for RFID'
+            })
+    # Refresh if required
+    if teslaApi.refreshTokenIfRequired():
+        UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(teslaApi, rfidTag)
+        rfidTag.save()
+    # Get charge state
+    chargeState = teslaApi.getChargeStateWithId(rfidTag.vehicle_id)
+    vehicleState = teslaApi.getVehicleStateWithId(rfidTag.vehicle_id)
+    if chargeState is None:
+        return jsonify({ 
+            'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 
+            'id'            : oppleoConfig.chargerName, 
+            'reason'        : 'No charge state obtained for charge session'
+            })
+
+    formattedChargeState = formatChargeState(chargeState)
+    # we got it, share it
+    if len(oppleoConfig.connectedClients) > 1:
+        WebSocketUtil.emit(
+            wsEmitQueue=oppleoConfig.wsEmitQueue,
+            event='vehicle_charge_status_update', 
+            id=oppleoConfig.chargerName,
+            data=formattedChargeState,
+            namespace='/charge_session',
+            public=True
+            )
+
+    return jsonify({ 
+        'status'        : HTTP_CODE_200_OK, 
+        'id'            : oppleoConfig.chargerName,
+        'chargeState'   : formattedChargeState
+        })
+
+
+# Always returns json
 @flaskRoutes.route("/system_status/", methods=["GET"])
 @authenticated_resource
 def systemStatus():
@@ -2022,20 +2103,5 @@ def softwareStatus():
         'softwareUpdateAvailable': GitUtil.gitUpdateAvailable(),
         'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr()
         })
-
-
-def RepresentsInt(s):
-    try: 
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-def RepresentsFloat(s):
-    try: 
-        float(s)
-        return True
-    except ValueError:
-        return False
 
 
