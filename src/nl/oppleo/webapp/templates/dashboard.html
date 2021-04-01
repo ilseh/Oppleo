@@ -69,22 +69,18 @@
     z-index:1;
     font-size:12px;
   }
-  .progressbar-label-txt-left {
-    position:relative;
-    float: left;
-    left: 5px;
-  }
   .progressbar-label-line {
-    float: right;
+    float: left;
     background: #fff;
     height: 22px;
     margin-top: 12px;
-    width: 2px;
-    margin-left: 5px;
+    width: 1px;
+    margin-left: 0px;
   }
-  .progressbar-label-txt-right {
-    float: right;
-    margin-left: 5px;   
+  .progressbar-label-text {
+    position: relative;
+    float: left;
+    margin-left: 2px;   
   }
   </style>
 
@@ -395,14 +391,12 @@
       let pEl = $('<div class="progress-bar '+color+' '+striping+' '+animation+'" role="progressbar" style="width: '+level+'%" aria-valuenow="'+level+'" aria-valuemin="'+min+'" aria-valuemax="'+max+'"></div>')
       $('div#vehicleChargeStateProgress').append(pEl)
     }
-    function drawProgresBarMarker(level, text1='', text2='', color='') {
-      let pEl = $('<div class="progressbar-step" style="left: '+level+'%">')
-      let pElT1 = $('<div class="progressbar-label-txt-left">'+text1+'</div>')
-      let pElT2 = $('<div class="progressbar-label-txt-right">'+text2+'</div>')
+    function drawProgresBarMarker(level, text='', color='') {
+      let pEl = $('<div class="progressbar-step" style="left: calc(10px + ('+level+' * ((100% - 20px)/100)));">')
       let pElLine = $('<div class="progressbar-label-line '+color+'"></div>')
-      pEl.append(pElT1)
-      pEl.append(pElT2)
+      let pElText = $('<div class="progressbar-label-text">'+text+'</div>')
       pEl.append(pElLine)
+      pEl.append(pElText)
       $('div#vehicleChargeStateProgress').append(pEl)
     }
 
