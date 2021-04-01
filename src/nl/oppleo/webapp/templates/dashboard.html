@@ -430,10 +430,11 @@
                                     chargeRequested,
                                     chargeCurrent,
                                     chargingState,
+                                    chargeRate,
                                     minutesToFullCharge,
                                     chargeEnergyAdded,
                                     chargeKmAdded,
-                                    batteryRange,
+                                    currentBatteryRange,
                                     chargeStart,
                                     chargePortDoorOpen,
                                     timestampMillis
@@ -460,14 +461,14 @@
       drawProgresBarMarker(chargeRequested, chargeRequested+"%")
       // Step 5: Draw footer
       let info = '<span class="border-secondary text-muted info-button-style-inline"  data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="Laadsessie zoals door het voertuig gerapporteerd. Bij tussentijds stop/start kan het voertuig de sessie resetten en er een lagere lading weergegeven worden."><i class="fas fa-info-circle"></i></span>'
-      let remainingTime = (chargingState == 'Charging' ? 'nog ' + minutesToFullCharge + ' min, ' : '')
+      let remainingTime = (chargingState == 'Charging' ? '<i class="far fa-clock"></i> ' + minutesToFullCharge + 'min ' : '')
       d = new Date(timestampMillis)
       let update = ( (weekday[d.getDay() %7]).substring(0, 2) + ' ' + 
                      d.getDate() + ' ' + (months[d.getMonth() %12]) + ' ' + d.getFullYear() + ' ' +
                      d.getHours() + ':' +
                     (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
                    ).toLowerCase()
-      drawProgresBarFooter((chargePortDoorOpen?'<i class="fas fa-plug"></i> ':'<i class="fas fa-key"></i> ')+vehicleName+': '+chargingState.toLowerCase()+', '+chargeEnergyAdded+'kWh, '+chargeKmAdded+'km, '+remainingTime+'last update '+update+' '+info)
+      drawProgresBarFooter((chargePortDoorOpen?'<i class="fas fa-car"></i> '+vehicleName+' <i class="fas fa-plug"></i> ':'<i class="fas fa-key"></i> ')+' '+chargingState.toLowerCase()+(chargingState=='Charging'?' @ '+chargeRate+'km/h':'')+' <i class="fas fa-charging-station"></i> '+chargeEnergyAdded+'kWh/'+chargeKmAdded+'km '+remainingTime+' <i class="fas fa-battery-half"></i> '+currentBatteryRange+'km <i class="far fa-calendar-check"></i> '+update+' '+info)
       $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       $('.info-button-style-inline').hover(
         function() { // mouseenter
@@ -481,12 +482,14 @@
           $(this).css('cursor', 'default')
         }
       )
-      // Slide down
-      $('div#vehicleChargeState').css( 'height', 0 )
-      $('div#vehicleChargeState').toggleClass( 'd-none', false )
-      $('div#vehicleChargeState').animate({
-        height: '+=95px',
-      })
+      // Slide down if not visible yet
+      if ($('div#vehicleChargeState').hasClass( 'd-none')) {
+        $('div#vehicleChargeState').css( 'height', 0 )
+        $('div#vehicleChargeState').toggleClass( 'd-none', false )
+        $('div#vehicleChargeState').animate({
+          height: '+=95px',
+        })
+      }
     }
 
     function getVehicleChargeState() {
@@ -514,23 +517,20 @@
             chargeKmAdded = data.chargeState?.chargeKmAddedRated                        // km
             idealBatteryRange = data.chargeState?.idealBatteryRange                     // km
             batteryRange = (data.chargeState?.idealBatteryRange / chargeCurrent) * progressMax  // km
-            
             chargeStart = chargeCurrent - ((chargeKmAdded / idealBatteryRange) *100)  // %     32.2/420 *100% = 7,65% (90-7,65=82,3%)
-
             chargePortDoorOpen = data.chargeState?.chargePortDoorOpen                   // true | false
-
             chargingState = data.chargeState?.chargingState                             // Charging=Blue, Stopped=Danger, Complete=Green, Disconnected=Gray]
-
             drawVehicleChargeState(data.vehicle.displayName,
                                    progressMin,
                                    progressMax,
                                    chargeRequested,
                                    chargeCurrent,
                                    chargingState,
+                                   data.chargeState.chargeRate,
                                    data.chargeState.minutesToFullCharge,
                                    chargeEnergyAdded,
                                    chargeKmAdded,
-                                   batteryRange,
+                                   data.chargeState?.idealBatteryRange,
                                    chargeStart,
                                    chargePortDoorOpen,
                                    data.chargeState.timestamp
@@ -676,10 +676,44 @@
         // Force gauge update
         getChargeSessionStatus()
         getUsageData(1)
+        hideVehicleChargeState()
       })
       chargeSessionSocket.on('off_peak_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         updateOffPeakIndicator( msg.data.offPeakEnabled, msg.data.isOffPeak, msg.data.peakAllowOnePeriod, false, true )
+      })
+      chargeSessionSocket.on('vehicle_charge_status_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        progressMin = 0
+        progressMax = 100                                                           // 100 (percentage)
+        progressConversion = msg.data.chargeState?.chargeLimitSocMax /progressMax       // / happens to be 1 (@ 100%)
+        chargeCurrent = msg.data.chargeState?.batteryLevel * progressConversion         // %     90
+        chargeRequested = msg.data.chargeState?.chargeLimitSoc * progressConversion     // % white line
+        chargeEnergyAdded = msg.data.chargeState?.chargeEnergyAdded                     // kWh
+        chargeKmAdded = msg.data.chargeState?.chargeKmAddedRated                        // km
+        idealBatteryRange = msg.data.chargeState?.idealBatteryRange                     // km
+        batteryRange = (msg.data.chargeState?.idealBatteryRange / chargeCurrent) * progressMax  // km
+        chargeStart = chargeCurrent - ((chargeKmAdded / idealBatteryRange) *100)  // %     32.2/420 *100% = 7,65% (90-7,65=82,3%)
+        chargePortDoorOpen = msg.data.chargeState?.chargePortDoorOpen                   // true | false
+        chargingState = msg.data.chargeState?.chargingState                             // Charging=Blue, Stopped=Danger, Complete=Green, Disconnected=Gray]
+        drawVehicleChargeState(msg.data.vehicle.displayName,
+                                progressMin,
+                                progressMax,
+                                chargeRequested,
+                                chargeCurrent,
+                                chargingState,
+                                msg.data.chargeState.chargeRate,
+                                msg.data.chargeState.minutesToFullCharge,
+                                chargeEnergyAdded,
+                                chargeKmAdded,
+                                msg.data.chargeState?.idealBatteryRange,
+                                chargeStart,
+                                chargePortDoorOpen,
+                                msg.data.chargeState.timestamp
+                              )
+
+// XXXXX
+//        updateOffPeakIndicator( msg.data.offPeakEnabled, msg.data.isOffPeak, msg.data.peakAllowOnePeriod, false, true )
       })
       // start up the SocketIO connection to the server on namespace /evse_status
       evseStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/evse_status')

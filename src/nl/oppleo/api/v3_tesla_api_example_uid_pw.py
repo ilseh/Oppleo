@@ -75,4 +75,9 @@ else:
 
     pp.pprint(fvcs)
 
+    rfid = '584190412223'
+    vcsmThread = VehicleChargeStatusMonitorThread()
+    vcsmThread.rfid = rfid
+    vcsmThread.start()
+
 pass

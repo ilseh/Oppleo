@@ -132,6 +132,7 @@ class OppleoConfig(object, metaclass=Singleton):
     chThread = None         # ChargerHandlerThread
     phmThread = None        # PeakHoursMonitorThread
     rgblcThread = None      # RGBLedControllerThread
+    vcsmThread = None       # VehicleChargeStatusMonitorThread
 
     wsEmitQueue = None
 

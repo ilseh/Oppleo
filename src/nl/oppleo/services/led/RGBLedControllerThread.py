@@ -294,7 +294,7 @@ class RGBLedControllerThread(object):
                         timeDelayDivider = timeDelayDivider *2
                     timeDelayDividerCounter = 0
 
-                self.logger.debug("run() dutyCyclePercentage:{}".format(dutyCyclePercentage))
+                # self.logger.debug("run() dutyCyclePercentage:{}".format(dutyCyclePercentage))
 
                 # Run effect if due, skip if divider
                 if timeDelayDividerCounter == 0:

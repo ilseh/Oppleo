@@ -11,6 +11,7 @@ from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException,
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.led.RGBLedControllerThread import RGBLedControllerThread
+from nl.oppleo.daemon.VehicleChargeStatusMonitorThread import VehicleChargeStatusMonitorThread
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
@@ -135,6 +136,10 @@ class ChargerHandlerThread(object):
             self.logger.info("No open charge session to resume.")
         else:
             self.logger.info("Resume charge session {} for rfid {}".format(openChargeSession.id, openChargeSession.rfid))
+            # Start the VehicleChargeStatusMonitorThread
+            oppleoConfig.vcsmThread = VehicleChargeStatusMonitorThread()
+            oppleoConfig.vcsmThread.rfid = openChargeSession.rfid
+            oppleoConfig.vcsmThread.start()
         self.update_charger_and_led(openChargeSession is not None)
 
 
@@ -222,7 +227,7 @@ class ChargerHandlerThread(object):
     # evse_reader_thread
     # rfid_reader_thread
     # main thread (though web)
-    def start_charge_session(self, rfid, trigger=ChargeSessionModel.TRIGGER_RFID, condense=False):
+    def start_charge_session(self, rfid:str, trigger=ChargeSessionModel.TRIGGER_RFID, condense=False):
         global oppleoConfig
 
         self.logger.debug(".start_charge_session() new charging session for rfid {}".format(rfid))
@@ -251,8 +256,8 @@ class ChargerHandlerThread(object):
         charge_session.save()
         self.logger.info('.start_charge_session() New charge session started with {}'.format(charge_session.id))
 
-        rfid = RfidModel.get_one(rfid)
-        if rfid.vehicle_make.upper() == "TESLA" and rfid.get_odometer: 
+        rfidObj = RfidModel.get_one(rfid)
+        if rfidObj.vehicle_make.upper() == "TESLA" and rfidObj.get_odometer: 
             # Try to add odometer
             self.logger.debug('.start_charge_session() Update odometer for this Tesla')
             self.save_tesla_values_in_thread(
@@ -270,6 +275,11 @@ class ChargerHandlerThread(object):
                     namespace='/charge_session',
                     public=False
                 )
+        # Start the VehicleChargeStatusMonitorThread
+        oppleoConfig.vcsmThread = VehicleChargeStatusMonitorThread()
+        oppleoConfig.vcsmThread.rfid = rfid
+        oppleoConfig.vcsmThread.start()
+
 
 
     # evse_reader_thread
@@ -311,6 +321,11 @@ class ChargerHandlerThread(object):
                     namespace='/charge_session',
                     public=False
                 )
+        # Stop the VehicleChargeStatusMonitorThread
+        if oppleoConfig.vcsmThread is not None:
+            oppleoConfig.vcsmThread.stop()
+            oppleoConfig.vcsmThread = None
+            
 
 
     # evse_reader_thread
@@ -413,7 +428,7 @@ class ChargerHandlerThread(object):
     # Auto Session starts a new session when the EVSE starts charging and during the set amount of minutes less
     # than the amount of energy has been consumed (auto was away)
     # A Tesla Model 3 75kWh Dual Motor charges 0.2kWh every 1:23h (16 feb 2020)
-    # Only called upon switch from not-charging to chargin by the EVSE, so a session is ongoin
+    # Only called upon switch from not-charging to charging by the EVSE, so a session is ongoin
     # evse_reader_thread
     def handle_auto_session(self):
         self.logger.debug('.handle_auto_session() enabled: {}'.format(oppleoConfig.autoSessionEnabled))

@@ -624,7 +624,7 @@ class TeslaAPI:
         return response_dict['response']
 
 
-    def getChargeStateWithId(self, id=None, update=False):
+    def getChargeStateWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getChargeStateWithId() id={} update={}".format(id, str(update)))
         vehicle = self.getVehicleWithId(id)
         if id is None or vehicle is None:
@@ -798,8 +798,6 @@ class TeslaAPI:
         response_dict = json.loads(r.text)
         vehicle[self.VEHICLE_CONFIG_TOKEN] = response_dict['response']
         return response_dict['response']
-
-
 
 
     def getOdometerWithId(self, id=None):
