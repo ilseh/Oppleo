@@ -7,7 +7,7 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
-from nl.oppleo.utils.FormatChargeState import formatChargeState
+from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
 
 
 oppleoConfig = OppleoConfig()
@@ -86,7 +86,9 @@ class VehicleChargeStatusMonitorThread(object):
                             wsEmitQueue=oppleoConfig.wsEmitQueue,
                             event='vehicle_charge_status_update', 
                             id=oppleoConfig.chargerName,
-                            data=formatChargeState(chargeState),
+                            data={ 'chargeState': formatChargeState(chargeState),
+                                   'vehicle'    : formatVehicle(teslaApi.getVehicleWithId(self.rfidTag.vehicle_id))
+                            },
                             namespace='/charge_session',
                             public=True
                             )

@@ -3,6 +3,7 @@ import pprint
 from datetime import datetime
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.daemon.VehicleChargeStatusMonitorThread import VehicleChargeStatusMonitorThread
+from nl.oppleo.utils.TeslaApiFormatters import formatChargeState
 
 vehicle_index = 0
 
@@ -70,8 +71,7 @@ else:
             )
         )
 
-    vcsmt = VehicleChargeStatusMonitorThread()
-    fvcs = vcsmt.formatChargeState(cs)
+    fvcs = formatChargeState(cs)
 
     pp.pprint(fvcs)
 

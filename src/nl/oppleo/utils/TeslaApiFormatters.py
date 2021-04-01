@@ -62,9 +62,6 @@ def formatChargeState(chargeState:dict=None) -> dict:
 
 """
 
-
-
-
 {
     "batteryLevel": 90,
     "batteryRange": 420.7,
@@ -85,3 +82,43 @@ def formatChargeState(chargeState:dict=None) -> dict:
     "timestamp": 1617095513483
 }
 """
+
+# https://tesla-api.timdorr.com/vehicle/optioncodes
+def battCapacityFromOptionCodes(optionCodes:str=None) -> int:
+    ocMap = { 'BT37': 75,
+              'BT40': 40,
+              'BT60': 60,
+              'BT70': 70,
+              'BT85': 85,
+              'BTX4': 90,
+              'BTX5': 75,
+              'BTX6': 100,
+              'BTX7': 75,
+              'BTX8': 75
+            }
+
+    if optionCodes is None:
+        return 0
+    ocl = optionCodes.split(',')
+    for oc in ocl:
+        if oc in ocMap and ocMap[oc] is not None:
+            return ocMap[oc]
+    return 0
+
+
+def formatVehicle(vehicle=None):
+    csEl = ['vehicle_id', 'vin', 'display_name', 'option_codes', 'timestamp']
+ 
+    if vehicle is None:
+        return {}
+
+    csDict = {}
+    for el in csEl:
+        csDict[toCamelcase(el)] = formatChargeStateParam(vehicle, el)
+
+    if 'option_codes' in vehicle and vehicle['option_codes'] is not None:
+        bc = battCapacityFromOptionCodes(vehicle['option_codes'])
+        if bc > 0:
+            csDict['batteryCapacity'] = bc
+
+    return csDict

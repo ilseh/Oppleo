@@ -40,7 +40,7 @@ from nl.oppleo.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
-from nl.oppleo.utils.FormatChargeState import formatChargeState
+from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.GitUtil import GitUtil
@@ -2045,7 +2045,8 @@ def getVehicleChargeStatus():
         rfidTag.save()
     # Get charge state
     chargeState = teslaApi.getChargeStateWithId(rfidTag.vehicle_id)
-    vehicleState = teslaApi.getVehicleStateWithId(rfidTag.vehicle_id)
+    vehicle = teslaApi.getVehicleWithId(rfidTag.vehicle_id)
+    # vehicleState = teslaApi.getVehicleStateWithId(rfidTag.vehicle_id)
     if chargeState is None:
         return jsonify({ 
             'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 
@@ -2054,13 +2055,16 @@ def getVehicleChargeStatus():
             })
 
     formattedChargeState = formatChargeState(chargeState)
+    formattedVehicle = formatVehicle(vehicle)
     # we got it, share it
     if len(oppleoConfig.connectedClients) > 1:
         WebSocketUtil.emit(
             wsEmitQueue=oppleoConfig.wsEmitQueue,
             event='vehicle_charge_status_update', 
             id=oppleoConfig.chargerName,
-            data=formattedChargeState,
+            data={ 'chargeState': formattedChargeState,
+                   'vehicle'    : formattedVehicle
+            },
             namespace='/charge_session',
             public=True
             )
@@ -2068,7 +2072,8 @@ def getVehicleChargeStatus():
     return jsonify({ 
         'status'        : HTTP_CODE_200_OK, 
         'id'            : oppleoConfig.chargerName,
-        'chargeState'   : formattedChargeState
+        'chargeState'   : formattedChargeState,
+        'vehicle'       : formattedVehicle
         })
 
 

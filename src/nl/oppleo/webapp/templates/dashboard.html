@@ -51,6 +51,41 @@
     cursor: help;
   }
 
+  .progressbar-footer {
+    position: absolute;
+    margin-top: 18px;
+    z-index: 1;
+    font-size: 12px;
+  }
+  .progressbar-footer-label {
+    position: relative;
+    float: left;
+    left: 5px;
+  }
+
+  .progressbar-step {
+    position:absolute;
+    margin-top:-20px;
+    z-index:1;
+    font-size:12px;
+  }
+  .progressbar-label-txt-left {
+    position:relative;
+    float: left;
+    left: 5px;
+  }
+  .progressbar-label-line {
+    float: right;
+    background: #fff;
+    height: 22px;
+    margin-top: 12px;
+    width: 2px;
+    margin-left: 5px;
+  }
+  .progressbar-label-txt-right {
+    float: right;
+    margin-left: 5px;   
+  }
   </style>
 
   <script>
@@ -356,6 +391,104 @@
       $('button#startChargeSession').prop('disabled', !enable)
     }
 
+    function drawProgresBarSection(color, striping, animation, level, min=0, max=0) {
+      let pEl = $('<div class="progress-bar '+color+' '+striping+' '+animation+'" role="progressbar" style="width: '+level+'%" aria-valuenow="'+level+'" aria-valuemin="'+min+'" aria-valuemax="'+max+'"></div>')
+      $('div#vehicleChargeStateProgress').append(pEl)
+    }
+    function drawProgresBarMarker(level, text1='', text2='', color='') {
+      let pEl = $('<div class="progressbar-step" style="left: '+level+'%">')
+      let pElT1 = $('<div class="progressbar-label-txt-left">'+text1+'</div>')
+      let pElT2 = $('<div class="progressbar-label-txt-right">'+text2+'</div>')
+      let pElLine = $('<div class="progressbar-label-line '+color+'"></div>')
+      pEl.append(pElT1)
+      pEl.append(pElT2)
+      pEl.append(pElLine)
+      $('div#vehicleChargeStateProgress').append(pEl)
+    }
+
+    function drawProgresBarFooter(label) {
+      let pEl = $('<div class="progressbar-footer" style="left: 1%">')
+      let pElLabel = $('<div class="progressbar-footer-label">'+label+'</div>')
+      pEl.append(pElLabel)
+      $('div#vehicleChargeStateProgress').append(pEl)
+    }
+
+    function hideVehicleChargeState() {
+      // Slide up
+      $('div#vehicleChargeState').animate({
+        height: '-=95px',
+      },400,function() {
+        // Animation complete.
+        $('div#vehicleChargeState').toggleClass( 'd-none', true )
+        $('div#vehicleChargeStateProgress div').remove()
+      })
+    }
+
+    function drawVehicleChargeState(vehicleName,
+                                    progressMin,
+                                    progressMax,
+                                    chargeRequested,
+                                    chargeCurrent,
+                                    chargingState,
+                                    minutesToFullCharge,
+                                    chargeEnergyAdded,
+                                    chargeKmAdded,
+                                    batteryRange,
+                                    chargeStart,
+                                    chargePortDoorOpen,
+                                    timestampMillis
+                                   ) {
+
+      // First, remove any existing progress bar
+      $('div#vehicleChargeStateProgress div').remove()
+
+      // Step 1: is there a part before the current charge?
+      drawProgresBarSection( ( chargingState == 'Charging' ? 'bg-primary' : 'bg-success' ),
+                             ( chargingState == 'Charging' ? 'progress-bar-striped' : '' ),
+                             ( chargingState == 'Charging' ? 'progress-bar-animated' : '' ),
+                             chargeStart
+                            )
+      // Step 2: Part of current charge
+      drawProgresBarSection( ( chargingState == 'Charging' ? 'bg-info' : 'bg-success' ),
+                             'progress-bar-striped',
+                             ( chargingState == 'Charging' ? 'progress-bar-animated' : '' ),
+                             (chargeCurrent-chargeStart)
+                            )
+      // Step 3: paint remaining to progressMax
+      drawProgresBarSection( 'bg-secondary', '', '', (progressMax-chargeCurrent) )
+      // Step 4: Now where does the white requested level marker go?
+      drawProgresBarMarker(chargeRequested, chargeRequested+"%")
+      // Step 5: Draw footer
+      let info = '<span class="border-secondary text-muted info-button-style-inline"  data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="Laadsessie zoals door het voertuig gerapporteerd. Bij tussentijds stop/start kan het voertuig de sessie resetten en er een lagere lading weergegeven worden."><i class="fas fa-info-circle"></i></span>'
+      let remainingTime = (chargingState == 'Charging' ? 'nog ' + minutesToFullCharge + ' min, ' : '')
+      d = new Date(timestampMillis)
+      let update = ( (weekday[d.getDay() %7]).substring(0, 2) + ' ' + 
+                     d.getDate() + ' ' + (months[d.getMonth() %12]) + ' ' + d.getFullYear() + ' ' +
+                     d.getHours() + ':' +
+                    (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
+                   ).toLowerCase()
+      drawProgresBarFooter((chargePortDoorOpen?'<i class="fas fa-plug"></i> ':'<i class="fas fa-key"></i> ')+vehicleName+': '+chargingState.toLowerCase()+', '+chargeEnergyAdded+'kWh, '+chargeKmAdded+'km, '+remainingTime+'last update '+update+' '+info)
+      $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+      $('.info-button-style-inline').hover(
+        function() { // mouseenter
+          $(this).removeClass('text-muted')
+          $(this).addClass('text-light')
+          $(this).css('cursor', 'help')
+        },
+        function(){  // mouseleave
+          $(this).removeClass('text-light')
+          $(this).addClass('text-muted')
+          $(this).css('cursor', 'default')
+        }
+      )
+      // Slide down
+      $('div#vehicleChargeState').css( 'height', 0 )
+      $('div#vehicleChargeState').toggleClass( 'd-none', false )
+      $('div#vehicleChargeState').animate({
+        height: '+=95px',
+      })
+    }
+
     function getVehicleChargeState() {
       console.log(timestamp() + ' getVehicleChargeState()')
       $.ajax({
@@ -370,68 +503,51 @@
         // log data to the console so we can see
         console.log(data)
 
-        progressMin = 0
-        progressMax = 100                                                           // 100 (percentage)
-        progressConversion = data.chargeState?.chargeLimitSocMax /progressMax       // / happens to be 1 (@ 100%)
-        chargeCurrent = data.chargeState?.batteryLevel * progressConversion         // %     90
-        chargeRequested = data.chargeState?.chargeLimitSoc * progressConversion     // % white line
-        chargeEnergyAdded = data.chargeState?.chargeEnergyAdded                     // kWh
-        chargeKmAdded = data.chargeState?.chargeKmAddedRated                        // km
-        idealBatteryRange = data.chargeState?.idealBatteryRange                     // km
-        chargeStarted = chargeCurrent - ((chargeKmAdded / idealBatteryRange) *100)  // %     32.2/420 *100% = 7,65% (90-7,65=82,3%)
+        switch (data.status) {
+          case 200:
+            progressMin = 0
+            progressMax = 100                                                           // 100 (percentage)
+            progressConversion = data.chargeState?.chargeLimitSocMax /progressMax       // / happens to be 1 (@ 100%)
+            chargeCurrent = data.chargeState?.batteryLevel * progressConversion         // %     90
+            chargeRequested = data.chargeState?.chargeLimitSoc * progressConversion     // % white line
+            chargeEnergyAdded = data.chargeState?.chargeEnergyAdded                     // kWh
+            chargeKmAdded = data.chargeState?.chargeKmAddedRated                        // km
+            idealBatteryRange = data.chargeState?.idealBatteryRange                     // km
+            batteryRange = (data.chargeState?.idealBatteryRange / chargeCurrent) * progressMax  // km
+            
+            chargeStart = chargeCurrent - ((chargeKmAdded / idealBatteryRange) *100)  // %     32.2/420 *100% = 7,65% (90-7,65=82,3%)
 
-        chargePortDoorOpen = data.chargeState?.chargePortDoorOpen                   // true | false
+            chargePortDoorOpen = data.chargeState?.chargePortDoorOpen                   // true | false
 
-        chargingState = data.chargeState?.chargingState                             // Charging=Blue, Stopped=Danger, Complete=Green, Disconnected=Gray]
+            chargingState = data.chargeState?.chargingState                             // Charging=Blue, Stopped=Danger, Complete=Green, Disconnected=Gray]
 
-        /*
-
-        km added 32.2
-        ideal 420
-
-
-        battery 0-chargeLimitSocMax (0-100)
-        batteryLevel (90) relates to batteryRange (420.7, or 4.674km/%)
-        chargeKmAddedRated (32.2 (4.674km/% -> 6,88% added)
-        chargeEnergyAdded: 4.92 (kWh) (6,88% -> 71.5kWh),
-
-        "chargePortDoorOpen": true,
-
- {
-    "batteryLevel": 90,
-    "batteryRange": 420.7,
-    "chargeEnergyAdded": 4.92,
-    "chargeKmAddedRated": 32.2,
-    "chargeLimitSoc": 90,
-    "chargeLimitSocMax": 100,
-    "chargePortDoorOpen": true,
-    "chargePortLatch": "Engaged",
-    "chargeRate": 0,
-    "chargerActualCurrent": 0,
-    "chargerPhases": 2,
-    "chargerPower": 0,
-    "chargerVoltage": 2,
-    "chargingState": "Stopped",
-    "minutesToFullCharge": 0,
-    'idealBatteryRange': 261.43,
-    "timeToFullCharge": 0,
-    "timestamp": 1617095513483
-}
-          }, 
-          "id": "laadpaal_macos", 
-          "status": 200
+            drawVehicleChargeState(data.vehicle.displayName,
+                                   progressMin,
+                                   progressMax,
+                                   chargeRequested,
+                                   chargeCurrent,
+                                   chargingState,
+                                   data.chargeState.minutesToFullCharge,
+                                   chargeEnergyAdded,
+                                   chargeKmAdded,
+                                   batteryRange,
+                                   chargeStart,
+                                   chargePortDoorOpen,
+                                   data.chargeState.timestamp
+                                  )
+            break
+          case 404:
+          default:
+            break
         }
-        */
       })
       .fail(function(data) {
         console.log(data)
-        // Probably not logged in - disable quickstart
+        // Probably not logged in
       })
       .always(function() {
       })
-    }    
-
-
+    }
 
     function getRfidTokens() {
       console.log(timestamp() + ' getRfidTokens()')
@@ -800,6 +916,19 @@
       </div>
       <!-- end page title end breadcrumb -->
 
+      <div id="vehicleChargeState" class="row d-none"">
+        <div class="col-12">
+          <div class="card-box">
+            <div class="row justify-content-around">
+              <div class="col-12 cos-xs-12 col-auto m-t-xs-40">
+                <div class="progress progress-md m-b-20" id="vehicleChargeStateProgress">
+                </div>    
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> <!-- end row -->
+
       <div class="row">
 
         <div id="gauger_1" class="col-lg-3" style="height: 220px; overflow: hidden; margin-bottom: 20px;">
@@ -918,107 +1047,6 @@
         </div>
       </div> <!-- end row -->
   
-      <div id="vehicleChargeState" class="row">
-        <div class="col-12">
-          <div class="card-box">
-
-            <div class="row justify-content-around">
-              <div class="col-12 cos-xs-12 col-auto m-t-xs-40">
-
-                <div class="progress progress-md m-b-20">
-                  <div 
-                    class="progress-bar bg-inverse progress-bar-striped"
-                    role="progressbar"
-                    style="width: 82.3%"
-                    aria-valuenow="82.3"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                  <div 
-                    class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
-                    role="progressbar"
-                    style="width: 5%"
-                    aria-valuenow="5"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                  <div 
-                    class="progress-bar bg-inverse "
-                    role="progressbar"
-                    style="width: 2.5%"
-                    aria-valuenow="2.5"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                  <div 
-                    class="progress-bar bg-white"
-                    role="progressbar"
-                    style="width: .25%"
-                    aria-valuenow=".25"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                  <div 
-                    class="progress-bar bg-inverse "
-                    role="progressbar"
-                    style="width: 10%"
-                    aria-valuenow="10"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                </div>
-
-                <div class="progress progress-md m-b-20">
-                  <div 
-                    class="progress-bar bg-inverse"
-                    role="progressbar"
-                    style="width: 82.3%"
-                    aria-valuenow="82.3"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                  <div 
-                    class="progress-bar bg-success"
-                    role="progressbar"
-                    style="width: 7.7%"
-                    aria-valuenow="7.7"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                  <div 
-                    class="progress-bar bg-white"
-                    role="progressbar"
-                    style="width: .25%"
-                    aria-valuenow=".25"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                  <div 
-                    class="progress-bar bg-inverse "
-                    role="progressbar"
-                    style="width: 10%"
-                    aria-valuenow="10"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    >
-                  </div>
-                </div>                
-              </div>
-            </div>
-
- 
-          </div>
-        </div>
-      </div> <!-- end row -->
-
   </div>
 </div>
 {% endblock %}
