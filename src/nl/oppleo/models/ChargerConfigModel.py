@@ -6,6 +6,16 @@ from marshmallow.fields import Boolean, Integer
 
 from sqlalchemy import orm, Column, String, Float, DateTime, Integer, Boolean, Time, desc
 from sqlalchemy.exc import InvalidRequestError
+"""
+When saving an object in another Thread, the attached Session (DbSession) can be from the previous Thread. This causes issues.
+Call make_transient_to_detached to detach the object. Changes cannot be flushed automatically, but DbSession.add() will add it 
+to a valid session again. because the primary key of this object remains, this can be done with no issues here.
+    sqlalchemy.orm.make_transient(instance)
+    sqlalchemy.orm.make_transient_to_detached(instance)
+https://docs.sqlalchemy.org/en/14/orm/session_api.html#sqlalchemy.orm.make_transient_to_detached
+"""
+from sqlalchemy.orm import make_transient, make_transient_to_detached
+
 
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
@@ -101,13 +111,17 @@ class ChargerConfigModel(Base):
     def setAndSave(self, key, value, allowed=None):
         self.logger.debug('.setAndSave() key:{} value:{} range:{}'.format(key, value, allowed))
         curVal = getattr(self, key)
+        self.logger.debug('.setAndSave() curVal:{}'.format(curVal))
         if not isinstance(value, type(curVal)):
             self.logger.debug(".setAndSave() {} TypeError: {} must be type {}".format(key, type(curVal)))
             raise TypeError("{} must be type {}".format(key, type(curVal)))
+        self.logger.debug('.setAndSave() no TypeError')
         if allowed is not None and value not in allowed:
             self.logger.debug(".setAndSave() {} ValueError: value {} of key {} not within range {}".format(value, key, allowed))
             raise ValueError("{} value {} of key {} not within range {}".format(value, key, allowed))
+        self.logger.debug('.setAndSave() no ValueError')
         setattr(self, key, value)
+        self.logger.debug('.setAndSave() curVal:{} getattr(self, key)={}'.format(curVal, getattr(self, key)))
         if curVal != getattr(self, key):
             # Value changed
             self.modified_at = datetime.datetime.now()
@@ -118,8 +132,11 @@ class ChargerConfigModel(Base):
         db_session = DbSession()
         try:
             # No need to 'add', committing this class
-#            db_session.add(self)
+            db_session.add(self)
             db_session.commit()
+            # Keep it detached
+            make_transient(self)
+            make_transient_to_detached(self)
         except InvalidRequestError as e:
             self.logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
             self.__cleanupDbSession(db_session, self.__class__.__name__)
@@ -134,6 +151,9 @@ class ChargerConfigModel(Base):
         try:
             db_session.delete(self)
             db_session.commit()
+            # Keep it detached
+            make_transient(self)
+            make_transient_to_detached(self)
         except InvalidRequestError as e:
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
@@ -151,8 +171,12 @@ class ChargerConfigModel(Base):
             ccm = db_session.query(ChargerConfigModel) \
                             .order_by(desc(ChargerConfigModel.modified_at)) \
                             .first()
+            # Detach (not transient) from database, allows saving in other Threads
+            # https://docs.sqlalchemy.org/en/14/orm/session_api.html#sqlalchemy.orm.make_transient_to_detached
+            make_transient(ccm)
+            make_transient_to_detached(ccm)
         except InvalidRequestError as e:
-            ChargerConfigModel.__cleanupDbSession(db_session, ChargerConfigModel.__class__.__name__)
+            ChargerConfigModel.__cleanupDbSession(db_session, ChargerConfigModel.__class__)
         except Exception as e:
             # Nothing to roll back
             ChargerConfigModel.logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)

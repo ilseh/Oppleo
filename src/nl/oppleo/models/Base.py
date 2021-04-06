@@ -2,13 +2,17 @@ import logging
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker, scoped_session, make_transient_to_detached
 from nl.oppleo.exceptions.Exceptions import DbException
+import threading
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 
 oppleoSystemConfig = OppleoSystemConfig()
 
+"""
+    NOTE: Do not close sessions, they are lazily reused and reusing a closed session causes Exceptions.
+"""
 
 engine = create_engine(
             oppleoSystemConfig.DATABASE_URL,
