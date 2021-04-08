@@ -2062,18 +2062,20 @@ def getVehicleChargeStatus():
             wsEmitQueue=oppleoConfig.wsEmitQueue,
             event='vehicle_charge_status_update', 
             id=oppleoConfig.chargerName,
-            data={ 'chargeState': formattedChargeState,
-                   'vehicle'    : formattedVehicle
+            data={ 'chargeState'            : formattedChargeState,
+                   'vehicle'                : formattedVehicle,
+                   'vehicleMonitorInterval' : str(oppleoConfig.vcsmThread.vehicleMonitorInterval if oppleoConfig.vcsmThread is not None else -1)
             },
             namespace='/charge_session',
             public=True
             )
 
     return jsonify({ 
-        'status'        : HTTP_CODE_200_OK, 
-        'id'            : oppleoConfig.chargerName,
-        'chargeState'   : formattedChargeState,
-        'vehicle'       : formattedVehicle
+        'status'                    : HTTP_CODE_200_OK, 
+        'id'                        : oppleoConfig.chargerName,
+        'chargeState'               : formattedChargeState,
+        'vehicle'                   : formattedVehicle,
+        'vehicleMonitorInterval'    : str(oppleoConfig.vcsmThread.vehicleMonitorInterval if oppleoConfig.vcsmThread is not None else -1)
         })
 
 

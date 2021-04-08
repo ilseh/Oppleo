@@ -24,7 +24,7 @@ def sortBackups(file:dict) -> int:
     try:
         return int(datetime.strptime(file['filename'][7:26], '%Y-%m-%d_%H.%M.%S').timestamp())
     except Exception as e:
-        logger = logging.getLogger('nl.oppleo.services.sortBackups')
+        logger = logging.getLogger('nl.oppleo.utils.sortBackups')
         logger.debug('sortBackups() Exception {}'.format(str(e)))
     return 0
 
@@ -83,7 +83,7 @@ class BackupUtil(object, metaclass=Singleton):
 
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.services.BackupUtil')
+        self.logger = logging.getLogger('nl.oppleo.utils.BackupUtil')
         self.oppleoConfig = OppleoConfig()
         self.oppleoSystemConfig = OppleoSystemConfig()
         self.monitorThread = None
@@ -892,16 +892,16 @@ class BackupUtil(object, metaclass=Singleton):
 
     def isBackupDue(self) -> bool:
         lastBackup = self.oppleoConfig.backupSuccessTimestamp
-        self.logger.info('isBackupDue() - lastBackup: {}'.format(str(lastBackup)))
+        self.logger.debug('isBackupDue() - lastBackup: {}'.format(str(lastBackup)))
         now = datetime.now()
-        self.logger.info('isBackupDue() - now: {}'.format(str(now)))
+        self.logger.debug('isBackupDue() - now: {}'.format(str(now)))
 
         """
             check backup type: Weekday or Calendar day
         """
 
         if self.oppleoConfig.backupInterval == self.oppleoConfig.BACKUP_INTERVAL_WEEKDAY:
-            self.logger.info('isBackupDue() - backupInterval == BACKUP_INTERVAL_WEEKDAY')
+            self.logger.debug('isBackupDue() - backupInterval == BACKUP_INTERVAL_WEEKDAY')
             """
                 --> Weekday
                     Determine due date by first enabled day since now (iterate through weekDayList from todays day), set due time,
@@ -918,7 +918,7 @@ class BackupUtil(object, metaclass=Singleton):
                 # -i to go backwards through the week (7 days = range(7))
                 daysPast = i if weekDayList[(weekDayToday+1-i)%7] and daysPast == 8 else daysPast
 
-            self.logger.info('isBackupDue() - daysPast={}, '.format(daysPast))
+            self.logger.debug('isBackupDue() - daysPast={}, '.format(daysPast))
 
             due = ((datetime.now() - timedelta(days=daysPast))
                     .replace(hour=self.oppleoConfig.backupTimeOfDay.hour, 
@@ -927,11 +927,9 @@ class BackupUtil(object, metaclass=Singleton):
                              microsecond=0
                              )
                   )
+            self.logger.debug('isBackupDue() - due: {}, '.format(due))
 
-            self.logger.info('isBackupDue() - due: {}, '.format(due))
-
-            self.logger.info('isBackupDue() - due? : {}, '.format((daysPast != 8 and lastBackup < due and now > due)))
-
+            self.logger.debug('isBackupDue() - due? : {}, '.format((daysPast != 8 and lastBackup < due and now > due)))
             # Backup due? (daysPast=8 indicates no active days)
             return daysPast != 8 and lastBackup < due and now > due
 

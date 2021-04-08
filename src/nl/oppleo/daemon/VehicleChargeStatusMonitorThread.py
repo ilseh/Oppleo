@@ -20,8 +20,8 @@ class VehicleChargeStatusMonitorThread(object):
 
     __rfidTag = None        # The ID string
 
-    # Check every minute [60 seconds]
-    __vehicleMonitorInterval = 10
+    # Check every minute [20 seconds]
+    __vehicleMonitorInterval = 20
     __sleepInterval = 0.25
 
     def __init__(self):
@@ -44,6 +44,10 @@ class VehicleChargeStatusMonitorThread(object):
         if rfidValue is None:
             self.__logger.error('Cannot set RFID to None!')
         self.__rfidTag = rfidValue
+
+    @property
+    def vehicleMonitorInterval(self):
+        return self.__vehicleMonitorInterval
 
 
     # VehicleChargeStatusMonitorThread
@@ -99,8 +103,10 @@ class VehicleChargeStatusMonitorThread(object):
                                 wsEmitQueue=oppleoConfig.wsEmitQueue,
                                 event='vehicle_charge_status_update', 
                                 id=oppleoConfig.chargerName,
-                                data={ 'chargeState': formatChargeState(chargeState),
-                                    'vehicle'    : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id))
+                                data={ 'chargeState'            : formatChargeState(chargeState),
+                                       'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
+                                       'vehicleMonitorInterval' : self.__vehicleMonitorInterval
+
                                 },
                                 namespace='/charge_session',
                                 public=True

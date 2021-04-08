@@ -53,6 +53,7 @@
 
   .progressbar-footer {
     position: absolute;
+    width: 100%;
     margin-top: 18px;
     z-index: 1;
     font-size: 12px;
@@ -62,24 +63,28 @@
     float: left;
     left: 5px;
   }
-
-  .progressbar-step {
-    position:absolute;
-    margin-top:-20px;
-    z-index:1;
-    font-size:12px;
+  .progressbar-footer-update {
+    position: flex;
+    font-size: smaller;
+    float: right;
+    margin-right: 30px;
   }
-  .progressbar-label-line {
-    float: left;
+
+  .progressbar-marker {
+    position: absolute;
+    margin-top: -20px;
+    z-index: 1;
+    font-size: 12px;
+  }
+  .progressbar-marker-line {
     background: #fff;
     height: 22px;
     margin-top: 12px;
     width: 1px;
     margin-left: 0px;
   }
-  .progressbar-label-text {
+  .progressbar-marker-label {
     position: relative;
-    float: left;
     margin-left: 2px;   
   }
   </style>
@@ -391,22 +396,44 @@
       let pEl = $('<div class="progress-bar '+color+' '+striping+' '+animation+'" role="progressbar" style="width: '+level+'%" aria-valuenow="'+level+'" aria-valuemin="'+min+'" aria-valuemax="'+max+'"></div>')
       $('div#vehicleChargeStateProgress').append(pEl)
     }
+    function drawProgresBarTitle(text) {
+      $('h4#vehicleChargeStateHeader').html(text)
+    }            
     function drawProgresBarMarker(level, text='', color='') {
-      let pEl = $('<div class="progressbar-step" style="left: calc(10px + ('+level+' * ((100% - 20px)/100)));">')
-      let pElLine = $('<div class="progressbar-label-line '+color+'"></div>')
-      let pElText = $('<div class="progressbar-label-text">'+text+'</div>')
+      let lFlipAt = 91
+      let pEl = $('<div class="progressbar-marker" style=" '+(level>lFlipAt?'right':'left')+': calc('+(level>lFlipAt?'100% - (':'')+'10px + ('+level+' * ((100% - 20px)/100))'+(level>lFlipAt?')':'')+');">')
+      let pElLine = $('<div class="progressbar-marker-line '+color+'" style="float: '+(level>lFlipAt?'right':'left')+';"></div>')
+      let pElText = $('<div class="progressbar-marker-label" style="float: '+(level>lFlipAt?'left':'right')+';">'+text+'</div>')
       pEl.append(pElLine)
       pEl.append(pElText)
       $('div#vehicleChargeStateProgress').append(pEl)
     }
+    progressbarUpdateTimerRef = null
+    function progressbarUpdateTimer() {
+      const t = parseInt($('span#progressbarUpdateTimerTime').text())
+      if (!isNaN(t)) {
+        if (t>1) {
+          $('span#progressbarUpdateTimerTime').text(t-1)
+          progressbarUpdateTimerRef = setTimeout(progressbarUpdateTimer, 1000)
+        } else {
+          $('div#progressbarUpdateTimer').html('<i class="fas fa-spinner fa-spin"></i>')
+        }
+      }
+    }
 
-    function drawProgresBarFooter(label) {
+    function drawProgresBarFooter(label, update) {
+      if (progressbarUpdateTimerRef != null) {
+        clearTimeout(progressbarUpdateTimerRef)
+        progressbarUpdateTimerRef = null
+      }
       let pEl = $('<div class="progressbar-footer" style="left: 1%">')
       let pElLabel = $('<div class="progressbar-footer-label">'+label+'</div>')
       pEl.append(pElLabel)
+      let pElUpdate = $('<div id="progressbarUpdateTimer" class="progressbar-footer-update text-secondary"><span id="progressbarUpdateTimerTime">'+update+'</span>s <i class="fas fa-stopwatch"></i></div>')
+      pEl.append(pElUpdate)
       $('div#vehicleChargeStateProgress').append(pEl)
+      progressbarUpdateTimerRef = setTimeout(progressbarUpdateTimer, 1000)
     }
-
     function hideVehicleChargeState() {
       // Slide up
       $('div#vehicleChargeState').animate({
@@ -453,7 +480,9 @@
       drawProgresBarSection( 'bg-secondary', '', '', (progressMax-chargeCurrent) )
       // Step 4: Now where does the white requested level marker go?
       drawProgresBarMarker(chargeRequested, chargeRequested+"%")
-      // Step 5: Draw footer
+      // Step 5: Draw title
+      drawProgresBarTitle('<i class="fas fa-car"></i> '+vehicleName)
+      // Step 6: Draw footer
       let info = '<span class="border-secondary text-muted info-button-style-inline"  data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="Laadsessie zoals door het voertuig gerapporteerd. Bij tussentijds stop/start kan het voertuig de sessie resetten en er een lagere lading weergegeven worden."><i class="fas fa-info-circle"></i></span>'
       let remainingTime = (chargingState == 'Charging' ? '<i class="far fa-clock"></i> ' + minutesToFullCharge + 'min ' : '')
       d = new Date(timestampMillis)
@@ -462,7 +491,7 @@
                      d.getHours() + ':' +
                     (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
                    ).toLowerCase()
-      drawProgresBarFooter((chargePortDoorOpen?'<i class="fas fa-car"></i> '+vehicleName+' <i class="fas fa-plug"></i> ':'<i class="fas fa-key"></i> ')+' '+chargingState.toLowerCase()+(chargingState=='Charging'?' @ '+chargeRate+'km/h':'')+' <i class="fas fa-charging-station"></i> '+chargeEnergyAdded+'kWh/'+chargeKmAdded+'km '+remainingTime+' <i class="fas fa-battery-half"></i> '+currentBatteryRange+'km <i class="far fa-calendar-check"></i> '+update+' '+info)
+      drawProgresBarFooter((chargePortDoorOpen?'<i class="fas fa-plug"></i> ':'<i class="fas fa-key"></i> ')+' '+chargingState.toLowerCase()+(chargingState=='Charging'?' @ '+chargeRate+'km/h':'')+' <i class="fas fa-charging-station"></i> '+chargeEnergyAdded+'kWh/'+chargeKmAdded+'km '+remainingTime+' <i class="fas fa-battery-half"></i> '+currentBatteryRange+'km <i class="far fa-calendar-check"></i> '+update+' '+info, 20)
       $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       $('.info-button-style-inline').hover(
         function() { // mouseenter
@@ -481,7 +510,7 @@
         $('div#vehicleChargeState').css( 'height', 0 )
         $('div#vehicleChargeState').toggleClass( 'd-none', false )
         $('div#vehicleChargeState').animate({
-          height: '+=95px',
+          height: '+=118px',
         })
       }
     }
@@ -947,6 +976,7 @@
       <div id="vehicleChargeState" class="row d-none"">
         <div class="col-12">
           <div class="card-box">
+            <h4 class="header-title ml-2" id="vehicleChargeStateHeader"></h4>
             <div class="row justify-content-around">
               <div class="col-12 cos-xs-12 col-auto m-t-xs-40">
                 <div class="progress progress-md m-b-20" id="vehicleChargeStateProgress">
