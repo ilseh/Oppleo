@@ -130,6 +130,8 @@ class ChargerConfigModel(Base):
     def save(self):
         self.logger.debug(".save()")
         db_session = DbSession()
+        # Prevent expiration after the session is closed or object is made transient or disconnected
+        db_session.expire_on_commit = False
         try:
             # No need to 'add', committing this class
             db_session.add(self)
@@ -148,6 +150,7 @@ class ChargerConfigModel(Base):
 
     def delete(self):
         db_session = DbSession()
+        db_session.expire_on_commit = True
         try:
             db_session.delete(self)
             db_session.commit()
@@ -165,6 +168,8 @@ class ChargerConfigModel(Base):
     @staticmethod
     def get_config():
         db_session = DbSession()
+        # Prevent expiration after the session is closed or object is made transient or disconnected
+        db_session.expire_on_commit = False
         ccm = None
         try:
             # Should be only one, return last modified
