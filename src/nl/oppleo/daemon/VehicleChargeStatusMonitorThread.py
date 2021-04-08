@@ -109,7 +109,7 @@ class VehicleChargeStatusMonitorThread(object):
 
                                 },
                                 namespace='/charge_session',
-                                public=True
+                                public=False
                                 )
                             # len(oppleoConfig.connectedClients) == 0
                         else:
