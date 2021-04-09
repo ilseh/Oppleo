@@ -61,6 +61,9 @@ class BackupUtil(object, metaclass=Singleton):
     backupInProgress = False
     lock = None
 
+    # Check once per minute. Sleep is 0.1s to respond to interrupts
+    __CHECK_INTERVAL = 60
+
     __DBTYPE_POSTGRESS__ = 0
 
     __SYSTEMSINIPATH__ = 'src/nl/oppleo/config/'
@@ -154,13 +157,19 @@ class BackupUtil(object, metaclass=Singleton):
 
 
     def monitorBackupDueStatusLoop(self):
+        self.__CHECK_INTERVAL
+        timer = 0
         while not self.stop_event.is_set():
-            if self.isBackupDue():
-                self.logger.debug('monitorBackupDueStatusLoop() - backup due!')
-                self.createBackup()
+            if timer > self.__CHECK_INTERVAL:
+                timer = 0
+                # Check if backup is due
+                if self.isBackupDue():
+                    self.logger.debug('monitorBackupDueStatusLoop() - backup due!')
+                    self.createBackup()
+            timer += (1 * .1)
             # Backup is minute precise. Sleep is interruptable by other threads, but sleeping 60 seconds before checking 
-            # if stop is requested is a bit long, so sleep for 3 seconds, then check passed time
-            sleep(3)
+            # if stop is requested is a bit long, so sleep for 0.1 seconds, then check passed time
+            sleep(.1)
 
 
     def createBackup(self):

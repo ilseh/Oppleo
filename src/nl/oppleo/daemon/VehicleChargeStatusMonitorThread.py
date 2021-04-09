@@ -10,6 +10,8 @@ from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
 from nl.oppleo.models.RfidModel import RfidModel
 
+from nl.oppleo.utils.TokenMediator import tokenMediator
+
 oppleoConfig = OppleoConfig()
 
 class VehicleChargeStatusMonitorThread(object):
@@ -69,6 +71,7 @@ class VehicleChargeStatusMonitorThread(object):
 
         if self.__rfidTag is None:
             self.__logger.error('monitor() Cannot run Thread for RFID None!')
+            return False
 
         rfidData = RfidModel.get_one(self.__rfidTag)
         if rfidData is None:
@@ -83,37 +86,75 @@ class VehicleChargeStatusMonitorThread(object):
                 if len(oppleoConfig.connectedClients) > 0 and oppleoConfig.vehicleDataOnDashboard:
                     self.__logger.debug("monitor() connected clients ({})".format(len(oppleoConfig.connectedClients)))
                     # See if something changes (could be added or retracted)
+
+                    if rfidData is None or rfidData.api_access_token is None:
+                        # No token? Try once more
+                        rfidData = RfidModel.get_one(self.__rfidTag)
+                        if rfidData is None or rfidData.api_access_token is None:
+                            # Still no token, next While iteration
+                            self.__logger.debug("monitor() no token, continue to next While iteration")
+                            continue
+
+                    # Token, checkout
+                    tKey = tokenMediator.checkout(token=rfidData.api_access_token, ref='VehicleStatusMonitorThread: '+rfidData.rfid, wait=True)
+                    self.__logger.debug("monitor() tokenMediator.checkout returned key {}".format(tKey))
+
+                    if tKey is None:
+                        # Checkout failed? Token must not be valid anymore
+                        if not tokenMediator.validate(token=rfidData.api_access_token):
+                            self.__logger.debug("monitor() token not valid, continue to next While iteration")
+                            # Make sure we reload the RFID tag data next loop
+                            rfidData = None
+                            continue
+
                     UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfidData, teslaApi)
 
-                    if teslaApi.hasValidToken():
-                        self.__logger.debug("monitor() valid token")
+                    if not teslaApi.hasValidToken():
+                        # Not valid, invalidate and continue
+                        tokenMediator.invalidate(token=rfidData.api_access_token, key=tKey, ref='VehicleStatusMonitorThread: '+rfidData.rfid,)
+                        # Make sure we reload the RFID tag data next loop
+                        rfidData = None
+                        continue
 
-                        # Refresh if required (check once per day)
-                        if teslaApi.refreshTokenIfRequired():
-                            UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(teslaApi, rfidData)
-                            rfidData.save()
+                    self.__logger.debug("monitor() valid token")
 
-                        # Force update
-                        chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, update=True)
+                    # Refresh if required
+                    if teslaApi.refreshTokenIfRequired():
+                        # Invalidate the old token
+                        tokenMediator.invalidate(token=rfidData.api_access_token, key=tKey, ref='VehicleStatusMonitorThread: '+rfidData.rfid)
+                        UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(teslaApi, rfidData)
+                        # Checkout the new token
+                        tKey = tokenMediator.checkout(token=rfidData.api_access_token, ref='VehicleStatusMonitorThread: '+rfidData.rfid, wait=True)
+                        rfidData.save()
 
-                        if chargeState is not None and oppleoConfig.vehicleDataOnDashboard:
-                            self.__logger.debug("monitor() chargeState (not None)")
-                            # Send change notification
-                            WebSocketUtil.emit(
-                                wsEmitQueue=oppleoConfig.wsEmitQueue,
-                                event='vehicle_charge_status_update', 
-                                id=oppleoConfig.chargerName,
-                                data={ 'chargeState'            : formatChargeState(chargeState),
-                                       'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
-                                       'vehicleMonitorInterval' : self.__vehicleMonitorInterval
+                    self.__logger.debug("monitor() [1] tKey={}".format(tKey))
 
-                                },
-                                namespace='/charge_session',
-                                public=False
-                                )
-                            # len(oppleoConfig.connectedClients) == 0
-                        else:
-                            self.__logger.debug('monitor() - could not get charge state (None)')
+                    # Force update
+                    chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, update=True)
+
+                    self.__logger.debug("monitor() [2] tKey={}".format(tKey))
+
+                    # Release the token
+                    tokenMediator.release(token=rfidData.api_access_token, key=tKey)
+
+                    if chargeState is not None and oppleoConfig.vehicleDataOnDashboard:
+                        self.__logger.debug("monitor() chargeState (not None)")
+                        # Send change notification
+                        WebSocketUtil.emit(
+                            wsEmitQueue=oppleoConfig.wsEmitQueue,
+                            event='vehicle_charge_status_update', 
+                            id=oppleoConfig.chargerName,
+                            data={ 'chargeState'            : formatChargeState(chargeState),
+                                    'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
+                                    'vehicleMonitorInterval' : self.__vehicleMonitorInterval
+
+                            },
+                            namespace='/charge_session',
+                            public=False
+                            )
+                        # len(oppleoConfig.connectedClients) == 0
+                    else:
+                        self.__logger.debug('monitor() - could not get charge state (None)')
 
                 else: 
                     # len(oppleoConfig.connectedClients) == 0

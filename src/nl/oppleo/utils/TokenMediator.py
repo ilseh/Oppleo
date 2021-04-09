@@ -82,22 +82,28 @@ class TokenMediator:
         -> return None: access denied (already in use or not valid)
     """ 
     # TODO add timeout
-    def checkout(self, token, ref=None, wait=False) -> str | None:
+    def checkout(self, token=None, ref=None, wait=False):
         while True:
             with self.__lock:
+                if token is None:
+                    # Not actual token in request
+                    self.__logger.debug('checkout() - Checkout request for None token (token={}, ref={})'.format(token, ref))
+                    return None
                 if token not in self.__tokens:
                     self.__tokens[token] = TokenObj(code=token, ref=ref, inUse=True, key=self.generateKey(), valid=True)
                     return self.__tokens[token].key
                 if not self.__tokens[token].valid:
                     # Not valid
-                    self.__logger.debug('Checkout reequest for invalid token (token={}, ref={})'.format(token, ref))
+                    self.__logger.debug('checkout() - Checkout request for invalid token (token={}, ref={})'.format(token, ref))
                     return None 
                 if self.__tokens[token].inUse:
                     if not wait:
                         return None
                 else:
                     self.__tokens[token].inUse = True
-                    return None
+                    self.__tokens[token].ref = ref
+                    self.__tokens[token].key = self.generateKey()
+                    return self.__tokens[token].key
             time.sleep(.1)
 
     """
@@ -109,13 +115,13 @@ class TokenMediator:
     def release(self, token, key) -> bool:
         with self.__lock:
             if token not in self.__tokens:
-                self.__logger.warn('Request to release unregistered token (token={}, key={})'.format(token, key))
+                self.__logger.warn('release() - Request to release unregistered token (token={}, key={})'.format(token, key))
                 return False
             if self.__tokens[token].key != key:
-                self.__logger.warn('Request to release token with invalid key (token={}, key={})'.format(token, key))
+                self.__logger.warn('release() - Request to release token with invalid key (token={}, key={}, ref={})'.format(token, key, self.__tokens[token].ref))
                 return False
             self.__tokens[token].inUse = False
-            self.__logger.debug('Token released (token={}, key={})'.format(token, key))
+            self.__logger.debug('release() - Token released (token={}, key={}, ref={})'.format(token, key, self.__tokens[token].ref))
             return True
 
     """
@@ -123,13 +129,13 @@ class TokenMediator:
         -> return True: unknown token, or registered and not invalidated
         -> return False: invalidated token, obtain a new one through the regular means (reload object from database)
     """
-    def validate(self, token):
+    def validate(self, token, ref=None):
         with self.__lock:
             if token not in self.__tokens:
                 # Unknown
                 self.__logger.debug('Validation request for unknown token (token={}, ref={})'.format(token))
                 return False
-            self.__logger.debug('Validation request for token (token={}, valid={})'.format(token, self.__tokens[token].valid))
+            self.__logger.debug('Validation request for token (token={}, valid={}, ref={})'.format(token, self.__tokens[token].valid, ref))
             return self.__tokens[token].valid
 
     """
@@ -137,17 +143,17 @@ class TokenMediator:
      -> return True: valid token now not valid anymore (key matches, token known and in use)
     -> return False: token not known, of key failed
     """
-    def invalidate(self, token, key):
+    def invalidate(self, token, key, ref):
         with self.__lock:
             if token not in self.__tokens:
-                self.__logger.debug('Request to invalidate unregistered token (token={}, key={})'.format(token, key))
+                self.__logger.debug('Request to invalidate unregistered token (token={}, key={}, ref={})'.format(token, key, ref))
                 return False
             if self.__tokens[token].key != key:
-                self.__logger.debug('Request to invalidate token with invalid key (token={}, key={})'.format(token, key))
+                self.__logger.debug('Request to invalidate token with invalid key (token={}, key={}, ref={})'.format(token, key, ref))
                 return False
             self.__tokens[token].valid = False
             self.__tokens[token].inUse = False
-            self.__logger.debug('Request to invalidate token with key (token={}, key={}) granted'.format(token, key))
+            self.__logger.debug('Request to invalidate token with key (token={}, key={}, ref={}) granted'.format(token, key, ref))
             return True
 
 

@@ -48,6 +48,8 @@ from nl.oppleo.utils.GitUtil import GitUtil
 from nl.oppleo.utils.EnergyModbusReader import modbusConfigOptions
 from nl.oppleo.utils.BackupUtil import BackupUtil
 
+from nl.oppleo.utils.TokenMediator import tokenMediator
+
 # https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 HTTP_CODE_200_OK                    = 200
 HTTP_CODE_400_BAD_REQUEST           = 400
@@ -55,6 +57,7 @@ HTTP_CODE_401_UNAUTHORIZED          = 401
 HTTP_CODE_403_FORBIDDEN             = 403
 HTTP_CODE_404_NOT_FOUND             = 404
 HTTP_CODE_405_METHOD_NOT_ALLOWED    = 405
+HTTP_CODE_409_CONFLICT              = 409
 HTTP_CODE_500_INTERNAL_SERVER_ERROR = 500
 HTTP_CODE_501_NOT_IMPLEMENTED       = 501
 
@@ -2044,9 +2047,31 @@ def getVehicleChargeStatus():
             'id'            : oppleoConfig.chargerName, 
             'reason'        : 'No RFID for charge session'
             })
+    if rfidTag.api_access_token is None:
+        return jsonify({ 
+            'status'        : HTTP_CODE_404_NOT_FOUND, 
+            'id'            : oppleoConfig.chargerName, 
+            'reason'        : 'No token for RFID'
+            })
     teslaApi = TeslaAPI()
+    # TODO timeout with max ~10sec wait
+    tKey = tokenMediator.checkout(token=rfidTag.api_access_token, ref='flaskRoutes:'+rfidTag.rfid, wait=False)
+    if tKey is None:
+        # Bum out, token not valid or in use
+        if not tokenMediator.validate(token=rfidTag.api_access_token):
+            return jsonify({
+                'status'        : HTTP_CODE_404_NOT_FOUND, 
+                'id'            : oppleoConfig.chargerName,
+                'reason'        : 'No token for RFID'
+                })
+        return jsonify({
+            'status'        : HTTP_CODE_409_CONFLICT, 
+            'id'            : oppleoConfig.chargerName,
+            'reason'        : 'Token not available'
+            })
     UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfidTag, teslaApi)
     if not teslaApi.hasValidToken():
+        tokenMediator.invalidate(token=rfidTag.api_access_token, key=tKey, ref='flaskRoutes:'+rfidTag.rfid)
         return jsonify({ 
             'status'        : HTTP_CODE_404_NOT_FOUND, 
             'id'            : oppleoConfig.chargerName, 
@@ -2054,12 +2079,19 @@ def getVehicleChargeStatus():
             })
     # Refresh if required
     if teslaApi.refreshTokenIfRequired():
+        # Invalidate the old token
+        tokenMediator.invalidate(token=rfidTag.api_access_token, key=tKey, ref='flaskRoutes:'+rfidTag.rfid)
         UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(teslaApi, rfidTag)
+        # Checkout the new token
+        tKey = tokenMediator.checkout(token=rfidTag.api_access_token, ref='flaskRoutes:'+rfidTag.rfid, wait=True)
         rfidTag.save()
+
     # Get charge state
     chargeState = teslaApi.getChargeStateWithId(rfidTag.vehicle_id)
     vehicle = teslaApi.getVehicleWithId(rfidTag.vehicle_id)
     # vehicleState = teslaApi.getVehicleStateWithId(rfidTag.vehicle_id)
+    # Release the token
+    tokenMediator.release(token=rfidTag.api_access_token, key=tKey)
     if chargeState is None:
         return jsonify({ 
             'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 

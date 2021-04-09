@@ -154,6 +154,7 @@ class RfidModel(Base):
             raise DbException("Could not query from {} table in database".format(RfidModel.__tablename__ ))
         return rfidm
 
+
     @staticmethod
     def get_one(rfid):
         db_session = DbSession()
