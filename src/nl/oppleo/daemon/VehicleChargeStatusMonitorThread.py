@@ -80,7 +80,7 @@ class VehicleChargeStatusMonitorThread(object):
             if monitorInterval > self.__vehicleMonitorInterval:
                 monitorInterval = 0
                 self.__logger.debug("monitor() loop")
-                if len(oppleoConfig.connectedClients) > 0:
+                if len(oppleoConfig.connectedClients) > 0 and oppleoConfig.vehicleDataOnDashboard:
                     self.__logger.debug("monitor() connected clients ({})".format(len(oppleoConfig.connectedClients)))
                     # See if something changes (could be added or retracted)
                     UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfidData, teslaApi)
@@ -96,7 +96,7 @@ class VehicleChargeStatusMonitorThread(object):
                         # Force update
                         chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, update=True)
 
-                        if chargeState is not None:
+                        if chargeState is not None and oppleoConfig.vehicleDataOnDashboard:
                             self.__logger.debug("monitor() chargeState (not None)")
                             # Send change notification
                             WebSocketUtil.emit(
@@ -117,7 +117,7 @@ class VehicleChargeStatusMonitorThread(object):
 
                 else: 
                     # len(oppleoConfig.connectedClients) == 0
-                    self.__logger.debug('monitor() no connectedClients to report chargeState to. Skip and go directly to sleep.')
+                    self.__logger.debug('monitor() no connectedClients to report chargeState to or display not enabled. Skip and go directly to sleep.')
 
             # Sleep for quite a while, and yield for other threads
             time.sleep(self.__sleepInterval)

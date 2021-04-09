@@ -738,6 +738,9 @@
 // XXXXX
 //        updateOffPeakIndicator( msg.data.offPeakEnabled, msg.data.isOffPeak, msg.data.peakAllowOnePeriod, false, true )
       })
+      chargeSessionSocket.on('vehicle_charge_status_stopped', function(msg) {
+        hideVehicleChargeState()
+      })
       // start up the SocketIO connection to the server on namespace /evse_status
       evseStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/evse_status')
       evseStatusSocket.on('evse_enabled', function(msg) {
@@ -889,7 +892,9 @@
           window.location.href = '/stop_charge_session/' + activeChargeSession.data.id + '?next_page=dashboard'
         })
       }
+      {% if oppleoconfig.vehicleDataOnDashboard %}
       getVehicleChargeState()
+      {% endif %}
     })
 
     </script>

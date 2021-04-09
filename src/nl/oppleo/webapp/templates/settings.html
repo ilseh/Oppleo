@@ -850,6 +850,9 @@
       $('input#authWebCharge').change(function() {
         updateSettings( 'authWebCharge', $(this).prop('checked') )
       })
+      $('input#vehicleDataOnDashboard').change(function() {
+        updateSettings( 'vehicleDataOnDashboard', $(this).prop('checked') )
+      })
 
       $('input#restrictMenu').change(function() {
         updateSettings( 'restrictMenu', $(this).prop('checked') )
@@ -1738,6 +1741,34 @@
                               </td>
                             </tr>                            
 
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Voertuiginformatie</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Voertuiginformatie op het Dashboard:</td>
+                              <td class="text-primary">
+                                <form id="vehicle-data-on-dashboard-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.vehicleDataOnDashboard %}checked{% endif %}
+                                    name="vehicleDataOnDashboard"
+                                    id="vehicleDataOnDashboard"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
 
                             <tr>
                               <th colspan="2">&nbsp;</th>

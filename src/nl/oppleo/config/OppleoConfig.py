@@ -782,3 +782,15 @@ class OppleoConfig(object, metaclass=Singleton):
     @smbBackupRemotePath.setter
     def smbBackupRemotePath(self, value):
         self.__chargerConfigModel.setAndSave('smb_backup_remote_path', value)
+
+
+    """
+        vehicleDataOnDashboard --> vehicle_data_on_dashboard
+    """
+    @property
+    def vehicleDataOnDashboard(self):
+        return self.__chargerConfigModel.vehicle_data_on_dashboard
+
+    @vehicleDataOnDashboard.setter
+    def vehicleDataOnDashboard(self, value):
+        self.__chargerConfigModel.setAndSave('vehicle_data_on_dashboard', value)

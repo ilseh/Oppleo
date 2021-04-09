@@ -87,6 +87,7 @@ class ChargerConfigModel(Base):
     smb_backup_service_name  = Column(String(200))
     smb_backup_remote_path = Column(String(256))
 
+    vehicle_data_on_dashboard = Column(Boolean) 
 
     def __init__(self):
         self.logger.debug('.init()')
@@ -282,3 +283,5 @@ class ChargerConfigSchema(Schema):
     smb_backup_password = fields.Str(dump_only=True)
     smb_backup_service_name  = fields.Str(dump_only=True)
     smb_backup_remote_path = fields.Str(dump_only=True)
+
+    vehicle_data_on_dashboard = fields.Bool(dump_only=True)

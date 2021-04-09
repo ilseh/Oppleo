@@ -1776,6 +1776,19 @@ def update_settings(param=None, value=None):
         oppleoConfig.smbBackupSharePath = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
+    # vehicleDataOnDashboard
+    if (param == 'vehicleDataOnDashboard'):
+        oppleoConfig.vehicleDataOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        if not oppleoConfig.vehicleDataOnDashboard:
+            WebSocketUtil.emit(
+                wsEmitQueue=oppleoConfig.wsEmitQueue,
+                event='vehicle_charge_status_stopped', 
+                id=oppleoConfig.chargerName,
+                namespace='/charge_session',
+                public=False
+                )
+
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.vehicleDataOnDashboard })
 
     # No parameter found or conditions not met
     return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'Not found' })
