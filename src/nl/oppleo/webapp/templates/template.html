@@ -99,6 +99,21 @@
                 5: 'Vrijdag',
                 6: 'Zaterdag'
             }
+            function getBatteryIcon(value, max=100) {
+                const faBattery = [
+                    { from:  0, to:  10, icon:'<i class="fas fa-battery-empty"></i>' },
+                    { from: 10, to:  40, icon:'<i class="fas fa-battery-quarter"></i>' },
+                    { from: 40, to:  60, icon:'<i class="fas fa-battery-half"></i>' },
+                    { from: 60, to:  90, icon:'<i class="fas fa-battery-three-quarters"></i>' },
+                    { from: 90, to: 100, icon:'<i class="fas fa-battery-full"></i>' }
+                ]
+                let pc = Math.round((value / max) *100) 
+                let fab = faBattery.filter(function(fab) {
+                    return pc >= fab.from && pc <= fab.to
+                })
+                return (fab != undefined && fab?.length > 0 ? fab[0].icon : '<i class="fas fa-car-battery"></i>')
+            }
+
             // Have jQuery behave reverse() like Array
             jQuery.fn.reverse = [].reverse
             // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
