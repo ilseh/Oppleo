@@ -562,11 +562,11 @@ Again use the postgress command line
   INSERT INTO energy_device( 
       energy_device_id, port_name, slave_address, baudrate, bytesize, parity,
       stopbits, serial_timeout, debug, mode, close_port_after_each_call,
-      modbus_timeout, modbus_config, device_enabled 
+      modbus_config, device_enabled 
   )
   SELECT '<new name>', port_name, slave_address, baudrate, bytesize, parity,
       stopbits, serial_timeout, debug, mode, close_port_after_each_call,
-      modbus_timeout, modbus_config, device_enabled 
+      modbus_config, device_enabled 
   FROM energy_device WHERE energy_device_id='<old name>';
   ```
 

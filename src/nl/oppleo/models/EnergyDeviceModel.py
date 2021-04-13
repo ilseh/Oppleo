@@ -26,7 +26,6 @@ class EnergyDeviceModel(Base):
     debug = Column(Boolean)
     mode = Column(String(10))
     close_port_after_each_call = Column(Boolean)
-    modbus_timeout = Column(Integer)
     modbus_config = Column(String(100))
     device_enabled = Column(Boolean)
 
@@ -128,7 +127,6 @@ class EnergyDeviceSchema(Schema):
     debug = fields.Bool(dump_only=True)
     mode = fields.Str(dump_only=True)
     close_port_after_each_call = fields.Bool(dump_only=True)
-    modbus_timeout = fields.Int(dump_only=True)
     modbus_config = fields.Str(dump_only=True)
     device_enabled = fields.Bool(dump_only=True)
 
