@@ -174,6 +174,9 @@ class TeslaAPI:
                 params=payload,
                 timeout=self.HTTP_TIMEOUT
                 )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.authenticate_v3_getform(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None, None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.authenticate_v3_getform(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None, None
@@ -217,6 +220,9 @@ class TeslaAPI:
                 data=data,
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.auth_post(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return False
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.auth_post(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return False
@@ -274,6 +280,9 @@ class TeslaAPI:
                 allow_redirects=False,
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.authorization_v3_get_auth_code(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.authorization_v3_get_auth_code(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -325,6 +334,9 @@ class TeslaAPI:
                 data=payload,
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.authorization_v3_get_bearer_token(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.authorization_v3_get_bearer_token(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -367,6 +379,9 @@ class TeslaAPI:
                 data=payload,
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.authorization_v3_get_access_token(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return False
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.authorization_v3_get_access_token(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return False
@@ -405,6 +420,9 @@ class TeslaAPI:
 
         # Step 2: Get any hidden params from the session form, including session cookie, transaction_id and csrf
         session, session_params = self.authenticate_v3_getform(challenge=challenge, state=state, email=email)
+        if session is None or session_params is None:
+            # Connection timeout or error, could not even get the form
+            return False
 
         # Step 3: Login and obtain authorization code
         # Add credentials
@@ -463,6 +481,8 @@ class TeslaAPI:
         # Reset
         self.logger.debug("getVehicleList() reset vehicle_list")
         self.vehicle_list = None
+        if not self.hasValidToken():
+            return self.vehicle_list
         # 02 - Vehicles [GET]
         # If >1 then show list and select, otherwise pick the vehicle  
         # sending post request and saving response as response object
@@ -472,6 +492,9 @@ class TeslaAPI:
                 headers={'Authorization': self.token_type + ' ' + self.access_token},
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.getVehicleList(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.getVehicleList(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -558,6 +581,9 @@ class TeslaAPI:
                     return True
                 self.logger.debug("Wait 5 seconds to try again...")
                 time.sleep(5)
+            except requests.exceptions.ConnectTimeout as ct:
+                self.logger.warn("TeslaAPI.wakeUpVehicleWithId(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+                # Continue loop
             except requests.ReadTimeout as rt:
                 self.logger.warn("TeslaAPI.wakeUpVehicleWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
                 # Continue loop
@@ -603,6 +629,9 @@ class TeslaAPI:
                 headers={'Authorization': self.token_type + ' ' + self.access_token},
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.getVehicleStateWithId(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.getVehicleStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -648,6 +677,9 @@ class TeslaAPI:
                 headers={'Authorization': self.token_type + ' ' + self.access_token},
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.getChargeStateWithId(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.getChargeStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -692,6 +724,9 @@ class TeslaAPI:
                 headers={'Authorization': self.token_type + ' ' + self.access_token},
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.getClimateStateWithId(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.getClimateStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -736,6 +771,9 @@ class TeslaAPI:
                 headers={'Authorization': self.token_type + ' ' + self.access_token},
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.getDriveStateWithId(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.getDriveStateWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -780,6 +818,9 @@ class TeslaAPI:
                 headers={'Authorization': self.token_type + ' ' + self.access_token},
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.getVehicleConfigWithId(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return None
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.getVehicleConfigWithId(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return None
@@ -846,6 +887,9 @@ class TeslaAPI:
                 data=data,
                 timeout=self.HTTP_TIMEOUT
             )
+        except requests.exceptions.ConnectTimeout as ct:
+            self.logger.warn("TeslaAPI.revokeToken(): ConnectTimeout (>{}s)".format(self.HTTP_TIMEOUT))
+            return False
         except requests.ReadTimeout as rt:
             self.logger.warn("TeslaAPI.revokeToken(): ReadTimeout (>{}s)".format(self.HTTP_TIMEOUT))
             return False
@@ -864,10 +908,10 @@ class TeslaAPI:
 
     # Token can expire, but apparently the token can also just become invalid.
     # Not sure if the refresh token in that case will still work.
-    def hasValidToken(self):
+    def hasValidToken(self) -> bool:
         self.logger.debug("hasValidToken()")
-        if self.access_token is None:
-            self.logger.debug("token is None")
+        if self.access_token is None or self.token_type is None:
+            self.logger.debug("hasValidToken() Token ({}) is None or TokenType ({}) is None".format(self.access_token, self.token_type))
             return False
         # Ran into 401's last time?
         if self.got401Unauthorized:

@@ -47,6 +47,11 @@ class PushMessageProwl(object):
             PushMessageProwl.__logger.debug("Result {} - {} ".format(r.status_code, r.reason))
             if r.status_code != PushMessageProwl.HTTP_200_OK:
                 PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): status code {} not Ok!".format(r.status_code))
+
+        except requests.exceptions.ConnectTimeout as ct:
+            PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+        except requests.ReadTimeout as rt:
+            PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
         except Exception as e:
             PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): Exception {} not Ok!".format(e))
 
