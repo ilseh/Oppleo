@@ -14,7 +14,7 @@ from json import JSONDecodeError
 
 import logging
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
@@ -1381,7 +1381,7 @@ def update_settings(param=None, value=None):
         ophm.holiday_month = vAr.pop(0)
         ophm.holiday_year = vAr.pop(0)
         ophm.recurring = True if vAr.pop(0).lower() in ['true', 1] else False
-        ophm.description = '|'.join(vAr)
+        ophm.description = unquote(vAr.pop(0))
         ophm.off_peak_start = '00:00:00'
         ophm.off_peak_end = '23:59:00'
         ophm.is_holiday = True
