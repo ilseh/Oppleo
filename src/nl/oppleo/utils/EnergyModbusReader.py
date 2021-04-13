@@ -1,4 +1,6 @@
-import minimalmodbus
+from minimalmodbus import minimalmodbus, ModbusException, NoResponseError
+from serial import SerialException
+
 import threading
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
@@ -193,15 +195,39 @@ class EnergyModbusReader:
             "hz": Hz
         }
 
-    def try_read_float(self, value_desc, registeraddress, functioncode, number_of_registers, byteorder):
-        value = 0
+    """
+        minimalmodbus.read_float raises:
+            TypeError, ValueError if functioncode is unknown, number_of_registers is out of bounds
+            ModbusException
+            NoResponseError("No communication with the instrument (no answer)")
+            serial.SerialException (inherited from IOError)
+    """
+    def try_read_float(self, value_desc, registeraddress, functioncode, number_of_registers, byteorder, default=0):
+        value = default
+        maxRetries = 3
+        tries = 1
         # Used by MeasureElectricityUsageThread and ChargerHandlerThread
-        with self.threadLock:
+        while True:
             try:
-                value = self.instrument.read_float(registeraddress, functioncode, number_of_registers, byteorder)
-            except Exception as ex:
-                self.logger.warning("Could not read value %s, gave exception %s Using value %d" % (value_desc, ex, value))
-        # Yield if we can, allow other time constraint threads to run
-        if self.appSocketIO is not None:
-            self.appSocketIO.sleep(0.01)
-        return value
+                with self.threadLock:
+                    value = self.instrument.read_float(registeraddress, functioncode, number_of_registers, byteorder)
+                # Yield if we can, allow other time constraint threads to run
+                if self.appSocketIO is not None:
+                    self.appSocketIO.sleep(0.01)
+                return value
+            except (ModbusException, NoResponseError, SerialException) as e:
+                # Recoverable IO errors, try again
+                self.logger.debug("Could not read value {} due to potential recoverable exception {}".format(value_desc, e))
+            except (TypeError, ValueError, Exception) as e:
+                # Catch all, won't recover
+                self.logger.warning("Failed to read {} from modbus due to exception {}. Using {}".format(value_desc, e, value))
+                return value
+            if tries >= maxRetries:
+                # No more retries, fail now
+                self.logger.warning("Failed to read {} from modbus after trying {} times. Using {}".format(value_desc, tries, value))
+                return value
+            tries += 1
+            # Wait before retry
+            if self.appSocketIO is not None:
+                self.appSocketIO.sleep(0.05)
+            self.logger.debug("Trying again ({}) to read modbus for {}...".format((tries), value_desc))
