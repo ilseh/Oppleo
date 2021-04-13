@@ -1,4 +1,4 @@
-from minimalmodbus import minimalmodbus, ModbusException, NoResponseError
+from minimalmodbus import Instrument, ModbusException, NoResponseError
 from serial import SerialException
 
 import threading
@@ -40,17 +40,15 @@ class EnergyModbusReader:
 
 
     def initInstrument(self):
-        global minimalmodbus, SDM630v2, SDM120
+        global SDM630v2, SDM120
 
         energy_device_data = EnergyDeviceModel.get()
         self.logger.debug(
             'found device: %s %s %d' % (energy_device_data.energy_device_id, energy_device_data.port_name, energy_device_data.slave_address))
 
-        minimalmodbus.TIMEOUT = energy_device_data.modbus_timeout
-
         try:
-            self.instrument = minimalmodbus.Instrument(energy_device_data.port_name,
-                                                       energy_device_data.slave_address
+            self.instrument = Instrument(port=energy_device_data.port_name,
+                                                       slaveaddress=energy_device_data.slave_address
                                                       )
         except Exception as e:
             self.logger.error("initInstrument() failed: {}".format(str(e)))
