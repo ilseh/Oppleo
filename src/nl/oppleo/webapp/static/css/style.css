@@ -4332,4 +4332,20 @@ File: Responsive
   .user-list .user-list-item .user-desc {
     margin-left: 0; } }
 
+
 /*# sourceMappingURL=style.css.map */
+@media (max-width: 500px) {                  
+  .hide-under-500 {
+      display: none;
+  }
+}
+@media (max-width: 540px) {                  
+  .hide-under-540 {
+      display: none;
+  }
+}
+@media (max-width: 580px) {
+  .hide-under-580 {
+      display: none;
+  }
+}
