@@ -339,8 +339,6 @@
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Offsite backup instellingen aangepast.')
                 // Now update the fields
                 let dObj = JSON.parse(data.value)
-
-// if XXXXXX
                 if (dObj.hasOwnProperty('osBackupType')) {
                   switch(dObj.osBackupType) {
                     case '{{ oppleoconfig.OS_BACKUP_TYPE_SMB }}':
@@ -666,14 +664,8 @@
 
       // TODO - populate type, serverorip, username and password fields with existing values
       // TODO - ook share en path als er niets wijzigd aan de server en user/pw?
-// XXXX
-      
-      
+      // XXXX
       // TODO bug bij next na share - button al enabled
-
-
-
-
       $('#offsiteBackupServerOrIP')[0].$input.classList.remove("border", "border-danger")
       $("#bm-step2-msg").html("")
       $('#offsiteBackupUsername')[0].$input.classList.remove("border", "border-danger")

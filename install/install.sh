@@ -2,7 +2,7 @@
 
 # Reaspberry config
 echo "Install script for the Oppleo service"
-echo "v0.6.5 06-08-2020"
+echo "v0.6.6 14-04-2021"
  
 echo "Running install script as $(whoami)"
 echo "Using background restart at the end."
@@ -23,6 +23,9 @@ echo "PATH=$PATH"
 # Define all variables
 function init() {
   echo " init - Start"
+
+  # Initiated from cmd line or from online?
+  [[ $1 == "online" ]] && ONLINE=true || ONLINE=false
 
   # Check if systemctl is present (should be present)
   #  0 (true)  - present
@@ -105,8 +108,12 @@ function stopService( ) {
 
   if [ "$START_OPPLEO_SERVICE" == true ]; then
     # Oppleo running 
-    echo "  Not stopping Oppleo (is running), this kills calling process..."
-    # sudo systemctl stop Oppleo.service
+    if [ "$ONLINE" == true ]; then
+      echo "  Not stopping Oppleo (is running), this kills calling process..."
+    else
+      echo "  Stopping Oppleo (is running)..."
+      sudo systemctl stop Oppleo.service
+    fi
   else
     # Oppleo not running 
     echo "  Oppleo is not running..."
@@ -385,7 +392,7 @@ function cleanup() {
 
 
 # 1. Determine the parameters
-init
+init $1
 # Check and install prerequisites
 # 2. Deactivate Oppleo service if running
 stopService $ON_RASPBERRY $SYSTEMCTL_PRESENT

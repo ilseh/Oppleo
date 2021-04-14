@@ -523,8 +523,8 @@ def software_update():
         try: 
             updateSoftwareInstallCmd = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/install.sh')
             updateSoftwareLogFile = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/log/update_{}.log'.format(datetime.now().strftime("%Y%m%d%H%M%S")))
-            # os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh' &>/dev/null")
-            flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
+            # os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh service' &>/dev/null")
+            flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {} service &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             os.popen("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             # update script kills Oppleo, and also os.system or os.popen processes. Spawn new process that will survive the Oppleo kill
             oppleoConfig.softwareUpdateInProgress = True
@@ -2026,6 +2026,8 @@ def getBackupInfo(cmd=None, data=None):
 
 
 # Always returns json
+# This function takes a long time (due to TeslaAPI being slooow) -> Just wait for the background task to 
+# submit updates through websockets.
 @flaskRoutes.route("/vehicle_charge_state", methods=["GET"])
 @flaskRoutes.route("/vehicle_charge_state/", methods=["GET"])
 @authenticated_resource  # CSRF Token is valid
@@ -2122,6 +2124,7 @@ def getVehicleChargeStatus():
         'vehicle'                   : formattedVehicle,
         'vehicleMonitorInterval'    : str(oppleoConfig.vcsmThread.vehicleMonitorInterval if oppleoConfig.vcsmThread is not None else -1)
         })
+
 
 
 # Always returns json
