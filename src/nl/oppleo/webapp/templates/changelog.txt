@@ -1,0 +1,34 @@
+Version 1.2.0   14-04-2021
+
+Added features 
+- vehicle status on dashboard, configurable on/off. Shows vehicle charge states. Tesla only for now.
+  Battery percentage reflected in icon op vehicle status
+- timeout on all TeslaAPI session/request calls to stop freeze
+
+Squashed bugs
+- Connection timeout and exception handling.
+  - Exceptions on connection issues, for example with active VPN. When sending PushMessage ot getting http requests for TeslaAPI.
+- sync issue with TeslaAPI token renew
+  - token refresh left other users (threads) with stale tokens (odometer vs dashboard update).
+  - token mediator singleton handing out tokens (thread locked)
+- vehicle status small screen hide last update date to fit
+- fix backups created after restart while not due
+- local rfid enables dashboard but keeps WACHTEN on first gauge
+- local rfid led not on green
+- renamed carcharger references to oppleo
+- wrong month when adding off peak holiday date (0-based to 1-based translation missing)
+- retry (3 times) in modbus reader to overcome incidential wrong reads. 
+
+
+Version 1.1.0   16-03-2021
+
+Added features
+- Oppleo creates backups! Includes the database (postgress only), ini file, and update logs. Including copy to offsite (smb share), and pruning to a maximum number of backups
+
+Squashed bugs
+- led control overhaul. Fixed and colors improved. More robust led pwm setup.
+- GenericUtil removed
+- fixed local rfid reader issue
+- fix tooltip over Delete empty charge session button
+- fix L2 Volts in 'verbruik' table where copy of L1
+
