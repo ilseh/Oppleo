@@ -1378,7 +1378,7 @@ def update_settings(param=None, value=None):
         vAr = value.split('|')
         ophm = OffPeakHoursModel()
         ophm.holiday_day = vAr.pop(0)
-        ophm.holiday_month = vAr.pop(0)
+        ophm.holiday_month = vAr.pop(0) # js is 0-based, python/db is 1-based - translated before submit
         ophm.holiday_year = vAr.pop(0)
         ophm.recurring = True if vAr.pop(0).lower() in ['true', 1] else False
         ophm.description = unquote(vAr.pop(0))

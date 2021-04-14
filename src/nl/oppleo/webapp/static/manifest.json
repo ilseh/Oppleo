@@ -1,19 +1,19 @@
 {
-  "short_name": "Laadpunt App",
-  "name": "Laadpunt",
+  "short_name": "Oppleo",
+  "name": "Oppleo",
   "icons": [
     {
-      "src": "/static/images/carcharger32.ico",
+      "src": "/static/images/oppleo32.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "/static/images/carcharger192.png",
+      "src": "/static/images/oppleo192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/static/images/carcharger512.png",
+      "src": "/static/images/oppleo512.png",
       "type": "image/png",
       "sizes": "512x512"
     }	    

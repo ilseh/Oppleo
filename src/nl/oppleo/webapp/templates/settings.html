@@ -963,6 +963,8 @@
           autoHideNotify('warning', 'top-left', 'Waarschuwing', 'Geen of onjuist datumveld ingevoerd. Zon/feestdag niet opgeslagen...')
           return
         }
+        // Found the 0-based (js) month. translate to python/db 1-based month (0->1, 11->12, never wraps)
+        hDayMonth = parseInt(hDayMonth) +1
         desc = $('#holidayDescription').val()
         if (desc.length == 0) {
           autoHideNotify('warning', 'top-left', 'Waarschuwing', 'Geen omschrijving ingevoerd. Zon/feestdag niet opgeslagen...')

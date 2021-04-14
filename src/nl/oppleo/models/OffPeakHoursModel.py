@@ -12,7 +12,14 @@ from sqlalchemy.exc import InvalidRequestError
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
+"""
+    Off-Peak Hours
+        Day is timestamp.date().day based - day of month is 1 based (1st = 1)
+        Month is timestamp.date().month based - month is 1 based (January = 1)
+""" 
+
 # enum.Enum is not jsonify serializable, IntEnum can be dumped using json.dumps()
+""" WEEKDAY IS ZERO BASED - DATETIME WEEKDAY IS ZERO BASED """
 class Weekday(IntEnum):
     MONDAY = 0 
     TUESDAY = 1  
@@ -27,9 +34,12 @@ class OffPeakHoursModel(Base):
     logger = logging.getLogger('nl.oppleo.models.OffPeakHoursModel')
     __tablename__ = 'off_peak_hours'
 
+    """ WEEKDAY IS ZERO BASED - DATETIME WEEKDAY IS ZERO BASED - IN DATABASE DUTCH TEXT """
     weekday_en = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ]
     weekday_nl = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag' ]
 
+    """ DAY OF MONTH IS ONE BASED - DATETIME DAY OF MONTH IS ONE BASED """
+    """ MONTH OF YEAR IS ONE BASED - DATETIME MONTH IS ONE BASED """
     month_en = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
     month_nl = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December' ]
 
@@ -103,10 +113,12 @@ class OffPeakHoursModel(Base):
     def weekdayToNlStr(weekday) -> str:
         return OffPeakHoursModel.weekday_nl[weekday % len(OffPeakHoursModel.weekday_nl)]
 
+    """ WEEKDAY IS ZERO BASED - DATETIME WEEKDAY IS ZERO BASED """
     def weekdayEnStr(self) -> str:
         return self.weekday_en[self.weekday % len(self.weekday_en)]
     def weekdayNlStr(self) -> str:
         return self.weekday_nl[self.weekday % len(self.weekday_nl)]
+    """ MONTH OF YEAR IS ONE BASED - DATETIME MONTH IS ONE BASED """
     def monthEnStr(self) -> str:
         return self.month_en[(self.holiday_month -1) % len(self.month_en)]
     def monthNlStr(self) -> str:
