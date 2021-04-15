@@ -217,6 +217,10 @@ try:
 
     if __name__ == "__main__":
 
+        # PROFILING
+        import yappi
+        yappi.start()
+        
         # Define the Energy Device Monitor thread and the ChangeHandler (RFID) thread
         meuThread = None
 

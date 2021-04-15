@@ -651,6 +651,12 @@ before running
   pip install -r requirements_non_raspberry.txt
   ```
 
+Note that if you run into xcrun errors (*xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools)*) xcode might need to be updated before running *pip install*:
+  >
+  ```bash
+  xcode-select --install
+  ```
+
 ### wget on macos
 
 Install wget through brew `brew install wget`

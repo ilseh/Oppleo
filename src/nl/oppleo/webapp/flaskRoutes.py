@@ -2160,3 +2160,83 @@ def softwareStatus():
         })
 
 
+@flaskRoutes.route("/yappi/", methods=["GET"])
+@authenticated_resource
+def yappi():
+    global oppleoConfig
+
+    import yappi
+
+    yappi.stop()
+
+    threads = yappi.get_thread_stats()
+    yStats = {}
+    for thread in threads:
+        yStats[thread.id] = {}
+        yStats[thread.id]['thread.name'] = thread.name
+        YFuncStatsObj = yappi.get_func_stats(ctx_id=thread.id)
+        for fs in YFuncStatsObj:
+            """
+            fs.index            A unique number for the stat                                                                                                                                                   
+            fs.module           Module name of the executed function                                                                                                                                           
+            fs.lineno           Line number of the executed function                                                                                                                                           
+            fs.name             Name of the executed function                                                                                                                                                  
+            fs.full_name        module:lineno name - unique full name of the executed function                                                                                                                 
+            fs.ncall            number of times the executed function is called.                                                                                                                               
+            fs.nactualcall      number of times the executed function is called, excluding the recursive calls.                                                                                                
+            fs.builtin          boolean flag showing if the executed function is a builtin                                                                                                                     
+            fs.ttot             total time spent in the executed function. See \[<https://code.google.com/p/yappi/wiki/ClockTypes_v082> Clock Types\] to interpret this value correctly.                       
+            fs.tsub             total time spent in the executed function, excluding subcalls. See \[<https://code.google.com/p/yappi/wiki/ClockTypes_v082> Clock Types\] to interpret this value correctly.   
+            fs.tavg             per-call average total time spent in the executed function. See \[<https://code.google.com/p/yappi/wiki/ClockTypes_v082> Clock Types\] to interpret this value correctly.      
+            fs.children         list of functions called from the executed function. See \[<https://code.google.com/p/yappi/wiki/YChildFuncStats_v092> YChildFuncStats\] object                                
+            """
+
+            yStats[thread.id]['ctx_id']      = fs.ctx_id
+            yStats[thread.id]['ctx_name']    = fs.ctx_name
+            yStats[thread.id]['tag']         = fs.tag
+            yStats[thread.id]['index']       = fs.index
+            yStats[thread.id]['module']      = fs.module
+            yStats[thread.id]['lineno']      = fs.lineno
+            yStats[thread.id]['name']        = fs.name
+            yStats[thread.id]['full_name']   = fs.full_name
+            yStats[thread.id]['ncall']       = fs.ncall
+            yStats[thread.id]['nactualcall'] = fs.nactualcall
+            yStats[thread.id]['builtin']     = fs.builtin
+            yStats[thread.id]['ttot']        = fs.ttot
+            yStats[thread.id]['tsub']        = fs.tsub
+            yStats[thread.id]['tavg']        = fs.tavg
+            yStats[thread.id]['children']    = {}
+            for ct in fs.children:
+                yStats[thread.id]['children']['index']       = ct.index
+                yStats[thread.id]['children']['lineno']      = ct.lineno
+                yStats[thread.id]['children']['tavg']        = ct.tavg
+                yStats[thread.id]['children']['tsub']        = ct.tsub
+                yStats[thread.id]['children']['ttot']        = ct.ttot
+                yStats[thread.id]['children']['full_name']   = ct.full_name
+                yStats[thread.id]['children']['ncall']       = ct.ncall
+                yStats[thread.id]['children']['nactualcall'] = ct.nactualcall
+                yStats[thread.id]['children']['tsub']        = ct.tsub
+                yStats[thread.id]['children']['ttot']        = ct.ttot
+
+    yappi.clear_stats() 
+    yappi.start()
+
+    return jsonify({
+        'status': HTTP_CODE_200_OK,
+        'yappi' : yStats
+        })
+
+"""
+    yappi.stop()
+    stats = yappi.get_func_stats()
+    try:
+        stats_file = os.path.join(oppleoConfig.oppleoRootDirectory, fname)
+        stats.save(stats_file, "pstat")
+    except Exception as e:
+        print("Error while saving the trace stats ", str(e))
+    finally:
+        yappi.clear_stats() 
+    yappi.start()
+
+    thread_stats = yappi.get_thread_stats().print_all()
+"""
