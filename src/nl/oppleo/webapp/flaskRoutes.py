@@ -2171,12 +2171,20 @@ def yappi():
 
     threads = yappi.get_thread_stats()
     yStats = {}
+    yStats['Threads'] = {}
     for thread in threads:
-        yStats[thread.id] = {}
-        yStats[thread.id]['thread.name'] = thread.name
+        yStats['Threads'][thread.id] = {}
+        yStats['Threads'][thread.id]['name'] = thread.name
+        yStats['Threads'][thread.id]['id'] = thread.id
+        yStats['Threads'][thread.id]['tid'] = thread.tid
+        yStats['Threads'][thread.id]['sched_count'] = thread.sched_count
+        yStats['Threads'][thread.id]['ttot'] = thread.ttot
+
         YFuncStatsObj = yappi.get_func_stats(ctx_id=thread.id)
-        for fs in YFuncStatsObj:
-            """
+
+        #yappi.get_func_stats(ctx_id=thread.id).print_all()
+
+        """
             fs.index            A unique number for the stat                                                                                                                                                   
             fs.module           Module name of the executed function                                                                                                                                           
             fs.lineno           Line number of the executed function                                                                                                                                           
@@ -2189,34 +2197,38 @@ def yappi():
             fs.tsub             total time spent in the executed function, excluding subcalls. See \[<https://code.google.com/p/yappi/wiki/ClockTypes_v082> Clock Types\] to interpret this value correctly.   
             fs.tavg             per-call average total time spent in the executed function. See \[<https://code.google.com/p/yappi/wiki/ClockTypes_v082> Clock Types\] to interpret this value correctly.      
             fs.children         list of functions called from the executed function. See \[<https://code.google.com/p/yappi/wiki/YChildFuncStats_v092> YChildFuncStats\] object                                
-            """
+        """
+        for fs in YFuncStatsObj:
 
-            yStats[thread.id]['ctx_id']      = fs.ctx_id
-            yStats[thread.id]['ctx_name']    = fs.ctx_name
-            yStats[thread.id]['tag']         = fs.tag
-            yStats[thread.id]['index']       = fs.index
-            yStats[thread.id]['module']      = fs.module
-            yStats[thread.id]['lineno']      = fs.lineno
-            yStats[thread.id]['name']        = fs.name
-            yStats[thread.id]['full_name']   = fs.full_name
-            yStats[thread.id]['ncall']       = fs.ncall
-            yStats[thread.id]['nactualcall'] = fs.nactualcall
-            yStats[thread.id]['builtin']     = fs.builtin
-            yStats[thread.id]['ttot']        = fs.ttot
-            yStats[thread.id]['tsub']        = fs.tsub
-            yStats[thread.id]['tavg']        = fs.tavg
-            yStats[thread.id]['children']    = {}
+            yStats['Threads'][thread.id]['ctx_id']      = fs.ctx_id
+            yStats['Threads'][thread.id]['ctx_name']    = fs.ctx_name
+            yStats['Threads'][thread.id]['tag']         = fs.tag
+            yStats['Threads'][thread.id]['index']       = fs.index
+            yStats['Threads'][thread.id]['module']      = fs.module
+            yStats['Threads'][thread.id]['lineno']      = fs.lineno
+            yStats['Threads'][thread.id]['name']        = fs.name
+            yStats['Threads'][thread.id]['full_name']   = fs.full_name
+            yStats['Threads'][thread.id]['ncall']       = fs.ncall
+            yStats['Threads'][thread.id]['nactualcall'] = fs.nactualcall
+            yStats['Threads'][thread.id]['builtin']     = fs.builtin
+            yStats['Threads'][thread.id]['ttot']        = fs.ttot
+            yStats['Threads'][thread.id]['tsub']        = fs.tsub
+            yStats['Threads'][thread.id]['tavg']        = fs.tavg
+            yStats['Threads'][thread.id]['children']    = []
             for ct in fs.children:
-                yStats[thread.id]['children']['index']       = ct.index
-                yStats[thread.id]['children']['lineno']      = ct.lineno
-                yStats[thread.id]['children']['tavg']        = ct.tavg
-                yStats[thread.id]['children']['tsub']        = ct.tsub
-                yStats[thread.id]['children']['ttot']        = ct.ttot
-                yStats[thread.id]['children']['full_name']   = ct.full_name
-                yStats[thread.id]['children']['ncall']       = ct.ncall
-                yStats[thread.id]['children']['nactualcall'] = ct.nactualcall
-                yStats[thread.id]['children']['tsub']        = ct.tsub
-                yStats[thread.id]['children']['ttot']        = ct.ttot
+                child = {}
+                child['index']       = ct.index
+                child['lineno']      = ct.lineno
+                child['tavg']        = ct.tavg
+                child['tsub']        = ct.tsub
+                child['ttot']        = ct.ttot
+                child['full_name']   = ct.full_name
+                child['ncall']       = ct.ncall
+                child['nactualcall'] = ct.nactualcall
+                child['tsub']        = ct.tsub
+                child['ttot']        = ct.ttot
+                yStats['Threads'][thread.id]['children'].append(child)
+
 
     yappi.clear_stats() 
     yappi.start()
