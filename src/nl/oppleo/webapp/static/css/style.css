@@ -4354,3 +4354,8 @@ File: Responsive
       display: none;
   }
 }
+@media (max-width: 680px) {
+  .hide-under-680 {
+      display: none;
+  }
+}
