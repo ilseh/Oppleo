@@ -1,0 +1,50 @@
+
+Mode 1:
+- Read UID
+- Not secure. Only read UID. Card can easily be copied (UID). No Auth.
+- Works with any 13MHz card (CreditCard, MTC)
+Mode 2:
+- MFRC522 read, select, and auth with default keys
+- Charger in adopt mode to prevent any presented key to overwrite the current B key
+- Adopt: set the B key to key of the charger. Write secure token to card
+- Use: read token using B key and validate token.
+- Token is one-way hash
+- Make sure to include this master key in the backup!
+- Only works with MiFare Basic cards, dedicated to the charger.
+
+
+References
+
+How to change keys
+https://github.com/miguelbalboa/rfid/wiki/How-to-change-keys%3F
+
+Key A and B
+https://stackoverflow.com/questions/28050718/mifare-1k-authentication-keys/28051227#28051227
+https://awesomeopensource.com/project/XaviTorello/mifare-classic-toolkit#:~:text=Each%20sector%20of%20a%20MIFARE,so%2Dcalled%20sector%20trailer).&text=Typical%20scenarios%20are%3A%20Authentication%20is,A%20has%20read%2Donly%20access.
+
+
+PiMyLifeUp
+https://github.com/pimylifeup/MFRC522-python
+https://pimylifeup.com/raspberry-pi-rfid-rc522/
+
+Change key lib
+https://github.com/ondryaso/pi-rc522
+
+
+Default keys list
+ffffffffffff
+a0b0c0d0e0f0
+a1b1c1d1e1f1
+a0a1a2a3a4a5 
+b0b1b2b3b4b5
+4d3a99c351dd 
+1a982c7e459a
+000000000000
+aabbccddeeff
+d3f7d3f7d3f7
+aabbccddeeff
+714c5c886e97
+587ee5f9350f
+a0478cc39091
+533cb6c723f6
+8fd0a4f256e9
