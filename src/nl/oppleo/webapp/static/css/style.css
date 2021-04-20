@@ -4334,6 +4334,16 @@ File: Responsive
 
 
 /*# sourceMappingURL=style.css.map */
+@media (max-width: 280px) {                  
+  .hide-under-280 {
+      display: none;
+  }
+}
+@media (max-width: 370px) {                  
+  .hide-under-370 {
+      display: none;
+  }
+}
 @media (max-width: 500px) {                  
   .hide-under-500 {
       display: none;
