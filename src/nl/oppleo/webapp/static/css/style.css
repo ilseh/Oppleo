@@ -4359,3 +4359,9 @@ File: Responsive
       display: none;
   }
 }
+@media (max-width: 740px) {
+  .hide-under-740 {
+      display: none;
+  }
+}
+

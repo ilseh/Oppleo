@@ -483,8 +483,6 @@
       // Step 5: Draw title
       drawProgresBarTitle('<i class="fas fa-car"></i> '+vehicleName)
       // Step 6: Draw footer
-      let info = '<span class="border-secondary text-muted info-button-style-inline"  data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="Laadsessie zoals door het voertuig gerapporteerd. Bij tussentijds stop/start kan het voertuig de sessie resetten en er een lagere lading weergegeven worden."><i class="fas fa-info-circle"></i></span>'
-      let remainingTime = (chargingState == 'Charging' ? '<i class="far fa-clock"></i> ' + minutesToFullCharge + 'min ' : '')
       d = new Date(timestampMillis)
       let update = ( (weekday[d.getDay() %7]).substring(0, 2) + ' ' + 
                      d.getDate() + ' ' + (months[d.getMonth() %12]) + ' ' + d.getFullYear() + ' ' +
@@ -494,14 +492,14 @@
 
       let pbf = (chargePortDoorOpen ? '<i class="fas fa-plug"></i> ' : '<i class="fas fa-key"></i> ' ) + ' '
       pbf += chargingState.toLowerCase() + ' '
-      pbf += ( chargingState=='Charging' ? '<span class="hide-under-680">@ ' + chargeRate + 'km/h</span> ' : '' )
+      pbf += ( chargingState=='Charging' ? '<span class="hide-under-740">@ ' + chargeRate + 'km/h</span> ' : '' )
       pbf += '<i class="fas fa-charging-station"></i> ' + chargeEnergyAdded + 'kWh '
       pbf += '<span class="hide-under-540">/' + chargeKmAdded + 'km </span>'
-      pbf += remainingTime + ' '
+      pbf += (chargingState == 'Charging' ? '<span class="hide-under-680"><i class="far fa-clock"></i> ' + minutesToFullCharge + 'min </span>' : '')
       pbf += getBatteryIcon( (chargeCurrent * progressMax) /100) + ' '
       pbf += currentBatteryRange+'km' + ' '
       pbf += '<span class="hide-under-580"><i class="far fa-calendar-check"></i> '+update+' </span>'
-      pbf += info
+      pbf += '<span class="border-secondary text-muted info-button-style-inline" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="Laadsessie zoals door het voertuig gerapporteerd. Bij tussentijds stop/start kan het voertuig de sessie resetten en er een lagere lading weergegeven worden."> <i class="fas fa-info-circle"></i></span>'
       drawProgresBarFooter(pbf, 20)
       
       $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
