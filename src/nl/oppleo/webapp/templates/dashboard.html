@@ -496,7 +496,7 @@
       pbf += '<span class="hide-under-370"><i class="fas fa-charging-station"></i> ' + chargeEnergyAdded + 'kWh </span>'
       pbf += '<span class="hide-under-540">/' + chargeKmAdded + 'km </span>'
       pbf += (chargingState == 'Charging' ? '<span class="hide-under-680"><i class="far fa-clock"></i> ' + minutesToFullCharge + 'min </span>' : '')
-      pbf += '<span class="hide-under-280">' + getBatteryIcon( (chargeCurrent * progressMax) /100) + currentBatteryRange+' km </span>'
+      pbf += '<span class="hide-under-280">' + getBatteryIcon( (chargeCurrent * progressMax) /100) + ' ' + currentBatteryRange + ' km </span>'
       pbf += '<span class="hide-under-580"><i class="far fa-calendar-check"></i> '+update+' </span>'
       pbf += '<span class="border-secondary text-muted info-button-style-inline" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="Laadsessie zoals door het voertuig gerapporteerd. Bij tussentijds stop/start kan het voertuig de sessie resetten en er een lagere lading weergegeven worden."> <i class="fas fa-info-circle"></i></span>'
       drawProgresBarFooter(pbf, 20)
@@ -522,6 +522,28 @@
           height: '+=118px',
         })
       }
+    }
+
+    function requestVehicleChargeStateUpdate() {
+      console.log(timestamp() + ' requestVehicleChargeStateUpdate()')
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/request_vehicle_charge_state/',
+        contentType : 'application/json',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+      })
+      .fail(function(data) {
+        console.log(data)
+        // Probably not logged in
+      })
+      .always(function() {
+      })
     }
 
     function getVehicleChargeState() {
@@ -905,6 +927,7 @@
       {% if oppleoconfig.vehicleDataOnDashboard %}
       // Don't actively request this information. Will come through web sockets, this call blocks the front end.
       // getVehicleChargeState()
+      requestVehicleChargeStateUpdate()
       {% endif %}
     })
 

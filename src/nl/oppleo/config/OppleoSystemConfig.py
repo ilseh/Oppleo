@@ -777,3 +777,6 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         if level == logging.FATAL:
             return 'fatal'
         return 'warning'
+
+
+oppleoSystemConfig = OppleoSystemConfig()

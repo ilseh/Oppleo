@@ -101,7 +101,8 @@ class OppleoConfig(object, metaclass=Singleton):
     OS_BACKUP_TYPE_ICLOUD       = 'icloud'
     OS_BACKUP_TYPE_ICLOUD_STR   = 'Apple iCloud'
     
-    BACKUP_DIR_NAME         = 'backup'
+    BACKUP_DIR_NAME             = 'backup'
+    DOC_DIR_NAME                = 'doc'
 
     
     """
@@ -794,3 +795,12 @@ class OppleoConfig(object, metaclass=Singleton):
     @vehicleDataOnDashboard.setter
     def vehicleDataOnDashboard(self, value):
         self.__chargerConfigModel.setAndSave('vehicle_data_on_dashboard', value)
+
+    """
+        returns the absolute path to the doc folder
+    """
+    @property
+    def localDocDirectory(self) -> str:
+        return os.path.join(self.oppleoRootDirectory, self.DOC_DIR_NAME)
+
+oppleoConfig = OppleoConfig()

@@ -25,6 +25,7 @@ class VehicleChargeStatusMonitorThread(object):
     # Check every minute [20 seconds]
     __vehicleMonitorInterval = 20
     __sleepInterval = 0.25
+    __requestChargeStatusNow = False
 
     def __init__(self):
         self.__threadLock = threading.Lock()
@@ -77,11 +78,13 @@ class VehicleChargeStatusMonitorThread(object):
         if rfidData is None:
             self.__logger.error('monitor() Cannot run Thread. Cannot get data for RFID {}'.format(self.__rfidTag))
 
-        monitorInterval = 0
-
+        monitorInterval = (self.__vehicleMonitorInterval + self.__sleepInterval)
+        
         while not self.__stop_event.is_set():
-            if monitorInterval > self.__vehicleMonitorInterval:
+            if monitorInterval > self.__vehicleMonitorInterval or self.__requestChargeStatusNow:
                 monitorInterval = 0
+                with self.__threadLock:
+                    self.__requestChargeStatusNow = False
                 self.__logger.debug("monitor() loop")
                 if len(oppleoConfig.connectedClients) > 0 and oppleoConfig.vehicleDataOnDashboard:
                     self.__logger.debug("monitor() connected clients ({})".format(len(oppleoConfig.connectedClients)))
@@ -165,6 +168,14 @@ class VehicleChargeStatusMonitorThread(object):
             monitorInterval = (monitorInterval + self.__sleepInterval)
 
         self.__logger.info("Stopping VehicleChargeStatusMonitorThread")
+
+
+    """
+        Causes the monitor loop to timeout now
+    """ 
+    def requestChargeStatusUpdate(self):
+        with self.__threadLock:
+            self.__requestChargeStatusNow = True
 
 
     def start(self):

@@ -1,0 +1,179 @@
+{% extends "template.html" %}
+{% block title %}Verbruik{% endblock %}
+{% block jquery %} 
+  {% include 'includes/include.jquery-3.3.1.html' %}
+{% endblock %} 
+{% block head %}
+  {{ super() }}
+
+  <!-- DataTables CSS -->
+  <link href="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+  <link href="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+  <link href="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css" />
+
+  <!-- Responsive datatable examples -->
+  <link href="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+   
+  <!-- Required datatable js -->
+  <script src="{{ url_for('static', filename='plugins/datatables/1.10.20/jquery.dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.bootstrap4.min.js') }}"></script>
+  <!-- Buttons -->
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/dataTables.buttons.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.bootstrap4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.flash.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/jszip/3.1.3/jszip.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/pdfmake.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/0.1.53/vfs_fonts.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.html5.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/buttons/1.6.1/buttons.print.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/buttons.colVis.min.js') }}"></script>
+
+  <!-- Responsive -->
+  <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
+  
+  <!-- Socket IO -->
+  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
+  <style>
+    .paginate_button {
+        padding: 0px !important;
+    }
+    tbody td {
+      padding: 2px 2px !important;
+      text-align: left;
+      background-color: #36404a;
+    }
+    div .dataTables_info {
+      color: #98a6ad !important;
+      margin-left: 5px;
+    }
+    div .dt-buttons {
+      margin-bottom: 10px;
+      margin-left: 3px;
+    }
+    div .dataTables_length {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+    }
+    div .dataTables_length label {
+      font-size: smaller;
+      margin-left: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      color: #98a6ad !important;
+    }
+    div .dataTables_length label select {
+      width: 80px;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+    /* no arrow on numeric input field - Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    /* no arrow on numeric input field - Firefox */
+    input[type=number] {
+      -moz-appearance: textfield;
+    }  
+  </style>
+
+  <script>
+    function timestamp() {
+      d = new Date();
+      return (d.getFullYear() + "-" + 
+             (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
+             (d.getDate()<10?'0':'') + d.getDate() + '.' + 
+             (d.getHours()<10?'0':'') + d.getHours() + ":" + 
+             (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
+             (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
+             (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
+      )
+    }
+
+    jQuery(document).ready(function () {
+      console.log(timestamp() + " file load completed!")
+      $('.spinner').hide()
+
+    })
+
+    </script>
+
+{% endblock %}
+{% block content %}
+
+<div class="wrapper" id="{{ var1 }}">
+  <div class="container-fluid">
+
+    <!-- Page-Title -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <div class="btn-group pull-right">
+                    <ol class="breadcrumb hide-phone p-0 m-0">
+                        <li class="breadcrumb-item"><a href="#">Account</a></li>
+                        <li class="breadcrumb-item active">Change log</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Change log</h4>
+            </div>
+        </div>
+    </div>
+    <!-- end page title end breadcrumb -->
+
+
+    <div class="row">
+      <div class="col-12">
+        <div class="card-box table-responsive">
+
+          <table class="table table-striped table-sm">
+            <tbody>
+              <tr>
+                <th colspan="2" style="line-height: 40px;">
+                  <h4 class="m-t-0 header-title"><i class="fas fa-landmark"></i> Oppleo change log</h4>
+                </th>
+              </tr>
+              {% for version in changelog.versionHistory %}
+              <tr>
+                <td class="text-dark text-left" colspan="2"><span class="block-highlight">&nbsp;</span>
+                  v{{ changelog.versionHistory[version]['version'] }}, {{ changelog.versionHistory[version]['date'] }}
+                </td>
+              </tr>
+              {% for addDetail in changelog.versionHistory[version]['Added'] %}
+              <tr>
+                <td class="text-dark">
+                  <h6 class="ml-5">
+                    {% if addDetail == (changelog.versionHistory[version]['Added'] | first) %}Added{% else %} {% endif %}
+                  </h6>
+                </td>
+                <td><h6>{{ addDetail }}</h6></td>
+              </tr>
+              {% endfor %}
+              {% for fixDetail in changelog.versionHistory[version]['Fixed'] %}
+              <tr>
+                <td class="text-dark">
+                  <h6 class="ml-5">
+                    {% if fixDetail == (changelog.versionHistory[version]['Fixed'] | first) %}Fixed{% else %} {% endif %}
+                  </h6>
+                </td>
+                <td><h6>{{ fixDetail }}</h6></td>
+              </tr>
+              {% endfor %}
+              {% endfor %}
+
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+    </div> <!-- end row -->
+
+  </div>
+</div>
+{% endblock %}

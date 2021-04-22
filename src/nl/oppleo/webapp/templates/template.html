@@ -704,8 +704,15 @@
         .datepicker table tr td.range, .datepicker table tr td.range:hover, .datepicker table tr td.range.disabled, .datepicker table tr td.range.disabled:hover {
             background: #0a7aa3 !important;
         }
+        .block-highlight {
+            background-color: #ffc107; /* danger: #dc3545; warning: #ffc107;*/
+            display: inline-block;
+            margin-left: 20px;
+            margin-right: 7px;
+            width: 3px; 
+            height: 100%;
+        }
         </style>
-
         {% endblock %}
     
     </head>
@@ -929,6 +936,11 @@
                                     </a>
                                 </li>
                                 <li>
+                                    <a href="{{ url_for('flaskRoutes.changelog') }}" class="stay">
+                                        <i class="fas fa-code-branch"></i> Change log
+                                    </a>
+                                </li>
+                                <li>
                                     <a href="https://www.oppleo.nl/" class="stay" target="_new">
                                         <i class="fas fa-external-link-alt"></i> oppleo.nl
                                     </a>
@@ -945,6 +957,22 @@
     {% block content %}
     {% endblock %}
 
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h6 class="font-italic font-weight-light">
+                    Versie <a href="https://github.com/ilseh/Oppleo" target="_new">{{ changelog.currentVersion }}</a>,
+                    {{ changelog.currentVersionDateStr(changelog.nl_NL) }} 
+                    <i class="far fa-copyright"></i> 2019 - 2021 <a href="https://oppleo.nl/" target="_new">Oppleo.nl</a>
+                    </h6>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- End Footer -->    
     <script src="{{ url_for('static', filename='js/jquery.app.js') }}"></script>
 
  </body>
