@@ -2217,18 +2217,34 @@ def systemStatus():
 
 
 # Always returns json
-@flaskRoutes.route("/software_status/", methods=["GET"])
-@authenticated_resource
-def softwareStatus():
+@flaskRoutes.route("/software_status", defaults={'branch': 'master'}, strict_slashes=False, methods=["GET"])
+@flaskRoutes.route("/software_status/<path:branch>", methods=["GET"])
+@flaskRoutes.route("/software_status/<path:branch>/", methods=["GET"])
+@authenticated_resource  # CSRF Token is valid
+def softwareStatus(branch='master'):
     global flaskRoutesLogger, oppleoConfig
-    flaskRoutesLogger.debug('/software_status/')
+    flaskRoutesLogger.debug('/software_status/{}'.format(branch))
 
     # Update status from github
     GitUtil.gitRemoteUpdate()
+    branches = []
+    # Get the current branch structure
+    (activeBranch, branchNames) = GitUtil.gitBranches()
+    for branchName in branchNames:
+        changeLogText = GitUtil.getChangeLogForBranch(branchName)
+        parsedChangeLog = changeLog.parse(changeLogText=changeLogText)
+        (versionNumber, versionDate) = changeLog.getMostRecentVersion(changeLogObj=parsedChangeLog)
+        branches.append({
+            'branch': branchName, 
+            'version': str(versionNumber) if versionNumber is not None else '0.0.0', 
+            'date': changeLog.versionDateStr(versionDate=versionDate) if versionDate is not None else 'null', 
+            })
 
     return jsonify({
         'status': HTTP_CODE_200_OK, 
         'softwareUpdateAvailable': GitUtil.gitUpdateAvailable(),
-        'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr()
+        'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr(),
+        'branches': branches,
+        'activeBranch': activeBranch
         })
 

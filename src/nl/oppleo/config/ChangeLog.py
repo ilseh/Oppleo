@@ -47,7 +47,7 @@ class Singleton(type):
 
 class ChangeLog():
     __logger = None
-    __filename = 'changelog.txt'
+    __FILENAME = 'changelog.txt'
     __changelog = {}
     __currentVersion = None
     __currentVersionDate = None
@@ -64,21 +64,39 @@ class ChangeLog():
 
     def __init__(self):
         self.__logger = logging.getLogger('nl.oppleo.config.ChangeLog')
-        self.__parse__()
 
-    def __parse__(self):
+        fileContent = self.__readChangeLogFile__()
+        parsedChangeLog = self.parse(changeLogText=fileContent)
+        self.__currentVersion, self.__currentVersionDate = self.getMostRecentVersion(parsedChangeLog)
+
+
+    def __readChangeLogFile__(self) -> str:
         global oppleoConfig
 
         localDocDirectory = oppleoConfig.localDocDirectory
         if not localDocDirectory.endswith(os.path.sep):
             localDocDirectory += os.path.sep
 
-        changeLogFile = open(localDocDirectory + self.__filename, "r")
+        changeLogFile = open(localDocDirectory + self.__FILENAME, "r")
+        changeLogText = ''
+        for line in changeLogFile:
+            changeLogText += line
+
+        changeLogFile.close()
+
+        return changeLogText        
+
+
+    def parse(self, changeLogText:str=None):
+        if changeLogText is None:
+            return None
+
         changeLog = {}
         versionNumber = None
         versionDate = None
         section = None
-        for line in changeLogFile:
+        changeLogLines = changeLogText.split('\n')
+        for line in changeLogLines:
             # Remove the waiste
             line = line.strip()
             # Skip empty lines
@@ -90,16 +108,13 @@ class ChangeLog():
                 line = line.replace('\t', ' ')
                 # Multiple spaces to single space
                 line = re.sub('\s+',' ',line).strip()
-                x = line.split(' ')
-                versionNumber   = x[1].strip()
-                versionDate     = x[2].strip()
+                lineSections = line.split(' ')
+                versionNumber   = lineSections[1].strip()
+                versionDate     = lineSections[2].strip()
                 changeLog[versionNumber] = {}
                 changeLog[versionNumber]['version'] = Version(versionNumber)
                 changeLog[versionNumber]['date'] = versionDate
                 section = None
-                if changeLog[versionNumber]['version'].isNewer(self.__currentVersion):
-                    self.__currentVersion = changeLog[versionNumber]['version']
-                    self.__currentVersionDate = self.__dateStrToDate__(versionDate)
                 continue
             if line.lower().startswith('added'):
                 section = 'Added'
@@ -115,9 +130,23 @@ class ChangeLog():
                 if line.startswith('-'):
                     line = line[1:].strip()
                 changeLog[versionNumber][section].append(line)
-        changeLogFile.close()
 
-        self.__changelog = changeLog
+        return changeLog
+
+
+    def getMostRecentVersion(self, changeLogObj:dict=None):
+        if changeLogObj is None:
+            return (None, None)
+
+        versionNumber   = None
+        versionDate     = None
+        for changeLogEntry in changeLogObj:
+
+            if changeLogObj[changeLogEntry]['version'].isNewer(versionNumber):
+                versionNumber = changeLogObj[changeLogEntry]['version']
+                versionDate = self.__dateStrToDate__(changeLogObj[changeLogEntry]['date'])
+
+        return (versionNumber, versionDate)
 
 
     @property
@@ -144,16 +173,19 @@ class ChangeLog():
             return None
 
 
-    def currentVersionDateStr(self, lang:int=0):
-        dcv = self.__currentVersionDate
+    def versionDateStr(self, lang:int=0, versionDate:datetime=None):
         if lang > self.__lang_max:
             lang = self.__lang_default
-        if dcv is None:
+        if versionDate is None:
             return "Date unknown"
         try:
-            return "{} {} {}".format(dcv.day, self.month[lang][dcv.month], dcv.year)
+            return "{} {} {}".format(versionDate.day, self.month[lang][versionDate.month], versionDate.year)
         except Exception as e:
             return "Date unknown"
 
+    def currentVersionDateStr(self, lang:int=0):
+        return self.versionDateStr(lang=lang, versionDate=self.__currentVersionDate)
+
 
 changeLog = ChangeLog()
+

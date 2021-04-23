@@ -1,3 +1,9 @@
+Version 1.2.1           2021-04-23
+
+Added
+ - Version information in changelog, available on settings page.
+
+
 Version 1.2.1           2021-04-22
 
 Fixed
