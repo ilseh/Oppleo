@@ -14,36 +14,35 @@ class GitUtil(object):
 
     # Returns a datetime object of the latest Git refresh
     @staticmethod
-    def lastBranchGitDate(branch:str="master") -> Optional[datetime]:
+    def lastBranchGitDate(branch:str="master", remote:bool=False) -> Optional[datetime]:
         # Wed Jul 22 15:40:45 2020 +0200\n
+        if not isinstance(branch, str):
+            return None
         try:
-            return datetime.strptime(os.popen('git log -1 --format=%cd {}'.format(branch)).read().rstrip(), '%a %b %d %H:%M:%S %Y %z')
+            if remote and not branch.lower().startswith('origin') and '/' not in branch:
+                branch = 'origin/' + branch
+            return datetime.strptime(os.popen('git log -n 1 --pretty="format:%cd" {}'.format(branch)).read().rstrip(), '%a %b %d %H:%M:%S %Y %z')
         except (RuntimeError, TypeError, ValueError, NameError) as e:
             return None
 
     @staticmethod
-    def lastBranchGitDateStr(branch:str="master") -> Optional[str]:
-        d = GitUtil.lastBranchGitDate(branch=branch)
+    def lastBranchGitDateStr(branch:str="master", remote:bool=False) -> Optional[str]:
+        d = GitUtil.lastBranchGitDate(branch=branch, remote=remote)
         return (str(d.strftime("%d/%m/%Y, %H:%M:%S")) if (d is not None) else "Onbekend")
 
     # Returns a datetime object of the latest Git refresh
     @staticmethod
     def lastRemoteMasterGitDate() -> Optional[datetime]:
-        return GitUtil.lastBranchGitDate("master")
+        return GitUtil.lastBranchGitDate(branch="master", remote=True)
 
     @staticmethod
     def lastRemoteMasterGitDateStr() -> Optional[str]:
-        return GitUtil.lastBranchGitDateStr("master")
+        return GitUtil.lastBranchGitDateStr(branch="master", remote=True)
 
     @staticmethod
     def gitUpdateAvailable(branch:str="master") -> Optional[bool]:
-"""
-   lokaal uit file
-   remote via git
-   TODO - fix, nu beiden uit git
-""" 
-        localGitDate = GitUtil.lastBranchGitDate(branch=branch) 
-        remoteGitDate = GitUtil.lastBranchGitDate(branch=branch)
+        localGitDate = GitUtil.lastBranchGitDate(branch=branch, remote=False) 
+        remoteGitDate = GitUtil.lastBranchGitDate(branch=branch, remote=True)
         return (localGitDate is not None and remoteGitDate is not None and \
                 localGitDate < remoteGitDate)
 
@@ -89,8 +88,3 @@ class GitUtil(object):
             return None
 
         return r.text
-
-GitUtil.gitRemoteUpdate()
-xxx = GitUtil.gitUpdateAvailable('tesla-chargelevel')
-availableSoftwareDate = GitUtil.lastBranchGitDateStr('tesla-chargelevel')
-pass

@@ -867,7 +867,8 @@ def settings(active=1):
                 oppleosystemconfig=oppleoSystemConfig,
                 oppleoconfig=oppleoConfig,
                 backuputil=BackupUtil(),
-                changelog=changeLog
+                changelog=changeLog,
+                gitutil=GitUtil
             )
 
 
@@ -2216,6 +2217,12 @@ def systemStatus():
         })
 
 
+"""
+    Each branch has a local and remote (origin) timestamp
+    Each branch has (or not) a changelog.txt file with version number and date
+    Local changelog.txt has a version and date, local active git branch has a timestamp
+"""
+
 # Always returns json
 @flaskRoutes.route("/software_status", defaults={'branch': 'master'}, strict_slashes=False, methods=["GET"])
 @flaskRoutes.route("/software_status/<path:branch>", methods=["GET"])
@@ -2237,14 +2244,27 @@ def softwareStatus(branch='master'):
         branches.append({
             'branch': branchName, 
             'version': str(versionNumber) if versionNumber is not None else '0.0.0', 
-            'date': changeLog.versionDateStr(versionDate=versionDate) if versionDate is not None else 'null', 
+            'versionDate': changeLog.versionDateStr(versionDate=versionDate) if versionDate is not None else 'null', 
+            'gitDate' : GitUtil.lastBranchGitDate(branch=branchName, remote=True)
             })
 
+    """
+        softwareReleaseUpdateAvailable     if local and remote branch have different commit 
+        softwareBuildUpdateAvailable       date of remote branch
+    """
     return jsonify({
         'status': HTTP_CODE_200_OK, 
-        'softwareUpdateAvailable': GitUtil.gitUpdateAvailable(activeBranch),
-        'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr(activeBranch),
-        'branches': branches,
-        'activeBranch': activeBranch
+        'softwareReleaseUpdateAvailable': GitUtil.gitUpdateAvailable(),         # default on master
+        'availableReleaseSoftwareDate'  : GitUtil.lastRemoteMasterGitDateStr(), # always on master
+        'softwareBuildUpdateAvailable'  : GitUtil.gitUpdateAvailable(branch=activeBranch),
+        'availableBuildSoftwareDate'    : GitUtil.lastBranchGitDateStr(branch=activeBranch, remote=True),
+        'branches'                      : branches,
+        'activeBranch'                  : activeBranch,
+        'localGitDate'                  : GitUtil.lastBranchGitDate(branch=activeBranch, remote=False)
         })
 
+
+GitUtil.gitRemoteUpdate()
+xxx = GitUtil.gitUpdateAvailable('tesla-chargelevel')
+availableSoftwareDate = GitUtil.lastBranchGitDateStr('tesla-chargelevel')
+pass

@@ -1852,20 +1852,24 @@
                             {% if changelog.activeBranch() != "master" %}
                             {% set changelogs = changelog.all(changelog.nl_NL) %}
                             <tr>
-                              <td class="text-dark"> Developer branch:</td>
-                              <td class="text-primary"><small><a href="https://github.com/ilseh/Oppleo/tree/{{ changelog.activeBranch() }}" class="font-italic text-warning font-smaller" target="_new"><i class="fas fa-external-link-alt"></i> {{ changelog.activeBranch() }}</a></small></td>
+                              <td class="text-dark"> Branch:</td>
+                              <td class="text-primary"><small><a href="https://github.com/ilseh/Oppleo/tree/{{ changelog.activeBranch() }}" class="font-italic text-warning font-smaller" target="_new"><i class="fas fa-external-link-alt"></i> {{ changelog.activeBranch() }}</a> (developer)</small></td>
                             </tr>
                             <tr>
-                              <td class="text-dark"> Branch <span class="text-primary font-italic">{{ changelog.activeBranch() }}</span>:</td>
+                              <td class="text-dark"> Changelog <span class="text-primary font-italic">{{ changelog.activeBranch() }}</span>:</td>
                               <td class="text-primary">v{{ changelogs[changelog.activeBranch()]['version'] }}, {{ changelogs[changelog.activeBranch()]['date'] }}<small class="pr-5" style="float: right;"><a href="{{ url_for('flaskRoutes.changelog') }}" class="stay font-italic text-success font-smaller pl-5"><i class="fas fa-link"></i> Change log</a></small></td>
                             </tr>
                             <tr>
-                              <td class="text-dark"> Branch <span class="text-primary font-italic">master</span>:</td>
+                              <td class="text-dark"> </td>
+                              <td class="text-primary"><small>Lokaal commit: {{ gitutil.lastBranchGitDateStr(branch=changelog.activeBranch(), remote=False) }}, Github commit: {{ gitutil.lastBranchGitDateStr(branch=changelog.activeBranch(), remote=True) }})</small></td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> Changelog <span class="text-primary font-italic">master</span>:</td>
                               <td class="text-primary">v{{ changelogs['master']['version'] }}, {{ changelogs['master']['date'] }}<small class="pr-5" style="float: right;"><a href="https://github.com/ilseh/Oppleo/blob/master/doc/changelog.txt" class="font-italic text-warning font-smaller pl-5" target="_new"><i class="fas fa-external-link-alt"></i> Change log</a></small></td>
                             </tr>
                             <tr id="softwateUpdateCurrentVersionRow">
-                              <td class="text-dark"> Github (master):</td>
-                              <td class="text-primary">{{ diag['lastSoftwareUpdate'] }}</td>
+                              <td class="text-dark"> </td>
+                              <td class="text-primary"><small>Lokaal commit: {{ gitutil.lastBranchGitDateStr(branch='master', remote=False) }}, Github commit: {{ gitutil.lastBranchGitDateStr(branch='master', remote=True) }})</small></td>
                             </tr>
                             {% endif %}
                             {% if changelog.activeBranch() == "master" %}
