@@ -420,10 +420,13 @@
 
                         } else {
                             // No update available
+                            //{% if changelog.activeBranch() != "master" %}{{ changelog.activeBranch() }} {% endif %}
                             if ( $("tr#noSoftwateUpdateAvailableRow").length == 0 ) {
                                 $('<tr id="noSoftwateUpdateAvailableRow">' +
                                     '<td class="text-dark"></td>' +
-                                    '<td class="text-secondary">Geen update beschikbaar</td>' +
+                                    '<td class="text-secondary">Geen update beschikbaar' +
+                                        (result.activeBranch != "master" ? ' voor <span class="font-italic">' + result.activeBranch + '<span>' : '') +
+                                    '</td>' +
                                 '</tr>')
                                 .insertAfter("tr#softwateUpdateCurrentVersionRow")
                             }

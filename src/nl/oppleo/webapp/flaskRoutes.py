@@ -2242,8 +2242,8 @@ def softwareStatus(branch='master'):
 
     return jsonify({
         'status': HTTP_CODE_200_OK, 
-        'softwareUpdateAvailable': GitUtil.gitUpdateAvailable(),
-        'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr(),
+        'softwareUpdateAvailable': GitUtil.gitUpdateAvailable(activeBranch),
+        'availableSoftwareDate': GitUtil.lastRemoteMasterGitDateStr(activeBranch),
         'branches': branches,
         'activeBranch': activeBranch
         })

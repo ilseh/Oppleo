@@ -5,7 +5,7 @@ import requests
 
 class GitUtil(object):
     GIT_OPPLEO_CHANGELOG_URL = 'https://raw.githubusercontent.com/ilseh/Oppleo/{branch}/doc/changelog.txt'
-
+    DEFAULT_BRANCH = "master"
     HTTP_TIMEOUT = 30
 
     HTTP_200_OK = 200
@@ -14,7 +14,7 @@ class GitUtil(object):
 
     # Returns a datetime object of the latest Git refresh
     @staticmethod
-    def lastBranchGitDate(branch="") -> Optional[datetime]:
+    def lastBranchGitDate(branch:str="master") -> Optional[datetime]:
         # Wed Jul 22 15:40:45 2020 +0200\n
         try:
             return datetime.strptime(os.popen('git log -1 --format=%cd {}'.format(branch)).read().rstrip(), '%a %b %d %H:%M:%S %Y %z')
@@ -22,23 +22,23 @@ class GitUtil(object):
             return None
 
     @staticmethod
-    def lastBranchGitDateStr(branch="") -> Optional[str]:
+    def lastBranchGitDateStr(branch:str="master") -> Optional[str]:
         d = GitUtil.lastBranchGitDate(branch=branch)
         return (str(d.strftime("%d/%m/%Y, %H:%M:%S")) if (d is not None) else "Onbekend")
 
     # Returns a datetime object of the latest Git refresh
     @staticmethod
-    def lastRemoteMasterGitDate() -> Optional[datetime]:
-        return GitUtil.lastBranchGitDate(branch="origin/master")
+    def lastRemoteMasterGitDate(branch:str="master") -> Optional[datetime]:
+        return GitUtil.lastBranchGitDate(branch=branch)
 
     @staticmethod
-    def lastRemoteMasterGitDateStr() -> Optional[str]:
-        return GitUtil.lastBranchGitDateStr(branch="origin/master")
+    def lastRemoteMasterGitDateStr(branch:str="master") -> Optional[str]:
+        return GitUtil.lastBranchGitDateStr(branch=branch)
 
     @staticmethod
-    def gitUpdateAvailable() -> Optional[bool]:
-        localGitDate = GitUtil.lastBranchGitDate() 
-        remoteGitDate = GitUtil.lastRemoteMasterGitDate()
+    def gitUpdateAvailable(branch:str="master") -> Optional[bool]:
+        localGitDate = GitUtil.lastBranchGitDate(branch=branch) 
+        remoteGitDate = GitUtil.lastRemoteMasterGitDate(branch=branch)
         return (localGitDate is not None and remoteGitDate is not None and \
                 localGitDate < remoteGitDate)
 

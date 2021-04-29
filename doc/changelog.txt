@@ -1,13 +1,13 @@
 Version 1.2.2           2021-04-23
 
 Added
- - Version information in changelog, available on settings page.
-
+- Version information in changelog, available on settings page.
+- developer software info
 
 Version 1.2.1           2021-04-22
 
 Fixed
- - Faster initial vehicle status.
+- Faster initial vehicle status.
 
 
 Version 1.2.0       2021-04-14

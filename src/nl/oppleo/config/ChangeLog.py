@@ -2,7 +2,7 @@ import os
 import logging
 import re
 from datetime import datetime
-from sys import builtin_module_names
+from nl.oppleo.utils.GitUtil import GitUtil
 from nl.oppleo.config.OppleoConfig import oppleoConfig
 
 
@@ -68,6 +68,7 @@ class ChangeLog():
         fileContent = self.__readChangeLogFile__()
         parsedChangeLog = self.parse(changeLogText=fileContent)
         self.__currentVersion, self.__currentVersionDate = self.getMostRecentVersion(parsedChangeLog)
+        self.__changelog = parsedChangeLog
 
 
     def __readChangeLogFile__(self) -> str:
@@ -179,12 +180,36 @@ class ChangeLog():
         if versionDate is None:
             return "Date unknown"
         try:
-            return "{} {} {}".format(versionDate.day, self.month[lang][versionDate.month], versionDate.year)
+            # datetime month is 1-based, the array 0-based
+            return "{} {} {}".format(versionDate.day, self.month[lang][versionDate.month-1], versionDate.year)
         except Exception as e:
             return "Date unknown"
 
     def currentVersionDateStr(self, lang:int=0):
         return self.versionDateStr(lang=lang, versionDate=self.__currentVersionDate)
+
+    def branches(self):
+        (activeBranch, branches) = GitUtil.gitBranches()
+        return branches
+        
+    def activeBranch(self):
+        (activeBranch, branches) = GitUtil.gitBranches()
+        return activeBranch
+
+    def all(self, lang:int=0):
+        (activeBranch, branchNames) = GitUtil.gitBranches()
+        branches = {}
+        for branchName in branchNames:
+            changeLogText = GitUtil.getChangeLogForBranch(branchName)
+            parsedChangeLog = changeLog.parse(changeLogText=changeLogText)
+            (versionNumber, versionDate) = changeLog.getMostRecentVersion(changeLogObj=parsedChangeLog)
+            branches[branchName] = {
+                'branch': branchName, 
+                'version': str(versionNumber) if versionNumber is not None else '0.0.0', 
+                'date': changeLog.versionDateStr(lang=lang, versionDate=versionDate) if versionDate is not None else 'null', 
+                }
+        return branches
+
 
 
 changeLog = ChangeLog()

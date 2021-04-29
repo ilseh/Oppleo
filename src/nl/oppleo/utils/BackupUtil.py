@@ -265,7 +265,7 @@ class BackupUtil(object, metaclass=Singleton):
             pushMsg += (" {}"
                     .format(
                         "(Offsite backup not enabled)" if not self.oppleoConfig.osBackupEnabled else (
-                            "Offsite backup (SMB) distribution to //{}/{}{} {}".format(
+                            "Offsite backup (SMB) to //{}/{}{} {}".format(
                                 self.oppleoConfig.smbBackupServerNameOrIPAddress, 
                                 self.oppleoConfig.smbBackupServiceName, 
                                 self.oppleoConfig.smbBackupRemotePath,
