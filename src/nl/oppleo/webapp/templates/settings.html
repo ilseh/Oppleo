@@ -1873,13 +1873,9 @@
                             </tr>
                             {% endif %}
                             {% if changelog.activeBranch() == "master" %}
-                            <tr>
+                            <tr id="softwateUpdateCurrentVersionRow">
                               <td class="text-dark"> Huidige versie:</td>
                               <td class="text-primary">v{{ changelog.currentVersion }}, {{ changelog.currentVersionDateStr(changelog.nl_NL) }}<small><a href="{{ url_for('flaskRoutes.changelog') }}" class="stay font-italic text-warning font-smaller pl-5"><i class="fas fa-external-link-alt"></i> Change log</a></small></td>
-                            </tr>
-                            <tr id="softwateUpdateCurrentVersionRow">
-                              <td class="text-dark"> Github:</td>
-                              <td class="text-primary">{{ diag['lastSoftwareUpdate'] }}</td>
                             </tr>
                             {% endif %}
                             <tr id="softwateUpdateCheckRow">
