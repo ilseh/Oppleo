@@ -28,17 +28,22 @@ class GitUtil(object):
 
     # Returns a datetime object of the latest Git refresh
     @staticmethod
-    def lastRemoteMasterGitDate(branch:str="master") -> Optional[datetime]:
-        return GitUtil.lastBranchGitDate(branch=branch)
+    def lastRemoteMasterGitDate() -> Optional[datetime]:
+        return GitUtil.lastBranchGitDate("master")
 
     @staticmethod
-    def lastRemoteMasterGitDateStr(branch:str="master") -> Optional[str]:
-        return GitUtil.lastBranchGitDateStr(branch=branch)
+    def lastRemoteMasterGitDateStr() -> Optional[str]:
+        return GitUtil.lastBranchGitDateStr("master")
 
     @staticmethod
     def gitUpdateAvailable(branch:str="master") -> Optional[bool]:
+"""
+   lokaal uit file
+   remote via git
+   TODO - fix, nu beiden uit git
+""" 
         localGitDate = GitUtil.lastBranchGitDate(branch=branch) 
-        remoteGitDate = GitUtil.lastRemoteMasterGitDate(branch=branch)
+        remoteGitDate = GitUtil.lastBranchGitDate(branch=branch)
         return (localGitDate is not None and remoteGitDate is not None and \
                 localGitDate < remoteGitDate)
 
@@ -85,3 +90,7 @@ class GitUtil(object):
 
         return r.text
 
+GitUtil.gitRemoteUpdate()
+xxx = GitUtil.gitUpdateAvailable('tesla-chargelevel')
+availableSoftwareDate = GitUtil.lastBranchGitDateStr('tesla-chargelevel')
+pass
