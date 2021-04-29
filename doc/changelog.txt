@@ -2,7 +2,7 @@ Version 1.2.2           2021-04-23
 
 Added
 - Version information in changelog, available on settings page.
-- developer software info
+- Software version info when on developer branch
 
 Version 1.2.1           2021-04-22
 
