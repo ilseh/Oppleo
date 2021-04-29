@@ -432,13 +432,17 @@
                             }
 
                             $('button#softwateUpdateCheck').html(
-                                '<i class="fas fa-redo-alt"></i> Check nogmaals '
+                                '<i class="fas fa-redo-alt"></i> Check ' + 
+                                    (result.activeBranch != "master" ? '<span class="font-italic">' + result.activeBranch + '<span> ' : '') +
+                                        'nogmaals '
                             )
 
                             $('button#softwateUpdateCheck').toggleClass('btn-outline-success', false)
                             $('button#softwateUpdateCheck').toggleClass('btn-outline-secondary', true)
 
-                            autoHideNotify('success', 'top-left', 'Up to date!', 'Oppleo is up-todate. Er is geen nieuwere software beschikbaar.')
+                            autoHideNotify('success', 'top-left', 'Up to date!', 'Oppleo is up-todate. Er is geen nieuwere software beschikbaar' +
+                                (result.activeBranch != "master" ? ' voor developer branch ' + result.activeBranch : '') +                            
+                                '.')
 
                         }
                         break
