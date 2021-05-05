@@ -402,7 +402,7 @@
                     console.log(result)
                     switch(parseInt(result.status)) {
                     case 200:
-                        if (result.softwareUpdateAvailable) {
+                        if (result.softwareReleaseUpdateAvailable) {
 
                             $('<tr id="softwateUpdateAvailableVersionRow">' +
                                 '<td class="text-dark"> Update beschikbaar:</td>' +
@@ -412,7 +412,7 @@
                                 '       id="updateSoftwateButton" ' +
                                 '       class="btn btn-outline-warning btn-sm waves-effect waves-light"' +
                                 '       > ' +
-                                '       <i class="fas fa-gift"></i> Update naar ' + result.availableSoftwareDate + 
+                                '       <i class="fas fa-gift"></i> Update naar ' + result.availableReleaseSoftwareVersion + 
                                 '   </button>' +
                                 '</td>' +
                                 '</tr>')
@@ -426,9 +426,7 @@
                             }
                             $('a#updateSoftwareMenuItem').parent().show()
                             $('a#checkSoftwareStatusMenuItem').parent().hide()
-
-                            autoHideNotify('warning', 'top-left', 'Update beschikbaar!', 'Software ' + result.availableSoftwareDate + ' beschikbaar!', 10000)
-
+                            autoHideNotify('warning', 'top-left', 'Update beschikbaar!', 'Software ' + result.availableReleaseSoftwareVersion + '(' + result.availableReleaseSoftwareDate + ') beschikbaar!', 10000)
                         } else {
                             // No update available
                             //{% if changelog.activeBranch() != "master" %}{{ changelog.activeBranch() }} {% endif %}

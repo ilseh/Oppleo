@@ -2307,6 +2307,7 @@ def softwareStatus(branch='master'):
     # Update status from github
     GitUtil.gitRemoteUpdate()
     branches = []
+    availableReleaseSoftwareVersion = 'unknown'
     # Get the current branch structure
     (activeBranch, branchNames) = GitUtil.gitBranches()
     for branchName in branchNames:
@@ -2319,6 +2320,8 @@ def softwareStatus(branch='master'):
             'versionDate': changeLog.versionDateStr(versionDate=versionDate) if versionDate is not None else 'null', 
             'gitDate' : GitUtil.lastBranchGitDate(branch=branchName, remote=True)
             })
+        if branchName == 'master':
+            availableReleaseSoftwareVersion = str(versionNumber) if versionNumber is not None else '0.0.0'
 
     """
         softwareReleaseUpdateAvailable     if local and remote branch have different commit 
@@ -2326,13 +2329,14 @@ def softwareStatus(branch='master'):
     """
     return jsonify({
         'status': HTTP_CODE_200_OK, 
-        'softwareReleaseUpdateAvailable': GitUtil.gitUpdateAvailable(),         # default on master
-        'availableReleaseSoftwareDate'  : GitUtil.lastRemoteMasterGitDateStr(), # always on master
-        'softwareBuildUpdateAvailable'  : GitUtil.gitUpdateAvailable(branch=activeBranch),
-        'availableBuildSoftwareDate'    : GitUtil.lastBranchGitDateStr(branch=activeBranch, remote=True),
-        'branches'                      : branches,
-        'activeBranch'                  : activeBranch,
-        'localGitDate'                  : GitUtil.lastBranchGitDate(branch=activeBranch, remote=False)
+        'softwareReleaseUpdateAvailable'    : GitUtil.gitUpdateAvailable(),         # default on master
+        'availableReleaseSoftwareDate'      : GitUtil.lastRemoteMasterGitDateStr(), # always on master
+        'availableReleaseSoftwareVersion'   : availableReleaseSoftwareVersion,      # always on master
+        'softwareBuildUpdateAvailable'      : GitUtil.gitUpdateAvailable(branch=activeBranch),
+        'availableBuildSoftwareDate'        : GitUtil.lastBranchGitDateStr(branch=activeBranch, remote=True),
+        'branches'                          : branches,
+        'activeBranch'                      : activeBranch,
+        'localGitDate'                      : GitUtil.lastBranchGitDate(branch=activeBranch, remote=False)
         })
 
 

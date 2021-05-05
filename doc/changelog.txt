@@ -1,3 +1,9 @@
+Version 1.2.7           2021-05-05
+
+Fixed
+- Update version number fixed.
+
+
 Version 1.2.6           2021-05-05
 
 Fixed
