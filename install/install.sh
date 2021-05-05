@@ -316,7 +316,7 @@ function installPipDependencies( ) {
     pip install -r $OPPLEO_ROOT_DIR/requirements_non_raspberry.txt > /dev/null 2>&1
   else
     echo "  installing raspberry dependencies incl mfrc522, RPi.GPIO, and spidev..."
-    pip install -r $OPPLEO_ROOT_DIR/requirements_raspberry.txt > /dev/null 2>&1
+    pip install -r $OPPLEO_ROOT_DIR/requirements.txt > /dev/null 2>&1
   fi
 
   echo " installPipDependencies - Done"

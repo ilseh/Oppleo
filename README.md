@@ -343,10 +343,10 @@ Oppleo is not a nicely packaged resource. Basically you'll pull the developer co
   pip install --upgrade pip
   ```
 
-* Install all dependencies from the requirements_raspberry.txt file
+* Install all dependencies from the requirements.txt file
   >
   ```bash
-  pip install -r requirements_raspberry.txt
+  pip install -r requirements.txt
   ```
 
 * Create an Oppleo ini file
@@ -710,10 +710,10 @@ Python Flash SocketIO uses Greenlet or Eventlet lightweight threads. These are l
 
 ### pkg-resources==0.0.0
 
-Running `pip freeze > requirements_raspberry.txt` can add a line `pkg-resources==0.0.0` which in term can cause errors installing the dependencies. This line can be removed from the requirements files.
+Running `pip freeze > requirements.txt` can add a line `pkg-resources==0.0.0` which in term can cause errors installing the dependencies. This line can be removed from the requirements files.
   >
   ```bash
-  pip freeze | grep -v "pkg-resources" > requirements_raspberry.txt"
+  pip freeze | grep -v "pkg-resources" > requirements.txt"
   ```
 
 excludes pkg-resources from the file when generating it.

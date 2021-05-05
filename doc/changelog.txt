@@ -1,8 +1,15 @@
+Version 1.2.6           2021-05-05
+
+Fixed
+- requirements.txt fixed.
+
+
 Version 1.2.5           2021-05-05
 
 Added
 - Two Factor Authentication (2FA) with Time-based One-time Password Algorithm (TOTP; specified in RFC 6238). i.e. Google Authenticator App. Currently no 2FA on restart/switch off.
 - Account page.
+
 
 Version 1.2.4           2021-04-29
 
