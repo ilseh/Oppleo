@@ -2,6 +2,8 @@ Version 1.2.7           2021-05-05
 
 Fixed
 - Update version number fixed.
+- NOTE: Due to changes in the version update check Oppleo will not detect this update from the web gui. Run 'install/install.sh' (twice!) from the command line in the '/home/pi/Oppleo' folder to force this update.
+- NOTE: Due to changes in the install script (install.sh uses a different requirements.txt filename) the install script must be run twice. This first run will instyall the correct install.sh script, the second run will run that correct script.
 
 
 Version 1.2.6           2021-05-05
