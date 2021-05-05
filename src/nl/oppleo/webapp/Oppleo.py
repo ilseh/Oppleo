@@ -260,17 +260,19 @@ try:
 
         # Start the Energy Device Monitor
         if meuThread is not None:
-            meuThread.start()
+# TODO 2FA            meuThread.start()
+            pass
         else:
             oppleoLogger.warning("MeasureElectricityUsageThread not started.")
         # Start the RFID Monitor
         if chThread is not None:
-            chThread.start()
+# TODO 2FA             chThread.start()
+            pass
         else:
             oppleoLogger.warning("ChargerHandlerThread not started.")
 
         # Start the Peak Hours Monitor
-        phmThread.start()
+# TODO 2FA         phmThread.start()
 
         print('Starting web server on {}:{} (debug:{}, use_reloader={})...'
             .format(

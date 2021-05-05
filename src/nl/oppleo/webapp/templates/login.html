@@ -38,6 +38,10 @@
   <link rel="stylesheet" type="text/css"
     href="{{ url_for('static', filename='plugins/fontawesome/5.12.0/css/all.css') }}">
 
+  <!-- Styled Notifications -->
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='plugins/styled-notifications/dist/notifications.css') }}">
+  <script src="{{ url_for('static', filename='plugins/styled-notifications/dist/notifications.js') }}"></script>
+
   <!-- Add webpage to the iOS Home screen. -->
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/splash.png') }}">
   <!-- iOS Launch Screen Image -->
@@ -56,15 +60,124 @@
     button {
       cursor: pointer;
     }
-
     .lightning-background {
       background-image: url('{{ url_for('static', filename='images/oppleo_lightning.png') }}');
       background-repeat: repeat-y;
       background-size: 80%;
       background-position: center;
     }
+    .field-error {
+      border: 1px solid red !important;
+      color: red !important;
+    }
   </style>
   <script>
+    function timestamp() {
+      d = new Date();
+      return (d.getFullYear() + "-" + 
+              (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
+              (d.getDate()<10?'0':'') + d.getDate() + '.' + 
+              (d.getHours()<10?'0':'') + d.getHours() + ":" + 
+              (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
+              (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
+              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
+      )
+    }
+    function autoHideNotify( theme='success', position='top-left', title, message, duration=2500 ) {
+      if (theme=='danger') { theme = 'error' }
+      window.createNotification({
+          theme: theme,
+          closeOnClick: true,
+          // nfc-top-left
+          // nfc-bottom-right
+          // nfc-bottom-left
+          positionClass: 'nfc-' + position,
+          // timeout in milliseconds
+          showDuration: duration,
+          })({
+              title: title,
+              message: message
+          })
+    }
+    function submitLogin(username, password, rememberMe, totp) {
+      console.log(timestamp() + ' submitLogin()')         
+      // Show spinner
+      $('.spinner').show()
+      data = {
+            csrf_token : '{{ csrf_token() }}',
+            username   : username,
+            password   : password,
+            rememberMe : rememberMe,
+            totp       : totp
+          }
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/' + username + '/login/',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200: // Ok - logged in
+            window.history.go(-1)
+            break
+          case 401: // Not authorized
+            switch (data.code) {
+              case 23: // 2FA_CODE_INCORRECT
+                // First time/ code missing or submitted code incorrect?
+                if ($('div#div-code').hasClass('d-none')) {
+                  // First time/ code missing
+                  $('#div-username').addClass('d-none')
+                  $('#div-password').addClass('d-none')
+                  $('#field-error-login-div').addClass('d-none')
+                  $('#div-remember_me').addClass('d-none')
+                  $('#div-code-msg').removeClass('d-none')
+                  $('#div-code').removeClass('d-none')
+                  $('#field-error-code-msg').html('')
+                  $('#field-error-code-icon').addClass('d-none')
+                  $('#field-error-code-div').removeClass('d-none')
+                } else {
+                  // Submitted 2FA incorrect
+                  $('#2fa-code').addClass('field-error')
+                  $('#field-error-code-msg').html("De 2-Factor Authenticatie code is niet geldig!")
+                  $('#field-error-code-icon').removeClass('d-none')
+                }
+                $('#2fa-code').val('')
+                $('#2fa-code').focus()
+                break
+              case 25: // PASSWORD_INCORRECT
+              case 26: // USERNAME_UNKNOWN
+                autoHideNotify('error', 'top-left', 'Auhenticatiefout', 'Gebruikersnaam of wachtwoord niet geldig.')
+                // The username or password is incorrect - red box
+                $('#field-error-login-msg').html('Gebruiker of wachtwoord niet geldig!')
+                $('#field-error-login-icon').removeClass('d-none')
+                $('#username').focus()
+                break
+            }
+            break
+          case 400: // Bad request
+            // In step 2 the code is invalid, try again
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            break
+          default:  // Start again
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            // TODO: melding boven password box 
+            break
+        }
+      })
+      .fail(function(ev) {
+        autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet ontvangen door de server. Probeer opnieuw.')
+// TODO: melding boven password box 
+      })
+      .always(function() {
+        // Hide spinner
+        $('.spinner').hide()
+      })
+    }        
     jQuery(document).ready(function () {
       $("button[id^=show_]").click(function () {
         id = $(this).attr('id').split("show_").pop()
@@ -76,8 +189,35 @@
         $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
       })
       $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
-      $('button#cancel').click(function () {
+      $('button#login-cancel').on('click', function (ev) {
         window.history.back()
+      })
+      $('button#login-submit').on('click', function (ev) {
+        if ($('#username').val().length == 0) {
+          $('#username').addClass('field-error')
+          $('#field-error-login-msg').html('Geef een username')
+          $('#field-error-login-icon').removeClass('d-none')
+          return false
+        }
+        submitLogin($('#username').val(), 
+                    $('#password').val(), 
+                    $('#remember_me').is(":checked"),
+                    $('#2fa-code').val())
+      })
+      $('#username, #password, #2fa-code').on('input', (ev) => {
+        $(ev.currentTarget).removeClass('field-error')
+        if ( ['username', 'password'].includes($(ev.currentTarget).attr('id')) ) {
+          $('#field-error-login-msg').html('')
+          $('#field-error-login-icon').addClass('d-none')
+        }
+        if ( ['2fa-code'].includes($(ev.currentTarget).attr('id')) ) {
+          $('#field-error-code-msg').html('')
+          $('#field-error-code-icon').addClass('d-none')
+        }
+      })
+      $('.2fa-code').on('input', function (ev) {
+        // Only accept digits, 6 max
+        $(this).val($(this).val().replace(/[^0-9]/g, '').substring(0,6))
       })
       // Remove spinner
       $('.spinner').hide()
@@ -102,77 +242,87 @@
       <h3 class="text-info">{{ oppleoconfig.chargerName }}</h3>
     </div>
 
-    {% if msg %}
-    <div class="text-center" style="color: #ef5350;">
-      <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ msg }}</span></span>
+    <div class="w-100 pb-3 pt-3 d-none text-center" id="div-code-msg">
+      2-Factor Authenticatie code (6 cijfers):
     </div>
-    {% endif %}
 
-    {% if form.errors %}
-    <div class="text-center" style="color: #ef5350;">
-      <span class="mdi mdi-alert-outline"><span style="font-weight: bold;"> {{ form.errors }}</span></span>
+    <div class="text-center text-danger" style="height:22px;" id="field-error-login-div">
+      <span class="mdi mdi-alert-outline d-none" id="field-error-login-icon"> <span style="font-weight: bold;" id="field-error-login-msg"></span></span>
     </div>
-    {% endif %}
 
-    <form id="login-form" class="form-horizontal m-t-20" method="POST" action="/login" autocomplete="on">
-      {{ form.csrf_token }}
-
-      <div class="form-group row">
-        <div class="col-12">
-          <div class="input-group">
-            <span class="input-group-prepend">
-              <span class="input-group-text bg-secondary border border-secondary text-muted">
-                <i class="mdi mdi-account"></i>
-              </span>
+    <div class="form-group row" id="div-username">
+      <div class="col-12">
+        <div class="input-group">
+          <span class="input-group-prepend">
+            <span class="input-group-text bg-secondary border border-secondary text-muted">
+              <i class="mdi mdi-account"></i>
             </span>
-            <input class="form-control" id="username" name="username" type="text" required="" placeholder="Username" autocomplete="username"
-              value="{% if form.username.data is not none %}{{ form.username.data }}{% endif %}">
-          </div>
+          </span>
+          <input class="form-control" id="username" name="username" type="text" 
+            required="" placeholder="Username" autocomplete="username" value="">
         </div>
       </div>
+    </div>
 
-      <div class="form-group row">
-        <div class="col-12">
-          <div class="input-group">
-            <span class="input-group-prepend">
-              <span class="input-group-text bg-secondary border border-secondary text-muted">
-                <i class="mdi mdi-radar"></i>
-              </span>
+    <div class="form-group row" id="div-password">
+      <div class="col-12">
+        <div class="input-group">
+          <span class="input-group-prepend">
+            <span class="input-group-text bg-secondary border border-secondary text-muted">
+              <i class="mdi mdi-radar"></i>
             </span>
-            <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password" autocomplete="current-password"
-              {% if form.password.data is not none %}value="{{ form.password.data }}"{% endif %}>
-            <span class="input-group-append">
-              <button id="show_password" type="button" class="btn waves-effect waves-light btn-primary"
-                data-toggle="tooltip" data-placement="bottom" data-html="true"
-                title="<em>Klik om de tekst zichtbaar te maken</em>">
-                <i class="far fa-eye"></i>
-              </button>
+          </span>
+          <input class="form-control" id="password" name="password" type="password" required="" 
+            placeholder="Password" autocomplete="current-password" value="">
+          <span class="input-group-append">
+            <button id="show_password" type="button" class="btn waves-effect waves-light btn-primary"
+              data-toggle="tooltip" data-placement="bottom" data-html="true"
+              title="<em>Klik om de tekst zichtbaar te maken</em>">
+              <i class="far fa-eye"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group row d-none" id="div-code">
+      <div class="col-12">
+        <div class="input-group">
+          <span class="input-group-prepend">
+            <span class="input-group-text bg-secondary border border-secondary text-muted">
+              <i class="fas fa-user-secret"></i>
             </span>
-          </div>
+          </span>
+          <input class="form-control 2fa-code" id="2fa-code" name="2fa-code" type="text" required="" 
+            placeholder="2FA code" autocomplete="off" value="">
         </div>
       </div>
+    </div>
 
-      <div class="form-group row">
-        <div class="col-12">
-          <div class="checkbox checkbox-primary">
-            <input id="remember_me" name="remember_me" type="checkbox" value="y">
-            <label for="remember_me">
-              Onthouden
-            </label>
-          </div>
+    <div class="text-center text-danger d-none" style="height:54px;" id="field-error-code-div">
+      <span class="mdi mdi-alert-outline" id="field-error-code-icon"> <span style="font-weight: bold;" id="field-error-code-msg"></span></span>
+    </div>
 
+    <div class="form-group row" id="div-remember_me">
+      <div class="col-12">
+        <div class="checkbox checkbox-primary">
+          <input id="remember_me" name="remember_me" type="checkbox" value="y">
+          <label for="remember_me">
+            Ingelogd blijven
+          </label>
         </div>
-      </div>
 
-      <div class="form-group text-right m-t-20">
-        <div class="col-xs-12">
-          <button id="cancel" class="btn btn-secondary btn-custom w-md waves-effect waves-light"
-            type="button">Annuleren</button>
-          <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Log In</button>
-        </div>
       </div>
+    </div>
 
-    </form>
+    <div class="form-group text-right m-t-20">
+      <div class="col-xs-12">
+        <button id="login-cancel" class="btn btn-secondary btn-custom w-md waves-effect waves-light"
+          type="button">Annuleren</button>
+        <button class="btn btn-primary btn-custom w-md waves-effect waves-light" id="login-submit" type="submit">Log In</button>
+      </div>
+    </div>
+
   </div>
 
 

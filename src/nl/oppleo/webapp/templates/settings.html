@@ -151,110 +151,10 @@
       background-color: rgba(0,0,0,.05);/* #576676; */
     }
 
-    .modal-dialog {
-      border-radius: 4px;
-      max-width: 900px;
-      border: 2px solid rgba(152, 166, 173, 0.2) !important;
-    }
-    .modal-header {
-      background-color: #3bafda;
-      width: 100%;
-      padding: 0.1rem;
-      padding-left: 1rem;
-    }
-    .modal-title {
-      color: #ffffff;
-    }
-    .modal-header .close-x {
-      position: absolute;
-      top: 0px;
-      font-size: 24px;
-      right: .1rem;
-      height: 36px;
-      width: 36px;
-      background-color: #3bafda;
-      opacity: 1;
-      border: 0px;
-      text-shadow: none;
-      color: #ffffff;
-      padding: 0;
-    }
-    .modal-body {
-      min-height:280px; 
-      overflow-y: auto;
-    }    
-    .modal-content {
-      background-color: #36404a;
-      border: 1px solid rgba(152, 166, 173, 0.4) !important;
-    }
-    .modal-footer {
-      border-top: 1px solid rgba(152, 166, 173, 0.4) !important;
-    }
-    .numberCircle {
-      border-radius: 50%;
-      width: 2rem;
-      height: 1rem;
-      padding: 1px 4px 1px 4px;
 
-      /* background: #3bafda; */
-      border: 2px solid #485561;
-      color: #98a6ad;
-      text-align: center;
-      opacity: 0.5;
-
-      font: 16px Arial, sans-serif;
-    }
-    .active .numberCircle {
-      border-radius: 50%;
-      width: 2rem;
-      height: 1rem;
-      padding: 1px 4px 1px 4px;
-
-      /* background: #3bafda; */
-      border: 2px solid#3bafda !important;
-      color: #fff;
-      text-align: center;
-      opacity: 0.5;
-
-      font: 16px Arial, sans-serif;
-    }
-    .spacer-10 {
-      height: 10px;
-    }
-    .spacer-20 {
-      height: 20px;
-    }
-    .spacer-25 {
-      height: 25px;
-    }
-    .float-boxes {
-      display: inline-block;
-    }
-    .wf-100 {
-      width: 100px;
-    }
-    .day-label {
-      width: 30px; 
-    }
-
-    input[type=checkbox], input[type=radio] {
-      cursor: pointer;
-    }
   </style>
 
   <script>
-    function timestamp() {
-      d = new Date();
-      return (d.getFullYear() + "-" + 
-             (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
-             (d.getDate()<10?'0':'') + d.getDate() + '.' + 
-             (d.getHours()<10?'0':'') + d.getHours() + ":" + 
-             (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
-             (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
-             (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
-      )
-    }
-
     function updateSettings( param, value ) {
       console.log(timestamp() + ' updateSettings()')            
       // Show spinner
@@ -3275,9 +3175,6 @@
 
   </div>
 </div>
-
-
-
 
 
         <!-- Bootstrap Modal -->

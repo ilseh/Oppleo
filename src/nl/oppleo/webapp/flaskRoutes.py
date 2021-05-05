@@ -1,8 +1,7 @@
 import os
 import threading
 from datetime import datetime, time
-from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session
-
+from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session, send_file
 from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
 
 from jinja2.exceptions import TemplateNotFound
@@ -15,6 +14,7 @@ from json import JSONDecodeError
 import logging
 import re
 from urllib.parse import urlparse, unquote
+import io
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
@@ -37,7 +37,6 @@ from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
-from nl.oppleo.webapp.ChangePasswordForm import ChangePasswordForm
 from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
@@ -45,6 +44,7 @@ from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.GitUtil import GitUtil
+from nl.oppleo.utils.Authenticator import (keyUri, makeQR, generateTotpSharedSecret, encryptAES, decryptAES, validateTotp)
 
 from nl.oppleo.utils.EnergyModbusReader import modbusConfigOptions
 from nl.oppleo.utils.BackupUtil import BackupUtil
@@ -62,6 +62,21 @@ HTTP_CODE_409_CONFLICT              = 409
 HTTP_CODE_500_INTERNAL_SERVER_ERROR = 500
 HTTP_CODE_501_NOT_IMPLEMENTED       = 501
 
+DETAIL_CODE_20_2FA_NOT_ENABLED                      =  20    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_21_2FA_ENABLED                          =  21    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_23_2FA_CODE_INCORRECT                   =  23    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_25_PASSWORD_INCORRECT                   =  25    # HTTP_CODE_401_UNAUTHORIZED
+# Security threat to leak this information
+DETAIL_CODE_26_USERNAME_UNKNOWN                     =  26    # HTTP_CODE_401_UNAUTHORIZED
+DETAIL_CODE_29_PROCESS_STEP_UNKNOWN                 =  29    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_40_PASSWORD_RULE_VIOLATION              =  40    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_41_PASSWORD_TOO_SHORT                   =  41    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_42_PASSWORD_TOO_LONG                    =  42    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_43_PASSWORD_INVALID_CHARACTER           =  43    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_44_PASSWORD_UPPERCASE_REQUIRED          =  44    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_45_PASSWORD_LOWERCASE_REQUIRED          =  45    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_46_PASSWORD_SPECIAL_CHARACTER_REQUIRED  =  46    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_200_OK                                  = 200    # HTTP_CODE_200_OK
 
 """ 
  - make sure all url_for routes point to this blueprint
@@ -259,6 +274,61 @@ def login():
                 )
 
 
+@flaskRoutes.route("/<path:username>/login", methods=["POST"])
+@flaskRoutes.route("/<path:username>/login/", methods=["POST"])
+def login2(username:str=None):
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/login2 {}'.format(request.method))
+
+    if username is None:
+        abort(404)
+
+    # username = request.form.get('user', default=None, type=str)
+    password = request.form.get('password', default=None, type=str)
+    rememberMe = True if request.form.get('rememberMe', default='false', type=str).lower() in ['true', 't', 1, '1'] else False
+    totp = request.form.get('totp', default=None, type=str)
+
+    # Find the user
+    user = User.get(username)
+    if user is None:
+        return jsonify({
+            'status'  : HTTP_CODE_401_UNAUTHORIZED,
+            'code'    : DETAIL_CODE_26_USERNAME_UNKNOWN,
+            'username': username,
+            'msg'     : 'Username unknown'
+            })                
+    # Validate current password
+    if not check_password_hash(user.password, password):
+        # Password incorrect
+        return jsonify({
+            'status'  : HTTP_CODE_401_UNAUTHORIZED,
+            'code'    : DETAIL_CODE_25_PASSWORD_INCORRECT,
+            'username': username,
+            'msg'     : 'Password incorrect'
+            })                
+
+    # Valid password, 2FA enabled?
+    if user.has_enabled_2FA():
+        # Password correct, validate the code
+        shared_secret = decryptAES(key=password, encData=user.shared_secret)
+        if totp is None or not validateTotp(totp=totp, shared_secret=shared_secret):
+            return jsonify({
+                'status'  : HTTP_CODE_401_UNAUTHORIZED,
+                'code'    : DETAIL_CODE_23_2FA_CODE_INCORRECT,
+                'username': username,
+                'msg'     : '2FA token required'
+                })                
+    # Password correct, 2FA correct, log user in
+    login_user(user, remember=rememberMe)
+    user.authenticated = True
+    user.save()
+    return jsonify({
+        'status'  : HTTP_CODE_200_OK,
+        'code'    : DETAIL_CODE_200_OK,
+        'username': username,
+        'msg'     : 'Loging successful'
+        })                
+ 
 
 @flaskRoutes.route("/logout", methods=["GET"])
 @authenticated_resource
@@ -274,63 +344,65 @@ def logout():
     return redirect(url_for('flaskRoutes.home'))
 
 
-@flaskRoutes.route("/change_password", methods=["GET", "POST"])
+@flaskRoutes.route("/<path:username>/change_password/", methods=["POST"])
+@flaskRoutes.route("/<path:username>/change_password", methods=["POST"])
 @authenticated_resource
-def change_password():
+def change_password(username:str=None):
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/change_password {}'.format(request.method))
-    if (request.method == 'GET'):
-        return render_template(
-            'change_password.html', 
-            form=ChangePasswordForm(),
-            oppleoconfig=oppleoConfig,
-            changelog=changeLog
-            )
 
-    form = ChangePasswordForm()
+    if username is None:
+        abort(404)
+
+    # username = request.form.get('user', default=None, type=str)
+    currentPassword = request.form.get('currentPassword', default=None, type=str)
+    newPassword = request.form.get('newPassword', default=None, type=str)
+    totp = request.form.get('totp', default=None, type=str)
+
+    """
+        TODO: is current user authorized to change password? (later with admin user)
+              for now, use current user
+    """
     # Validate current password
-    if not check_password_hash(current_user.password, form.current_password.data):
-        # Current password correct
-        form.current_password.errors = []
-        form.current_password.errors.append('Het huidige admin wachtwoord is niet juist.')
-        return render_template(
-            'change_password.html', 
-            form=form,
-            oppleoconfig=oppleoConfig,
-            changelog=changeLog
-            )
-    if form.validate_on_submit():
-        # Valid, change the password for the user now
-        user = current_user
-        user.password = generate_password_hash(form.new_password.data)
-        user.save()
-        return render_template(
-            'change_password_success.html', 
-            oppleoconfig=oppleoConfig,
-            changelog=changeLog
-            )
-    # Translate errors
-    if ('new_password' in form.errors):
-        for i in range(len(form.errors['new_password'])):
-            if form.errors['new_password'][i] == "Field must be between 8 and 25 characters long.":
-                form.errors['new_password'][i] = "Wachtwoord moet tussen 8 en 25 karakters lang zijn."
-    if ('confirm_password' in form.errors):
-        for i in range(len(form.errors['confirm_password'])):
-            if form.errors['confirm_password'][i] == "Passwords must match":
-                form.errors['confirm_password'][i] = "Wachtwoord moet gelijk zijn aan het wachtwoord hierboven."
-    if ('csrf_token' in form.errors):
-        for i in range(len(form.errors['csrf_token'])):
-            if form.errors['csrf_token'][i] == "The CSRF token is invalid.":
-                form.errors['csrf_token'][i] = "Het CSRF token is verlopen. Herlaad de pagina om een nieuw token te genereren."
+    if not check_password_hash(current_user.password, currentPassword):
+        # Current password incorrect
+        return jsonify({
+            'status'  : HTTP_CODE_401_UNAUTHORIZED,
+            'code'    : DETAIL_CODE_25_PASSWORD_INCORRECT,
+            'username': username,
+            'msg'     : 'Password incorrect'
+            })                
+    # Password correct, valid according to rules?
+    """
+        TODO: configurable password rules
+              for now accept any
+    """
+    # Valid password, 2FA enabled?
+    if current_user.has_enabled_2FA():
+        # Password correct, validate the code
+        shared_secret = decryptAES(key=currentPassword, encData=current_user.shared_secret)
+        if totp is None or not validateTotp(totp=totp, shared_secret=shared_secret):
+            return jsonify({
+                'status'  : HTTP_CODE_401_UNAUTHORIZED,
+                'code'    : DETAIL_CODE_23_2FA_CODE_INCORRECT,
+                'username': username,
+                'msg'     : '2FA token required'
+                })                
 
-    # Not valid - error message
-    return render_template(
-        'change_password.html', 
-        form=form,
-        oppleoconfig=oppleoConfig,
-        changelog=changeLog
-        )
-
+    # Valid, change the password for the user
+    user = current_user
+    user.password = generate_password_hash(newPassword)
+    # Update the shared secret encryption to the new password
+    if current_user.has_enabled_2FA():
+        user.shared_secret = encryptAES(key=newPassword, plainData=shared_secret)
+    user.save()
+    return jsonify({
+        'status'  : HTTP_CODE_200_OK,
+        'code'    : DETAIL_CODE_200_OK,
+        'username': username,
+        'msg'     : 'Password updated'
+        })                
+ 
 
 @flaskRoutes.route("/about")
 @flaskRoutes.route("/about/")
@@ -2264,7 +2336,211 @@ def softwareStatus(branch='master'):
         })
 
 
-GitUtil.gitRemoteUpdate()
-xxx = GitUtil.gitUpdateAvailable('tesla-chargelevel')
-availableSoftwareDate = GitUtil.lastBranchGitDateStr('tesla-chargelevel')
-pass
+@flaskRoutes.route("/account", methods=["GET"])
+@flaskRoutes.route("/account/", methods=["GET"])
+@authenticated_resource  # CSRF Token is valid
+def account():
+    global flaskRoutesLogger, oppleoConfig, current_user
+
+    flaskRoutesLogger.debug('/account {}'.format(request.method))
+    return render_template("account.html", 
+        oppleoconfig=oppleoConfig,
+        changelog=changeLog,
+        user=current_user
+        )
+
+
+"""
+    Flow enable:
+        login, enable 2FA - enter password - gen shared_secret, store enc with pw
+    Flow use:
+        login - 2FA enabled? - ask pw + 2FA token - get secret and dec with pw, validate 2FA token
+    Flow disable
+        login, disable 2FA - enter password + 2FA key - valid: shared_secret->'', enable2FA->false
+
+"""
+@flaskRoutes.route("/enable_2FA", methods=["POST"])
+@flaskRoutes.route("/enable_2FA/", methods=["POST"])
+@authenticated_resource  # CSRF Token is valid
+def enable_2FA():
+    global flaskRoutesLogger, oppleoConfig
+
+    flaskRoutesLogger.debug('/enable_2FA {}'.format(request.method))
+
+    # For POST requests, process the json
+    step = request.form.get('step')
+    password = request.form.get('password')
+    totp = request.form.get('totp')
+
+    if step == 1 or step == '1':
+        # Check the password
+        if not check_password_hash(current_user.password, password):
+            return jsonify({
+                'status': HTTP_CODE_401_UNAUTHORIZED, 
+                'step'  : 1,
+                'code'  : DETAIL_CODE_25_PASSWORD_INCORRECT,
+                'msg'   : 'Wachtwoord incorrect'
+                })
+        # Password correct, not already enabled?
+        if current_user.has_enabled_2FA():
+            # cannot re-enable
+            return jsonify({
+                'status'  : HTTP_CODE_400_BAD_REQUEST,
+                'step'    : 1,
+                'code'    : DETAIL_CODE_21_2FA_ENABLED,
+                'msg'     : '2FA already enabled'
+                })                
+        # Password correct, generate secret and return - for now Google Authenticator only accepts 16 character secrets...
+        secret_base32 = generateTotpSharedSecret()
+        uri = keyUri(type='totp', secret=secret_base32, issuer='Oppleo ' + oppleoConfig.chargerName,
+                        accountname=current_user.username)
+#                        accountname=current_user.username+'@oppleo.nl')
+
+        current_user.shared_secret = encryptAES(key=password, plainData=secret_base32)
+        current_user.save()
+        return jsonify({
+            'status'  : HTTP_CODE_200_OK,
+            'step'    : 1,
+            'code'    : DETAIL_CODE_200_OK,
+            'secret'  : secret_base32,
+            'account' : 'Oppleo ' + oppleoConfig.chargerName + ' (' + current_user.username + ")",
+            'type'    : 'totp',
+            'url'     : uri
+            })                
+    if step == 2 or step == '2':
+        # Check the password (again)
+        if not check_password_hash(current_user.password, password):
+            return jsonify({
+                'status': HTTP_CODE_401_UNAUTHORIZED, 
+                'step'  : 2,
+                'code'  : DETAIL_CODE_25_PASSWORD_INCORRECT,
+                'msg'   : 'Wachtwoord incorrect'
+                })                
+        # Password correct, validate the code
+        shared_secret = decryptAES(key=password, encData=current_user.shared_secret)
+        if validateTotp(totp=totp, shared_secret=shared_secret):
+            # valid
+            current_user.enabled_2fa = True
+            current_user.save()
+            # valid - 
+            return jsonify({
+                'status': HTTP_CODE_200_OK,
+                'step'  : 2,
+                'code'  : DETAIL_CODE_200_OK
+                }) 
+        # Not valid!
+        return jsonify({
+            'status': HTTP_CODE_400_BAD_REQUEST,
+            'step'  : 2,
+            'code'  : DETAIL_CODE_23_2FA_CODE_INCORRECT,
+            'msg'   : 'Code not valid'
+            }) 
+
+    # Not valid!
+    return jsonify({
+        'status': HTTP_CODE_400_BAD_REQUEST,
+        'step'  : 'unknown',
+        'code'  : DETAIL_CODE_29_PROCESS_STEP_UNKNOWN,
+        'msg'   : 'Proces step unknown'
+        }) 
+
+
+# TODO authorized
+@flaskRoutes.route("/disable_2FA", methods=["POST"])
+@flaskRoutes.route("/disable_2FA/", methods=["POST"])
+@authenticated_resource  # CSRF Token is valid
+def disable_2FA():
+    global flaskRoutesLogger, oppleoConfig
+
+    flaskRoutesLogger.debug('/disable_2FA {}'.format(request.method))
+
+    # For POST requests, process the json
+    step = request.form.get('step')
+    password = request.form.get('password')
+    totp = request.form.get('totp')
+
+    if step == 1 or step == '1':
+        # Check the password
+        if not check_password_hash(current_user.password, password):
+            return jsonify({
+                'status': HTTP_CODE_401_UNAUTHORIZED,
+                'code'  : DETAIL_CODE_25_PASSWORD_INCORRECT,
+                'msg'   : 'Wachtwoord incorrect'
+                })                
+        # Password correct, 2FA enabled?
+        if not current_user.has_enabled_2FA():
+            # Cannot disable
+            return jsonify({
+                'status'  : HTTP_CODE_400_BAD_REQUEST,
+                'step'    : 1,
+                'code'    : DETAIL_CODE_20_2FA_NOT_ENABLED,
+                'msg'     : '2FA not enabled'
+                })         
+        # valideer password en 2FA actief       
+        return jsonify({
+            'status'  : HTTP_CODE_200_OK,
+            'step'    : 1,
+            'code'    : DETAIL_CODE_200_OK
+            })                
+    if step == 2 or step == '2':
+        # Check the password (again)
+        if not check_password_hash(current_user.password, password):
+            return jsonify({
+                'status': HTTP_CODE_401_UNAUTHORIZED, 
+                'code'  : DETAIL_CODE_25_PASSWORD_INCORRECT,
+                'msg'   : 'Wachtwoord incorrect'
+                })                
+        # Password correct, validate the code
+        shared_secret = decryptAES(key=password, encData=current_user.shared_secret)
+        if validateTotp(totp=totp, shared_secret=shared_secret):
+            # valid
+            current_user.enabled_2fa = False
+            current_user.save()
+            # valid - 
+            return jsonify({
+                'status': HTTP_CODE_200_OK,
+                'step'  : 2,
+                'code'  : DETAIL_CODE_200_OK
+                }) 
+        # Not valid!
+        return jsonify({
+            'status': HTTP_CODE_400_BAD_REQUEST,
+            'step'  : 2,
+            'code'  : DETAIL_CODE_23_2FA_CODE_INCORRECT,
+            'msg'   : 'Code not valid'
+            }) 
+
+    # Not valid!
+    return jsonify({
+        'status': HTTP_CODE_400_BAD_REQUEST,
+        'step'  : 'unknown',
+        'code'  : DETAIL_CODE_29_PROCESS_STEP_UNKNOWN,
+        'msg'   : 'Proces step unknown'
+        }) 
+
+
+
+# https://stackoverflow.com/questions/7877282/how-to-send-image-generated-by-pil-to-browser
+@flaskRoutes.route("/qr/<path:data>", methods=["GET"])
+@flaskRoutes.route("/qr/<path:data>/", methods=["GET"])
+@authenticated_resource  # CSRF Token is valid
+def getRr(data:str=None):
+    if data is None:
+        abort(404)
+    data = unquote(data)
+    fill = request.args.get('fill', default='black', type=str)
+    back = request.args.get('back', default='white', type=str)
+    qr_img = makeQR(data=data, fill_color=fill, back_color=back)
+    # qr_img.show()
+    qr_io_buf = io.BytesIO()
+    qr_img.save(qr_io_buf)
+    qr_io_buf.seek(0)
+  #  return send_file(qr_io_buf, mimetype='image/jpeg')
+    try:
+        return send_file(qr_io_buf,
+                 attachment_filename='oppleo_qr.png',
+                 mimetype='image/png',
+                 cache_timeout=-1)
+        
+    except Exception as e:
+        abort(404)

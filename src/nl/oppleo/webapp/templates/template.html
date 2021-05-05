@@ -99,6 +99,17 @@
                 5: 'Vrijdag',
                 6: 'Zaterdag'
             }
+            function timestamp() {
+                d = new Date();
+                return (d.getFullYear() + "-" + 
+                        (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
+                        (d.getDate()<10?'0':'') + d.getDate() + '.' + 
+                        (d.getHours()<10?'0':'') + d.getHours() + ":" + 
+                        (d.getMinutes()<10?'0':'') + d.getMinutes() + "." + 
+                        (d.getSeconds()<10?'0':'') + d.getSeconds() + '.' + 
+                        (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
+                )
+            }
             function getBatteryIcon(value, max=100) {
                 const faBattery = [
                     { from:  0, to:  10, icon:'<i class="fas fa-battery-empty"></i>' },
@@ -719,6 +730,97 @@
             width: 3px; 
             height: 100%;
         }
+
+        .modal-dialog {
+            border-radius: 4px;
+            max-width: 900px;
+            border: 2px solid rgba(152, 166, 173, 0.2) !important;
+        }
+        .modal-header {
+            background-color: #3bafda;
+            width: 100%;
+            padding: 0.1rem;
+            padding-left: 1rem;
+        }
+        .modal-title {
+            color: #ffffff;
+        }
+        .modal-header .close-x {
+            position: absolute;
+            top: 0px;
+            font-size: 24px;
+            right: .1rem;
+            height: 36px;
+            width: 36px;
+            background-color: #3bafda;
+            opacity: 1;
+            border: 0px;
+            text-shadow: none;
+            color: #ffffff;
+            padding: 0;
+        }
+        .modal-body {
+            min-height:280px; 
+            overflow-y: auto;
+        }    
+        .modal-content {
+            background-color: #36404a;
+            border: 1px solid rgba(152, 166, 173, 0.4) !important;
+        }
+        .modal-footer {
+            border-top: 1px solid rgba(152, 166, 173, 0.4) !important;
+        }
+        .numberCircle {
+            border-radius: 50%;
+            width: 2rem;
+            height: 1rem;
+            padding: 1px 4px 1px 4px;
+
+            /* background: #3bafda; */
+            border: 2px solid #485561;
+            color: #98a6ad;
+            text-align: center;
+            opacity: 0.5;
+
+            font: 16px Arial, sans-serif;
+        }
+        .active .numberCircle {
+            border-radius: 50%;
+            width: 2rem;
+            height: 1rem;
+            padding: 1px 4px 1px 4px;
+
+            /* background: #3bafda; */
+            border: 2px solid#3bafda !important;
+            color: #fff;
+            text-align: center;
+            opacity: 0.5;
+
+            font: 16px Arial, sans-serif;
+        }
+        .spacer-10 {
+            height: 10px;
+        }
+        .spacer-20 {
+            height: 20px;
+        }
+        .spacer-25 {
+            height: 25px;
+        }
+        .float-boxes {
+            display: inline-block;
+        }
+        .wf-100 {
+            width: 100px;
+        }
+        .day-label {
+            width: 30px; 
+        }
+
+        input[type=checkbox], input[type=radio] {
+            cursor: pointer;
+        }
+
         </style>
         {% endblock %}
     
@@ -894,6 +996,12 @@
                                         <i class="fas fa-sign-out-alt"></i> Afmelden
                                     </a>
                                 </li>
+                                <li>
+                                    <a href="{{ url_for('flaskRoutes.account') }}" class="stay">
+                                        <i class="far fa-user-circle"></i> Account
+                                    </a>
+                                </li>
+
                                 <li class="has-submenu">
                                     <a href="#"><i class="fas fa-exclamation-triangle"></i> Beheer</a>
                                     <ul class="submenu">
@@ -908,8 +1016,8 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a href="{{ url_for('flaskRoutes.change_password') }}" class="stay">
-                                                <i class="fa fa-key"></i> Wijzig wachtwoord
+                                            <a href="{{ url_for('flaskRoutes.changelog') }}" class="stay">
+                                                <i class="fas fa-code-branch"></i> Change log
                                             </a>
                                         </li>
                                         <li>
@@ -940,16 +1048,6 @@
                                 <li>
                                     <a href="{{ url_for('flaskRoutes.about') }}" class="stay">
                                         <i class="fas fa-info-circle"></i> Over Oppleo
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.changelog') }}" class="stay">
-                                        <i class="fas fa-code-branch"></i> Change log
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="https://www.oppleo.nl/" class="stay" target="_new">
-                                        <i class="fas fa-external-link-alt"></i> oppleo.nl
                                     </a>
                                 </li>
                             </ul>

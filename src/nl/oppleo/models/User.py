@@ -13,13 +13,16 @@ class User(Base):
     """
     """
     __tablename__ = 'users'
+    __logger = logging.getLogger('nl.oppleo.models.User')
 
     username = Column(String, primary_key=True)
     password = Column(String)
     authenticated = Column(Boolean, default=False)
+    enabled_2fa = Column(Boolean, default=False)
+    shared_secret = Column(String)
 
     def __init__(self, username=None, password=None, authenticated=None):
-        self.__logger = logging.getLogger('nl.oppleo.models.User')
+        #self.__logger = logging.getLogger('nl.oppleo.models.User')
         # If the variables are already initialized by the reconstructor, let them be
         if self.username is None and self.password is None:
             self.username = username
@@ -41,9 +44,9 @@ class User(Base):
                             .filter(User.username == username) \
                             .first()
         except InvalidRequestError as e:
-            User.__cleanupDbSession(db_session, User.__class__.__name__)
+            User.__cleanupDbSession(db_session, User.__class__)
         except Exception as e:
-            # Nothing to roll back
+            # Nothing to roll back 
             User.__logger.error("Could not query {} table in database".format(User.__tablename__ ), exc_info=True)
             raise DbException("Could not query {} table in database".format(User.__tablename__ ))
         return user
@@ -72,6 +75,10 @@ class User(Base):
     def is_authenticated(self):
         """Return True if the user is authenticated."""
         return self.authenticated
+
+    def has_enabled_2FA(self):
+        """Return True if the 2FA is enabled."""
+        return self.enabled_2fa
 
     def is_anonymous(self):
         """False, as anonymous users aren't supported."""

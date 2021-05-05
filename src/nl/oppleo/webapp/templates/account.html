@@ -1,0 +1,976 @@
+{% extends "template.html" %}
+{% block title %}Charge sessions{% endblock %}
+{% block jquery %} 
+  {% include 'includes/include.jquery-3.3.1.html' %}
+{% endblock %} 
+{% block head %}
+  {{ super() }}
+
+  <!-- Socket IO -->
+  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+
+  <style>
+  .field-error {
+    border: 1px solid red !important;
+    color: red !important;
+  }
+  .account_wrapper_2 {
+    float:left;
+    width:50%;
+  }
+  .account_wrapper_3 {
+    float:left;
+    width:33%;
+  }
+  .account_container {
+    /* background-color: skyblue; */
+    margin: 15px 0px 5px 0px;
+    padding: 20px;
+  }
+  .account_wrapper_2:nth-child(1) .account_container.right-border {
+    border-right: 1px solid ;
+  }
+  table tbody tr td:nth-child(1) {
+    width: 50%;
+    text-align: right;
+    padding-right: 5px;
+    color: #ffffff !important;
+  }
+  table tbody tr td:nth-child(2) {
+    width: 50%;
+    text-align: left;
+    padding-left: 5px;
+    color: #3bafda !important;
+
+  }
+  ul {
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0em;
+    text-indent: 0em;
+  }  
+  </style>
+
+  <script>
+    function enable2FA(step, password, totp) {
+      console.log(timestamp() + ' enable2FA()')         
+      // Show spinner
+      $('.spinner').show()
+      data = {
+            csrf_token : '{{ csrf_token() }}',
+            step       : step,
+            password   : password,
+            totp       : totp
+          }
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/enable_2FA/',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200: // Ok
+            switch (data.step) {
+              case 1:
+                // Show message/ QR
+                $('img#qr').attr('src', '/qr/' + encodeURIComponent(data.url) + '?fill=' + $('img#qr').attr("fill_color") + '&back=' + $('img#qr').attr("back_color"))
+                $('img#qr').removeClass("d-none")
+                $('a[href="#e2fa-step2"').tab('show')
+                $('#enable2fa-modal-text-account').html(data.account)
+                $('#enable2fa-modal-text-key').html(data.secret)
+                if (data.type == 'totp') {
+                  $('#enable2fa-modal-text-type').html('Tijdgebonden')
+                }
+                if (data.type == 'hotp') {
+                  $('#enable2fa-modal-text-type').html('Op basis van telling')
+                }
+                break
+              case 2:
+                // 2FA enabled
+                $('#modal-enable-2fa').addClass('d-none')
+                $('#modal-disable-2fa').removeClass('d-none')
+                enable2FADialog.modal('hide')
+                break
+              default:
+                autoHideNotify('error', 'top-left', 'Fout', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            }
+            break
+          case 401: // Not authorized
+            autoHideNotify('error', 'top-left', 'Auhenticatiefout', 'Wachtwoord niet geldig.')
+            // The password is incorrect - red box
+            $('input#e2fa-step1-password').addClass('field-error')
+            $('span#e2fa-step1-errormsg').html("Het wachtwoord is niet geldig!")
+            $('div#field-error-e2fa-step1-password').removeClass('d-none')
+            $('#e2fa-step1-password').focus()
+            break
+          case 400: // Bad request
+            if (data.step == 2) {
+              // In step 2 the code is invalid, try again
+              autoHideNotify('error', 'top-left', 'Oeps', 'De code is niet geldig. probeer opnieuw of genereer een nieuwe QR code...')
+              $('input#e2fa-step2-code').addClass('field-error')
+              $('span#e2fa-step2-errormsg').html("De code is niet geldig.")
+              $('div#field-error-e2fa-step2-code').removeClass('d-none')
+              $('#e2fa-step2-code').focus()
+              break              
+            }
+            // In step 2 the code is invalid, try again
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            break
+          default:  // Start again
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            // TODO: melding boven password box 
+            break
+        }
+      })
+      .fail(function() {
+        autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet ontvangen door de server. Probeer opnieuw.')
+// TODO: melding boven password box 
+      })
+      .always(function() {
+        // Hide spinner
+        $('.spinner').hide()
+      })
+    }
+    function disable2FA(step, password, totp) {
+      console.log(timestamp() + ' disable2FA()')         
+      // Show spinner
+      $('.spinner').show()
+      data = {
+            csrf_token : '{{ csrf_token() }}',
+            step       : step,
+            password   : password,
+            totp       : totp
+          }
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/disable_2FA/',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200: // Ok
+            switch (data.step) {
+              case 1:
+                // Password ok and 2FA is enabled, ask code
+                $('a[href="#d2fa-step2"').tab('show')
+                break
+              case 2:
+                // 2FA disabled
+                $('#modal-disable-2fa').addClass('d-none')
+                $('#modal-enable-2fa').removeClass('d-none')
+                disable2FADialog.modal('hide')
+                break
+              default:
+                autoHideNotify('error', 'top-left', 'Fout', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            }
+            break
+          case 401: // Not authorized
+            autoHideNotify('error', 'top-left', 'Auhenticatiefout', 'Wachtwoord niet geldig.')
+            // The password is incorrect - red box
+            $('input#d2fa-step1-password').addClass('field-error')
+            $('span#d2fa-step1-errormsg').html("Het wachtwoord is niet geldig!")
+            $('div#field-error-d2fa-step1-password').removeClass('d-none')
+            $('#d2fa-step1-password').focus()
+            break
+          case 400: // Bad request
+            if (data.step == 2) {
+              // In step 2 the code is invalid, try again
+              autoHideNotify('error', 'top-left', 'Oeps', 'De code is niet geldig. probeer opnieuw...')
+              $('input#d2fa-step2-code').addClass('field-error')
+              $('span#d2fa-step2-errormsg').html("De code is niet geldig.")
+              $('div#field-error-d2fa-step2-code').removeClass('d-none')
+              $('#d2fa-step2-code').focus()
+              break              
+            }
+            // In step 2 the code is invalid, try again
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            break
+          default:  // Start again
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            // TODO: melding boven password box 
+            break
+        }
+      })
+      .fail(function() {
+        autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet ontvangen door de server. Probeer opnieuw.')
+// TODO: melding boven password box 
+      })
+      .always(function() {
+        // Hide spinner
+        $('.spinner').hide()
+      })
+    }    
+    function changePassword(user, currentPassword, newPassword, totp) {
+      console.log(timestamp() + ' changePassword()')         
+      // Show spinner
+      $('.spinner').show()
+      data = {
+            csrf_token : '{{ csrf_token() }}',
+            user            : user,
+            currentPassword : currentPassword,
+            newPassword     : newPassword,
+            totp            : totp
+          }
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/' + user + '/change_password/',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200: // Ok
+            // Password changed
+            autoHideNotify('success', 'top-left', 'Wachtwoord gewijzigd', 'Het wachtwoord voor ' + data.username + ' is gewijzigd.')
+            changePasswordModal.modal('hide')
+            break
+          case 401: // Not authorized
+            switch (data.code) {
+              case 23: // 2FA_CODE_INCORRECT
+                // First time/ code missing or submitted code incorrect?
+                if ($('div#div-change-password-code').hasClass('d-none')) {
+                  // First time/ code missing
+                  $('#div-change-password-current-password-msg').addClass('d-none')
+                  $('#div-change-password-current-password').addClass('d-none')
+                  $('#div-change-password-new-password-msg').addClass('d-none')
+                  $('#div-change-password-new-password').addClass('d-none')
+                  $('#div-change-password-new-password2').addClass('d-none')
+                  $('#div-change-password-code-msg').removeClass('d-none')
+                  $('#div-change-password-code').removeClass('d-none')
+                } else {
+                  // Submitted 2FA incorrect
+                  $('input#change-password-code').addClass('field-error')
+                  $('span#change-password-code-errormsg').html("De 2-Factor Authenticatie code is niet geldig!")
+                  $('div#field-error-change-password-code').removeClass('d-none')
+                  $('#change-password-code').focus()
+                }
+                $('#change-password-code').val('')
+                $('#change-password-code').focus()
+                break
+              case 25: // PASSWORD_INCORRECT
+                autoHideNotify('error', 'top-left', 'Auhenticatiefout', 'Wachtwoord niet geldig.')
+                // The password is incorrect - red box
+                $('input#change-password-current-password').addClass('field-error')
+                $('span#change-password-current-password-errormsg').html("Het wachtwoord is niet geldig!")
+                $('div#field-error-change-password-current-password').removeClass('d-none')
+                $('#change-password-current-password').focus()
+                break
+            }
+            break
+          case 400: // Bad request
+            if (data.code == 40) { // PASSWORD_RULE_VIOLATION
+              $each(data.passwordViolation, (violation) => {
+                switch (violation) {
+                  case 41: // PASSWORD_TOO_SHORT
+                    break
+                  case 42: // 42_PASSWORD_TOO_LONG
+                    break
+                  case 43: // 43_PASSWORD_INVALID_CHARACTER
+                    break
+                  case 44: // 44_PASSWORD_UPPERCASE_REQUIRED
+                    break
+                  case 45: // 45_PASSWORD_LOWERCASE_REQUIRED
+                    break
+                  case 46: // 46_PASSWORD_SPECIAL_CHARACTER_REQUIRED
+                    break
+                } 
+              })
+            }
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            break
+          default:  // Start again
+            autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet begrepen door de server. Probeer opnieuw.')
+            // TODO: melding boven password box 
+            break
+        }
+      })
+      .fail(function() {
+        autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet ontvangen door de server. Probeer opnieuw.')
+// TODO: melding boven password box 
+      })
+      .always(function() {
+        // Hide spinner
+        $('.spinner').hide()
+      })
+    }        
+    let enable2FADialog = null
+    function showEnable2FAModal() {
+      // Init modal dialog
+      $('input#e2fa-step1-password').val('')
+      $('input#e2fa-step2-code').val('')
+      $('input#e2fa-step1-password').removeClass('field-error')
+      $('div#field-error-e2fa-step1-password').addClass('d-none')
+      $('input#e2fa-step2-code').removeClass('field-error')
+      $('div#field-error-e2fa-step2-code').addClass('d-none')
+      enable2FADialog.modal('show')
+      $('a[href="#e2fa-step1"').tab('show')
+    }
+
+    let disable2FADialog = null
+    function showDisable2FAModal() {
+      // Init modal dialog
+      $('input#d2fa-step1-password').val('')
+      $('input#d2fa-step2-code').val('')
+      $('input#d2fa-step1-password').removeClass('field-error')
+      $('div#field-error-d2fa-step1-password').addClass('d-none')
+      $('input#d2fa-step2-code').removeClass('field-error')
+      $('div#field-error-d2fa-step2-code').addClass('d-none')
+      disable2FADialog.modal('show')
+      $('a[href="#d2fa-step1"').tab('show')
+    }
+
+    let changePasswordModal = null
+    function showChangePasswordModal() {
+      // Init modal dialog
+      $('input#change-password-current-password').val('')
+      $('input#change-password-new-password').val('')
+      $('input#change-password-new-password2').val('')
+      $('input#change-password-code').val('')
+      $('input#change-password-current-password').removeClass('field-error')
+      $('input#change-password-new-password').removeClass('field-error')
+      $('input#change-password-new-password2').removeClass('field-error')
+      $('input#change-password-code').removeClass('field-error')
+      $('#div-change-password-current-password-msg').removeClass('d-none')
+      $('#div-change-password-current-password').removeClass('d-none')
+      $('div#field-error-change-password-current-password').addClass('d-none')
+      $('#div-change-password-new-password-msg').removeClass('d-none')
+      $('#div-change-password-new-password').removeClass('d-none')
+      $('div#field-error-change-password-new-password').addClass('d-none')
+      $('#div-change-password-new-password2').removeClass('d-none')
+      $('div#field-error-change-password-new-password2').addClass('d-none')
+      $('#div-change-password-code-msg').addClass('d-none')
+      $('#div-change-password-code').addClass('d-none')
+      $('div#field-error-change-password-code').addClass('d-none')
+      changePasswordModal.modal('show')
+    }
+
+    function compareNewPasswordAndNewPassword2() {
+      if ($('#change-password-new-password2').val() != $('#change-password-new-password').val()) {
+          $('#change-password-new-password2').addClass('field-error')
+          $('#change-password-new-password2-errormsg').html('Voer twee keer hetzelfde nieuwe wachtwoord in')
+          $('#field-error-change-password-new-password2').removeClass('d-none')
+          return false
+        } else {
+          $('#change-password-new-password2').removeClass('field-error')
+          $('#field-error-change-password-new-password2').addClass('d-none')
+          return true
+        }
+    }
+    function validateNewPassword() {
+      // For now no rules - later regex
+      // $('#change-password-new-password').val()
+      if (false) {
+          $('#change-password-new-password2').addClass('field-error')
+          $('#change-password-new-password-errormsg').html('Het wachtwoord voldoet niet')
+          $('#field-error-change-password-new-password').removeClass('d-none')
+          return false
+        } else {
+          $('#change-password-new-password2').removeClass('field-error')
+          $('#field-error-change-password-new-password').addClass('d-none')
+          return true
+        }
+    }
+
+    jQuery(document).ready(function () {
+      console.log(timestamp() + " file load completed!")
+      $("button[id^=show_]").click(function () {
+        id = $(this).attr('id').split("show_").pop()
+        $('input[id=' + id).attr(
+          'type',
+          ($('input[id=' + id).attr('type') === "password" ? 'text' : 'password')
+        )
+        $(this).find('i').toggleClass('fa-eye')     // far fa-eye
+        $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
+      })
+
+      $('button#enable2fa-modal-footer-nextaction').on("click", function(e) {
+        // active tab?
+        if ($('div#e2fa-step1.active').length > 0) {
+          // step 1: Submit password, request secret and url
+          enable2FA(1, $('input#e2fa-step1-password').val())
+        }
+        if ($('div#e2fa-step2.active').length > 0) {
+          // step 2: Submit password and token
+          enable2FA(2, $('input#e2fa-step1-password').val(), $('input#e2fa-step2-code').val())
+        }
+        e.preventDefault()
+      })
+      $('button#enable2fa-modal-footer-cancel').on("click", function(e) {
+        enable2FADialog.modal('hide')
+        e.preventDefault()
+      })
+
+      enable2FADialog = $('#enable2FAModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $('#enable2FAModal').on('shown.bs.modal', function (e) {
+        $('input#e2fa-step1-password').focus()
+      })
+      $('a[href*="#e2fa-step2"]').on("shown.bs.tab", function(e) {
+        $('#e2fa-step2-code').focus()
+      })
+      $('button#modal-enable-2fa').on('click', (ev) => {
+        showEnable2FAModal()
+      })
+      $('input').on('input', (ev) => {
+        $(ev.currentTarget).removeClass('field-error')
+        $('div#field-error-'+$(ev.currentTarget).attr('id')).addClass('d-none')
+      })
+      $('button#enable2fa-modal-show-qr').on('click', (ev) => {
+        $('div#enable2fa-modal-qr').removeClass('d-none')
+        $('div#enable2fa-modal-text').addClass('d-none')
+        $('button#enable2fa-modal-show-qr').removeClass('btn-outline-primary')
+        $('button#enable2fa-modal-show-qr').addClass('btn-primary')
+        $('button#enable2fa-modal-show-text').addClass('btn-outline-primary')
+        $('button#enable2fa-modal-show-text').removeClass('btn-primary')
+      })
+      $('button#enable2fa-modal-show-text').on('click', (ev) => {
+        $('div#enable2fa-modal-qr').addClass('d-none')
+        $('div#enable2fa-modal-text').removeClass('d-none')
+        $('button#enable2fa-modal-show-qr').addClass('btn-outline-primary')
+        $('button#enable2fa-modal-show-qr').removeClass('btn-primary')
+        $('button#enable2fa-modal-show-text').removeClass('btn-outline-primary')
+        $('button#enable2fa-modal-show-text').addClass('btn-primary')
+      })
+
+      $('button#disable2fa-modal-footer-nextaction').on("click", function(e) {
+        // active tab?
+        if ($('div#d2fa-step1.active').length > 0) {
+          // step 1: Submit password
+          disable2FA(1, $('input#d2fa-step1-password').val())
+        }
+        if ($('div#d2fa-step2.active').length > 0) {
+          // step 2: Submit password and token
+          disable2FA(2, $('input#d2fa-step1-password').val(), $('input#d2fa-step2-code').val())
+        }
+        e.preventDefault()
+      })
+      $('button#disable2fa-modal-footer-cancel').on("click", function(e) {
+        disable2FADialog.modal('hide')
+        e.preventDefault()
+      })
+      disable2FADialog = $('#disable2FAModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $('#disable2FAModal').on('shown.bs.modal', function (e) {
+        $('input#d2fa-step1-password').focus()
+      })
+      $('a[href*="#d2fa-step2"]').on("shown.bs.tab", function(e) {
+        $('#d2fa-step2-code').focus()
+      })
+      $('button#modal-disable-2fa').on('click', (e) => {
+        showDisable2FAModal()
+      })
+
+
+      changePasswordModal = $('#changePasswordModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $('#changePasswordModal').on('shown.bs.modal', function (e) {
+        $('input#change-password-current-password').focus()
+      })
+
+      $('button#modal-change-password').on('click', (e) => {
+        showChangePasswordModal()
+      })
+      $('button#change-password-modal-footer-nextaction').on("click", function(ev) {
+        // valid input?
+        if (compareNewPasswordAndNewPassword2() &&
+            validateNewPassword() ) {
+          // Submit password and new password
+          changePassword('{{ current_user.username }}', 
+              $('input#change-password-current-password').val(), 
+              $('input#change-password-new-password').val(),
+              $('input#change-password-code').val())
+        }
+        ev.preventDefault()
+      })
+      $('button#change-password-modal-footer-cancel').on("click", function(e) {
+        changePasswordModal.modal('hide')
+        e.preventDefault()
+      })
+      
+      $('#change-password-new-password').on('input', function (ev) {
+        validateNewPassword()
+        compareNewPasswordAndNewPassword2()
+      })
+      $('#change-password-new-password2').on('input', function (ev) {
+        compareNewPasswordAndNewPassword2()
+      })
+
+      $('.2fa-code').on('input', function (ev) {
+        // Only accept digits, 6 max
+        $(this).val($(this).val().replace(/[^0-9]/g, '').substring(0,6))
+      })
+      // Remove spinner
+      $('.spinner').hide()
+
+    })
+
+    </script>
+
+
+{% endblock %}
+{% block content %}
+
+<div class="wrapper" id="{{ var1 }}">
+  <div class="container-fluid">
+
+    <!-- Page-Title -->
+    <div class="row">
+      <div class="col-lg-12">
+        <div>
+          <div class="account_wrapper_2">
+            <div class="account_container text-right right-border">
+              <h1><i class="far fa-user-circle"></i></h1>
+            </div>
+          </div>
+          <div class="account_wrapper_2">
+            <div class="account_container">
+              <h1>{{ current_user.username }}</h1>
+            </div>
+          </div>
+        </div>    
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card-box">
+          <h4 class="m-t-0 header-title text-center mb-3"><i class="fas fa-unlock-alt"></i> Account Beveiliging</h4>
+          <table class="table table-striped table-sm">
+            <tbody>
+              <tr>
+                <td>Rol:</td>
+                <td>Administrator</td>
+              </tr>
+              <tr>
+                <td>Wachtwoord:</td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="modal-change-password"> <i class="fas fa-angle-right"></i> Wijzigen </button>
+                </td>
+              </tr>
+              <tr id="account_2fa">
+                <td>2-Factor Authenticatie:</td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-enable-2fa"> <i class="fas fa-angle-right"></i> Activeren </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary{% if not current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-disable-2fa"> <i class="fas fa-angle-right"></i> Uitschakelen </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+ 
+  </div>
+</div>
+
+
+        <!-- Bootstrap Modal -->
+        <div class="modal fade" id="enable2FAModal" tabindex="-1" role="dialog" aria-labelledby="enable2FAModalLabel" aria-hidden="true" data-backdrop="static">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 class="modal-title" id="enable2FAModalLabel">Activeer 2-Factor Authenticatie</h3>
+                <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true"><i class="fas fa-times"></i></span>
+                </button>
+              </div>
+              <div class="modal-body">
+
+                <ul class="nav nav-tabs tabs-bordered nav-justified">
+                  <li class="nav-item">
+                    <a href="#e2fa-step1" class="nav-link" aaria-expanded="true" style="cursor: default;"><span class="numberCircle">1</span> Authenticatie <i class="fas fa-shoe-prints float-right"></i></a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="#e2fa-step2" class="nav-link" aaria-expanded="true" style="cursor: default;"><span class="numberCircle">2</span> Instellen <i class="fas fa-flag-checkered float-right"></i></a>
+                  </li>
+                </ul>            
+                <div class="tab-content">
+    
+                  <div class="tab-pane fade" id="e2fa-step1">
+                    <div class="col-lg-12">
+                      <div class="w-100 pb-2 pt-5 text-center">
+                        Voer eerst het wachtwoord opnieuw in:
+                      </div>
+          
+                      <div class="form-group row pt-3">
+                        <div class="col-12">
+                          <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                            <span class="input-group-prepend">
+                              <span class="input-group-text bg-secondary border border-secondary text-muted">
+                                <i class="mdi mdi-radar"></i>
+                              </span>
+                            </span>
+                            <input class="form-control" id="e2fa-step1-password" name="e2fa-step1-password" type="password" required="" placeholder="Wachtwoord..." autocomplete="current-password"
+                              value="">
+                            <span class="input-group-append">
+                              <button id="show_e2fa-step1-password" type="button" class="btn waves-effect waves-light btn-primary"
+                                data-toggle="tooltip" data-placement="bottom" data-html="true"
+                                title="<em>Klik om de tekst zichtbaar te maken</em>">
+                                <i class="far fa-eye"></i>
+                              </button>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-e2fa-step1-password">
+                        <i class="fas fa-exclamation-triangle"></i> <span id="e2fa-step1-errormsg">Het wachtwoord is niet geldig</span>
+                      </div>
+          
+                    </div>
+                  </div>
+    
+                  <div class="tab-pane fade" id="e2fa-step2">
+                    <div class="col-lg-12">
+
+                      <div>
+                        <div class="account_wrapper_2">
+                          <div class="account_container p-0 text-center">
+                            Scan de onderstaande code met de Authenticator app en de camera van de telefoon of voer de gegevens in.
+                          </div>
+                          <div class="account_container p-0 pl-2 pr-2 text-center" style="height: 140px;" id="enable2fa-modal-qr">
+                            <img id="qr" src="" class="d-none" alt="qr code" with="140" height="140" fill_color="black" back_color="white">
+                          </div>
+                          <div class="account_container p-0 pl-2 pr-2 text-center d-none" style="height: 140px;" id="enable2fa-modal-text">
+                            <div class="pt-3">
+                              <table>
+                                <tr><td>Account:</td><td id="enable2fa-modal-text-account"></td></tr>
+                                <tr><td>Key:</td><td id="enable2fa-modal-text-key"></td></tr>
+                                <tr><td>Type:</td><td id="enable2fa-modal-text-type"></td></tr>
+                              </table>
+                            </div>
+                          </div>
+                          <div class="account_container p-0 text-center">
+                            <button type="button" class="btn btn-primary btn-sm" style="width: 50px;" id="enable2fa-modal-show-qr">
+                              <i class="fas fa-qrcode"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" style="width: 50px;" id="enable2fa-modal-show-text">
+                              <i class="far fa-keyboard"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="account_wrapper_2">
+                          <div class="account_container p-0 pl-2 pr-2 text-center">
+                            Na het scannen van de QR code links genereert de Authenticator app een 6-cijferige code. Voer deze code hieronder in:
+                          </div>
+                          <div class="account_container pt-4">
+                            <div class="col-12">
+                              <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                                <span class="input-group-prepend">
+                                  <span class="input-group-text bg-secondary border border-secondary text-muted">
+                                    <i class="fas fa-user-secret"></i>
+                                  </span>
+                                </span>
+                                <input class="form-control 2fa-code" id="e2fa-step2-code" name="e2fa-step2-code" type="e2fa-step2-code" required="" placeholder="Code" autocomplete="off"
+                                  value="">
+                              </div>
+                            </div>
+                            <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-e2fa-step2-code">
+                              <i class="fas fa-exclamation-triangle"></i> <span id="e2fa-step2-errormsg">De code is niet geldig</span>
+                            </div>
+      
+                          </div>
+                        </div>
+                      </div>    
+
+                    </div>
+                  </div>
+    
+    
+                </div>
+
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary mr-2" id="enable2fa-modal-footer-cancel">Annuleren</button>
+                <button type="button" class="btn btn-primary" style="width: 50px;" id="enable2fa-modal-footer-nextaction"> <i class="fas fa-angle-right"></i> </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+       <!-- Bootstrap Modal -->
+       <div class="modal fade" id="disable2FAModal" tabindex="-1" role="dialog" aria-labelledby="disable2FAModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title" id="disable2FAModalLabel">2-Factor Authenticatie uitschakelen</h3>
+              <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i class="fas fa-times"></i></span>
+              </button>
+            </div>
+            <div class="modal-body">
+
+              <ul class="nav nav-tabs tabs-bordered nav-justified">
+                <li class="nav-item">
+                  <a href="#d2fa-step1" class="nav-link" aaria-expanded="true" style="cursor: default;"><span class="numberCircle">1</span> Authenticatie <i class="fas fa-shoe-prints float-right"></i></a>
+                </li>
+                <li class="nav-item">
+                  <a href="#d2fa-step2" class="nav-link" aaria-expanded="true" style="cursor: default;"><span class="numberCircle">2</span> Uitschakelen <i class="fas fa-flag-checkered float-right"></i></a>
+                </li>
+              </ul>            
+              <div class="tab-content">
+  
+                <div class="tab-pane fade" id="d2fa-step1">
+                  <div class="col-lg-12">
+                    <div class="w-100 pb-2 pt-5 text-center">
+                      Voer eerst het wachtwoord opnieuw in:
+                    </div>
+        
+                    <div class="form-group row pt-3">
+                      <div class="col-12">
+                        <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                          <span class="input-group-prepend">
+                            <span class="input-group-text bg-secondary border border-secondary text-muted">
+                              <i class="mdi mdi-radar"></i>
+                            </span>
+                          </span>
+                          <input class="form-control" id="d2fa-step1-password" name="d2fa-step1-password" type="password" required="" placeholder="Wachtwoord..." autocomplete="current-password"
+                            value="">
+                          <span class="input-group-append">
+                            <button id="show_d2fa-step1-password" type="button" class="btn waves-effect waves-light btn-primary"
+                              data-toggle="tooltip" data-placement="bottom" data-html="true"
+                              title="<em>Klik om de tekst zichtbaar te maken</em>">
+                              <i class="far fa-eye"></i>
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-d2fa-step1-password">
+                      <i class="fas fa-exclamation-triangle"></i> <span id="d2fa-step1-errormsg">Het wachtwoord is niet geldig</span>
+                    </div>
+        
+                  </div>
+                </div>
+  
+                <div class="tab-pane fade" id="d2fa-step2">
+                  <div class="col-lg-12">
+
+                    <div class="pt-5">
+                      <div class="container p-0 pl-2 pr-2 text-center">
+                        2-Factor Authenticatie code (6 cijfers):
+                      </div>
+                      <div class="container pt-4">
+                        <div class="col-12">
+                          <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                            <span class="input-group-prepend">
+                              <span class="input-group-text bg-secondary border border-secondary text-muted">
+                                <i class="fas fa-user-secret"></i>
+                              </span>
+                            </span>
+                            <input class="form-control 2fa-code" id="d2fa-step2-code" name="d2fa-step2-code" type="d2fa-step2-code" required="" placeholder="Code" autocomplete="off"
+                              value="">
+                          </div>
+                        </div>
+                        <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-d2fa-step2-code">
+                          <i class="fas fa-exclamation-triangle"></i> <span id="d2fa-step2-errormsg">De code is niet geldig</span>
+                        </div>
+    
+                      </div>
+                    </div>    
+
+                  </div>
+                </div>
+  
+  
+              </div>
+
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary mr-2" id="disable2fa-modal-footer-cancel">Annuleren</button>
+              <button type="button" class="btn btn-primary" style="width: 50px;" id="disable2fa-modal-footer-nextaction"> <i class="fas fa-angle-right"></i> </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+
+       <!-- Bootstrap Modal -->
+       <div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title" id="changePasswordModalLabel">Wachtwoord wijzigen</h3>
+              <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i class="fas fa-times"></i></span>
+              </button>
+            </div>
+            <div class="modal-body">
+
+              <div class="col-lg-12">
+                <div class="w-100 pb-2 pt-3 text-center" id="div-change-password-current-password-msg">
+                  Huidig wachtwoord:
+                </div>
+    
+                <div class="form-group row" id="div-change-password-current-password">
+                  <div class="col-12">
+                    <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                      <span class="input-group-prepend">
+                        <span class="input-group-text bg-secondary border border-secondary text-muted">
+                          <i class="mdi mdi-radar"></i>
+                        </span>
+                      </span>
+                      <input class="form-control" id="change-password-current-password" name="change-password-current-password" type="password" required="" placeholder="Huidig wachtwoord..." autocomplete="current-password"
+                        value="">
+                      <span class="input-group-append">
+                        <button id="show_change-password-current-password" type="button" class="btn waves-effect waves-light btn-primary"
+                          data-toggle="tooltip" data-placement="bottom" data-html="true"
+                          title="<em>Klik om de tekst zichtbaar te maken</em>">
+                          <i class="far fa-eye"></i>
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-change-password-current-password">
+                  <i class="fas fa-exclamation-triangle"></i> <span id="change-password-current-password-errormsg">Het wachtwoord is niet geldig</span>
+                </div>
+
+                <div class="w-100 pb-2 pt-3 text-center" id="div-change-password-new-password-msg">
+                  Nieuw wachtwoord:
+                </div>
+
+                <div class="form-group row" id="div-change-password-new-password">
+                  <div class="col-12">
+                    <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                      <span class="input-group-prepend">
+                        <span class="input-group-text bg-secondary border border-secondary text-muted">
+                          <i class="mdi mdi-radar"></i>
+                        </span>
+                      </span>
+                      <input class="form-control" id="change-password-new-password" name="change-password-new-password" 
+                        pattern=".{6,}"
+                        type="password" required="" placeholder="Nieuw wachtwoord..." autocomplete="new-password"
+                        value="">
+                      <span class="input-group-append">
+                        <button id="show_change-password-new-password" type="button" 
+                          class="btn waves-effect waves-light btn-primary"
+                          data-toggle="tooltip" data-placement="bottom" data-html="true"
+                          title="<em>Klik om de tekst zichtbaar te maken</em>">
+                          <i class="far fa-eye"></i>
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-change-password-new-password">
+                  <i class="fas fa-exclamation-triangle"></i> <span id="change-password-new-password-errormsg">Het wachtwoord is niet geldig</span>
+                </div>
+    
+   
+                <div class="form-group row" id="div-change-password-new-password2">
+                  <div class="col-12">
+                    <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                      <span class="input-group-prepend">
+                        <span class="input-group-text bg-secondary border border-secondary text-muted">
+                          <i class="mdi mdi-radar"></i>
+                        </span>
+                      </span>
+                      <input class="form-control" id="change-password-new-password2" name="change-password-new-password2" 
+                        type="password" required=""
+                        placeholder="Herhaal nieuw wachtwoord..." autocomplete="new-password"
+                        value="">
+                      <span class="input-group-append">
+                        <button id="show_change-password-new-password2" type="button" class="btn waves-effect waves-light btn-primary"
+                          data-toggle="tooltip" data-placement="bottom" data-html="true"
+                          title="<em>Klik om de tekst zichtbaar te maken</em>">
+                          <i class="far fa-eye"></i>
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-change-password-new-password2">
+                  <i class="fas fa-exclamation-triangle"></i> <span id="change-password-new-password2-errormsg">Het wachtwoord is niet geldig</span>
+                </div>
+
+                <div class="w-100 pb-2 pt-5 d-none text-center" id="div-change-password-code-msg">
+                  2-Factor Authenticatie code (6 cijfers):
+                </div>
+                
+                <div class="form-group row d-none" id="div-change-password-code">
+                  <div class="col-12">
+                    <div class="input-group" style="max-width: 326px; left: 50%; margin-left: -163px;">
+                      <span class="input-group-prepend">
+                        <span class="input-group-text bg-secondary border border-secondary text-muted">
+                          <i class="fas fa-user-secret"></i>
+                        </span>
+                      </span>
+                      <input class="form-control 2fa-code" id="change-password-code" name="change-password-code" 
+                        type="text" required=""
+                        placeholder="2FA code..." autocomplete="off"
+                        value="">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="w-100 text-center text-danger d-none pb-0 mb-0" id="field-error-change-password-code">
+                  <i class="fas fa-exclamation-triangle"></i> <span id="change-password-code-errormsg">De 2FA code is niet geldig</span>
+                </div>
+
+              </div>
+            </div>
+  
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary mr-2" id="change-password-modal-footer-cancel">Annuleren</button>
+              <button type="button" class="btn btn-primary" id="change-password-modal-footer-nextaction"> Wijzig wachtwoord</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+        <div class="w-100 pb-4 pt-2 d-none">
+          Met authenticatie in twee stappen of Twee Factor Authenticatie (2FA) wordt dit account met zowel een wachtwoord (iets wat je weet) als een 
+          extra device zoals een telefoon (iets wat je hebt) beveiligd. Nadat Twee Factor Authenticatie is ingesteld wordt bij het inloggen om een wachtwoord 
+          én om een 6-cijferige code gevraagd. Deze code wordt gegenereerd door een app op de telefoon en heeft een geldigheid van ongeveer 30 seconden.
+          
+          Om deze code te genereren is een app zoals <span class="text-success">Google Authenticator</span> 
+          <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_new"><i class="fab fa-google-play"></i></a>
+          <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_new"><i class="fab fa-app-store"></i></i></a>,
+          <span class="text-success">Microsoft Authenticator</span>
+          <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator" target="_new"><i class="fab fa-google-play"></i></a>
+          <a href="https://apps.apple.com/nl/app/microsoft-authenticator/id983156458" target="_new"><i class="fab fa-app-store"></i></i></a> of
+          <span class="text-success">Lastpass Authenticator</span> 
+          <a href="https://play.google.com/store/apps/details?id=com.lastpass.authenticator" target="_new"><i class="fab fa-google-play"></i></a>
+          <a href="https://apps.apple.com/nl/app/lastpass-authenticator/id1079110004" target="_new"><i class="fab fa-app-store"></i></i></a>
+          nodig. Download eerst een Authenticator app en klik op <span class="text-primary">Beginnen</span>. 
+        </div>
+
+{% endblock %}
