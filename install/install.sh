@@ -27,9 +27,9 @@ function init() {
   # Initiated from cmd line or from online?
   [[ $1 == "online" ]] && ONLINE=true || ONLINE=false
   if [ "$ONLINE" == true ]; then
-    echo "  Update process initiated from online"
+    echo "  Update process initiated from the Oppleo.service process (online)"
   else
-    echo "  Update process initiated from cmd line"
+    echo "  Update process initiated from a command line"
   fi
 
   # Check if systemctl is present (should be present)
@@ -311,6 +311,7 @@ function startSystemdService( ) {
         echo "  Starting the Oppleo systemd service failed..."
         sudo systemctl status Oppleo.service
       fi
+    fi
   else
     echo "  Oppleo systemd service was not running, not starting it now."
     echo "   [MANUAL] sudo systemctl start Oppleo.service"
