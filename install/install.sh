@@ -30,6 +30,7 @@ function init() {
     echo "  Update process initiated from online"
   else
     echo "  Update process initiated from cmd line"
+  fi
 
   # Check if systemctl is present (should be present)
   #  0 (true)  - present
