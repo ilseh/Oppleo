@@ -2,7 +2,7 @@
 
 # Reaspberry config
 echo "Install script for the Oppleo service"
-echo "v0.6.7 05-05-2021"
+echo "v0.6.8 06-05-2021"
  
 echo "Running install script as $(whoami)"
 echo "Using background restart at the end."
@@ -26,6 +26,10 @@ function init() {
 
   # Initiated from cmd line or from online?
   [[ $1 == "online" ]] && ONLINE=true || ONLINE=false
+  if [ "$ONLINE" == true ]; then
+    echo "  Update process initiated from online"
+  else
+    echo "  Update process initiated from cmd line"
 
   # Check if systemctl is present (should be present)
   #  0 (true)  - present
@@ -290,8 +294,22 @@ function startSystemdService( ) {
 
   # Check if service file exists
   if [ "$START_OPPLEO_SERVICE" == true ]; then
-    echo "  Restart the Oppleo systemd service in 2 seconds in the background..."
-    (sleep 2; sudo systemctl restart Oppleo.service) &
+    if [ "$ONLINE" == true ]; then
+      echo "  Restart the Oppleo systemd service in 2 seconds in the background..."
+      (sleep 2; sudo systemctl restart Oppleo.service) &
+    else
+      echo "  Start the Oppleo systemd service..."
+      sudo systemctl start Oppleo.service
+      # systemctl is-active --quiet service
+      # will exit with status zero if service is active, non-zero otherwise
+      systemctl is-active --quiet Oppleo.service
+      if [ "$?" -eq 0 ]; then
+        # Oppleo running 
+        echo "  Oppleo systemd service running"
+      else
+        echo "  Starting the Oppleo systemd service failed..."
+        sudo systemctl status Oppleo.service
+      fi
   else
     echo "  Oppleo systemd service was not running, not starting it now."
     echo "   [MANUAL] sudo systemctl start Oppleo.service"

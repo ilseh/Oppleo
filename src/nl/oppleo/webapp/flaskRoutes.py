@@ -626,8 +626,9 @@ def software_update():
             updateSoftwareInstallCmd = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/install.sh')
             updateSoftwareLogFile = os.path.join(os.path.dirname(os.path.realpath(__file__)).split('src/nl/oppleo/webapp')[0], 'install/log/update_{}.log'.format(datetime.now().strftime("%Y%m%d%H%M%S")))
             # os.system("nohup sudo -b bash -c 'sleep 2; /home/pi/Oppleo/install/install.sh service' &>/dev/null")
-            flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {} service &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
-            os.popen("nohup sudo -u pi -b bash -c 'sleep 2; {} &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
+            # online is the keyword for install.sh for not killing the Oppleo.service!
+            flaskRoutesLogger.debug("nohup sudo -u pi -b bash -c 'sleep 2; {} online &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
+            os.popen("nohup sudo -u pi -b bash -c 'sleep 2; {} online &> {}'".format(updateSoftwareInstallCmd, updateSoftwareLogFile))
             # update script kills Oppleo, and also os.system or os.popen processes. Spawn new process that will survive the Oppleo kill
             oppleoConfig.softwareUpdateInProgress = True
         except Exception as e:
