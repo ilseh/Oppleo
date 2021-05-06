@@ -2,7 +2,7 @@
 
 # Reaspberry config
 echo "Install script for the Oppleo service"
-echo "v0.6.6 14-04-2021"
+echo "v0.6.7 05-05-2021"
  
 echo "Running install script as $(whoami)"
 echo "Using background restart at the end."

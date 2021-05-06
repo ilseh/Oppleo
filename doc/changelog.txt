@@ -1,3 +1,9 @@
+Version 1.2.8           2021-05-06
+
+Fixed
+- For development disabled threads re-enabled
+
+
 Version 1.2.7           2021-05-05
 
 Fixed
