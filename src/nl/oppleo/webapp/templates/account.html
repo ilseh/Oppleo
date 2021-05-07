@@ -309,7 +309,8 @@
         // Hide spinner
         $('.spinner').hide()
       })
-    }        
+    }
+    let info2FADialog = null
     let enable2FADialog = null
     function showEnable2FAModal() {
       // Init modal dialog
@@ -412,6 +413,24 @@
         }
         e.preventDefault()
       })
+
+      info2FADialog = $('#info2FAModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $('button#info2fa-modal-close').on("click", function(e) {
+        info2FADialog.modal('hide')
+        e.preventDefault()
+      })
+      $('button#modal-2fa-info').on('click', (e) => {
+        info2FADialog.modal('show')
+      })
+      $('button#modal-info-2fa-enable-2fa').on('click', (e) => {
+        info2FADialog.modal('hide')
+        showEnable2FAModal()
+      })
+
       $('button#enable2fa-modal-footer-cancel').on("click", function(e) {
         enable2FADialog.modal('hide')
         e.preventDefault()
@@ -579,6 +598,10 @@
                 <td>
                   <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-enable-2fa"> <i class="fas fa-angle-right"></i> Activeren </button>
                   <button type="button" class="btn btn-sm btn-outline-primary{% if not current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-disable-2fa"> <i class="fas fa-angle-right"></i> Uitschakelen </button>
+
+                  <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-2fa-info"
+                    data-toggle="tooltip" data-placement="bottom" data-html="true" title="" 
+                    data-original-title="Klik voor meer informatie over 2-Factor authenticatie"> <i class="fas fa-info-circle"></i> </button>
                 </td>
               </tr>
             </tbody>
@@ -816,6 +839,56 @@
 
 
 
+       <!-- Bootstrap Modal -->
+       <div class="modal fade" id="info2FAModal" tabindex="-1" role="dialog" aria-labelledby="info2FAModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title" id="info2FAModalLabel">Wat is 2-Factor Authenticatie</h3>
+              <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i class="fas fa-times"></i></span>
+              </button>
+            </div>
+            <div class="modal-body">
+
+              <div class="col-lg-12">
+                <div class="w-100 pb-2 pt-3 text-center" id="div-change-password-current-password-msg">
+                  Huidig wachtwoord:
+                </div>
+                <div class="w-100 pb-4 pt-2">
+                  Met authenticatie in twee stappen of 2-Factor Authenticatie (2FA) wordt een account met zowel een wachtwoord (iets wat je weet) als een 
+                  extra device zoals een telefoon (iets wat je hebt) beveiligd. Nadat 2-Factor Authenticatie is ingesteld wordt bij het inloggen om een wachtwoord 
+                  én om een 6-cijferige code gevraagd. Deze code wordt gegenereerd door een app op de telefoon en heeft een geldigheid van ongeveer 30 seconden.
+                  <br/>
+                  <br/>
+                  Om deze code te genereren is een app zoals <span class="text-white font-bold">Google Authenticator</span> 
+                  <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
+                  data-original-title="Download <b>Google Authenticator</b> uit de Play Store voor Android telefoons"><i class="fab fa-google-play"></i></a>
+                  <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
+                  data-original-title="Download <b>Google Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></i></a>,
+                  <span class="text-white font-bold">Microsoft Authenticator</span>
+                  <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
+                  data-original-title="Download <b>Microsoft Authenticator</b> uit de Play Store voor Android telefoons"><i class="fab fa-google-play"></i></a>
+                  <a href="https://apps.apple.com/nl/app/microsoft-authenticator/id983156458" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
+                  data-original-title="Download <b>Microsoft Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></i></a> of
+                  <span class="text-white font-bold">Lastpass Authenticator</span> 
+                  <a href="https://play.google.com/store/apps/details?id=com.lastpass.authenticator" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
+                  data-original-title="Download <b>Lastpass Authenticator</b> uit de Play Store voor Android telefoons"><i class="fab fa-google-play"></i></a>
+                  <a href="https://apps.apple.com/nl/app/lastpass-authenticator/id1079110004" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
+                  data-original-title="Download <b>Lastpass Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></i></a>
+                  geinstalleerd op een telefoon of tablet nodig. Download eerst een Authenticator app en klik daarna op de <button class="btn btn-sm btn-outline-success" id="modal-info-2fa-enable-2fa"> <i class="fas fa-angle-right"></i> Activeren</button> knop. 
+                </div>
+
+              </div>
+            </div>
+  
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" id="info2fa-modal-close"> Sluiten</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
        <!-- Bootstrap Modal -->
        <div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true" data-backdrop="static">
@@ -956,21 +1029,8 @@
 
 
 
-        <div class="w-100 pb-4 pt-2 d-none">
-          Met authenticatie in twee stappen of Twee Factor Authenticatie (2FA) wordt dit account met zowel een wachtwoord (iets wat je weet) als een 
-          extra device zoals een telefoon (iets wat je hebt) beveiligd. Nadat Twee Factor Authenticatie is ingesteld wordt bij het inloggen om een wachtwoord 
-          én om een 6-cijferige code gevraagd. Deze code wordt gegenereerd door een app op de telefoon en heeft een geldigheid van ongeveer 30 seconden.
-          
-          Om deze code te genereren is een app zoals <span class="text-success">Google Authenticator</span> 
-          <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_new"><i class="fab fa-google-play"></i></a>
-          <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_new"><i class="fab fa-app-store"></i></i></a>,
-          <span class="text-success">Microsoft Authenticator</span>
-          <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator" target="_new"><i class="fab fa-google-play"></i></a>
-          <a href="https://apps.apple.com/nl/app/microsoft-authenticator/id983156458" target="_new"><i class="fab fa-app-store"></i></i></a> of
-          <span class="text-success">Lastpass Authenticator</span> 
-          <a href="https://play.google.com/store/apps/details?id=com.lastpass.authenticator" target="_new"><i class="fab fa-google-play"></i></a>
-          <a href="https://apps.apple.com/nl/app/lastpass-authenticator/id1079110004" target="_new"><i class="fab fa-app-store"></i></i></a>
-          nodig. Download eerst een Authenticator app en klik op <span class="text-primary">Beginnen</span>. 
-        </div>
+
+
+
 
 {% endblock %}
