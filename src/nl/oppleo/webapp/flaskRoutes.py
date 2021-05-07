@@ -27,7 +27,6 @@ from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException,
                                              ExpiredException)
 
 from nl.oppleo.models.User import User
-from nl.oppleo.webapp.LoginForm import LoginForm
 from nl.oppleo.webapp.AuthorizeForm import AuthorizeForm
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.models.Raspberry import Raspberry
@@ -216,62 +215,31 @@ def internal_server_error(e):
     # No need for oppleoconfig=oppleoConfig
     return render_template('errorpages/500.html'), HTTP_CODE_500_INTERNAL_SERVER_ERROR
 
+def same_origin(current_uri, compare_uri):
+    parsed_uri = urlparse(current_uri)
+    parsed_compare = urlparse(compare_uri)
+    return (parsed_uri.scheme == parsed_compare.scheme and
+        parsed_uri.hostname == parsed_compare.hostname and
+        parsed_uri.port == parsed_compare.port)
 
-@flaskRoutes.route('/login', methods=['GET', 'POST'])
+@flaskRoutes.route('/login', methods=['GET'])
 def login():
     # For GET requests, display the login form. 
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/login {}'.format(request.method))
+
+    if hasattr(current_user, 'authenticated') and current_user.authenticated:
+        referrer = request.headers.get("Referer", default=None, type=str)
+        # Referrer and on same host?
+        if referrer is None or not same_origin(referrer, 'https://{}/'.format(request.host)):
+            return redirect('/')
+        return redirect(referrer)
+
     if (request.method == 'GET'):
         return render_template("login.html", 
-            form=LoginForm(),
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
-    # For POST requests, login the current user by processing the form.
-    form = LoginForm()
-    flaskRoutesLogger.debug('login form created')
-    if form.validate_on_submit():
-        flaskRoutesLogger.debug('loginForm valid on submit')
-        user = User.get(form.username.data)
-        flaskRoutesLogger.debug('loginForm valid on submit')
-        try:
-            flaskRoutesLogger.debug('form.username.data = ' + form.username.data)
-            if user is not None:
-                flaskRoutesLogger.debug('if user:')
-                if check_password_hash(user.password, form.password.data):
-                    flaskRoutesLogger.debug('check_password_hash ok, login_user()')
-                    login_user(user, remember=form.remember_me.data)
-                    user.authenticated = True
-                    user.save()
-                    if 'login_next' in session:
-                        flaskRoutesLogger.debug('login_next: %s' % session['login_next'])
-                        login_next = session['login_next']
-                        del session['login_next']
-                        # only allow relative paths, so there cannot be a netloc (host)
-                        if bool(urlparse(login_next).netloc):
-                            # do not allow this 
-                            flaskRoutesLogger.debug('login_next: {} not allowed. Using default route'.format(login_next))
-                            return redirect(url_for('flaskRoutes.home'))
-                        # Safe next
-                        return redirect(login_next)
-                    else:
-                        # Return to the home page
-                        flaskRoutesLogger.debug('flaskRoutes.home')
-                        return redirect(url_for('flaskRoutes.home'))
-        except Exception as e:
-            flaskRoutesLogger.debug(type(e))
-            flaskRoutesLogger.debug(e.args)
-            flaskRoutesLogger.debug(e)
-
-
-    flaskRoutesLogger.debug('nothing of that all')
-    return render_template("login.html", 
-                form=form, 
-                msg="Login failed",
-                oppleoconfig=oppleoConfig,
-                changelog=changeLog
-                )
 
 
 @flaskRoutes.route("/<path:username>/login", methods=["POST"])
