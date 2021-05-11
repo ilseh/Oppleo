@@ -515,6 +515,57 @@
       })
     }
 
+    function updateExternalSubnet( subnetOrIP, action, successCallback=null, failCallback=null ) {
+      console.log(timestamp() + ' updateExternalSubnet()')            
+      // Show spinner
+      $('.spinner').show()
+      data = {
+        csrf_token    : '{{ csrf_token() }}',
+        subnetOrIP    : subnetOrIP,
+        action        : action
+      }
+      $.ajax({
+        type		    : action,
+        url			    : ('/external_subnet/' + encodeURIComponent(subnetOrIP) +'/'),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        switch (data.status) {
+          case 400:   // Bad request
+          case 500:   // Internal Server Error
+            autoHideNotify('error','top-left', 'Bad request ('+data.status+')', 'Data niet beschikbaar.')
+            if (failCallback != null) { failCallback(data) }
+            break
+          case 401:
+            // Not authorized response
+            autoHideNotify('warning','top-left', 'Autorisatie fout', 'Data niet beschikbaar.')
+            if (failCallback != null) { failCallback(data) }
+            break
+          case 404:   // Not Found
+            if (failCallback != null) { failCallback(data) }
+            break
+          case 200:
+            // Ok response
+            if (successCallback != null) { successCallback(data) }
+            break
+          default:
+            if (failCallback != null) { failCallback(data) }
+            break
+        }
+      })
+      .fail(function(data) {
+        autoHideNotify('error','top-left', 'Connectie fout', 'Data niet beschikbaar.')
+        if (failCallback != null) { failCallback(data) }
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
     var diag_data = {{ diag_json | safe }}
     var backupOffsiteDialog = null
 
@@ -712,6 +763,47 @@
       })
     }
 
+    // 
+    function buttonSubnetOrIPDelete(e) {
+      console.log(e.currentTarget)
+      e.preventDefault()
+      $(e.currentTarget).tooltip('hide') // Make sure tooltips don't remain 
+      let value = $(e.currentTarget).parent().children('span.subnetOrIP').text()
+      // Submit
+      updateExternalSubnet( value, 'DELETE', 
+        function(result) {
+          // successCallback
+          autoHideNotify('success','top-left', 'Verwijderd', 'Het IP of subnet is verwijderd.')
+          // Remove this row if not the first row, and move everything up one row
+          let el = $("span.subnetOrIP:contains('"+result.subnetOrIP32+"')")
+          let cnt = $("span.subnetOrIP").length
+          let pel = el.parent().parent() // td - tr
+          pel = el.closest('tr')
+          if (pel.is('#subnetOrIPFirstRow') && cnt == 1) {
+            // First row, and only. Remove
+            pel.find('td:nth-child(2)').empty()
+            pel.find('td:nth-child(2)').append('<span class="subnetOrIP"><i class="far fa-clipboard"></i> Geen</span>')
+          }
+          if (pel.is('#subnetOrIPFirstRow') && cnt > 1) {
+            // First row, move second one up and remove that one
+            let pel2 = pel.next()
+            //pel.find('td:nth-child(2)').html(pel2.find('td:nth-child(2)').html())
+            pel.find('td:nth-child(2)').empty()
+            pel.find('td:nth-child(2)').append(pel2.find('td:nth-child(2)').contents())
+            pel2.remove()
+          }
+          if (!pel.is('#subnetOrIPFirstRow')) {
+            // Not the first row, just remove this one
+            pel.remove()
+          }
+        }, function(result) {
+          // failCallback
+          if (!([400, 401, 404, 500].includes(result.status))) {
+              autoHideNotify('error','top-left', 'Niet verwijderd', 'Het verwijderen van het IP adres is niet gelukt ('+result.status+').')
+          }
+      })
+    }
+
     jQuery(document).ready(function() {
       console.log(timestamp() + " file load completed!")
       $('pre#diag_json').html( 
@@ -747,6 +839,9 @@
       })
       $('input#allowLocalDashboardAccess').change(function() {
         updateSettings( 'allowLocalDashboardAccess', $(this).prop('checked') )
+      })
+      $('input#bypassLocal2FA').change(function() {
+        updateSettings( 'bypassLocal2FA', $(this).prop('checked') )
       })
       
       $('input#autoSessionEnabled').bootstrapToggle()
@@ -1247,7 +1342,110 @@
       $('a[href="#bm-step?"').on('click', function (e) {
         e.preventDefault()
       })
+      // - Subnet/ Reverse Proxy
+      $('#newSubnetOrIPButton').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Clean data fields
+        $('#newSubnetOrIPInput').val('')
+        // Show input
+        $('#newSubnetOrIPInputRow').removeClass('d-none')
+        $('#newSubnetOrIPButton').addClass('d-none')
+        $('#newSubnetOrIPCancel').removeClass('d-none')
+        $('#newSubnetOrIPSave').removeClass('d-none')
+      })
+      $('#newSubnetOrIPCancel').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Clean data fields
+        $('#newSubnetOrIPInput').val('')
+        // Hide input
+        $('#newSubnetOrIPInputRow').addClass('d-none')
+        $('#newSubnetOrIPButton').removeClass('d-none')
+        $('#newSubnetOrIPCancel').addClass('d-none')
+        $('#newSubnetOrIPSave').addClass('d-none')
+      })
+      $('#newSubnetOrIPInput').on('paste input', (e) => {
+        // Only accept digits, dot and slash
+        e.preventDefault()
+        $(e.currentTarget).val($(e.currentTarget).val().replace(/[^(0-9|.|/)]/g, '').substring(0,18))
+        let validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4}$"
+        let regex = new RegExp(validation)
+        if (regex.test($(e.currentTarget).val())) {
+          $(e.currentTarget).removeClass("border-danger")
+        }
+      })
+      $('button.subnetOrIPDelete').on('click', function(e) {
+        buttonSubnetOrIPDelete(e)
+      })
+      $('#newSubnetOrIPSave').on('click', function(e) {
+        e.preventDefault()
+        console.log(this.id)
+        // Verify data field, only accept digits, dot and slash
+        let validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4}$"
+        let regex = new RegExp(validation)
+        if (regex.test($('#newSubnetOrIPInput').val())) {
+          $('#newSubnetOrIPInput').removeClass("border-danger")
+        } else {                                  // Invalid
+          $('#newSubnetOrIPInput').addClass("border-danger")
+          return
+        }
+        // Submit
+//XXXXXX
+        updateExternalSubnet( $('#newSubnetOrIPInput').val(), 'POST', 
+          function(result) {
+            // successCallback
+            autoHideNotify('success','top-left', 'Toegevoegd', 'Het IP of subnet is toegevoegd.')
+            let nsoi = `<i class="`+( result.isSingleIP ? 'fas fa-desktop' : 'fas fa-network-wired')+` w-20px mr-2"></i>
+                        <span class="subnetOrIP">`+result.subnetOrIP32+`</span>
+                        <button type="button" style="float: right;" class="subnetOrIPDelete btn btn-xs btn-low-key-danger waves-effect waves-light" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="<em class='text-danger font-weight-bold'>Let op!<br /><span class='text-white font-weight-normal'>Wordt direct verwijderd!</span></em>"> 
+                          <i class="fas fa-trash-alt"></i> Verwijder 
+                        </button>`
 
+            let cnt = $("span.subnetOrIP").length
+            // 
+            if (cnt == 1 && $("span.subnetOrIP i.fa-clipboard").length > 0) {
+              // Empty - fill first entry - find First row and Replace
+              let el = $('#subnetOrIPFirstRow').find('td:nth-child(2)')
+              el.empty()
+              el.append($(nsoi))
+            } else {
+              // Not empty - add entry
+              let newRow = `<tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-primary">
+                              ` + nsoi + `
+                              </td>
+                            </tr>`
+              let tr = $("span.subnetOrIP").last().closest('tr')
+              $(newRow).insertAfter(tr)
+
+            }
+            // Remove existing click event handlers and Activate Delete button
+            $('button.subnetOrIPDelete').off('click')
+            $('button.subnetOrIPDelete').on('click', function(e) {
+              buttonSubnetOrIPDelete(e)
+            })
+            // Tooltip Delete button
+            $('[data-toggle=tooltip]').tooltip({ 
+                    boundary: 'window', 
+                    trigger : 'hover'   // Allow button clicks
+            })
+
+
+            // Hide input
+            $('#newSubnetOrIPInputRow').addClass('d-none')
+            $('#newSubnetOrIPButton').removeClass('d-none')
+            $('#newSubnetOrIPCancel').addClass('d-none')
+            $('#newSubnetOrIPSave').addClass('d-none')
+          }, function(result) {
+            // failCallback
+            if (!([400, 401, 404, 500].includes(result.status))) {
+                autoHideNotify('error','top-left', 'Niet toegevoegd', 'Het toevoegen van het IP adres is niet gelukt ('+result.status+').')
+            }
+        })
+
+      })
 
        // Remove spinner
       $('.spinner').hide()
@@ -1662,7 +1860,7 @@
                             </tr>
                             <tr>
                               <th colspan="2" style="line-height: 40px;">
-                                <h4 class="m-t-0 header-title"><i class="fas fa-credit-card"></i> Afschermen</h4>
+                                <h4 class="m-t-0 header-title"><i class="fas fa-credit-card"></i> Afschermen (Reverse Proxy)</h4>
                               </th>
                             </tr>
                             <tr>
@@ -1726,20 +1924,64 @@
                                 </form>
                               </td>
                             </tr>
-                            <tr>
-                              <td class="text-dark">Reverse Proxy:</td>
+                            {% for subnetOrIP in oppleoconfig.routerIPAddress %}
+                            <tr id="subnetOrIPFirstRow">
+                              <td class="text-dark">{% if subnetOrIP == (oppleoconfig.routerIPAddress | first) %}Extern netwerk/ Reverse Proxy:{% else %}&nbsp;{% endif %}</td>
                               <td class="text-primary">
-                                <form id="router-ip-address-form">
-                                  <oppleo-edit-str 
-                                  id="routerIPAddress"
-                                  prefix="" 
-                                  value="{{ oppleoconfig.routerIPAddress }}"
-                                  validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
-                                  info="IPv4 adres van de Reverse Proxy. Verkeer van de Reverse Proxy wordt gezien als Extern verkeer, overige IPv4 adressen worden gezien als lokaal verkeer."
-                                  />
-                                </form>
+                                <i class="{% if ipv4.isSingleIP(subnetOrIP) %}fas fa-desktop{% else %}fas fa-network-wired{%endif%} w-20px mr-2"></i>
+                                <span class="subnetOrIP">{{ ipv4.remove32Subnet(subnetOrIP) }}</span>
+                                <button type="button" style="float: right;" class="subnetOrIPDelete btn btn-xs btn-low-key-danger waves-effect waves-light" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="<em class='text-danger font-weight-bold'>Let op!<br /><span class='text-white font-weight-normal'>Wordt direct verwijderd!</span></em>"> 
+                                  <i class="fas fa-trash-alt"></i> Verwijder 
+                                </button>
                               </td>
-                            </tr>          
+                            </tr>
+                            {% endfor %}
+                            {% if oppleoconfig.routerIPAddress | length == 0 %}
+                            <tr id="subnetOrIPFirstRow">
+                              <td class="text-dark">Extern netwerk/ Reverse Proxy:</td>
+                              <td class="text-primary"><span class="subnetOrIP"><i class="far fa-clipboard pr-2"></i> Geen</span></td>
+                            </tr>
+                            {% endif %}
+                            <tr id="newSubnetOrIPInputRow" class="d-none">
+                              <td class="text-dark">{% if oppleoconfig.routerIPAddress | length == 0 %}Extern netwerk/ Reverse Proxy:{% else %}&nbsp;{% endif %}</td>
+                              <td class="text-primary">
+                                <div class="input-daterange input-group">
+                                  <div class="input-group-prepend">
+                                    <span class="input-group-text bg-primary b-0 text-white">
+                                      <i class="fas fa-network-wired"></i>
+                                    </span>
+                                  </div>
+                                  <input type="text" id="newSubnetOrIPInput" class="form-control" name="newSubnetOrIPInput" style="text-align: left; flex: 40%;" placeholder="x.x.x.x/yy" value="">
+                                  <div class="input-group-append">
+
+                                  <div class="input-group-append info-button-style" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" data-original-title="IPv4 adres met x.x.x.x formaat, of een netwerk subnet met x.x.x.x/xx CIDR (Classless Inter-Domain Routing) mask.">
+                                    <span class="input-group-text border-secondary bg-secondary text-muted">
+                                      <i class="fas fa-info-circle"></i>
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>                            
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-primary">
+                                <button type="button" id="newSubnetOrIPButton" class="btn btn-sm btn-outline-primary waves-effect waves-light"> 
+                                  <i class="fas fa-edit"></i> IP/Subnet toevoegen
+                                </button>
+                                <button type="button" id="newSubnetOrIPSave" style="float: right;" class="btn btn-sm btn-primary waves-effect waves-light d-none"> 
+                                  <i class="far fa-thumbs-up"></i> Opslaan 
+                                </button>
+                                <div style="float: right; width: 5px;">&nbsp;</div>
+                                <button type="button" id="newSubnetOrIPCancel" style="float: right;" class="btn btn-sm btn-secondary waves-effect waves-light d-none"> 
+                                  <i class="fas fa-times"></i> Annuleren 
+                                </button>
+                              </td>
+                            </tr>
+
+
+
+
+
 
                             <tr>
                               <th colspan="2">&nbsp;</th>

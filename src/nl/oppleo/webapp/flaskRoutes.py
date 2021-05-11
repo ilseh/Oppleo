@@ -44,6 +44,7 @@ from nl.oppleo.services.Evse import Evse
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.GitUtil import GitUtil
 from nl.oppleo.utils.Authenticator import (keyUri, makeQR, generateTotpSharedSecret, encryptAES, decryptAES, validateTotp)
+from nl.oppleo.utils.IPv4 import IPv4
 
 from nl.oppleo.utils.EnergyModbusReader import modbusConfigOptions
 from nl.oppleo.utils.BackupUtil import BackupUtil
@@ -52,6 +53,7 @@ from nl.oppleo.utils.TokenMediator import tokenMediator
 
 # https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 HTTP_CODE_200_OK                    = 200
+HTTP_CODE_303_SEE_OTHER             = 303  # Conflict, POST on existing resource
 HTTP_CODE_400_BAD_REQUEST           = 400
 HTTP_CODE_401_UNAUTHORIZED          = 401
 HTTP_CODE_403_FORBIDDEN             = 403
@@ -67,6 +69,7 @@ DETAIL_CODE_23_2FA_CODE_INCORRECT                   =  23    # HTTP_CODE_400_BAD
 DETAIL_CODE_25_PASSWORD_INCORRECT                   =  25    # HTTP_CODE_401_UNAUTHORIZED
 # Security threat to leak this information
 DETAIL_CODE_26_USERNAME_UNKNOWN                     =  26    # HTTP_CODE_401_UNAUTHORIZED
+DETAIL_CODE_28_ACTION_UNKNOWN                       =  28    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_29_PROCESS_STEP_UNKNOWN                 =  29    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_40_PASSWORD_RULE_VIOLATION              =  40    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_41_PASSWORD_TOO_SHORT                   =  41    # HTTP_CODE_400_BAD_REQUEST
@@ -127,6 +130,7 @@ def authenticated_resource(function):
         return ('Niet ingelogd', HTTP_CODE_401_UNAUTHORIZED)
     return decorated
 
+
 # Resource is only served for logged in user if allowed in preferences
 def config_dashboard_access_restriction(function):
     @wraps(function)
@@ -143,9 +147,12 @@ def config_dashboard_access_restriction(function):
             current_user.is_authenticated
             ))
 
-        if (not oppleoConfig.restrictDashboardAccess or \
-            ( oppleoConfig.allowLocalDashboardAccess and request.remote_addr != oppleoConfig.routerIPAddress ) or \
-            current_user.is_authenticated):
+        if (not oppleoConfig.restrictDashboardAccess or
+            ( oppleoConfig.allowLocalDashboardAccess and  
+                IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False) 
+            ) or
+            current_user.is_authenticated
+            ):
             flaskRoutesLogger.debug('config_dashboard_access_restriction() access allowed')
             return function(*args, **kwargs)
         flaskRoutesLogger.debug('config_dashboard_access_restriction() access denied')
@@ -909,7 +916,8 @@ def settings(active=1):
                 oppleoconfig=oppleoConfig,
                 backuputil=BackupUtil(),
                 changelog=changeLog,
-                gitutil=GitUtil
+                gitutil=GitUtil,
+                ipv4=IPv4
             )
 
 
@@ -2517,3 +2525,83 @@ def getRr(data:str=None):
         
     except Exception as e:
         abort(404)
+
+
+
+# https://stackoverflow.com/questions/7877282/how-to-send-image-generated-by-pil-to-browser
+@flaskRoutes.route("/external_subnet/<path:subnetOrIP>", methods=["POST", "DELETE"])
+@flaskRoutes.route("/external_subnet/<path:subnetOrIP>/", methods=["POST", "DELETE"])
+@authenticated_resource  # CSRF Token is valid
+def externalSubnet(subnetOrIP:str=None):
+    if subnetOrIP is None:
+        abort(404)
+    subnetOrIP = unquote(subnetOrIP)
+    subnetOrIP = IPv4.makeSubnet(subnetOrIP)
+    if (request.method == 'POST'):
+        ipList = oppleoConfig.routerIPAddress
+        if (subnetOrIP in ipList):
+            # Reject existing subnets
+            return jsonify({
+                'status'        : HTTP_CODE_303_SEE_OTHER,
+                'subnetOrIP'    : subnetOrIP,
+                'isSubnet'      : IPv4.validSubnet(subnetOrIP),
+                'isSingleIP'    : IPv4.isSingleIP(subnetOrIP),
+                'subnetOrIP32'  : IPv4.remove32Subnet(subnetOrIP),  # without /32 if IP
+                'msg'           : 'Existing'
+                })
+        # New item, add to list
+        ipList.append(subnetOrIP)
+        oppleoConfig.routerIPAddress = ipList
+        # Success
+        return jsonify({
+            'status'        : HTTP_CODE_200_OK,
+            'subnetOrIP'    : subnetOrIP,
+            'isSubnet'      : IPv4.validSubnet(subnetOrIP),
+            'isSingleIP'    : IPv4.isSingleIP(subnetOrIP),
+            'subnetOrIP32'  : IPv4.remove32Subnet(subnetOrIP),  # without /32 if IP
+            'msg'           : 'Success'
+            })
+
+    if (request.method == 'DELETE'):
+        ipList = oppleoConfig.routerIPAddress
+        if (subnetOrIP not in ipList):
+            # Reject non existing subnets
+            return jsonify({
+                'status'        : HTTP_CODE_404_NOT_FOUND,
+                'subnetOrIP'    : subnetOrIP,
+                'isSubnet'      : IPv4.validSubnet(subnetOrIP),
+                'isIP'          : IPv4.isSingleIP(subnetOrIP),
+                'subnetOrIP32'  : IPv4.remove32Subnet(subnetOrIP),  # without /32 if IP
+                'msg'           : 'Not Found'
+                })
+        # Remove from list
+        try:
+            ipList.remove(subnetOrIP)
+        except ValueError as ve:
+            return jsonify({
+                'status'        : HTTP_CODE_404_NOT_FOUND,
+                'subnetOrIP'    : subnetOrIP,
+                'isSubnet'      : IPv4.validSubnet(subnetOrIP),
+                'isSingleIP'    : IPv4.isSingleIP(subnetOrIP),
+                'subnetOrIP32'  : IPv4.remove32Subnet(subnetOrIP),  # without /32 if IP
+                'msg'           : 'Not Found'
+                })
+
+        oppleoConfig.routerIPAddress = ipList
+        # Success
+        return jsonify({
+            'status'        : HTTP_CODE_200_OK,
+            'subnetOrIP'    : subnetOrIP,
+            'isSubnet'      : IPv4.validSubnet(subnetOrIP),
+            'isSingleIP'    : IPv4.isSingleIP(subnetOrIP),
+            'subnetOrIP32'  : IPv4.remove32Subnet(subnetOrIP),  # without /32 if IP
+            'msg'           : 'Success'
+            }) 
+
+    # Not valid!
+    return jsonify({
+        'status': HTTP_CODE_400_BAD_REQUEST,
+        'code'  : DETAIL_CODE_28_ACTION_UNKNOWN,
+        'action': request.method,
+        'msg'   : 'Action unknown'
+        }) 

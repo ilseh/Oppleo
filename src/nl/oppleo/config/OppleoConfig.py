@@ -3,10 +3,14 @@ from configparser import RawConfigParser, NoSectionError, NoOptionError, Extende
 import logging
 from datetime import datetime
 import os
+import json
+from json import JSONDecodeError
+
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.IPv4 import IPv4
 
 """
  Instantiate an OppleoConfig() object. This will be a Singleton
@@ -582,14 +586,35 @@ class OppleoConfig(object, metaclass=Singleton):
 
     """
         routerIPAddress --> router_ip_address
+        Return list of ip strings, with /b bitmask
+        Backward compatible with single IP-address string in database
     """
     @property
     def routerIPAddress(self):
-        return self.__chargerConfigModel.router_ip_address
+        # Old: string with one IP, new: json with ip and mask
+        try:
+            return json.loads(self.__chargerConfigModel.router_ip_address)
+        except JSONDecodeError as jde:
+            # Not json, old string, convert
+            pass
+        newList = []
+        oldValue = self.__chargerConfigModel.router_ip_address
+
+        # Convert to subnet
+        newList.append( oldValue + '/32' if ( IPv4.validIP(oldValue) and not IPv4.validSubnet(oldValue)) else '' )
+        # Store the list
+        self.routerIPAddress = newList
+
+        return newList
 
     @routerIPAddress.setter
-    def routerIPAddress(self, value):
-        self.__chargerConfigModel.setAndSave('router_ip_address', value)
+    def routerIPAddress(self, ip_list:list=None):
+        if ip_list is None: 
+            ip_list = []
+        for i in range(len(ip_list)):            
+            if IPv4.validIP(ip_list[i]) and not IPv4.validSubnet(ip_list[i]):
+                ip_list[i] = ip_list[i] + '/32'
+        self.__chargerConfigModel.setAndSave('router_ip_address', json.dumps(ip_list))
 
     """
         receiptPrefix --> receipt_prefix
