@@ -149,7 +149,7 @@ def config_dashboard_access_restriction(function):
 
         if (not oppleoConfig.restrictDashboardAccess or
             ( oppleoConfig.allowLocalDashboardAccess and  
-                IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False) 
+                not IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False) 
             ) or
             current_user.is_authenticated
             ):
