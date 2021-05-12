@@ -1883,6 +1883,7 @@ def update_settings(param=None, value=None):
     if (param == 'vehicleDataOnDashboard'):
         oppleoConfig.vehicleDataOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         if not oppleoConfig.vehicleDataOnDashboard:
+            # Announce switching off
             WebSocketUtil.emit(
                 wsEmitQueue=oppleoConfig.wsEmitQueue,
                 event='vehicle_charge_status_stopped', 
@@ -1890,7 +1891,9 @@ def update_settings(param=None, value=None):
                 namespace='/charge_session',
                 public=False
                 )
-
+        else:
+            # Enabling, also request update now
+            oppleoConfig.vcsmThread.requestChargeStatusUpdate()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.vehicleDataOnDashboard })
 
     # No parameter found or conditions not met

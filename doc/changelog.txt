@@ -4,11 +4,11 @@ Added
 - 2FA info button
 - breadcrumbs removed
 - font awesome update to 1.15.3
-- vehicle connect icon and disconnected vehicle status
+- vehicle connect icon and hide disconnected vehicle status
 
 Fixed
 - Redirect after login
-
+- Request vehicle status update when enabling
 
 Version 1.2.9           2021-05-06
 
