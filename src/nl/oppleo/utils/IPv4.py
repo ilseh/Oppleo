@@ -122,36 +122,4 @@ class IPv4():
             if IPv4.ipInSubnet(ip=ip, subnet=subnet, default=False):
                 return True
         return False
-
-
-
  
-
-# TESTING
-"""
-ipv4 = IPv4()
-ipv4._IPv4__chargerConfigModel_router_ip_address = '10.0.1.5'
-add = ipv4.routerIPAddress
-
-ipv4.routerIPAddress = [ '10.0.1.1', '10.0.1.1/24' ]
-add = ipv4.routerIPAddress
-ipv4.routerIPAddress = []
-ipv4.routerIPAddress = [ '10.0.1.1', '10.0.1.1/24' ]
-
-
-a1 = IPv4.ipInSubnet('192.168.1.248', '192.168.1.248/31')
-a2 = IPv4.ipInSubnet('192.168.1.248', '192.168.1.248/32')
-a3 = IPv4.ipInSubnet('192.168.1.249', '192.168.1.248/31')
-
-# ip:   192.168.1.249   3232236025   C0 A8 01 F9   192 168 1 249            F9   1111 1001
-# mask: 192.168.1.248   3232236024   C0 A8 01 F8   192 168 1 248
-# mask2: /32            4294967295   FF FF FF FF
-a4 = IPv4.ipInSubnet('192.168.1.249', '192.168.1.248/32')
-a5 = IPv4.ipInSubnet('192.168.1.248', '192.168.1.248')
-a6 = IPv4.ipInSubnet('192.168.1.249', '192.168.1.248')
-a7 = IPv4.ipInSubnet('10.0.1.100', '10.0.1.0/16')
-a8 = IPv4.ipInSubnet('10.0.2.100', '10.1.1.0/8')
-a9 = IPv4.ipInSubnet('10.0.2.100', '10.1.1.0/16')
-a10 = IPv4.ipInSubnet('33.25.28.1', '192.168.1.248/24')
-
-"""

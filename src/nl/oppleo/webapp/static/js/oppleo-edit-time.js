@@ -34,7 +34,7 @@ class OppleoEditTime extends HTMLElement {
       <script src="/static/plugins/bootstrap/4.4.1/js/bootstrap.min.js"></script>
       <script src="/static/js/waves.js"></script>
     
-      <link rel="stylesheet" type="text/css" href="/static/plugins/fontawesome/5.12.0/css/all.css">
+      <link rel="stylesheet" type="text/css" href="/static/plugins/fontawesome/5.13.3/css/all.min.css">
       <style>
       button {
         cursor: pointer;

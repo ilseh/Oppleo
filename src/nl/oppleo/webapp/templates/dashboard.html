@@ -490,7 +490,7 @@
                     (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
                    ).toLowerCase()
 
-      let pbf = (chargePortDoorOpen ? '<i class="fas fa-plug"></i> ' : '<i class="fas fa-key"></i> ' ) + ' '
+      let pbf = (chargePortDoorOpen ? '<i class="fas fa-plug"></i> ' : '<span class="fa-layers fa-fw fa-6x" style="font-size: 12px;"><span class="fas fa-slash" data-fa-mask="fas fa-plug" data-fa-transform="down-2.25"></span><span class="fas fa-slash"></span></span>' ) + ' '
       pbf += chargingState.toLowerCase() + ' '
       pbf += ( chargingState=='Charging' ? '<span class="hide-under-740">@ ' + chargeRate + 'km/h</span> ' : '' )
       pbf += '<span class="hide-under-370"><i class="fas fa-charging-station"></i> ' + chargeEnergyAdded + 'kWh </span>'
@@ -523,7 +523,37 @@
         })
       }
     }
+    function enableVehicleConnectedIdicator(enabled) {
+      // Enable vehicle connected indicator
+      $('span#vehicleConnectedIndicatorSpacer').toggleClass('d-none', !enabled)
+      $('span#vehicleConnectedIndicator').toggleClass('d-none', !enabled)
+    }
+    function updateVehicleConnectedIdicator(connected) {
+      // Enable vehicle connected indicator
+      if (connected) {
+        $('span#vehicleConnectedIndicator').empty()
+        $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
+        $('span#vehicleConnectedIndicator').addClass('badge-success')
+        $('span#vehicleConnectedIndicator').removeClass('badge-outlined')
+        $('span#vehicleConnectedIndicator').css({'padding-left': '6px'})
+        $('span#vehicleConnectedIndicator').append(`<span class="fas fa-plug" style="font-size: 11px;"></span>`)
+        $('span#vehicleConnectedIndicator').attr('data-original-title','Verbonden')
+        $('span#vehicleConnectedIndicator').tooltip('hide')
 
+      } else {
+        $('span#vehicleConnectedIndicator').empty()
+        $('span#vehicleConnectedIndicator').addClass('badge-secondary')
+        $('span#vehicleConnectedIndicator').removeClass('badge-success')
+        $('span#vehicleConnectedIndicator').addClass('badge-outlined')
+        $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
+        $('span#vehicleConnectedIndicator').append(`<span class="fa-layers fa-fw fa-6x" style="font-size: 11px;">
+                                                      <span class="fas fa-slash" data-fa-mask="fas fa-plug" data-fa-transform="down-2.25"></span>
+                                                      <span class="fas fa-slash"></span>
+                                                    </span>`)
+        $('span#vehicleConnectedIndicator').attr('data-original-title','Niet aangesloten')
+        $('span#vehicleConnectedIndicator').tooltip('hide')
+      }
+    }
     function requestVehicleChargeStateUpdate() {
       console.log(timestamp() + ' requestVehicleChargeStateUpdate()')
       $.ajax({
@@ -537,64 +567,6 @@
       .done(function(data) {
         // log data to the console so we can see
         console.log(data)
-      })
-      .fail(function(data) {
-        console.log(data)
-        // Probably not logged in
-      })
-      .always(function() {
-      })
-    }
-
-    function getVehicleChargeState() {
-      console.log(timestamp() + ' getVehicleChargeState()')
-      $.ajax({
-        type		    : 'GET',
-        url			    : '/vehicle_charge_state/',
-        contentType : 'application/json',
-        dataType	  : 'json',
-        headers     : { 'ignore-login-next': 'true' },
-        encode		  : true
-      }) // using the done promise callback
-      .done(function(data) {
-        // log data to the console so we can see
-        console.log(data)
-
-        switch (data.status) {
-          case 200:
-            progressMin = 0
-            progressMax = 100                                                           // 100 (percentage)
-            progressConversion = data.chargeState?.chargeLimitSocMax /progressMax       // / happens to be 1 (@ 100%)
-            chargeCurrent = data.chargeState?.batteryLevel * progressConversion         // %     90
-            chargeRequested = data.chargeState?.chargeLimitSoc * progressConversion     // % white line
-            chargeEnergyAdded = data.chargeState?.chargeEnergyAdded                     // kWh
-            chargeKmAdded = data.chargeState?.chargeKmAddedRated                        // km
-            idealBatteryRange = data.chargeState?.idealBatteryRange                     // km
-            batteryRange = (data.chargeState?.idealBatteryRange / chargeCurrent) * progressMax  // km
-            chargeStart = chargeCurrent - ((chargeKmAdded / idealBatteryRange) *100)  // %     32.2/420 *100% = 7,65% (90-7,65=82,3%)
-            chargePortDoorOpen = data.chargeState?.chargePortDoorOpen                   // true | false
-            chargingState = data.chargeState?.chargingState                             // Charging=Blue, Stopped=Danger, Complete=Green, Disconnected=Gray]
-            drawVehicleChargeState(data.vehicle.displayName,
-                                   progressMin,
-                                   progressMax,
-                                   chargeRequested,
-                                   chargeCurrent,
-                                   chargingState,
-                                   data.chargeState.chargeRate,
-                                   data.chargeState.minutesToFullCharge,
-                                   chargeEnergyAdded,
-                                   chargeKmAdded,
-                                   data.chargeState?.idealBatteryRange,
-                                   chargeStart,
-                                   chargePortDoorOpen,
-                                   data.chargeState.timestamp
-                                  )
-            break
-          case 404:
-          case 409:
-          default:
-            break
-        }
       })
       .fail(function(data) {
         console.log(data)
@@ -739,8 +711,15 @@
       })
       chargeSessionSocket.on('vehicle_charge_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
+        enableVehicleConnectedIdicator(true)
+        chargePortDoorOpen = msg.data.chargeState?.chargePortDoorOpen                   // true | false
+        updateVehicleConnectedIdicator(chargePortDoorOpen)
+        if (!chargePortDoorOpen) {
+          hideVehicleChargeState()
+          return
+        }
         progressMin = 0
-        progressMax = 100                                                           // 100 (percentage)
+        progressMax = 100                                                               // 100 (percentage)
         progressConversion = msg.data.chargeState?.chargeLimitSocMax /progressMax       // / happens to be 1 (@ 100%)
         chargeCurrent = msg.data.chargeState?.batteryLevel * progressConversion         // %     90
         chargeRequested = msg.data.chargeState?.chargeLimitSoc * progressConversion     // % white line
@@ -749,7 +728,6 @@
         idealBatteryRange = msg.data.chargeState?.idealBatteryRange                     // km
         batteryRange = (msg.data.chargeState?.idealBatteryRange / chargeCurrent) * progressMax  // km
         chargeStart = chargeCurrent - ((chargeKmAdded / idealBatteryRange) *100)  // %     32.2/420 *100% = 7,65% (90-7,65=82,3%)
-        chargePortDoorOpen = msg.data.chargeState?.chargePortDoorOpen                   // true | false
         chargingState = msg.data.chargeState?.chargingState                             // Charging=Blue, Stopped=Danger, Complete=Green, Disconnected=Gray]
         drawVehicleChargeState(msg.data.vehicle.displayName,
                                 progressMin,
@@ -772,6 +750,7 @@
       })
       chargeSessionSocket.on('vehicle_charge_status_stopped', function(msg) {
         hideVehicleChargeState()
+        enableVehicleConnectedIdicator(false)
       })
       // start up the SocketIO connection to the server on namespace /evse_status
       evseStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/evse_status')
@@ -926,7 +905,7 @@
       }
       {% if oppleoconfig.vehicleDataOnDashboard %}
       // Don't actively request this information. Will come through web sockets, this call blocks the front end.
-      // getVehicleChargeState()
+      enableVehicleConnectedIdicator(true)
       requestVehicleChargeStateUpdate()
       {% endif %}
     })
@@ -1002,6 +981,20 @@
                             title="Niet aangemeld"
                             >
                             <i class="fas fa-user"></i>
+                      </span>
+                      <span id="vehicleConnectedIndicatorSpacer" class="d-none">&nbsp;</span>
+                      <span class="badge badge-outlined badge-secondary d-none"
+                            id="vehicleConnectedIndicator"
+                            style="width: 22.25px; padding-left: 3px;"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Niet aangesloten"
+                            >
+                            <span class="fa-layers fa-fw fa-6x" style="font-size: 11px;">
+                              <span class="fas fa-slash" data-fa-mask="fas fa-plug" data-fa-transform="down-2.25"></span>
+                              <span class="fas fa-slash"></span>
+                            </span>                         
                       </span>
         
                 </div>

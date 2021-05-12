@@ -47,7 +47,7 @@ class OppleoEditSelect extends HTMLElement {
       <link href="/static/plugins/select2/4.0.7/select2.min.css" rel="stylesheet" />
       <script src="/static/plugins/select2/4.0.7/select2.min.js"></script>
 
-      <link rel="stylesheet" type="text/css" href="/static/plugins/fontawesome/5.12.0/css/all.css">
+      <link rel="stylesheet" type="text/css" href="/static/plugins/fontawesome/5.13.3/css/all.min.css">
       <link rel="stylesheet" type="text/css" href="/static/css/oppleo-edit-select.css">
       <style>
 

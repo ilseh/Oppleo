@@ -841,6 +841,11 @@
         updateSettings( 'allowLocalDashboardAccess', $(this).prop('checked') )
       })
       $('input#bypassLocal2FA').change(function() {
+
+        // TODO: if 2FA enabled, check 2FA!
+        //       make field in database and oppleoConfig
+        //       add to flaskRoute.py
+
         updateSettings( 'bypassLocal2FA', $(this).prop('checked') )
       })
       
@@ -1912,6 +1917,26 @@
                                     {% if oppleoconfig.allowLocalDashboardAccess %}checked{% endif %}
                                     name="allowLocalDashboardAccess"
                                     id="allowLocalDashboardAccess"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Lokaal 2FA omzeilen:</td>
+                              <td class="text-primary">
+                                <form id="bypass-local-2fa-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.bypassLocal2FA %}checked{% endif %}
+                                    name="bypassLocal2FA"
+                                    id="bypassLocal2FA"
                                     data-toggle="toggle"
                                     data-on="<i class='far fa-thumbs-up'></i></i> JA"
                                     data-off="<i class='far fa-thumbs-down'></i> NEE"
