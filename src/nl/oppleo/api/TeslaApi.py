@@ -519,12 +519,12 @@ class TeslaAPI:
             self.logger.debug("Het VIN is : %s " % vehicle['vin'])
         return self.vehicle_list
 
-    def getVehicleWithId(self, id=None):
+    def getVehicleWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getVehicleWithId() id={}".format(id))
         if id is None:
             self.logger.debug("getVehicleWithId() id={} return None (1)".format(id))
             return None
-        vehicle_list = self.getVehicleList()
+        vehicle_list = self.getVehicleList(update=update)
         if vehicle_list is None:
             self.logger.debug("getVehicleWithId() id={} return None (2)".format(id))
             return None
@@ -549,9 +549,9 @@ class TeslaAPI:
         return nid
 
 
-    def wakeUpVehicleWithId(self, id=None):
-        self.logger.debug("wakeUpVehicleWithId: " + self.API_WAKE_UP)
-        vehicle = self.getVehicleWithId(id)
+    def wakeUpVehicleWithId(self, id:str=None):
+        self.logger.debug("wakeUpVehicleWithId(): id={}".format(id))
+        vehicle = self.getVehicleWithId(id=id)
         if vehicle is None:
             return False
         wake_up_tries = 0
@@ -595,8 +595,8 @@ class TeslaAPI:
         return True
 
 
-    def vehicleWithIdIsAsleep(self, id=None):
-        self.logger.debug("vehicleWithIdIsAsleep()")
+    def vehicleWithIdIsAsleep(self, id:str=None):
+        self.logger.debug("vehicleWithIdIsAsleep() id={}".format(id))
         vehicle = self.getVehicleWithId(id)
         if vehicle is None:
             self.logger.debug("Cannot determine. Vehicle not found.")
@@ -605,7 +605,7 @@ class TeslaAPI:
         return vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP
 
 
-    def getVehicleStateWithId(self, id=None, update=False):
+    def getVehicleStateWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getVehicleStateWithId() id={} update={}".format(id, str(update)))
         vehicle = self.getVehicleWithId(id)
         if id is None or vehicle is None:
@@ -615,8 +615,8 @@ class TeslaAPI:
         if (self.VEHICLE_STATE_TOKEN in vehicle) and (vehicle[self.VEHICLE_STATE_TOKEN] != None) and (not update):
             return vehicle[self.VEHICLE_STATE_TOKEN]
         # Needs to be awake
-        if (self.vehicleWithIdIsAsleep(id) and
-                not self.wakeUpVehicleWithId(id)):
+        if (self.vehicleWithIdIsAsleep(id=id) and
+                not self.wakeUpVehicleWithId(id=id)):
             self.logger.debug("getVehicleStateWithId() id={}  return None (2)".format(id))
             return None
         self.logger.debug("getVehicleStateWithId() - awake")
@@ -653,9 +653,10 @@ class TeslaAPI:
         return response_dict['response']
 
 
-    def getChargeStateWithId(self, id:str=None, update:bool=False):
+    def getChargeStateWithId(self, id:str=None, update:bool=False, wakeUpWhenSleeping:bool=False):
         self.logger.debug("getChargeStateWithId() id={} update={}".format(id, str(update)))
-        vehicle = self.getVehicleWithId(id)
+        # Get updated vehicle info, as iit contains state (sleep or online)
+        vehicle = self.getVehicleWithId(id=id, update=update)
         if id is None or vehicle is None:
             self.logger.debug("getChargeStateWithId() id={}  return None (1)".format(id))
             return None
@@ -663,8 +664,10 @@ class TeslaAPI:
         if (self.CHARGE_STATE_TOKEN in vehicle) and (vehicle[self.CHARGE_STATE_TOKEN] != None) and (not update):
             return vehicle[self.CHARGE_STATE_TOKEN]
         # Needs to be awake
-        if (self.vehicleWithIdIsAsleep(id) and
-                not self.wakeUpVehicleWithId(id)):
+        if ( ( self.vehicleWithIdIsAsleep(id=id) and not wakeUpWhenSleeping) or
+             ( wakeUpWhenSleeping and not self.wakeUpVehicleWithId(id=id) )
+           ):
+           # Not awake and not requested to not succeded to wakeup
             self.logger.debug("getChargeStateWithId() id={}  return None (2)".format(id))
             return None
         self.logger.debug("getChargeStateWithId() - awake")
@@ -688,6 +691,7 @@ class TeslaAPI:
         if r.status_code != self.HTTP_200_OK:
             self.logger.warn("TeslaAPI.getChargeStateWithId(): status code {}".format(r.status_code))
             if r.status_code == self.HTTP_408_REQUEST_TIMEOUT:
+                # NOTE this happens when the vehicle is unreachable or still sleeping (undetected)
                 response_dict = json.loads(r.text)
                 self.logger.warning("Error: %s" % response_dict['error'])
             if r.status_code == self.HTTP_401_UNAUTHORIZED:
@@ -700,7 +704,7 @@ class TeslaAPI:
         return response_dict['response']
 
 
-    def getClimateStateWithId(self, id=None, update=False):
+    def getClimateStateWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getClimateStateWithId() id={} update={}".format(id, str(update)))
         vehicle = self.getVehicleWithId(id)
         if id is None or vehicle is None:
@@ -710,8 +714,8 @@ class TeslaAPI:
         if (self.CLIMATE_STATE_TOKEN in vehicle) and (vehicle[self.CLIMATE_STATE_TOKEN] != None) and (not update):
             return vehicle[self.CLIMATE_STATE_TOKEN]
         # Needs to be awake
-        if (self.vehicleWithIdIsAsleep(id) and
-                not self.wakeUpVehicleWithId(id)):
+        if (self.vehicleWithIdIsAsleep(id=id) and
+                not self.wakeUpVehicleWithId(id=id)):
             self.logger.debug("getClimateStateWithId() id={}  return None (2)".format(id))
             return None
         self.logger.debug("getClimateStateWithId() - awake")
@@ -747,7 +751,7 @@ class TeslaAPI:
         return response_dict['response']
 
 
-    def getDriveStateWithId(self, id=None, update=False):
+    def getDriveStateWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getDriveStateWithId() id={} update={}".format(id, str(update)))
         vehicle = self.getVehicleWithId(id)
         if id is None or vehicle is None:
@@ -757,8 +761,8 @@ class TeslaAPI:
         if (self.DRIVE_STATE_TOKEN in vehicle) and (vehicle[self.DRIVE_STATE_TOKEN] != None) and (not update):
             return vehicle[self.DRIVE_STATE_TOKEN]
         # Needs to be awake
-        if (self.vehicleWithIdIsAsleep(id) and
-                not self.wakeUpVehicleWithId(id)):
+        if (self.vehicleWithIdIsAsleep(id=id) and
+                not self.wakeUpVehicleWithId(id=id)):
             self.logger.debug("getDriveStateWithId() id={}  return None (2)".format(id))
             return None
         self.logger.debug("getDriveStateWithId() - awake")
@@ -794,7 +798,7 @@ class TeslaAPI:
         return response_dict['response']
 
 
-    def getVehicleConfigWithId(self, id=None, update=False):
+    def getVehicleConfigWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getVehicleConfigWithId() id={} update={}".format(id, str(update)))
         vehicle = self.getVehicleWithId(id)
         if id is None or vehicle is None:
@@ -804,8 +808,8 @@ class TeslaAPI:
         if (self.VEHICLE_CONFIG_TOKEN in vehicle) and (vehicle[self.VEHICLE_CONFIG_TOKEN] != None) and (not update):
             return vehicle[self.VEHICLE_CONFIG_TOKEN]
         # Needs to be awake
-        if (self.vehicleWithIdIsAsleep(id) and
-                not self.wakeUpVehicleWithId(id)):
+        if (self.vehicleWithIdIsAsleep(id=id) and
+                not self.wakeUpVehicleWithId(id=id)):
             self.logger.debug("getVehicleConfigWithId() id={}  return None (2)".format(id))
             return None
         self.logger.debug("getVehicleConfigWithId() - awake")

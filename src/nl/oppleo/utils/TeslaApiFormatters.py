@@ -107,7 +107,7 @@ def battCapacityFromOptionCodes(optionCodes:str=None) -> int:
 
 
 def formatVehicle(vehicle=None):
-    csEl = ['vehicle_id', 'vin', 'display_name', 'option_codes', 'timestamp']
+    csEl = ['vehicle_id', 'vin', 'display_name', 'option_codes', 'timestamp', 'state']
  
     if vehicle is None:
         return {}

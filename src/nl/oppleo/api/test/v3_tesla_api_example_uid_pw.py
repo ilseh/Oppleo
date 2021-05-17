@@ -3,7 +3,7 @@ import pprint
 from datetime import datetime
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.daemon.VehicleChargeStatusMonitorThread import VehicleChargeStatusMonitorThread
-from nl.oppleo.utils.TeslaApiFormatters import formatChargeState
+from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
 
 vehicle_index = 0
 
@@ -15,6 +15,7 @@ password = getpass('Password (typing not shown): ')
 t_auth = t_api.authenticate_v3(username, password)
 requiresRefresh = t_api.tokenRequiresRefresh()
 # refreshed = t_api.refreshTokenIfRequired()
+
 v_list = t_api.getVehicleList()
 if v_list is None:
     print('No vehicles found')
@@ -60,7 +61,9 @@ else:
     """
 
 
-    vehicle_config = t_api.getVehicleConfigWithId(v_list[vehicle_index]['id_s'])
+    vehicle_config = t_api.getVehicleConfigWithId(id=v_list[vehicle_index]['id_s'])
+    vehicle = t_api.getVehicleWithId(id=v_list[vehicle_index]['id_s'], update=False)
+    print( formatVehicle(vehicle) )
 
     odo = t_api.getOdometerWithId(v_list[vehicle_index]['id_s'])
     print('Odometer for vehicle {} (id:{} vin:{}) is {}km'.format(

@@ -132,8 +132,9 @@ class VehicleChargeStatusMonitorThread(object):
 
                     self.__logger.debug("monitor() [1] tKey={}".format(tKey))
 
-                    # Force update
-                    chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, update=True)
+                    # Force update, for now do not wakeup
+                    # TODO - add wakeup as parameter
+                    chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, update=True, wakeUpWhenSleeping=False)
 
                     self.__logger.debug("monitor() [2] tKey={}".format(tKey))
 
@@ -148,9 +149,8 @@ class VehicleChargeStatusMonitorThread(object):
                             event='vehicle_charge_status_update', 
                             id=oppleoConfig.chargerName,
                             data={ 'chargeState'            : formatChargeState(chargeState),
-                                    'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
-                                    'vehicleMonitorInterval' : self.__vehicleMonitorInterval
-
+                                   'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
+                                   'vehicleMonitorInterval' : self.__vehicleMonitorInterval
                             },
                             namespace='/charge_session',
                             public=False
@@ -158,7 +158,20 @@ class VehicleChargeStatusMonitorThread(object):
                         # len(oppleoConfig.connectedClients) == 0
                     else:
                         self.__logger.debug('monitor() - could not get charge state (None)')
-
+                        if teslaApi.vehicleWithIdIsAsleep(id=rfidData.vehicle_id):
+                            # Send change notification - vehicle asleep
+                            WebSocketUtil.emit(
+                                wsEmitQueue=oppleoConfig.wsEmitQueue,
+                                event='vehicle_charge_status_update', 
+                                id=oppleoConfig.chargerName,
+                                data={ 'chargeState'            : formatChargeState(chargeState),
+                                                                  # No need to update vehicle information, done when requesting charge state
+                                       'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(id=rfidData.vehicle_id, update=False)),
+                                       'vehicleMonitorInterval' : self.__vehicleMonitorInterval
+                                },
+                                namespace='/charge_session',
+                                public=False
+                                )
                 else: 
                     # len(oppleoConfig.connectedClients) == 0
                     self.__logger.debug('monitor() no connectedClients to report chargeState to or display not enabled. Skip and go directly to sleep.')

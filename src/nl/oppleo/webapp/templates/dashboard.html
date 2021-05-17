@@ -538,31 +538,61 @@
       $('span#vehicleConnectedIndicatorSpacer').toggleClass('d-none', !enabled)
       $('span#vehicleConnectedIndicator').toggleClass('d-none', !enabled)
     }
-    function updateVehicleConnectedIdicator(connected) {
+    const VEHICLE_STATE_ASLEEP = 'asleep'
+    const VEHICLE_STATE_CONNECTED = 'connected'
+    const VEHICLE_STATE_DISCONNECTED = 'disconnected'
+    const VEHICLE_STATE_UNKNOWN = 'unknown'
+    function updateVehicleConnectedIdicator(state) {
       // Enable vehicle connected indicator
-      if (connected) {
-        $('span#vehicleConnectedIndicator').empty()
-        $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
-        $('span#vehicleConnectedIndicator').addClass('badge-success')
-        $('span#vehicleConnectedIndicator').removeClass('badge-outlined')
-        $('span#vehicleConnectedIndicator').css({'padding-left': '6px'})
-        $('span#vehicleConnectedIndicator').append(`<span class="fas fa-plug" style="font-size: 11px;"></span>`)
-        $('span#vehicleConnectedIndicator').attr('data-original-title','Verbonden')
-        $('span#vehicleConnectedIndicator').tooltip('hide')
-
-      } else {
-        $('span#vehicleConnectedIndicator').empty()
-        $('span#vehicleConnectedIndicator').addClass('badge-secondary')
-        $('span#vehicleConnectedIndicator').removeClass('badge-success')
-        $('span#vehicleConnectedIndicator').addClass('badge-outlined')
-        $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
-        $('span#vehicleConnectedIndicator').append(`<span class="fa-layers fa-fw fa-6x" style="font-size: 11px;">
-                                                      <span class="fas fa-slash" data-fa-mask="fas fa-plug" data-fa-transform="down-2.25"></span>
-                                                      <span class="fas fa-slash"></span>
-                                                    </span>`)
-        $('span#vehicleConnectedIndicator').attr('data-original-title','Niet aangesloten')
-        $('span#vehicleConnectedIndicator').tooltip('hide')
+      $('span#vehicleConnectedIndicator').empty()
+      switch (state) {
+        case VEHICLE_STATE_CONNECTED:
+          $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
+          $('span#vehicleConnectedIndicator').addClass('badge-success')
+          $('span#vehicleConnectedIndicator').removeClass('badge-outlined')
+          $('span#vehicleConnectedIndicator').css({'padding-left': '6px'})
+          $('span#vehicleConnectedIndicator').append(`<span class="fas fa-plug" style="font-size: 11px;"></span>`)
+          $('span#vehicleConnectedIndicator').attr('data-original-title','Verbonden')
+          break
+        case VEHICLE_STATE_DISCONNECTED:
+          $('span#vehicleConnectedIndicator').empty()
+          $('span#vehicleConnectedIndicator').addClass('badge-secondary')
+          $('span#vehicleConnectedIndicator').removeClass('badge-success')
+          $('span#vehicleConnectedIndicator').addClass('badge-outlined')
+          $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
+          $('span#vehicleConnectedIndicator').append(`<span class="fa-layers fa-fw fa-6x" style="font-size: 11px;">
+                                                        <span class="fas fa-slash" data-fa-mask="fas fa-plug" data-fa-transform="down-2.25"></span>
+                                                        <span class="fas fa-slash"></span>
+                                                      </span>`)
+          $('span#vehicleConnectedIndicator').attr('data-original-title','Niet aangesloten')
+          break
+        case VEHICLE_STATE_ASLEEP:
+          $('span#vehicleConnectedIndicator').addClass('badge-secondary')
+          $('span#vehicleConnectedIndicator').removeClass('badge-success')
+          $('span#vehicleConnectedIndicator').addClass('badge-outlined')
+          $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
+          $('span#vehicleConnectedIndicator').append(`<span class="" style="font-size: 8px;">
+                                                      z
+                                                        <sup>
+                                                            z
+                                                            <sup>
+                                                                z
+                                                            </sup>
+                                                        </sup>
+                                                      </span>`)
+          $('span#vehicleConnectedIndicator').attr('data-original-title','In slaap')
+          break
+        case VEHICLE_STATE_UNKNOWN:
+          $('span#vehicleConnectedIndicator').addClass('badge-secondary')
+          $('span#vehicleConnectedIndicator').removeClass('badge-success')
+          $('span#vehicleConnectedIndicator').addClass('badge-outlined')
+          $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
+          $('span#vehicleConnectedIndicator').append('<span class="fas fa-question" style="font-size: 11px;"></span>')
+          $('span#vehicleConnectedIndicator').attr('data-original-title','Verbindingstatus wordt opgehaald')
+        default:
+          break
       }
+      $('span#vehicleConnectedIndicator').tooltip('hide')
     }
     function requestVehicleChargeStateUpdate() {
       console.log(timestamp() + ' requestVehicleChargeStateUpdate()')
@@ -722,12 +752,27 @@
       chargeSessionSocket.on('vehicle_charge_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         enableVehicleConnectedIdicator(true)
-        chargePortDoorOpen = msg.data.chargeState?.chargePortDoorOpen                   // true | false
-        updateVehicleConnectedIdicator(chargePortDoorOpen)
-        if (!chargePortDoorOpen) {
+        // Hide if not online
+        if (msg.data.vehicle.state == 'asleep') {
+          updateVehicleConnectedIdicator(VEHICLE_STATE_ASLEEP)
           hideVehicleChargeState()
           return
         }
+        if (msg.data.vehicle.state != 'online') {
+          updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
+          hideVehicleChargeState()
+          return
+        }
+        // Vehicle online, information available. If charge door is open, we assume it is connected
+        // TODO: add GPS validation. Now assume charging here
+        chargePortDoorOpen = msg.data.chargeState?.chargePortDoorOpen                   // true | false
+        // Hide if not connected
+        if (!chargePortDoorOpen) {
+          updateVehicleConnectedIdicator(VEHICLE_STATE_DISCONNECTED)
+          hideVehicleChargeState()
+          return
+        }
+        updateVehicleConnectedIdicator(VEHICLE_STATE_CONNECTED)
         progressMin = 0
         progressMax = 100                                                               // 100 (percentage)
         progressConversion = msg.data.chargeState?.chargeLimitSocMax /progressMax       // / happens to be 1 (@ 100%)
@@ -915,7 +960,7 @@
       }
       {% if oppleoconfig.vehicleDataOnDashboard %}
       // Don't actively request this information. Will come through web sockets, this call blocks the front end.
-      enableVehicleConnectedIdicator(true)
+      enableVehicleConnectedIdicator({% if current_user.is_authenticated %}true{% else %}false{% endif %})
       requestVehicleChargeStateUpdate()
       {% endif %}
     })
@@ -995,16 +1040,13 @@
                       <span id="vehicleConnectedIndicatorSpacer" class="d-none">&nbsp;</span>
                       <span class="badge badge-outlined badge-secondary d-none"
                             id="vehicleConnectedIndicator"
-                            style="width: 22.25px; padding-left: 3px;"
+                            style="width: 22.25px; padding-left: 6px;"
                             data-toggle="tooltip" 
                             data-placement="bottom" 
                             data-html="true" 
-                            title="Niet aangesloten"
+                            title="Verbindingstatus wordt opgehaald"
                             >
-                            <span class="fa-layers fa-fw fa-6x" style="font-size: 11px;">
-                              <span class="fas fa-slash" data-fa-mask="fas fa-plug" data-fa-transform="down-2.25"></span>
-                              <span class="fas fa-slash"></span>
-                            </span>                         
+                            <span class="fas fa-question" style="font-size: 11px;"></span>
                       </span>
         
                 </div>
