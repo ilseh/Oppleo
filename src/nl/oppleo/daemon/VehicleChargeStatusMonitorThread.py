@@ -26,6 +26,7 @@ class VehicleChargeStatusMonitorThread(object):
     __vehicleMonitorInterval = 20
     __sleepInterval = 0.25
     __requestChargeStatusNow = False
+    __requestVehicleWakeupNow = False
 
     def __init__(self):
         self.__threadLock = threading.Lock()
@@ -81,7 +82,7 @@ class VehicleChargeStatusMonitorThread(object):
         monitorInterval = (self.__vehicleMonitorInterval + self.__sleepInterval)
         
         while not self.__stop_event.is_set():
-            if monitorInterval > self.__vehicleMonitorInterval or self.__requestChargeStatusNow:
+            if monitorInterval > self.__vehicleMonitorInterval or self.__requestChargeStatusNow or self.__requestVehicleWakeupNow:
                 monitorInterval = 0
                 with self.__threadLock:
                     self.__requestChargeStatusNow = False
@@ -117,6 +118,21 @@ class VehicleChargeStatusMonitorThread(object):
                         tokenMediator.invalidate(token=rfidData.api_access_token, key=tKey, ref='VehicleStatusMonitorThread: '+rfidData.rfid,)
                         # Make sure we reload the RFID tag data next loop
                         rfidData = None
+                        if self.__requestVehicleWakeupNow:
+                            with self.__threadLock:
+                                self.__requestVehicleWakeupNow = False
+                            # Send wakeup failed notification
+                            WebSocketUtil.emit(
+                                wsEmitQueue=oppleoConfig.wsEmitQueue,
+                                event='vehicle_status_update', 
+                                id=oppleoConfig.chargerName,
+                                data={ 'request'                : 'wakeupVehicle',
+                                       'result'                 : 424,
+                                       'msg'                    : 'No valid token'
+                                },
+                                namespace='/charge_session',
+                                public=False
+                                )
                         continue
 
                     self.__logger.debug("monitor() valid token")
@@ -134,7 +150,26 @@ class VehicleChargeStatusMonitorThread(object):
 
                     # Force update, for now do not wakeup
                     # TODO - add wakeup as parameter
-                    chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, update=True, wakeUpWhenSleeping=False)
+                    chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, 
+                                                                update=True, 
+                                                                wakeUpWhenSleeping=False or self.__requestVehicleWakeupNow
+                                                               )
+
+                    if self.__requestVehicleWakeupNow:
+                        with self.__threadLock:
+                            self.__requestVehicleWakeupNow = False
+                        # Send wakeup result notification
+                        WebSocketUtil.emit(
+                            wsEmitQueue=oppleoConfig.wsEmitQueue,
+                            event='vehicle_status_update', 
+                            id=oppleoConfig.chargerName,
+                            data={ 'request'                : 'wakeupVehicle',
+                                   'result'                 : 200 if chargeState is not None else 424,
+                                   'msg'                    : 'Vehicle awake' if chargeState is not None else 'Could not wakeup vehicle'
+                            },
+                            namespace='/charge_session',
+                            public=False
+                            )
 
                     self.__logger.debug("monitor() [2] tKey={}".format(tKey))
 
@@ -175,6 +210,8 @@ class VehicleChargeStatusMonitorThread(object):
                 else: 
                     # len(oppleoConfig.connectedClients) == 0
                     self.__logger.debug('monitor() no connectedClients to report chargeState to or display not enabled. Skip and go directly to sleep.')
+                    with self.__threadLock:
+                        self.__requestVehicleWakeupNow = False
 
             # Sleep for quite a while, and yield for other threads
             time.sleep(self.__sleepInterval)
@@ -190,6 +227,12 @@ class VehicleChargeStatusMonitorThread(object):
         with self.__threadLock:
             self.__requestChargeStatusNow = True
 
+    """
+        Causes the monitor loop to timeout now and wake up the vehicle
+    """ 
+    def requestVehicleWakeup(self):
+        with self.__threadLock:
+            self.__requestVehicleWakeupNow = True
 
     def start(self):
         self.__stop_event.clear()

@@ -549,14 +549,14 @@ class TeslaAPI:
         return nid
 
 
-    def wakeUpVehicleWithId(self, id:str=None):
+    def wakeUpVehicleWithId(self, id:str=None, update:bool=False, wakeupTries:int=0):
         self.logger.debug("wakeUpVehicleWithId(): id={}".format(id))
-        vehicle = self.getVehicleWithId(id=id)
+        vehicle = self.getVehicleWithId(id=id, update=update)
         if vehicle is None:
             return False
         wake_up_tries = 0
         while ((vehicle[self.VEHICLE_LIST_STATE_PARAM] == self.VEHICLE_LIST_STATE_VALUE_ASLEEP) and
-               (wake_up_tries < self.MAX_WAKE_UP_TRIES)):
+               (wake_up_tries < (wakeupTries if wakeupTries != 0 else self.MAX_WAKE_UP_TRIES))):
             wake_up_tries += 1
             # 03 Wake it up, otherwise the STATE call will timeout
             try:
@@ -595,9 +595,9 @@ class TeslaAPI:
         return True
 
 
-    def vehicleWithIdIsAsleep(self, id:str=None):
+    def vehicleWithIdIsAsleep(self, id:str=None, update:bool=False):
         self.logger.debug("vehicleWithIdIsAsleep() id={}".format(id))
-        vehicle = self.getVehicleWithId(id)
+        vehicle = self.getVehicleWithId(id=id, update=update)
         if vehicle is None:
             self.logger.debug("Cannot determine. Vehicle not found.")
             return False
@@ -607,7 +607,7 @@ class TeslaAPI:
 
     def getVehicleStateWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getVehicleStateWithId() id={} update={}".format(id, str(update)))
-        vehicle = self.getVehicleWithId(id)
+        vehicle = self.getVehicleWithId(id=id, update=update)
         if id is None or vehicle is None:
             self.logger.debug("getVehicleStateWithId() id={}  return None (1)".format(id))
             return None
@@ -706,7 +706,7 @@ class TeslaAPI:
 
     def getClimateStateWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getClimateStateWithId() id={} update={}".format(id, str(update)))
-        vehicle = self.getVehicleWithId(id)
+        vehicle = self.getVehicleWithId(id=id, update=update)
         if id is None or vehicle is None:
             self.logger.debug("getClimateStateWithId() id={}  return None (1)".format(id))
             return None
@@ -753,7 +753,7 @@ class TeslaAPI:
 
     def getDriveStateWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getDriveStateWithId() id={} update={}".format(id, str(update)))
-        vehicle = self.getVehicleWithId(id)
+        vehicle = self.getVehicleWithId(id=id, update=update)
         if id is None or vehicle is None:
             self.logger.debug("getDriveStateWithId() id={}  return None (1)".format(id))
             return None
@@ -800,7 +800,7 @@ class TeslaAPI:
 
     def getVehicleConfigWithId(self, id:str=None, update:bool=False):
         self.logger.debug("getVehicleConfigWithId() id={} update={}".format(id, str(update)))
-        vehicle = self.getVehicleWithId(id)
+        vehicle = self.getVehicleWithId(id=id, update=update)
         if id is None or vehicle is None:
             self.logger.debug("getVehicleConfigWithId() id={}  return None (1)".format(id))
             return None

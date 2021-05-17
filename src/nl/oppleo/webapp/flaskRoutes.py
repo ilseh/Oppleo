@@ -60,6 +60,7 @@ HTTP_CODE_403_FORBIDDEN             = 403
 HTTP_CODE_404_NOT_FOUND             = 404
 HTTP_CODE_405_METHOD_NOT_ALLOWED    = 405
 HTTP_CODE_409_CONFLICT              = 409
+HTTP_CODE_424_FAILED_DEPENDENCY     = 424
 HTTP_CODE_500_INTERNAL_SERVER_ERROR = 500
 HTTP_CODE_501_NOT_IMPLEMENTED       = 501
 
@@ -71,6 +72,8 @@ DETAIL_CODE_25_PASSWORD_INCORRECT                   =  25    # HTTP_CODE_401_UNA
 DETAIL_CODE_26_USERNAME_UNKNOWN                     =  26    # HTTP_CODE_401_UNAUTHORIZED
 DETAIL_CODE_28_ACTION_UNKNOWN                       =  28    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_29_PROCESS_STEP_UNKNOWN                 =  29    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_30_NO_RFID_DATA                         =  30    # HTTP_CODE_500_INTERNAL_SERVER_ERROR
+DETAIL_CODE_31_NO_ACTIVE_CHARGE_SESSION             =  31    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_40_PASSWORD_RULE_VIOLATION              =  40    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_41_PASSWORD_TOO_SHORT                   =  41    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_42_PASSWORD_TOO_LONG                    =  42    # HTTP_CODE_400_BAD_REQUEST
@@ -78,6 +81,8 @@ DETAIL_CODE_43_PASSWORD_INVALID_CHARACTER           =  43    # HTTP_CODE_400_BAD
 DETAIL_CODE_44_PASSWORD_UPPERCASE_REQUIRED          =  44    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_45_PASSWORD_LOWERCASE_REQUIRED          =  45    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_46_PASSWORD_SPECIAL_CHARACTER_REQUIRED  =  46    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_51_WAKEUP_VEHICLE_FAILED                =  51    # HTTP_CODE_424_FAILED_DEPENDENCY
+
 DETAIL_CODE_200_OK                                  = 200    # HTTP_CODE_200_OK
 
 """ 
@@ -2506,3 +2511,38 @@ def externalSubnet(subnetOrIP:str=None):
         'action': request.method,
         'msg'   : 'Action unknown'
         }) 
+
+
+# Always returns json
+@flaskRoutes.route("/wakeup_vehicle", methods=["GET"])
+@flaskRoutes.route("/wakeup_vehicle/", methods=["GET"])
+@authenticated_resource
+def wakeupVehicle():
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/wakeup_vehicle/')
+
+    """
+        Which vehicle? Request how?
+        - get current charge session
+        - get current rfid
+        - get vehicle
+        - see if we can wake it up at all
+        - wake up - takes long time, how to send to background?
+        - send ok
+    """
+
+    if oppleoConfig.vcsmThread is None:
+        return jsonify({
+            'status': HTTP_CODE_400_BAD_REQUEST,
+            'code'  : DETAIL_CODE_31_NO_ACTIVE_CHARGE_SESSION,
+            'action': request.method,
+            'msg'   : 'No active charge session'
+            })
+
+    oppleoConfig.vcsmThread.requestVehicleWakeup()
+    return jsonify({ 
+        'status': HTTP_CODE_200_OK,
+        'code'  : DETAIL_CODE_200_OK,
+        'action': request.method,
+        'msg'   : 'Wakeup requested'
+        })

@@ -386,7 +386,43 @@
         // Remove spinner?
       })
     }
-
+    function wakeupVehicle( ) {
+      console.log(timestamp() + ' wakeupVehicle()')
+      $('.spinner').show()
+      $.ajax({
+        type		  : 'GET',
+        url			  : '/wakeup_vehicle/',
+        dataType	: 'json',
+        encode		: true,
+        headers   : { 'ignore-login-next': 'true' }
+      }) // using the done promise callback
+      .done(function(result) {
+        // log data to the console so we can see
+        console.log(result)
+        switch(parseInt(result.status)) {
+          case 200:                   // Success - wakeup requested
+            updateVehicleConnectedIdicator(VEHICLE_STATE_WAKINGUP)
+            break
+          case 400:                   // Bad request
+          case 404:                   // Not found
+          case 424:                   // Failed
+          case 500:                   // Error (red?)
+          default:
+            autoHideNotify('warning','top-left', 'Onbekend', 'Onbekende fout ('+result.status+'). Voertuig niet gewekt.')
+            break
+        }
+      })
+      .fail(function(result) {
+        console.log('wakeupVehicle() FAILED')
+        // log data to the console so we can see
+        console.log(result)
+        autoHideNotify('error','top-left', 'Connectie fout', 'Voertuig niet gewekt.')
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
     function enableQuickStartButton( enable ) {
       // Enable quickstart button when token selected, disable otherwise
       $('button#startChargeSession').prop('disabled', !enable)
@@ -530,8 +566,8 @@
         $('span#vehicleConnectedIndicator').addClass('badge-secondary')
         $('span#vehicleConnectedIndicator').removeClass('badge-success')
         $('span#vehicleConnectedIndicator').addClass('badge-outlined')
-        $('span#vehicleConnectedIndicator').css({'padding-left': '6px'})
-        $('span#vehicleConnectedIndicator').append(`<span class="fas fa-question" style="font-size: 11px;"></span>`)
+        $('span#vehicleConnectedIndicator').css({'padding-left': '4px'})
+        $('span#vehicleConnectedIndicator').append('<span class="fas fa-car" style="font-size: 12px;"></span>')
         $('span#vehicleConnectedIndicator').attr('data-original-title','Verbindingstatus wordt opgehaald')
         $('span#vehicleConnectedIndicator').tooltip('hide')
       }
@@ -541,10 +577,13 @@
     const VEHICLE_STATE_ASLEEP = 'asleep'
     const VEHICLE_STATE_CONNECTED = 'connected'
     const VEHICLE_STATE_DISCONNECTED = 'disconnected'
+    const VEHICLE_STATE_WAKINGUP = 'wakingup'
     const VEHICLE_STATE_UNKNOWN = 'unknown'
     function updateVehicleConnectedIdicator(state) {
       // Enable vehicle connected indicator
       $('span#vehicleConnectedIndicator').empty()
+      $('#vehicleConnectedIndicator').off('click, mouseenter, mouseleave')
+      $('span#vehicleConnectedIndicator').css({'cursor': 'help'})
       switch (state) {
         case VEHICLE_STATE_CONNECTED:
           $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
@@ -571,24 +610,37 @@
           $('span#vehicleConnectedIndicator').removeClass('badge-success')
           $('span#vehicleConnectedIndicator').addClass('badge-outlined')
           $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
-          $('span#vehicleConnectedIndicator').append(`<span class="" style="font-size: 8px;">
-                                                      z
-                                                        <sup>
-                                                            z
-                                                            <sup>
-                                                                z
-                                                            </sup>
-                                                        </sup>
-                                                      </span>`)
+          $('span#vehicleConnectedIndicator').append(`<span class="" style="font-size: 10px;">z<sup>z<sup>z</sup></sup></span>`)
           $('span#vehicleConnectedIndicator').attr('data-original-title','In slaap')
+          $('#vehicleConnectedIndicator').on('click', (e) => {
+            wakeupVehicle()
+          })
+          $('#vehicleConnectedIndicator').on('mouseenter', (e) => {
+            $('span#vehicleConnectedIndicator').addClass('badge-success')
+            $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
+          })
+          $('#vehicleConnectedIndicator').on('mouseleave', (e) => {
+            $('span#vehicleConnectedIndicator').removeClass('badge-success')
+            $('span#vehicleConnectedIndicator').addClass('badge-secondary')
+          })
+          $('span#vehicleConnectedIndicator').css({'cursor': 'pointer'})
+          break
+        case VEHICLE_STATE_WAKINGUP:
+          $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
+          $('span#vehicleConnectedIndicator').addClass('badge-success')
+          $('span#vehicleConnectedIndicator').addClass('badge-outlined')
+          $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
+          $('span#vehicleConnectedIndicator').append('<span class="fas fa-spinner fa-pulse" style="font-size: 14px;"></span>')
+          $('span#vehicleConnectedIndicator').attr('data-original-title','Voertuig wordt gewekt...')
           break
         case VEHICLE_STATE_UNKNOWN:
           $('span#vehicleConnectedIndicator').addClass('badge-secondary')
           $('span#vehicleConnectedIndicator').removeClass('badge-success')
           $('span#vehicleConnectedIndicator').addClass('badge-outlined')
-          $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
-          $('span#vehicleConnectedIndicator').append('<span class="fas fa-question" style="font-size: 11px;"></span>')
+          $('span#vehicleConnectedIndicator').css({'padding-left': '4px'})
+          $('span#vehicleConnectedIndicator').append('<span class="fas fa-car" style="font-size: 12px;"></span>')
           $('span#vehicleConnectedIndicator').attr('data-original-title','Verbindingstatus wordt opgehaald')
+          break
         default:
           break
       }
@@ -748,6 +800,32 @@
       chargeSessionSocket.on('off_peak_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         updateOffPeakIndicator( msg.data.offPeakEnabled, msg.data.isOffPeak, msg.data.peakAllowOnePeriod, false, true )
+      })
+      chargeSessionSocket.on('vehicle_status_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        // Wakeup request
+        switch (msg.data.request) {
+          case 'wakeupVehicle':
+            switch (msg.data.result) {
+              case 200:
+                autoHideNotify('success','top-left', 'Wakker', 'Voertuig succesvol gewekt.')
+                updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
+                break
+              case 424:
+                autoHideNotify('warning','top-left', 'Mislukt', 'Voertuig wekken mislukt')
+                updateVehicleConnectedIdicator(VEHICLE_STATE_ASLEEP)
+                break
+              default:
+                autoHideNotify('error','top-left', 'Mislukt', 'Voertuig wekken mislukt')
+                updateVehicleConnectedIdicator(VEHICLE_STATE_ASLEEP)
+                break
+            }
+            break
+          default:
+            console.error('Unknown vehicle_status_update received: ' + JSON.stringify(msg))
+            updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
+            break
+        }
       })
       chargeSessionSocket.on('vehicle_charge_status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
@@ -1040,13 +1118,13 @@
                       <span id="vehicleConnectedIndicatorSpacer" class="d-none">&nbsp;</span>
                       <span class="badge badge-outlined badge-secondary d-none"
                             id="vehicleConnectedIndicator"
-                            style="width: 22.25px; padding-left: 6px;"
+                            style="width: 22.25px; padding-left: 4px;"
                             data-toggle="tooltip" 
                             data-placement="bottom" 
                             data-html="true" 
                             title="Verbindingstatus wordt opgehaald"
                             >
-                            <span class="fas fa-question" style="font-size: 11px;"></span>
+                            <span class="fas fa-car" style="font-size: 12px;"></span>
                       </span>
         
                 </div>

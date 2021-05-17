@@ -220,13 +220,13 @@
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Daluren zon/feestdag verwijderd [' + data.value + '].')
                 break
               case 'chargerName':
-                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt naam gewijzigd in ' + data.value + '.');
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt naam gewijzigd in ' + data.value + '.')
                 break
               case 'factorWhkm':
-                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Whkm factor gewijzigd in ' + data.value + '.');
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Whkm factor gewijzigd in ' + data.value + '.')
                 break
               case 'chargerTariff':
-                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt tarief gewijzigd in ' + data.value + '.');
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt tarief gewijzigd in ' + data.value + '.')
                 break
               case 'smbBackupSettings':
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Offsite backup instellingen aangepast.')
@@ -1930,13 +1930,13 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Lokaal 2FA omzeilen:</td>
+                              <td class="text-dark">Lokaal 2FA omzeilen toestaan:</td>
                               <td class="text-primary">
                                 <form id="bypass-local-2fa-form">
                                   <input type="checkbox" 
-                                    {% if oppleoconfig.bypassLocal2FA %}checked{% endif %}
-                                    name="bypassLocal2FA"
-                                    id="bypassLocal2FA"
+                                    {% if oppleoconfig.allowLocal2FABypass %}checked{% endif %}
+                                    name="allowLocal2FABypass"
+                                    id="allowLocal2FABypass"
                                     data-toggle="toggle"
                                     data-on="<i class='far fa-thumbs-up'></i></i> JA"
                                     data-off="<i class='far fa-thumbs-down'></i> NEE"
