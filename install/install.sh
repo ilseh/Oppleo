@@ -254,11 +254,11 @@ function installSystemdService( ) {
   fi
 
   # Check if service file exists
-  if [ -f /etc/systemd/system/Oppleo.service ]; then
-    echo "  The Oppleo systemd service file exists."
-    echo " installSystemdService - Done (0)"
-    return 0
-  fi
+  #if [ -f /etc/systemd/system/Oppleo.service ]; then
+  #  echo "  The Oppleo systemd service file exists."
+  #  echo " installSystemdService - Done (0)"
+  #  return 0
+  #fi
 
   echo "  Installing the Oppleo systemd service..."
 
