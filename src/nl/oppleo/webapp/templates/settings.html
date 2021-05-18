@@ -830,6 +830,9 @@
       $('input#vehicleDataOnDashboard').change(function() {
         updateSettings( 'vehicleDataOnDashboard', $(this).prop('checked') )
       })
+      $('input#wakeupVehicleOnDataRequest').change(function() {
+        updateSettings( 'wakeupVehicleOnDataRequest', $(this).prop('checked') )
+      })
 
       $('input#restrictMenu').change(function() {
         updateSettings( 'restrictMenu', $(this).prop('checked') )
@@ -1847,6 +1850,26 @@
                                     {% if oppleoconfig.vehicleDataOnDashboard %}checked{% endif %}
                                     name="vehicleDataOnDashboard"
                                     id="vehicleDataOnDashboard"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Voertuig wekken:</td>
+                              <td class="text-primary">
+                                <form id="wakeup-vehicle-on-data-request-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.wakeupVehicleOnDataRequest %}checked{% endif %}
+                                    name="wakeupVehicleOnDataRequest"
+                                    id="wakeupVehicleOnDataRequest"
                                     data-toggle="toggle"
                                     data-on="<i class='far fa-thumbs-up'></i></i> JA"
                                     data-off="<i class='far fa-thumbs-down'></i> NEE"

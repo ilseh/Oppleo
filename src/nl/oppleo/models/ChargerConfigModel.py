@@ -59,6 +59,7 @@ class ChargerConfigModel(Base):
     peakhours_allow_peak_one_period = Column(Boolean) 
 
     webcharge_on_dashboard = Column(Boolean) 
+    wakeup_vehicle_on_data_request = Column(Boolean) 
     auth_webcharge = Column(Boolean) 
 
     restrict_dashboard_access = Column(Boolean) 
@@ -256,6 +257,7 @@ class ChargerConfigSchema(Schema):
     peakhours_allow_peak_one_period = fields.Bool(dump_only=True)
 
     webcharge_on_dashboard = fields.Bool(dump_only=True)
+    wakeup_vehicle_on_data_request = fields.Bool(dump_only=True)
     auth_webcharge = fields.Bool(dump_only=True)
 
     restrict_dashboard_access = fields.Bool(dump_only=True)

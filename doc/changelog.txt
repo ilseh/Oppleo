@@ -5,6 +5,7 @@ Added
 - breadcrumbs removed
 - font awesome update to 1.15.3
 - vehicle connect icon, wakeup, and hide disconnected vehicle status
+- vehicle wakeup on data request (i.e. charge status on dashboard)
 
 Fixed
 - Redirect after login

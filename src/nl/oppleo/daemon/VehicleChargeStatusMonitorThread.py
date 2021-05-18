@@ -81,6 +81,8 @@ class VehicleChargeStatusMonitorThread(object):
         When the session is stopped this Thread is destroyed. With a new session a new Thread is started.
     """
     def monitor(self):
+        global oppleoConfig
+        
         self.__logger.debug('monitor()')
 
         teslaApi = TeslaAPI()
@@ -155,7 +157,8 @@ class VehicleChargeStatusMonitorThread(object):
                     # TODO - add wakeup as parameter
                     chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, 
                                                                 update=True, 
-                                                                wakeUpWhenSleeping=False or self.__requestVehicleWakeupNow
+                                                                wakeUpWhenSleeping=oppleoConfig.wakeupVehicleOnDataRequest or 
+                                                                                   self.__requestVehicleWakeupNow
                                                                )
 
                     if self.__requestVehicleWakeupNow:

@@ -1904,6 +1904,12 @@ def update_settings(param=None, value=None):
             oppleoConfig.vcsmThread.requestChargeStatusUpdate()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.vehicleDataOnDashboard })
 
+    # wakeupVehicleOnDataRequest
+    if (param == 'wakeupVehicleOnDataRequest'):
+        oppleoConfig.wakeupVehicleOnDataRequest = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.wakeupVehicleOnDataRequest })
+
+
     # No parameter found or conditions not met
     return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'Not found' })
 
