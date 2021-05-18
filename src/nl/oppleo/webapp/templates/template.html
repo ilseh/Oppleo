@@ -438,7 +438,7 @@
                                 '       id="updateSoftwateButton" ' +
                                 '       class="btn btn-outline-warning btn-sm waves-effect waves-light"' +
                                 '       > ' +
-                                '       <i class="fas fa-gift"></i> Update build ' + result.activeBranch + ' naar ' + buildVersion + '(' + result.availableBuildSoftwareDate + ')' +
+                                '       <i class="fas fa-gift"></i> Update branch ' + result.activeBranch + ' naar v' + buildVersion + ' (' + result.availableBuildSoftwareDate + ')' +
                                 '   </button>' +
                                 '</td>' +
                                 '</tr>')
@@ -452,7 +452,7 @@
                             }
                             $('a#updateSoftwareMenuItem').parent().show()
                             $('a#checkSoftwareStatusMenuItem').parent().hide()
-                            autoHideNotify('warning', 'top-left', 'Build beschikbaar!', 'Software branch ' + result.activeBranch + ' heeft een update voor versie ' + buildVersion + ' met commit datum ' + result.availableBuildSoftwareDate + ' beschikbaar!', 10000)
+                            autoHideNotify('warning', 'top-left', 'Build beschikbaar!', 'Software branch ' + result.activeBranch + ' heeft een update voor v' + buildVersion + ' met commit datum ' + result.availableBuildSoftwareDate + ' beschikbaar!', 10000)
 
                         } else {
                             // No release update nor build update available
