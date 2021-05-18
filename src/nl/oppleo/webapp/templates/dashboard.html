@@ -470,15 +470,27 @@
       $('div#vehicleChargeStateProgress').append(pEl)
       progressbarUpdateTimerRef = setTimeout(progressbarUpdateTimer, 1000)
     }
+    function showVehicleChargeState() {
+      // Slide down if not visible yet
+      if ($('div#vehicleChargeState').hasClass( 'd-none')) {
+        $('div#vehicleChargeState').css( 'height', 0 )
+        $('div#vehicleChargeState').removeClass( 'd-none' )
+        $('div#vehicleChargeState').animate({
+          height: '+=118px',
+        })
+      }
+    }
     function hideVehicleChargeState() {
       // Slide up
-      $('div#vehicleChargeState').animate({
-        height: '-=95px',
-      },400,function() {
-        // Animation complete.
-        $('div#vehicleChargeState').toggleClass( 'd-none', true )
-        $('div#vehicleChargeStateProgress div').remove()
-      })
+      if (!$('div#vehicleChargeState').hasClass( 'd-none')) {
+        $('div#vehicleChargeState').animate({
+          height: '-=95px',
+        },400,function() {
+          // Animation complete.
+          $('div#vehicleChargeState').addClass( 'd-none' )
+          $('div#vehicleChargeStateProgress div').remove()
+        })
+      }
     }
 
     function drawVehicleChargeState(vehicleName,
@@ -551,13 +563,7 @@
         }
       )
       // Slide down if not visible yet
-      if ($('div#vehicleChargeState').hasClass( 'd-none')) {
-        $('div#vehicleChargeState').css( 'height', 0 )
-        $('div#vehicleChargeState').toggleClass( 'd-none', false )
-        $('div#vehicleChargeState').animate({
-          height: '+=118px',
-        })
-      }
+      showVehicleChargeState()
     }
     function enableVehicleConnectedIdicator(enabled) {
       // Enable vehicle connected indicator
@@ -574,6 +580,19 @@
       $('span#vehicleConnectedIndicatorSpacer').toggleClass('d-none', !enabled)
       $('span#vehicleConnectedIndicator').toggleClass('d-none', !enabled)
     }
+    function highlightVehicleIcon(e) {
+      switch (e.type) {
+        case 'mouseenter':
+          $('span#vehicleConnectedIndicator').addClass('badge-success')
+          $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
+          break
+        case 'mouseleave':
+          $('span#vehicleConnectedIndicator').removeClass('badge-success')
+          $('span#vehicleConnectedIndicator').addClass('badge-secondary')
+          break
+      }
+    }
+ 
     const VEHICLE_STATE_ASLEEP = 'asleep'
     const VEHICLE_STATE_CONNECTED = 'connected'
     const VEHICLE_STATE_DISCONNECTED = 'disconnected'
@@ -582,7 +601,9 @@
     function updateVehicleConnectedIdicator(state) {
       // Enable vehicle connected indicator
       $('span#vehicleConnectedIndicator').empty()
-      $('#vehicleConnectedIndicator').off('click, mouseenter, mouseleave')
+//      $('#vehicleConnectedIndicator').off('click, mouseenter, mouseleave')
+      $('#vehicleConnectedIndicator').off('click', wakeupVehicle)
+      $('#vehicleConnectedIndicator').off('mouseenter, mouseleave', highlightVehicleIcon)
       $('span#vehicleConnectedIndicator').css({'cursor': 'help'})
       switch (state) {
         case VEHICLE_STATE_CONNECTED:
@@ -611,18 +632,10 @@
           $('span#vehicleConnectedIndicator').addClass('badge-outlined')
           $('span#vehicleConnectedIndicator').css({'padding-left': '3px'})
           $('span#vehicleConnectedIndicator').append(`<span class="" style="font-size: 10px;">z<sup>z<sup>z</sup></sup></span>`)
-          $('span#vehicleConnectedIndicator').attr('data-original-title','In slaap')
-          $('#vehicleConnectedIndicator').on('click', (e) => {
-            wakeupVehicle()
-          })
-          $('#vehicleConnectedIndicator').on('mouseenter', (e) => {
-            $('span#vehicleConnectedIndicator').addClass('badge-success')
-            $('span#vehicleConnectedIndicator').removeClass('badge-secondary')
-          })
-          $('#vehicleConnectedIndicator').on('mouseleave', (e) => {
-            $('span#vehicleConnectedIndicator').removeClass('badge-success')
-            $('span#vehicleConnectedIndicator').addClass('badge-secondary')
-          })
+          $('span#vehicleConnectedIndicator').attr('data-original-title','In slaap, klik om te wekken')
+          $('#vehicleConnectedIndicator').on('click', wakeupVehicle)
+          $('#vehicleConnectedIndicator').on('mouseenter', highlightVehicleIcon)
+          $('#vehicleConnectedIndicator').on('mouseleave', highlightVehicleIcon)
           $('span#vehicleConnectedIndicator').css({'cursor': 'pointer'})
           break
         case VEHICLE_STATE_WAKINGUP:
@@ -791,7 +804,7 @@
         updateChargingIndicator( false, false, false, true )
         setActiveChargeSession( {
           chargeSession: false
-          })
+        })
         // Force gauge update
         getChargeSessionStatus()
         getUsageData(1)

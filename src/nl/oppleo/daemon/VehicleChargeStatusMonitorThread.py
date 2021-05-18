@@ -12,6 +12,19 @@ from nl.oppleo.models.RfidModel import RfidModel
 
 from nl.oppleo.utils.TokenMediator import tokenMediator
 
+HTTP_CODE_200_OK                    = 200
+HTTP_CODE_303_SEE_OTHER             = 303  # Conflict, POST on existing resource
+HTTP_CODE_400_BAD_REQUEST           = 400
+HTTP_CODE_401_UNAUTHORIZED          = 401
+HTTP_CODE_403_FORBIDDEN             = 403
+HTTP_CODE_404_NOT_FOUND             = 404
+HTTP_CODE_405_METHOD_NOT_ALLOWED    = 405
+HTTP_CODE_409_CONFLICT              = 409
+HTTP_CODE_410_GONE                  = 410
+HTTP_CODE_424_FAILED_DEPENDENCY     = 424
+HTTP_CODE_500_INTERNAL_SERVER_ERROR = 500
+HTTP_CODE_501_NOT_IMPLEMENTED       = 501
+
 oppleoConfig = OppleoConfig()
 
 class VehicleChargeStatusMonitorThread(object):
@@ -109,6 +122,8 @@ class VehicleChargeStatusMonitorThread(object):
                             self.__logger.debug("monitor() token not valid, continue to next While iteration")
                             # Make sure we reload the RFID tag data next loop
                             rfidData = None
+                            with self.__threadLock:
+                                self.__requestChargeStatusNow = False
                             continue
 
                     UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfidData, teslaApi)
@@ -119,20 +134,7 @@ class VehicleChargeStatusMonitorThread(object):
                         # Make sure we reload the RFID tag data next loop
                         rfidData = None
                         if self.__requestVehicleWakeupNow:
-                            with self.__threadLock:
-                                self.__requestVehicleWakeupNow = False
-                            # Send wakeup failed notification
-                            WebSocketUtil.emit(
-                                wsEmitQueue=oppleoConfig.wsEmitQueue,
-                                event='vehicle_status_update', 
-                                id=oppleoConfig.chargerName,
-                                data={ 'request'                : 'wakeupVehicle',
-                                       'result'                 : 424,
-                                       'msg'                    : 'No valid token'
-                                },
-                                namespace='/charge_session',
-                                public=False
-                                )
+                            self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_424_FAILED_DEPENDENCY, msg='No valid token')
                         continue
 
                     self.__logger.debug("monitor() valid token")
@@ -156,20 +158,9 @@ class VehicleChargeStatusMonitorThread(object):
                                                                )
 
                     if self.__requestVehicleWakeupNow:
-                        with self.__threadLock:
-                            self.__requestVehicleWakeupNow = False
-                        # Send wakeup result notification
-                        WebSocketUtil.emit(
-                            wsEmitQueue=oppleoConfig.wsEmitQueue,
-                            event='vehicle_status_update', 
-                            id=oppleoConfig.chargerName,
-                            data={ 'request'                : 'wakeupVehicle',
-                                   'result'                 : 200 if chargeState is not None else 424,
-                                   'msg'                    : 'Vehicle awake' if chargeState is not None else 'Could not wakeup vehicle'
-                            },
-                            namespace='/charge_session',
-                            public=False
-                            )
+                        self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_200_OK if chargeState is not None else HTTP_CODE_424_FAILED_DEPENDENCY,
+                                                       msg='Vehicle awake' if chargeState is not None else 'Could not wakeup vehicle'
+                                                      )
 
                     self.__logger.debug("monitor() [2] tKey={}".format(tKey))
 
@@ -180,15 +171,15 @@ class VehicleChargeStatusMonitorThread(object):
                         self.__logger.debug("monitor() chargeState (not None)")
                         # Send change notification
                         WebSocketUtil.emit(
-                            wsEmitQueue=oppleoConfig.wsEmitQueue,
-                            event='vehicle_charge_status_update', 
-                            id=oppleoConfig.chargerName,
-                            data={ 'chargeState'            : formatChargeState(chargeState),
-                                   'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
-                                   'vehicleMonitorInterval' : self.__vehicleMonitorInterval
+                            wsEmitQueue     = oppleoConfig.wsEmitQueue,
+                            event           = 'vehicle_charge_status_update', 
+                            id              = oppleoConfig.chargerName,
+                            data            = { 'chargeState'            : formatChargeState(chargeState),
+                                                'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
+                                                'vehicleMonitorInterval' : self.__vehicleMonitorInterval
                             },
-                            namespace='/charge_session',
-                            public=False
+                            namespace       = '/charge_session',
+                            public          = False
                             )
                         # len(oppleoConfig.connectedClients) == 0
                     else:
@@ -196,22 +187,24 @@ class VehicleChargeStatusMonitorThread(object):
                         if teslaApi.vehicleWithIdIsAsleep(id=rfidData.vehicle_id):
                             # Send change notification - vehicle asleep
                             WebSocketUtil.emit(
-                                wsEmitQueue=oppleoConfig.wsEmitQueue,
-                                event='vehicle_charge_status_update', 
-                                id=oppleoConfig.chargerName,
-                                data={ 'chargeState'            : formatChargeState(chargeState),
-                                                                  # No need to update vehicle information, done when requesting charge state
-                                       'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(id=rfidData.vehicle_id, update=False)),
-                                       'vehicleMonitorInterval' : self.__vehicleMonitorInterval
+                                wsEmitQueue = oppleoConfig.wsEmitQueue,
+                                event       = 'vehicle_charge_status_update', 
+                                id          = oppleoConfig.chargerName,
+                                data        = { 'chargeState'            : formatChargeState(chargeState),
+                                                                           # No need to update vehicle information, done when requesting charge state
+                                                'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(id=rfidData.vehicle_id, update=False)),
+                                                'vehicleMonitorInterval' : self.__vehicleMonitorInterval
                                 },
-                                namespace='/charge_session',
-                                public=False
+                                namespace   = '/charge_session',
+                                public      = False
                                 )
                 else: 
                     # len(oppleoConfig.connectedClients) == 0
                     self.__logger.debug('monitor() no connectedClients to report chargeState to or display not enabled. Skip and go directly to sleep.')
-                    with self.__threadLock:
-                        self.__requestVehicleWakeupNow = False
+
+                    self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_410_GONE,
+                                                   msg='No clients connected'
+                                                  )
 
             # Sleep for quite a while, and yield for other threads
             time.sleep(self.__sleepInterval)
@@ -233,6 +226,23 @@ class VehicleChargeStatusMonitorThread(object):
     def requestVehicleWakeup(self):
         with self.__threadLock:
             self.__requestVehicleWakeupNow = True
+
+    def clearVehicleWakeupRequest(self, resultCode:int=500, msg:str='Unknown'):
+        with self.__threadLock:
+            self.__requestVehicleWakeupNow = False
+
+        # Send wakeup result notification
+        WebSocketUtil.emit(
+            wsEmitQueue = oppleoConfig.wsEmitQueue,
+            event       = 'vehicle_status_update', 
+            id          = oppleoConfig.chargerName,
+            data        = { 'request' : 'wakeupVehicle',
+                            'result'  : resultCode,
+                            'msg'     : msg
+            },
+            namespace   = '/charge_session',
+            public      = False
+            )
 
     def start(self):
         self.__stop_event.clear()
