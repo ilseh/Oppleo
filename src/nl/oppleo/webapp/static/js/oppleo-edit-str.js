@@ -22,7 +22,9 @@ oppleo_edit_str_template.innerHTML = `
   <script src="/static/plugins/bootstrap/4.4.1/js/bootstrap.min.js"></script>
   <script src="/static/js/waves.js"></script>
 
+  <!-- Fontawesome -->
   <link rel="stylesheet" type="text/css" href="/static/plugins/fontawesome/5.13.3/css/all.min.css">
+    
   <style>
   button {
     cursor: pointer;
@@ -413,9 +415,3 @@ class OppleoEditStr extends HTMLElement {
   }
 }
 window.customElements.define('oppleo-edit-str', OppleoEditStr)
-
-
-
-
-
-

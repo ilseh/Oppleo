@@ -699,17 +699,19 @@
                   <input type="hidden" id="vehicle_id" name="vehicle_id" value="{% if rfid_model['vehicle_id'] is not none %}{{ rfid_model['vehicle_id'] }}{% endif %}" />
                   <input type="hidden" id="vehicle_vin" name="vehicle_vin" value="{% if rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_vin'] }}{% endif %}" />
                   <select class="form-control" id="vehicle" name="vehicle">
-                    <option value="-" style="font-style: italic;">{% if rfid_model['vehicle_name'] is not none and rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_name'] }} (VIN: {{ rfid_model['vehicle_vin'] }}){% else %}Geen voertuigen...{% endif %}</option>
+                    <option value="-" style="font-style: italic;">{% if rfid_model['vehicle_name'] is not none and rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_name'] }} (VIN: {{ rfid_model['vehicle_vin'] }}){% else %}Geen voertuigen... (klik refresh){% endif %}</option>
                   </select>
-                  <span class="input-group-addon info-button-style"
-                        data-toggle="tooltip" 
-                        data-placement="bottom" 
-                        data-html="true" 
-                        title="Vernieuw de autorisatie of trek de autorisatie in en maak een nieuwe autorisatie aan om de actuele voertuiglijst op te halen."
-                        >
-                        <i class="fas fa-info-circle"></i>
+
+                  <div class="input-group-append info-button-style" 
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Vernieuw de autorisatie of trek de autorisatie in en maak een nieuwe autorisatie aan om de actuele voertuiglijst op te halen."
+                       >
+                    <span class="input-group-text border-secondary bg-secondary text-muted">
+                      <i class="fas fa-info-circle"></i>
                     </span>
-                </div>
+                  </div>                  
               </td>
             </tr>
             <tr id="oauth_token_row">
@@ -726,7 +728,7 @@
                        data-toggle="tooltip" 
                        data-placement="bottom" 
                        data-html="true" 
-                       title="De autorisatie wordt bij gebruik automatisch verlengt. De autorisatie verloopt automatisch als de pas 45 dagen niet is gebruikt."
+                       title="De autorisatie wordt bij gebruik regelmatig verlengt. De autorisatie verloopt automatisch als de pas 45 dagen niet is gebruikt."
                     >
                     <span class="input-group-text bg-secondary text-muted border-secondary">
                       <i class="fas fa-info-circle"></i>
