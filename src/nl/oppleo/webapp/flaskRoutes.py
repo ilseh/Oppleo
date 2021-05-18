@@ -53,6 +53,7 @@ from nl.oppleo.utils.TokenMediator import tokenMediator
 
 # https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 HTTP_CODE_200_OK                    = 200
+HTTP_CODE_202_ACCEPTED              = 202  # Accepted, processing pending
 HTTP_CODE_303_SEE_OTHER             = 303  # Conflict, POST on existing resource
 HTTP_CODE_400_BAD_REQUEST           = 400
 HTTP_CODE_401_UNAUTHORIZED          = 401
@@ -85,6 +86,7 @@ DETAIL_CODE_46_PASSWORD_SPECIAL_CHARACTER_REQUIRED  =  46    # HTTP_CODE_400_BAD
 DETAIL_CODE_51_WAKEUP_VEHICLE_FAILED                =  51    # HTTP_CODE_424_FAILED_DEPENDENCY
 
 DETAIL_CODE_200_OK                                  = 200    # HTTP_CODE_200_OK
+DETAIL_CODE_202_ACCEPTED                            = 202    # HTTP_CODE_202_ACCEPTED
 
 """ 
  - make sure all url_for routes point to this blueprint
@@ -2153,7 +2155,7 @@ def requestVehicleChargeStatus():
 
     oppleoConfig.vcsmThread.requestChargeStatusUpdate()
     return jsonify({ 
-        'status'                    : HTTP_CODE_200_OK
+        'status'                    : HTTP_CODE_202_ACCEPTED
         })
 
 
@@ -2542,8 +2544,8 @@ def wakeupVehicle():
 
     oppleoConfig.vcsmThread.requestVehicleWakeup()
     return jsonify({ 
-        'status': HTTP_CODE_200_OK,
-        'code'  : DETAIL_CODE_200_OK,
+        'status': HTTP_CODE_202_ACCEPTED,
+        'code'  : DETAIL_CODE_202_ACCEPTED,
         'action': request.method,
         'msg'   : 'Wakeup requested'
         })

@@ -13,6 +13,7 @@ from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.utils.TokenMediator import tokenMediator
 
 HTTP_CODE_200_OK                    = 200
+HTTP_CODE_202_ACCEPTED              = 202  # Accepted, processing pending
 HTTP_CODE_303_SEE_OTHER             = 303  # Conflict, POST on existing resource
 HTTP_CODE_400_BAD_REQUEST           = 400
 HTTP_CODE_401_UNAUTHORIZED          = 401
@@ -226,6 +227,19 @@ class VehicleChargeStatusMonitorThread(object):
     def requestVehicleWakeup(self):
         with self.__threadLock:
             self.__requestVehicleWakeupNow = True
+
+        # Send wakeup request notification
+        WebSocketUtil.emit(
+            wsEmitQueue = oppleoConfig.wsEmitQueue,
+            event       = 'vehicle_status_update', 
+            id          = oppleoConfig.chargerName,
+            data        = { 'request' : 'wakeupVehicle',
+                            'result'  : HTTP_CODE_202_ACCEPTED,
+                            'msg'     : 'Waking up vehicle'
+            },
+            namespace   = '/charge_session',
+            public      = False
+            )
 
     def clearVehicleWakeupRequest(self, resultCode:int=500, msg:str='Unknown'):
         with self.__threadLock:

@@ -403,7 +403,7 @@
                     switch(parseInt(result.status)) {
                     case 200:
                         if (result.softwareReleaseUpdateAvailable) {
-
+                            // New release available
                             $('<tr id="softwateUpdateAvailableVersionRow">' +
                                 '<td class="text-dark"> Update beschikbaar:</td>' +
                                 '<td class="text-warning">' +
@@ -427,9 +427,35 @@
                             $('a#updateSoftwareMenuItem').parent().show()
                             $('a#checkSoftwareStatusMenuItem').parent().hide()
                             autoHideNotify('warning', 'top-left', 'Update beschikbaar!', 'Software ' + result.availableReleaseSoftwareVersion + '(' + result.availableReleaseSoftwareDate + ') beschikbaar!', 10000)
+                        } else if ( result.activeBranch != "master" && result.softwareBuildUpdateAvailable ) {
+                            // No release update available, but new build available
+                            let buildVersion = result.branches.filter(branch => branch.branch == result.activeBranch)[0].version
+                            $('<tr id="softwateUpdateAvailableVersionRow">' +
+                                '<td class="text-dark"> Update beschikbaar:</td>' +
+                                '<td class="text-warning">' +
+                                '   <button' +
+                                '       type="button" ' +
+                                '       id="updateSoftwateButton" ' +
+                                '       class="btn btn-outline-warning btn-sm waves-effect waves-light"' +
+                                '       > ' +
+                                '       <i class="fas fa-gift"></i> Update build ' + result.activeBranch + ' naar ' + buildVersion + '(' + result.availableBuildSoftwareDate + ')' +
+                                '   </button>' +
+                                '</td>' +
+                                '</tr>')
+                                .insertAfter("tr#softwateUpdateCurrentVersionRow")
+                            $('tr#softwateUpdateCheckRow').hide()
+                            $('button#updateSoftwateButton').on('click', () => {
+                                window.location = "{{ url_for('flaskRoutes.software_update') }}"
+                            })
+                            if ( $("tr#noSoftwateUpdateAvailableRow").length != 0 ) {
+                                $("tr#noSoftwateUpdateAvailableRow").remove()
+                            }
+                            $('a#updateSoftwareMenuItem').parent().show()
+                            $('a#checkSoftwareStatusMenuItem').parent().hide()
+                            autoHideNotify('warning', 'top-left', 'Build beschikbaar!', 'Software branch ' + result.activeBranch + ' heeft een update voor versie ' + buildVersion + ' met commit datum ' + result.availableBuildSoftwareDate + ' beschikbaar!', 10000)
+
                         } else {
-                            // No update available
-                            //{% if changelog.activeBranch() != "master" %}{{ changelog.activeBranch() }} {% endif %}
+                            // No release update nor build update available
                             if ( $("tr#noSoftwateUpdateAvailableRow").length == 0 ) {
                                 $('<tr id="noSoftwateUpdateAvailableRow">' +
                                     '<td class="text-dark"></td>' +
@@ -449,7 +475,7 @@
                             $('button#softwateUpdateCheck').toggleClass('btn-outline-success', false)
                             $('button#softwateUpdateCheck').toggleClass('btn-outline-secondary', true)
 
-                            autoHideNotify('success', 'top-left', 'Up to date!', 'Oppleo is up-todate. Er is geen nieuwere software beschikbaar' +
+                            autoHideNotify('success', 'top-left', 'Up to date!', 'Oppleo is up-to-date. Er is geen nieuwere software beschikbaar' +
                                 (result.activeBranch != "master" ? ' voor developer branch ' + result.activeBranch : '') +                            
                                 '.')
 

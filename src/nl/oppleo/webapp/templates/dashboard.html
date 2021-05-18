@@ -400,6 +400,9 @@
         // log data to the console so we can see
         console.log(result)
         switch(parseInt(result.status)) {
+          case 200:                   // Success - wakeup done
+            updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
+            break
           case 200:                   // Success - wakeup requested
             updateVehicleConnectedIdicator(VEHICLE_STATE_WAKINGUP)
             break
@@ -820,9 +823,13 @@
         switch (msg.data.request) {
           case 'wakeupVehicle':
             switch (msg.data.result) {
-              case 200:
+              case 200: // OK
                 autoHideNotify('success','top-left', 'Wakker', 'Voertuig succesvol gewekt.')
                 updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
+                break
+              case 202: // ACCEPTED - pending
+                autoHideNotify('success','top-left', 'Wekken', 'Voertuig wordt gewekt...')
+                updateVehicleConnectedIdicator(VEHICLE_STATE_WAKINGUP)
                 break
               case 424:
                 autoHideNotify('warning','top-left', 'Mislukt', 'Voertuig wekken mislukt')
