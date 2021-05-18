@@ -28,6 +28,9 @@ Environment=#WORKINGDIR_PLACEHOLDER/src
 
 ExecStart=#WORKINGDIR_PLACEHOLDER/venv/bin/python3 #WORKINGDIR_PLACEHOLDER/src/nl/oppleo/webapp/Oppleo.py socketserver
 
+# Kill only the Oppleo process, not any install/update shell running as child
+KillMode=process
+
 [Install]
 # start with default stuff when we enable automatic startup
 WantedBy=default.target
