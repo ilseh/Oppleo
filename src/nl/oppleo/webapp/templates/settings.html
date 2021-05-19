@@ -1952,26 +1952,7 @@
                                 </form>
                               </td>
                             </tr>
-                            <tr>
-                              <td class="text-dark">Lokaal 2FA omzeilen toestaan:</td>
-                              <td class="text-primary">
-                                <form id="bypass-local-2fa-form">
-                                  <input type="checkbox" 
-                                    {% if oppleoconfig.allowLocal2FABypass %}checked{% endif %}
-                                    name="allowLocal2FABypass"
-                                    id="allowLocal2FABypass"
-                                    data-toggle="toggle"
-                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
-                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
-                                    data-onstyle="primary"
-                                    data-offstyle="dark"
-                                    data-size="sm"
-                                    data-height="30"
-                                    data-width="70"
-                                  />
-                                </form>
-                              </td>
-                            </tr>
+
                             {% for subnetOrIP in oppleoconfig.routerIPAddress %}
                             <tr id="subnetOrIPFirstRow">
                               <td class="text-dark">{% if subnetOrIP == (oppleoconfig.routerIPAddress | first) %}Extern netwerk/ Reverse Proxy:{% else %}&nbsp;{% endif %}</td>
@@ -2046,7 +2027,7 @@
                             </tr>
                             <tr>
                               <td class="text-dark"> </td>
-                              <td class="text-primary"><small>Lokaal commit: {{ gitutil.lastBranchGitDateStr(branch=changelog.activeBranch(), remote=False) }}, Github commit: {{ gitutil.lastBranchGitDateStr(branch=changelog.activeBranch(), remote=True) }})</small></td>
+                              <td class="text-primary"><small>Server commit: {{ gitutil.lastBranchGitDateStr(branch=changelog.activeBranch(), remote=False) }}, Github commit: {{ gitutil.lastBranchGitDateStr(branch=changelog.activeBranch(), remote=True) }})</small></td>
                             </tr>
                             <tr>
                               <td class="text-dark"> Changelog <span class="text-primary font-italic">master</span>:</td>
@@ -2054,7 +2035,7 @@
                             </tr>
                             <tr id="softwateUpdateCurrentVersionRow">
                               <td class="text-dark"> </td>
-                              <td class="text-primary"><small>Lokaal commit: {{ gitutil.lastBranchGitDateStr(branch='master', remote=False) }}, Github commit: {{ gitutil.lastBranchGitDateStr(branch='master', remote=True) }})</small></td>
+                              <td class="text-primary"><small>Server commit: {{ gitutil.lastBranchGitDateStr(branch='master', remote=False) }}, Github commit: {{ gitutil.lastBranchGitDateStr(branch='master', remote=True) }})</small></td>
                             </tr>
                             {% endif %}
                             {% if changelog.activeBranch() == "master" %}

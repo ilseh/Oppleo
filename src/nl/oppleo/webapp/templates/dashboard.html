@@ -400,10 +400,10 @@
         // log data to the console so we can see
         console.log(result)
         switch(parseInt(result.status)) {
-          case 200:                   // Success - wakeup done
+          case 200:                   // OK - Success - wakeup done
             updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
             break
-          case 200:                   // Success - wakeup requested
+          case 202:                   // Accepted - Success - wakeup requested
             updateVehicleConnectedIdicator(VEHICLE_STATE_WAKINGUP)
             break
           case 400:                   // Bad request
