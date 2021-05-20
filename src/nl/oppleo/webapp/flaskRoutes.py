@@ -291,7 +291,11 @@ def login2(username:str=None):
             })                
 
     # Valid password, 2FA enabled?
-    if user.has_enabled_2FA():
+    if (user.has_enabled_2FA() and 
+            (user.is_2FA_local_enforced() or 
+                IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False)
+            )
+       ): 
         # Password correct, validate the code
         shared_secret = decryptAES(key=password, encData=user.shared_secret)
         if totp is None or not validateTotp(totp=totp, shared_secret=shared_secret):
@@ -1916,7 +1920,7 @@ def update_settings(param=None, value=None):
 
 
 # Always returns json
-@flaskRoutes.route("/backup/<path:cmd>", defaults={'value': None}, strict_slashes=False, methods=["GET"])
+@flaskRoutes.route("/backup/<path:cmd>", defaults={'data': None}, strict_slashes=False, methods=["GET"])
 @flaskRoutes.route("/backup/<path:cmd>/<path:data>", methods=["GET"])
 @flaskRoutes.route("/backup/<path:cmd>/<path:data>/", methods=["GET"])
 @authenticated_resource  # CSRF Token is valid
@@ -2232,18 +2236,54 @@ def softwareStatus(branch='master'):
         })
 
 
-@flaskRoutes.route("/account", methods=["GET"])
-@flaskRoutes.route("/account/", methods=["GET"])
+@flaskRoutes.route("/account", defaults={'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
+@flaskRoutes.route("/account/", defaults={'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
+@flaskRoutes.route("/account/<path:param>", methods=["GET"])
+@flaskRoutes.route("/account/<path:param>/", methods=["GET"])
+@flaskRoutes.route("/account/<path:param>/<path:value>", methods=["POST"])
+@flaskRoutes.route("/account/<path:param>/<path:value>/", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
-def account():
+def account(param:str=None, value:str=None):
     global flaskRoutesLogger, oppleoConfig, current_user
 
     flaskRoutesLogger.debug('/account {}'.format(request.method))
-    return render_template("account.html", 
-        oppleoconfig=oppleoConfig,
-        changelog=changeLog,
-        user=current_user
-        )
+
+    if request.method == "GET":
+        if param is None:
+            return render_template("account.html", 
+                oppleoconfig=oppleoConfig,
+                changelog=changeLog,
+                user=current_user
+                )
+        if param == 'enforceLocal2FA':
+            return jsonify({
+                'status': HTTP_CODE_200_OK,
+                'param' : param,
+                'value' : current_user.is_2FA_local_enforced()
+                })
+        return jsonify({
+            'status': HTTP_CODE_404_NOT_FOUND, 
+            'msg'   : 'Parameter not found'
+            })
+    if request.method == "POST":
+        if param == 'enforceLocal2FA':
+            current_user.enforce_local_2fa = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+            current_user.save()
+            return jsonify({
+                'status': HTTP_CODE_200_OK,
+                'param' : param,
+                'value' : current_user.is_2FA_local_enforced()
+                })
+        return jsonify({
+            'status': HTTP_CODE_404_NOT_FOUND, 
+            'msg'   : 'Parameter not found'
+            })
+
+    return jsonify({
+        'status': HTTP_CODE_404_NOT_FOUND, 
+        'msg'   : 'Method {} not supported'.format(request.method)
+        })
+        
 
 
 """
@@ -2290,7 +2330,6 @@ def enable_2FA():
         secret_base32 = generateTotpSharedSecret()
         uri = keyUri(type='totp', secret=secret_base32, issuer='Oppleo ' + oppleoConfig.chargerName,
                         accountname=current_user.username)
-#                        accountname=current_user.username+'@oppleo.nl')
 
         current_user.shared_secret = encryptAES(key=password, plainData=secret_base32)
         current_user.save()

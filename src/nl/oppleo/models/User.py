@@ -19,7 +19,9 @@ class User(Base):
     password = Column(String)
     authenticated = Column(Boolean, default=False)
     enabled_2fa = Column(Boolean, default=False)
+    enforce_local_2fa = Column(Boolean, default=True)
     shared_secret = Column(String)
+
 
     def __init__(self, username=None, password=None, authenticated=None):
         #self.__logger = logging.getLogger('nl.oppleo.models.User')
@@ -80,9 +82,24 @@ class User(Base):
         """Return True if the 2FA is enabled."""
         return self.enabled_2fa
 
+    def is_2FA_local_enforced(self):
+        return self.enforce_local_2fa
+
     def is_anonymous(self):
         """False, as anonymous users aren't supported."""
         return False
+
+    # Return all users
+    @staticmethod
+    def all():
+        db_session = DbSession()
+        try:
+            # Should be only one
+            return db_session.query(User).all()
+        except Exception as e:
+            User.__logger.error("Could not query to {} table in database".format(User.__tablename__ ), exc_info=True)
+        return None
+
 
     # Delete this user
     def delete(self):

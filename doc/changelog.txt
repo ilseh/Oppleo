@@ -1,7 +1,9 @@
-Version 1.3.0           2021-05-19
+Version 1.3.0           2021-05-20
 
 Added
 - 2FA info button
+- Local 2FA bypass per account on account page
+- command line script to disable 2FA for account
 - breadcrumbs removed
 - font awesome update to 1.15.3
 - vehicle connect icon, wakeup, and hide disconnected vehicle status

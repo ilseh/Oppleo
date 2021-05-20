@@ -48,7 +48,26 @@
     margin-left: 0;
     padding-left: 0em;
     text-indent: 0em;
-  }  
+  }
+  .btn-outline-success-warning {
+    color: #00b19d;
+    border-color: #00b19d;
+  }
+  .btn-outline-success-warning:hover {
+    background-color: #e69900;
+    border: 1px solid #e69900;
+    color: #ffffff;
+  }
+  .btn-outline-warning-success {
+    color: #e69900;
+    border-color: #e69900;
+  }
+  .btn-outline-warning-success:hover {
+    background-color: #00b19d;
+    border: 1px solid #00b19d;
+    color: #ffffff;
+  }
+
   </style>
 
   <script>
@@ -310,6 +329,55 @@
         $('.spinner').hide()
       })
     }
+    function updateAccount( param, value ) {
+      console.log(timestamp() + ' updateAccount()')            
+      // Show spinner
+      $('.spinner').show()
+      data = {
+            csrf_token    : '{{ csrf_token() }}',
+            param         : param,
+            value         : value
+          }
+          let url = ('/account/'+encodeURIComponent(param)+'/'+encodeURIComponent(value)+'/')
+      $.ajax({
+        type		    : 'POST',
+        url			    : ('/account/'+encodeURIComponent(param)+'/'+encodeURIComponent(value)+'/'),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200:
+            switch (data.param) {
+              case 'enforceLocal2FA':
+                autoHideNotify('success', 'top-left', 'Gewijzigd', '2FA '+(data.value?'actief':'gepasseerd')+' voor toegang vanaf lokaal netwerk.')
+                break
+              default:
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Instelling aangepast.')
+                break
+            }
+            break
+          case 404:
+            autoHideNotify('warning','top-left', 'Onbekend', 'Instelling onbekend (404). Niet gewijzigd.')
+            break
+          default:
+            autoHideNotify('warning','top-left', 'Onbekend', 'Instelling onbekend. Niet gewijzigd.')
+            break
+        }
+      })
+      .fail(function(data) {
+        autoHideNotify('error','top-left', 'Connectie fout', 'Instelling niet gewijzigd.')
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
     let info2FADialog = null
     let enable2FADialog = null
     function showEnable2FAModal() {
@@ -544,6 +612,12 @@
         // Only accept digits, 6 max
         $(this).val($(this).val().replace(/[^0-9]/g, '').substring(0,6))
       })
+
+      $('input[type=checkbox]').change(function(e) {
+        updateAccount( e.target.id, $(this).prop('checked') )
+      })
+
+
       // Remove spinner
       $('.spinner').hide()
 
@@ -596,13 +670,42 @@
               <tr id="account_2fa">
                 <td>2-Factor Authenticatie:</td>
                 <td>
-                  <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-enable-2fa"> <i class="fas fa-angle-right"></i> Activeren </button>
-                  <button type="button" class="btn btn-sm btn-outline-primary{% if not current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-disable-2fa"> <i class="fas fa-angle-right"></i> Uitschakelen </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-enable-2fa"> <i class="fas fa-angle-right"></i> Activeren </button>
+                  <button type="button" class="btn btn-sm btn-outline-success-warning{% if not current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-disable-2fa"> <i class="fas fa-angle-right"></i> Uitschakelen </button>
 
                   <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-2fa-info"
                     data-toggle="tooltip" data-placement="bottom" data-html="true" title="" 
-                    data-original-title="Klik voor meer informatie over 2-Factor authenticatie"> <i class="fas fa-info-circle"></i> </button>
+                    data-original-title="Klik voor meer informatie over 2-Factor authenticatie"
+                    >
+                    <i class="fas fa-info-circle"></i>
+                  </button>
                 </td>
+              </tr>
+              <tr>
+                <td>2FA toepassen op lokaal netwerk:</td>
+                <td class="text-primary">
+                  <span
+                    data-toggle="tooltip" 
+                    data-placement="bottom" 
+                    data-html="true" 
+                    title="2FA toepassen bij inloggen op het lokale (thuis-)netwerk wanneer 2FA geactiveerd is. Deactiveren maakt inloggen op het lokale (thuis-)netwerk zonder 2FA code mogelijk. <br/>Het lokale netwerk kan worden ingesteld bij <span class='text-primary'><i class='fa fa-sliders-h'></i> Instellingen</span> <i class='fa fa-angle-right'></i> <span class='text-primary'><i class='fa fa-charging-station'></i> Laadpunt </span><i class='fa fa-angle-right'></i> <span class='text-primary'> <i class='fa fa-credit-card'></i> Afschermen </span>."
+                  >
+                  <input type="checkbox" 
+                    {% if current_user.is_2FA_local_enforced() %}checked{% endif %}
+                    name="enforceLocal2FA"
+                    id="enforceLocal2FA"
+                    data-toggle="toggle"
+                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                    data-onstyle="success"
+                    data-offstyle="warning"
+                    data-size="sm"
+                    data-height="30"
+                    data-width="70"
+                  />
+
+                </span>
+              </td>
               </tr>
             </tbody>
           </table>
