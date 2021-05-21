@@ -8,6 +8,7 @@ Added
 - font awesome update to 1.15.3
 - vehicle connect icon, wakeup, and hide disconnected vehicle status
 - vehicle wakeup on data request (i.e. charge status on dashboard)
+- user icon in menu bar, update menu structure
 
 Fixed
 - Redirect after login

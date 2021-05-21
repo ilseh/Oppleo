@@ -523,7 +523,11 @@
                 )
                 $('#updateSoftwareMenuItem').parent().hide()
                 $('#checkSoftwareStatusMenuItem').on('click', () => {
+                    {% if current_user.is_authenticated %}
                     getSoftwareStatus()
+                    {% else %}
+                    window.location.replace( '{{ url_for('flaskRoutes.login') }}' )
+                    {% endif %}
                     return false
                 })
             })
@@ -844,7 +848,14 @@
         .day-label {
             width: 30px; 
         }
-
+        hr.menu-break {
+            margin-top: 4px;
+            margin-bottom: 4px;
+            border-top: 1px solid #98a6ad; 
+            width: 70%; 
+            padding-left: 16px;
+            padding-right: 16px;
+        }
         input[type=checkbox], input[type=radio] {
             cursor: pointer;
         }
@@ -876,14 +887,63 @@
                     <ul class="list-inline float-right mb-0">
 
                         <li class="menu-item list-inline-item">
-                            <span class="navbar-toggle nav-link">
+                            <!-- Mobile menu toggle-->
+                            <a class="navbar-toggle nav-link">
                                 <div class="lines">
                                     <span></span>
                                     <span></span>
                                     <span></span>
                                 </div>
-                            </span>
+                            </a>
+                            <!-- End mobile menu toggle-->
                         </li>
+ 
+                        {% if current_user.is_authenticated %}
+
+                        <li class="list-inline-item dropdown notification-list">
+                            <a class="nav-link dropdown-toggle waves-effect nav-user" data-toggle="dropdown" href="#" role="button"
+                               aria-haspopup="false" aria-expanded="false">
+                               <img src="{{ url_for('static', filename='images/users/admin.png') }}" alt="user" class="rounded-circle">
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right profile-dropdown " aria-labelledby="Preview">
+                                <!-- item-->
+                                <div class="dropdown-item noti-title">
+                                    <h5 class="text-overflow"><small class="text-white">Welcome ! {{ current_user.username }}</small> </h5>
+                                </div>
+
+                                <!-- item-->
+                                <a href="{{ url_for('flaskRoutes.account') }}" class="dropdown-item notify-item">
+                                    <i class="mdi mdi-account-star-variant"></i> <span>Profile</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="{{ url_for('flaskRoutes.logout') }}" class="dropdown-item notify-item">
+                                    <i class="mdi mdi-logout"></i> <span>Uitloggen</span>
+                                </a>
+
+                            </div>
+                        </li>
+
+                        {% endif %}
+
+                        {% if not current_user.is_authenticated %}
+
+                        <li class="list-inline-item dropdown notification-list">
+                            <a class="nav-link dropdown-toggle waves-effect nav-user" data-toggle="dropdown" href="#" role="button"
+                               aria-haspopup="false" aria-expanded="false">
+                               <img src="{{ url_for('static', filename='images/users/unknown2.png') }}" alt="user" class="rounded-circle">
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right profile-dropdown " aria-labelledby="Preview">
+
+                                <!-- item-->
+                                <a href="{{ url_for('flaskRoutes.login') }}" class="dropdown-item notify-item">
+                                    <i class="mdi mdi-login"></i> <span>Aanmelden</span>
+                                </a>
+
+                            </div>
+                        </li>
+
+                        {% endif %}                        
                     </ul>
                 </div>
 
@@ -896,8 +956,112 @@
             <div class="container-fluid">
                 <div id="navigation">
                     <ul class="navigation-menu">
-                        <li>
-                            <a href="{{ url_for('flaskRoutes.index') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                        <li{% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %} class="has-submenu"{% endif %}>
+                            <a href="{{ url_for('flaskRoutes.index') }}"><i class="fa fa-charging-station"></i> Oppleo</a>
+
+                            {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('flaskRoutes.index') }}" class="stay">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                    <li>
+                                        <hr class="menu-break"/>
+                                    </li>
+                                    <li class="has-submenu">
+                                        <a href="#"><i class="fas fa-sliders-h"></i> Instellingen</a>
+                                        <ul class="submenu">
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=1) }}" class="stay">
+                                                    <i class="fas fa-charging-station"></i> Laadpunt
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=2) }}" class="stay">
+                                                    <i class="fas fa-tachometer-alt"></i> kWh meter
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=3) }}" class="stay">
+                                                    <i class="fas fa-network-wired"></i> Netwerk
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=4) }}" class="stay">
+                                                    <i class="fas fa-database"></i> Database
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=5) }}" class="stay">
+                                                    <i class="fas fa-microchip"></i> Hardware
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=6) }}" class="stay">
+                                                    <i class="fa fa-download"></i> Backup
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=7) }}" class="stay">
+                                                    <i class="fas fa-stethoscope"></i> Diagnostics
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    
+                                    {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
+                                    <li class="has-submenu">
+                                        <a href="#"><i class="fas fa-exclamation-triangle"></i> Beheer</a>
+                                        <ul class="submenu">
+                                            <li>
+                                                <a href="#" class="stay" id="checkSoftwareStatusMenuItem">
+                                                    <i class="far fa-question-circle"></i> Controleer op updates
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.software_update') }}" class="text-warning font-weight-bold" id="updateSoftwareMenuItem">
+                                                    <i class="fas fa-gift text-warning"></i> Update Oppleo!
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.changelog') }}" class="stay">
+                                                    <i class="fas fa-code-branch"></i> Change log
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <hr class="menu-break"/>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.restart') }}" class="stay">
+                                                    <i class="fas fa-redo-alt"></i> Herstart Oppleo
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.reboot') }}" class="stay">
+                                                    <i class="fas fa-redo-alt"></i> Reboot systeem
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.shutdown') }}" class="stay">
+                                                    <i class="fas fa-power-off"></i> Systeem uitschakelen
+                                                </a>
+                                            </li>        
+                                        </ul>
+                                    </li>
+                                    {% endif %}
+                                    <li>
+                                        <hr class="menu-break"/>
+                                    </li>
+                                    <li>
+                                        <a href="{{ url_for('flaskRoutes.about') }}" class="stay">
+                                            <i class="fas fa-info-circle"></i> Over Oppleo
+                                        </a>
+                                    </li>
+
+                                </li>
+                            </ul>
+                            {% endif %}
+
                         </li>
                         {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
                         <li class="has-submenu">
@@ -927,6 +1091,13 @@
                         </li>
                         {% endif %}
 
+                        {% if (not current_user.is_authenticated and oppleoconfig.restrictMenu) %}
+                        <li>
+                            <a href="{{ url_for('flaskRoutes.usage_table' ) }}" class="stay">
+                                <i class="fas fa-table"></i> Verbruik
+                            </a>
+                        </li>
+                        {% else %}
                         <li class="has-submenu">
                             <a href="#"><i class="fas fa-table"></i> Verbruik</a>
                             <ul class="submenu">
@@ -969,117 +1140,15 @@
                                 {% endif %}
                             </ul>
                         </li>
-
-                        {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
-                        <li class="has-submenu">
-                            <a href="#"><i class="fas fa-sliders-h"></i> Instellingen</a>
-                            <ul class="submenu">
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.settings', active=1) }}" class="stay">
-                                        <i class="fas fa-charging-station"></i> Laadpunt
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.settings', active=2) }}" class="stay">
-                                        <i class="fas fa-tachometer-alt"></i> kWh meter
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.settings', active=3) }}" class="stay">
-                                        <i class="fas fa-network-wired"></i> Netwerk
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.settings', active=4) }}" class="stay">
-                                        <i class="fas fa-database"></i> Database
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.settings', active=5) }}" class="stay">
-                                        <i class="fas fa-microchip"></i> Hardware
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.settings', active=6) }}" class="stay">
-                                        <i class="fa fa-download"></i> Backup
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.settings', active=7) }}" class="stay">
-                                        <i class="fas fa-stethoscope"></i> Diagnostics
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
                         {% endif %}
 
-                        <li class="has-submenu">
-                            <a href="#">
-                                <i class="fas fa-user-circle"></i>Account
+                        {% if (not current_user.is_authenticated and oppleoconfig.restrictMenu) %}
+                        <li>
+                            <a href="{{ url_for('flaskRoutes.about') }}" class="stay">
+                                <i class="fas fa-info-circle"></i> Over Oppleo
                             </a>
-                            <ul class="submenu">
-                                {% if current_user.is_authenticated %}
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.logout') }}" class="stay">
-                                        <i class="fas fa-sign-out-alt"></i> Afmelden
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.account') }}" class="stay">
-                                        <i class="far fa-user-circle"></i> Account
-                                    </a>
-                                </li>
-
-                                <li class="has-submenu">
-                                    <a href="#"><i class="fas fa-exclamation-triangle"></i> Beheer</a>
-                                    <ul class="submenu">
-                                        <li>
-                                            <a href="#" class="stay" id="checkSoftwareStatusMenuItem">
-                                                <i class="far fa-question-circle"></i> Controleer op updates
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.software_update') }}" class="text-warning font-weight-bold" id="updateSoftwareMenuItem">
-                                                <i class="fas fa-gift text-warning"></i> Update Oppleo!
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.changelog') }}" class="stay">
-                                                <i class="fas fa-code-branch"></i> Change log
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.restart') }}" class="stay">
-                                                <i class="fas fa-redo-alt"></i> Herstart Oppleo
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.reboot') }}" class="stay">
-                                                <i class="fas fa-redo-alt"></i> Reboot systeem
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ url_for('flaskRoutes.shutdown') }}" class="stay">
-                                                <i class="fas fa-power-off"></i> Systeem uitschakelen
-                                            </a>
-                                        </li>        
-                                    </ul>
-                                </li>
-                                {% endif %}
-                                {% if not current_user.is_authenticated %}
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.login') }}" class="stay">
-                                        <i class="fas fa-sign-in-alt"></i> Aanmelden
-                                    </a>
-                                </li>
-                                {% endif %}
-                                <li>
-                                    <a href="{{ url_for('flaskRoutes.about') }}" class="stay">
-                                        <i class="fas fa-info-circle"></i> Over Oppleo
-                                    </a>
-                                </li>
-                            </ul>
                         </li>
+                        {% endif %}
                         
                     </ul>
                 </div>

@@ -196,7 +196,14 @@
       })
       $('button[data-toggle=tooltip]').tooltip({ boundary: 'window' })
       $('button#login-cancel').on('click', function (ev) {
-        window.history.back()
+        // window.history.go(-1) shows a page like you are not logged in
+        window.location.replace( 
+          (document.referrer.length > 0 && document.referrer.split('/')[2] == location.host) ? 
+            // Referrer, go back if it is on the same host
+            document.referrer :
+            // No referrer or not on this host, go to the default page
+            location.protocol + '//' + location.host + '/'
+        )
       })
       $('button#login-submit').on('click', function (ev) {
         if ($('#username').val().length == 0) {
