@@ -1,4 +1,4 @@
-Version 1.3.0           2021-05-20
+Version 1.3.0           2021-05-25
 
 Added
 - 2FA info button
@@ -8,7 +8,8 @@ Added
 - font awesome update to 1.15.3
 - vehicle connect icon, wakeup, and hide disconnected vehicle status
 - vehicle wakeup on data request (i.e. charge status on dashboard)
-- user icon in menu bar, update menu structure
+- user avatar in menu bar, update menu structure
+- change user avatar in account page
 
 Fixed
 - Redirect after login

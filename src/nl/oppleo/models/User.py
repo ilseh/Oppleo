@@ -21,6 +21,7 @@ class User(Base):
     enabled_2fa = Column(Boolean, default=False)
     enforce_local_2fa = Column(Boolean, default=True)
     shared_secret = Column(String)
+    avatar = Column(String)
 
 
     def __init__(self, username=None, password=None, authenticated=None):

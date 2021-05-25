@@ -24,6 +24,8 @@
   }
   .account_container {
     /* background-color: skyblue; */
+    position: relative;
+    height: 87px;
     margin: 15px 0px 5px 0px;
     padding: 20px;
   }
@@ -67,7 +69,23 @@
     border: 1px solid #00b19d;
     color: #ffffff;
   }
-
+  .avatar-click {
+    cursor: pointer;
+    position: absolute;
+    height: 87px;
+    top: 0px;;
+    padding-left: 10px;
+    padding-right: 10px;
+    right: 10px;
+  }
+  .avatar-click:hover {
+    background: #00b19d;
+  }
+  .avatar-click img {
+    margin-top: 25px;
+    height: 36px; 
+    width: 36px;
+  }
   </style>
 
   <script>
@@ -329,8 +347,11 @@
         $('.spinner').hide()
       })
     }
-    function updateAccount( param, value ) {
-      console.log(timestamp() + ' updateAccount()')            
+    function updateAccount( username, param, value ) {
+      console.log(timestamp() + ' updateAccount()')         
+      
+      let to = typeof(value)  // "object" "boolean"
+      
       // Show spinner
       $('.spinner').show()
       data = {
@@ -338,13 +359,26 @@
             param         : param,
             value         : value
           }
-          let url = ('/account/'+encodeURIComponent(param)+'/'+encodeURIComponent(value)+'/')
+      data = new FormData()
+      data.append('csrf_token', '{{ csrf_token() }}')
+      data.append('param', param)
+      data.append('value', value)
       $.ajax({
         type		    : 'POST',
-        url			    : ('/account/'+encodeURIComponent(param)+'/'+encodeURIComponent(value)+'/'),
-        dataType	  : 'json',
+        url			    : ('/account/' +
+                        encodeURIComponent(username) + '/' +
+                        encodeURIComponent(param) + '/' +
+                        (typeof(value) == "object" ? 
+                          encodeURIComponent(value.name) :
+                          encodeURIComponent(value)
+                        ) + '/'
+                      ),
+//        dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
-        encode		  : true,
+        contentType: false,
+  processData: false,
+  cache: false,
+//        encode		  : true,
         data        : data
       }) // using the done promise callback
       .done(function(data) {
@@ -355,6 +389,10 @@
             switch (data.param) {
               case 'enforceLocal2FA':
                 autoHideNotify('success', 'top-left', 'Gewijzigd', '2FA '+(data.value?'actief':'gepasseerd')+' voor toegang vanaf lokaal netwerk.')
+                break
+              case 'avatar':
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'De avatar is aangepast.')
+                $('img.accountavatar_'+data.username).attr("src", '{{ url_for('static', filename='images/avatars/') }}' + data.filename)
                 break
               default:
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Instelling aangepast.')
@@ -614,9 +652,23 @@
       })
 
       $('input[type=checkbox]').change(function(e) {
-        updateAccount( e.target.id, $(this).prop('checked') )
+        updateAccount( '{{ current_user.username }}', e.target.id, $(this).prop('checked') )
       })
 
+      $('#avatarclick').on('click', function() { 
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = e => { 
+          var file = e.target.files[0]
+          if (file.size > 256000) {
+            autoHideNotify('warning','top-left', 'Te groot', 'Het selecteerde bestand is te groot. Selecteer een jpg, png of gif bestand van maximaal 250kB.')
+            return 
+          }
+          // Upload the file
+          updateAccount( '{{ current_user.username }}', 'avatar', file )
+        }
+        input.click();
+      })
 
       // Remove spinner
       $('.spinner').hide()
@@ -638,7 +690,13 @@
         <div>
           <div class="account_wrapper_2">
             <div class="account_container text-right right-border">
-              <h1><i class="far fa-user-circle"></i></h1>
+              <div id="avatarclick" class="avatar-click waves-effect"
+                   data-toggle="tooltip" data-placement="bottom" data-html="true" 
+                   title="Klik om een avatar te uploaden" 
+                    >
+                <img src="{{ url_for('static', filename='images/avatars/'+current_user.avatar) }}" 
+                     alt="user" class="rounded-circle accountavatar_{{ current_user.username }}">
+              </div>
             </div>
           </div>
           <div class="account_wrapper_2">

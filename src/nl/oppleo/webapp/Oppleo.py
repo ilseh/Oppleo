@@ -55,6 +55,11 @@ try:
     app.config['SECRET_KEY'] = oppleoConfig.secretKey
     app.config['WTF_CSRF_SECRET_KEY'] = oppleoConfig.csrfSecretKey
 
+    # File upload, used for user image
+    app.config['AVATAR_FOLDER'] = oppleoConfig.oppleoRootDirectory + 'src/nl/oppleo/webapp/static/images/avatars/'
+    app.config['MAX_CONTENT_PATH'] = 256 * 1024  # 256kB
+
+
     from flask_wtf.csrf import CSRFProtect
     # https://flask-wtf.readthedocs.io/en/v0.12/csrf.html
     CSRFProtect(app)

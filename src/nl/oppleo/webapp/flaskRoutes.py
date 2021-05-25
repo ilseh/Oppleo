@@ -6,6 +6,7 @@ from flask import current_app as app # Note: that the current_app proxy is only 
 
 from jinja2.exceptions import TemplateNotFound
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 from functools import wraps
 import json
@@ -15,6 +16,7 @@ import logging
 import re
 from urllib.parse import urlparse, unquote
 import io
+import uuid
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
@@ -2236,20 +2238,26 @@ def softwareStatus(branch='master'):
         })
 
 
-@flaskRoutes.route("/account", defaults={'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
-@flaskRoutes.route("/account/", defaults={'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
-@flaskRoutes.route("/account/<path:param>", methods=["GET"])
-@flaskRoutes.route("/account/<path:param>/", methods=["GET"])
-@flaskRoutes.route("/account/<path:param>/<path:value>", methods=["POST"])
-@flaskRoutes.route("/account/<path:param>/<path:value>/", methods=["POST"])
+
+
+@flaskRoutes.route("/account", defaults={'username': None, 'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
+@flaskRoutes.route("/account/", defaults={'username': None, 'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
+@flaskRoutes.route("/account/<path:username>", defaults={'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
+@flaskRoutes.route("/account/<path:username>/", defaults={'param': None, 'value': None}, strict_slashes=False, methods=["GET", "POST"])
+@flaskRoutes.route("/account/<path:username>/<path:param>", methods=["GET"])
+@flaskRoutes.route("/account/<path:username>/<path:param>/", methods=["GET"])
+@flaskRoutes.route("/account/<path:username>/<path:param>/<path:value>", methods=["POST"])
+@flaskRoutes.route("/account/<path:username>/<path:param>/<path:value>/", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
-def account(param:str=None, value:str=None):
+def account(username:str=None, param:str=None, value:str=None):
     global flaskRoutesLogger, oppleoConfig, current_user
 
-    flaskRoutesLogger.debug('/account {}'.format(request.method))
+    flaskRoutesLogger.debug('/account{}/{}/{} {}'.format('username', param, value, request.method))
+
+    # TODO now only allowed to change your own settings. Add admin rights later.
 
     if request.method == "GET":
-        if param is None:
+        if username is None or param is None:
             return render_template("account.html", 
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog,
@@ -2257,26 +2265,73 @@ def account(param:str=None, value:str=None):
                 )
         if param == 'enforceLocal2FA':
             return jsonify({
-                'status': HTTP_CODE_200_OK,
-                'param' : param,
-                'value' : current_user.is_2FA_local_enforced()
+                'status'   : HTTP_CODE_200_OK,
+                'username' : username,
+                'param'    : param,
+                'value'    : current_user.is_2FA_local_enforced()
                 })
         return jsonify({
-            'status': HTTP_CODE_404_NOT_FOUND, 
-            'msg'   : 'Parameter not found'
+            'status'   : HTTP_CODE_404_NOT_FOUND, 
+            'username' : username,
+            'param'    : param,
+            'msg'      : 'Parameter not found'
             })
     if request.method == "POST":
+        if current_user.username != username:
+            return jsonify({
+                'status': HTTP_CODE_403_FORBIDDEN, 
+                'msg'   : 'Changes to other users not allowed'
+                })
+
         if param == 'enforceLocal2FA':
             current_user.enforce_local_2fa = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
             current_user.save()
             return jsonify({
                 'status': HTTP_CODE_200_OK,
+                'username' : username,
                 'param' : param,
                 'value' : current_user.is_2FA_local_enforced()
                 })
+
+        if param == 'avatar':
+            # check if the post request has the file part
+            # if user does not select file, browser also submit an empty part without filename
+            if 'value' not in request.files or request.files['value'].filename == '':
+                return jsonify({
+                    'status': HTTP_CODE_400_BAD_REQUEST,
+                    'username' : username,
+                    'param' : param,
+                    'msg'   : 'No file uploaded'
+                    })
+            ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+            # Allowed extension?
+            if (not '.' in request.files['value'].filename and 
+                request.files['value'].filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS):
+                return jsonify({
+                    'status': HTTP_CODE_400_BAD_REQUEST,
+                    'username' : username,
+                    'param' : param,
+                    'msg'   : 'Unsupported file type'
+                    })
+            filename = str(uuid.uuid4()) + '.' + request.files['value'].filename.rsplit('.', 1)[1].lower()
+            request.files['value'].save(os.path.join(app.config['AVATAR_FOLDER'], filename))
+            user = User.get(username)
+            # Remove current avatar
+            os.remove(app.config['AVATAR_FOLDER'] + user.avatar)
+            user.avatar = filename
+            user.save()
+            return jsonify({
+                'status'   : HTTP_CODE_200_OK,
+                'username' : username,
+                'param'    : param,
+                'msg'      : 'Uploaded',
+                'filename' : filename
+                })
+
         return jsonify({
-            'status': HTTP_CODE_404_NOT_FOUND, 
-            'msg'   : 'Parameter not found'
+            'status'   : HTTP_CODE_404_NOT_FOUND, 
+            'username' : username,
+            'msg'      : 'Parameter not found'
             })
 
     return jsonify({
@@ -2594,3 +2649,4 @@ def wakeupVehicle():
         'action': request.method,
         'msg'   : 'Wakeup requested'
         })
+
