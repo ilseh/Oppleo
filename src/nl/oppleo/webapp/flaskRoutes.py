@@ -311,10 +311,17 @@ def login2(username:str=None):
     login_user(user, remember=rememberMe)
     user.authenticated = True
     user.save()
+
+    login_next = None
+    if 'login_next' in session:
+        login_next = session['login_next']
+        del session['login_next']
+
     return jsonify({
         'status'  : HTTP_CODE_200_OK,
         'code'    : DETAIL_CODE_200_OK,
         'username': username,
+        '' if login_next is None else 'login_next': login_next,
         'msg'     : 'Loging successful'
         })                
  

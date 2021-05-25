@@ -167,7 +167,7 @@
       })
       .fail(function() {
         autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet ontvangen door de server. Probeer opnieuw.')
-// TODO: melding boven password box 
+        // TODO: melding boven password box 
       })
       .always(function() {
         // Hide spinner
@@ -242,7 +242,7 @@
       })
       .fail(function() {
         autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet ontvangen door de server. Probeer opnieuw.')
-// TODO: melding boven password box 
+        // TODO: melding boven password box 
       })
       .always(function() {
         // Hide spinner
@@ -269,7 +269,6 @@
         data        : data
       }) // using the done promise callback
       .done(function(data) {
-        // log data to the console so we can see
         // log data to the console so we can see
         console.log(data)
         switch (data.status) {
@@ -340,7 +339,7 @@
       })
       .fail(function() {
         autoHideNotify('error', 'top-left', 'Oeps', 'Verzoek niet ontvangen door de server. Probeer opnieuw.')
-// TODO: melding boven password box 
+        // TODO: melding boven password box 
       })
       .always(function() {
         // Hide spinner
@@ -376,8 +375,8 @@
 //        dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
         contentType: false,
-  processData: false,
-  cache: false,
+        processData: false,
+        cache: false,
 //        encode		  : true,
         data        : data
       }) // using the done promise callback
