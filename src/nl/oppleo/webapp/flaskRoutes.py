@@ -2323,11 +2323,16 @@ def account(username:str=None, param:str=None, value:str=None):
                     'param' : param,
                     'msg'   : 'Unsupported file type'
                     })
-            filename = str(uuid.uuid4()) + '.' + request.files['value'].filename.rsplit('.', 1)[1].lower()
+            # Determine unique and non-existing filename
+            filename = None
+            while filename is None or (os.path.exists(os.path.join(app.config['AVATAR_FOLDER'], filename))):
+                filename = str(uuid.uuid4()) + '.' + request.files['value'].filename.rsplit('.', 1)[1].lower()
+            # Save the avatar to it
             request.files['value'].save(os.path.join(app.config['AVATAR_FOLDER'], filename))
             user = User.get(username)
-            # Remove current avatar
-            os.remove(app.config['AVATAR_FOLDER'] + user.avatar)
+            # Remove current avatar - if not the default one
+            if (user.avatar != 'unknown.png'):
+                os.remove(app.config['AVATAR_FOLDER'] + user.avatar)
             user.avatar = filename
             user.save()
             return jsonify({
