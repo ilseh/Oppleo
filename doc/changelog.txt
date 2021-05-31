@@ -1,15 +1,11 @@
-Version 1.3.0           2021-05-25
+Version 1.3.0           2021-05-31
 
 Added
-- 2FA info button
-- Local 2FA bypass per account on account page
-- command line script to disable 2FA for account
+- 2FA info button, local 2FA bypass per account on account page, command line script to disable 2FA for account
 - breadcrumbs removed
 - font awesome update to 1.15.3
-- vehicle connect icon, wakeup, and hide disconnected vehicle status
-- vehicle wakeup on data request (i.e. charge status on dashboard)
-- user avatar in menu bar, update menu structure
-- change user avatar in account page
+- vehicle connect icon, wakeup, and hide disconnected vehicle status, vehicle wakeup on data request (i.e. charge status on dashboard)
+- user avatar in menu bar, update menu structure, change user avatar in account page
 
 Fixed
 - Redirect after login

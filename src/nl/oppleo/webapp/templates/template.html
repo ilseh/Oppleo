@@ -848,14 +848,29 @@
         .day-label {
             width: 30px; 
         }
-        hr.menu-break {
-            margin-top: 4px;
-            margin-bottom: 4px;
-            border-top: 1px solid #98a6ad; 
-            width: 70%; 
-            padding-left: 16px;
-            padding-right: 16px;
+        /* Horizontal rule in wide responsive Menu */
+        @media (min-width: 992px) {
+            hr.menu-break {
+                margin-top: 4px;
+                margin-bottom: 4px;
+                border-top: 1px solid #98a6ad; 
+                width: 70%; 
+                padding-left: 16px;
+                padding-right: 16px;
+            }
         }
+        /* Horizontal rule in hamburger responsive Menu */
+        @media (max-width: 991px) {
+                hr.menu-break {
+                margin-top: 4px;
+                margin-bottom: 4px;
+                border-top: 1px solid #98a6ad; 
+                width: 100%; 
+                padding-left: 0px;
+                padding-right: 0px;
+            }
+        }
+
         input[type=checkbox], input[type=radio] {
             cursor: pointer;
         }
@@ -958,7 +973,7 @@
                 <div id="navigation">
                     <ul class="navigation-menu">
                         <li{% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %} class="has-submenu"{% endif %}>
-                            <a href="{{ url_for('flaskRoutes.index') }}"><i class="fa fa-charging-station"></i> Oppleo</a>
+                            <a href="#"><i class="fa fa-charging-station"></i> Oppleo</a>
 
                             {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
                             <ul class="submenu">
