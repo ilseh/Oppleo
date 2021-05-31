@@ -69,5 +69,5 @@ try:
 
 except KeyboardInterrupt:
     print('Done')
-    exit
+    exit(0)
 

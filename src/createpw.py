@@ -9,7 +9,7 @@ try:
     password = input("Enter the password to hash: ")
 except KeyboardInterrupt:
     print("Stopped")
-    exit
+    exit(0)
 
 print("Password hash:")
 print(generate_password_hash(password))
