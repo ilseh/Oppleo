@@ -14,7 +14,7 @@ Click==7.0
 cryptography==3.4.7
 dnspython==1.16.0
 docutils==0.15.2
-eventlet==0.25.1
+eventlet==0.31.0
 Flask==1.1.2
 Flask-APScheduler==1.11.0
 Flask-Bcrypt==0.7.1
