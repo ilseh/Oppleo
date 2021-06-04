@@ -1,3 +1,12 @@
+Version 1.3.1           2021-06-04
+
+Added
+
+Fixed
+- default avatar if none set
+- OS info in settings
+- update urllib3 to 1.26.5
+
 Version 1.3.0           2021-05-31
 
 Added

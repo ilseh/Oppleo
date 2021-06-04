@@ -2760,8 +2760,8 @@
                             </tr>
                             {% for os_line in diag['os'] %}
                             <tr>
-                              <td class="text-dark">&nbsp;</td>
-                              <td class="text-primary">{{ os_line }}</td>
+                              <td class="text-dark">{{ os_line }}</td>
+                              <td class="text-primary">{{ diag['os'][os_line] }}</td>
                             </tr>
                             {% endfor %}
                             {% endif %}

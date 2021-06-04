@@ -90,6 +90,7 @@ class User(Base):
         """False, as anonymous users aren't supported."""
         return False
 
+
     # Return all users
     @staticmethod
     def all():

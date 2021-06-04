@@ -693,7 +693,7 @@
                    data-toggle="tooltip" data-placement="bottom" data-html="true" 
                    title="Klik om een avatar te uploaden" 
                     >
-                <img src="{{ url_for('static', filename='images/avatars/'+current_user.avatar) }}" 
+                <img src="{{ url_for('static', filename='images/avatars/'+(current_user.avatar if current_user.avatar is not none else 'unknown.png')) }}" 
                      alt="user" class="rounded-circle accountavatar_{{ current_user.username }}">
               </div>
             </div>
