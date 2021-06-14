@@ -334,16 +334,18 @@ class ChargerHandlerThread(object):
     def save_tesla_values_in_thread(self, charge_session_id, condense=False):
         self.logger.debug('.save_tesla_values_in_thread() id = {} and condense = {}'.format(charge_session_id, condense))
         uotu = UpdateOdometerTeslaUtil()
-        uotu.set_charge_session_id(charge_session_id=charge_session_id)
-        uotu.set_condense(condense=condense)
+        uotu.charge_session_id = charge_session_id
+        uotu.condense = condense
         # update_odometer takes some time, so put in own thread
 
         # uotu.start()
         # start() launches a background_task by calling socketio.start_background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
-        thread_for_tesla_util = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
-        thread_for_tesla_util.start()
+        if oppleoConfig.vuThread is not None and oppleoConfig.vuThread.is_alive():
+            self.logger.warning('.save_tesla_values_in_thread() VehicleUpdateThread was running (odometer) - running another one')
+        oppleoConfig.vuThread = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
+        oppleoConfig.vuThread.start()
 
 
     # rfid_reader_thread

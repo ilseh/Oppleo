@@ -100,6 +100,12 @@
                 5: 'Vrijdag',
                 6: 'Zaterdag'
             }
+            const BUTTONSTATE_INITIAL = 0
+            const BUTTONSTATE_REQUESTING = 1
+            const BUTTONSTATE_REQUESTED = 2
+            const BUTTONSTATE_FAILED = 3
+            const BUTTONSTATE_DONE = 4
+            const BUTTONSTATE_HIDE = 5
             function timestamp() {
                 d = new Date();
                 return (d.getFullYear() + "-" + 
@@ -224,8 +230,11 @@
                         $('button#softwateUpdateCheck').toggleClass('btn-outline-success', true)
                         $('button#softwateUpdateCheck').toggleClass('btn-outline-secondary', false)
                     }
-                    softwareUpdateInProgress = result.softwareUpdateInProgress
-                    // On reload no need to make it blue, thats default
+                    if (!result.odometerCaptureInProgress) {
+                        if (typeof captureOdometerButton === 'function') { 
+                            captureOdometerButton(BUTTONSTATE_REQUESTED)
+                        }
+                    }
                 })
                 .fail(function(result) {
                     if (result.status == 401) {
@@ -646,6 +655,12 @@
         .btn-outline-primary.disabled:hover, .btn-outline-primary:disabled:hover {
             background-color: #212529;
         }
+        .btn-xs {
+            padding-left: 4px; 
+            padding-right: 4px; 
+            padding-top: 4px; 
+            padding-bottom: 4px;
+        }
 
         .form-control {
             color: #ffffff !important;
@@ -913,6 +928,46 @@
                             <!-- End mobile menu toggle-->
                         </li>
  
+
+                        <li class="list-inline-item dropdown notification-list">
+                            <a class="nav-link dropdown-toggle arrow-none waves-effect" data-toggle="dropdown" href="#" role="button"
+                               aria-haspopup="false" aria-expanded="false">
+                                <i class="mdi mdi-bell noti-icon"></i>
+                                <span class="badge badge-pink noti-icon-badge">4</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right dropdown-arrow dropdown-menu-lg" aria-labelledby="Preview">
+                                <!-- item-->
+                                <div class="dropdown-item noti-title">
+                                    <h5 class="font-16"><span class="badge badge-danger float-right">5</span>Notification</h5>
+                                </div>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item notify-item">
+                                    <div class="notify-icon bg-success"><i class="mdi mdi-comment-account"></i></div>
+                                    <p class="notify-details">Robert S. Taylor commented on Admin<small class="text-muted">1 min ago</small></p>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item notify-item">
+                                    <div class="notify-icon bg-info"><i class="mdi mdi-account"></i></div>
+                                    <p class="notify-details">New user registered.<small class="text-muted">1 min ago</small></p>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item notify-item">
+                                    <div class="notify-icon bg-danger"><i class="mdi mdi-airplane"></i></div>
+                                    <p class="notify-details">Carlos Crouch liked <b>Admin</b><small class="text-muted">1 min ago</small></p>
+                                </a>
+
+                                <!-- All-->
+                                <a href="javascript:void(0);" class="dropdown-item notify-item notify-all">
+                                    View All
+                                </a>
+
+                            </div>
+                        </li>
+                 
+
                         {% if current_user.is_authenticated %}
 
                         <li class="list-inline-item dropdown notification-list">

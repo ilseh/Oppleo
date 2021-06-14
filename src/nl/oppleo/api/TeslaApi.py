@@ -27,6 +27,12 @@ import urllib.parse
     available. While you can potentially fully evaluate this page to remove the block, the best practice for now is to reduce your 
     calls to the SSO service to a minimum and avoid things like automatic request retries.
 
+    vehicle_id vs id
+    One potentially confusing part of Tesla's API is the switching use of the id and vehicle_id of the car. The id field is an identifier 
+    for the car on the owner-api endpoint. The vehicle_id field is for identifying the car across different endpoints, such as the streaming 
+    or Autopark APIs. For the state and command APIs, you should be using the id field. If your JSON parser doesn't support large numbers (>32 bit),
+    then you can use the id_s field for a string version of the ID.
+
 """
 
 class TeslaAPI:
@@ -83,7 +89,8 @@ class TeslaAPI:
     VEHICLE_LIST_STATE_VALUE_ASLEEP = 'asleep'
     VEHICLE_LIST_STATE_VALUE_AWAKE = 'online'
     VEHICLE_LIST_STATE_VALUE_UNKNOWN = 'unknown'
-    VEHICLE_LIST_ID_PARAM = 'id_s'
+    VEHICLE_LIST_ID_S_PARAM = 'id_s'
+    VEHICLE_LIST_VEHICLE_ID_PARAM = 'vehicle_id'        # Should not be used in Oppleo!
     VEHICLE_LIST_DISPLAY_NAME_PARAM = 'display_name'
     VEHICLE_LIST_VIN_PARAM = 'vin'
 
@@ -511,12 +518,11 @@ class TeslaAPI:
         self.logger.debug("Vehicle count : %s " % response_dict['count'])
         self.vehicle_list = response_dict['response']
         for vehicle in self.vehicle_list:
-            self.logger.debug(
-                "The display_name (given vehicle name) is : %s " % vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM])
-            self.logger.debug("Het id_s is : %s " % vehicle[self.VEHICLE_LIST_ID_PARAM])
-            self.logger.debug("Het state is : %s " % vehicle[self.VEHICLE_LIST_STATE_PARAM])
-            self.logger.debug("Het vehicle_id is : %s " % vehicle['vehicle_id'])
-            self.logger.debug("Het VIN is : %s " % vehicle['vin'])
+            self.logger.debug("Het {} (given vehicle name) is : {} ".format(self.VEHICLE_LIST_DISPLAY_NAME_PARAM,  vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM]))
+            self.logger.debug("Het {} is : {} ".format(self.VEHICLE_LIST_ID_S_PARAM,  vehicle[self.VEHICLE_LIST_ID_S_PARAM]))
+            self.logger.debug("Het {} is : {} ".format(self.VEHICLE_LIST_STATE_PARAM,  vehicle[self.VEHICLE_LIST_STATE_PARAM]))
+            self.logger.debug("Het {} is : {} ".format(self.VEHICLE_LIST_VEHICLE_ID_PARAM,  vehicle[self.VEHICLE_LIST_VEHICLE_ID_PARAM]))
+            self.logger.debug("Het {} is : {} ".format(self.VEHICLE_LIST_VIN_PARAM,  vehicle[self.VEHICLE_LIST_VIN_PARAM]))
         return self.vehicle_list
 
     def getVehicleWithId(self, id:str=None, update:bool=False):
@@ -529,7 +535,7 @@ class TeslaAPI:
             self.logger.debug("getVehicleWithId() id={} return None (2)".format(id))
             return None
         for vehicle in vehicle_list:
-            if id == vehicle[self.VEHICLE_LIST_ID_PARAM]:
+            if id == vehicle[self.VEHICLE_LIST_ID_S_PARAM]:
                 self.logger.debug("%d vehicles, selected vehicle id %s" % (len(vehicle_list), id))
                 return vehicle
         return None
@@ -542,7 +548,7 @@ class TeslaAPI:
         nid = []
         for vehicle in vehicle_list:
             nid.append({
-                'id': vehicle[self.VEHICLE_LIST_ID_PARAM],
+                'id': vehicle[self.VEHICLE_LIST_ID_S_PARAM],
                 'name': vehicle[self.VEHICLE_LIST_DISPLAY_NAME_PARAM],
                 'vin': vehicle[self.VEHICLE_LIST_VIN_PARAM]
             })
@@ -561,7 +567,7 @@ class TeslaAPI:
             # 03 Wake it up, otherwise the STATE call will timeout
             try:
                 r = requests.post(
-                    url=self.API_BASE + self.API_WAKE_UP.replace('{id}', vehicle[self.VEHICLE_LIST_ID_PARAM]),
+                    url=self.API_BASE + self.API_WAKE_UP.replace('{id}', vehicle[self.VEHICLE_LIST_ID_S_PARAM]),
                     headers={'Authorization': self.token_type + ' ' + self.access_token},
                     timeout=self.HTTP_TIMEOUT
                 )

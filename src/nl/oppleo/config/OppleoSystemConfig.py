@@ -8,8 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
-
 
 """
  First init the Logger, then load the config

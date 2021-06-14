@@ -19,6 +19,10 @@ def milesToKm(miles:float=0, acc:int=0):
 
 
 """
+    id                          identifier for the car on the owner-api endpoint
+    id_s                        string version of the id
+    vehicle_id                  identifying the car across different endpoints, such as the streaming or Autopark APIs.
+                                Oppleo uses the id_s and stores it as vehicle_id in the RFID 8)
     battery_level               battery percentage charged [int]
     battery_range               range in miles with current battery level [int]
     charge_energy_added         enery added in the charge session of the vehicle, in kWh [int]
@@ -107,8 +111,9 @@ def battCapacityFromOptionCodes(optionCodes:str=None) -> int:
 
 
 def formatVehicle(vehicle=None):
-    csEl = ['vehicle_id', 'vin', 'display_name', 'option_codes', 'timestamp', 'state']
- 
+    # Elements in vehicle
+    csEl = ['id_s', 'vin', 'display_name', 'option_codes', 'timestamp', 'state']
+
     if vehicle is None:
         return {}
 

@@ -75,6 +75,8 @@
   </style>
 
   <script>
+    let dt = undefined
+
     function timestamp() {
       d = new Date();
       return (d.getFullYear() + "-" + 
@@ -86,8 +88,254 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
+
+    var chargeSessionSocket = undefined
+    function startWebSocket() {
+      console.log(timestamp() + ' startWebSocket()')
+      // start up the SocketIO connection to the server on namespace /usage
+      chargeSessionSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/charge_session')
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+      chargeSessionSocket.on('charge_session_deleted', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        // The charge session is effectively removed, delete from datatables
+        // TODO
+
+        if (dt != undefined) {
+          // Remove a row by column[0] value
+          dt
+            .rows( function ( idx, data, node ) {
+              return data[0] === msg.data.id
+            })
+            .remove()
+            .draw()
+        }
+      })
+      chargeSessionSocket.on('charge_session_data_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        // The values of the charge session are updated, change in datatables
+
+        // Update km in datatable
+        if (dt != undefined) {
+          // Update a row
+          var rowIndex = -1
+          let rowData = undefined
+          // Find the row
+          dt.rows( function ( idx, data, node ) {             
+              if (data[0] == msg.data.id) {
+                  rowIndex = idx
+                  rowData = data
+              }
+              return false
+            })
+            .draw()
+          if (rowIndex != -1) {
+            // Row:
+            // session id stays id
+            // token is rfid
+            rowData[1] = msg.data.rfid
+            // start time
+            rowData[2] = ( (typeof msg.data.start_time === 'string' || msg.data.start_time instanceof String) ?
+                            '<nobr>' + msg.data.start_time + '</nobr>' :
+                            '-'
+                          )
+            // trigger
+            rowData[3] = ( ((typeof msg.data.trigger === 'string' || msg.data.trigger instanceof String) && msg.data.trigger != "None") ?
+                          msg.data.trigger :
+                          '-'
+                        )
+            // Start value
+            rowData[4] = ( (typeof msg.data.start_value === 'string' || msg.data.start_value instanceof String) ?
+                          msg.data.start_value :
+                          '-'
+                        )
+            // km
+            rowData[5] = ( (typeof msg.data.km === 'string' || msg.data.km instanceof String) ?
+                          msg.data.km :
+                          '-'
+                        )
+            // End time
+            rowData[6] = ( (typeof msg.data.end_time === 'string' || msg.data.end_time instanceof String) ?
+                          '<nobr>' + msg.data.end_time + '</nobr>' :
+                          '-'
+                        )
+            // End value
+            rowData[7] = ( (typeof msg.data.end_value === 'string' || msg.data.end_value instanceof String) ?
+                          msg.data.end_value :
+                          '-'
+                        )
+            // Charger
+            rowData[8] = msg.data.energy_device_id
+            // Tariff
+            rowData[9] =  ( (typeof msg.data.tariff === 'string' || msg.data.tariff instanceof String) ?
+                          msg.data.tariff :
+                          '-'
+                        )
+            // Usage
+            rowData[10] = ( (typeof msg.data.total_energy === 'string' || msg.data.total_energy instanceof String) ?
+                            msg.data.total_energy :
+                            '-'
+                          )
+            // Total
+            rowData[11] = ( (typeof msg.data.total_price === 'string' || msg.data.total_price instanceof String) ?
+                            msg.data.total_price :
+                            '-'
+                          )
+            // Buttons
+            rowData[12] = ""
+            dt.row(rowIndex).data(rowData).draw()
+            $('button#edit_' + msg.data.rfid).click(function() {
+              //Do stuff when clicked
+              window.location = location + $(this).attr('id').split("_").pop();
+            })
+            // Change animation
+            dt.rows(rowIndex).nodes().to$().toggleClass("text-info").fadeOut(800, function() {              
+              $(this).toggleClass("text-info").fadeIn(50)
+            })
+          }
+        }
+
+      })
+
+      
+      chargeSessionSocket.on('odomoter_update_started', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        if (dt != undefined && typeof msg.data.chargeSessionId == "number") {
+          captureOdometerButton(BUTTONSTATE_REQUESTING)
+        }
+      })
+      chargeSessionSocket.on('odomoter_update_ended', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+
+        if (!msg.data.status) {
+          captureOdometerButton(BUTTONSTATE_FAILED)
+          autoHideNotify('warning','top-left', 'Ophalen mislukt', 'Ophalen kilometerstand voor sessie ' + 
+                              msg.data.chargeSessionId +' mislukt (code ' + msg.data.code + 
+                              ': ' + msg.data.reason + ').')
+          return
+        }
+        // Hide button for now
+        captureOdometerButton(BUTTONSTATE_HIDE)
+
+      })
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    function updateCaptureOdometerButton(icon, text, clickEnabled, hide=false) {
+      $('button#captureOdometer_0').html(icon)
+      $('button#captureOdometer_0').attr('data-original-title','<em>'+text+'</em>')
+      $('button#captureOdometer_0').tooltip('hide')
+      $('button#captureOdometer_0').off('click', captureOdometer)
+      if (clickEnabled) {
+        $('button#captureOdometer_0').on('click', captureOdometer)
+        $('button#captureOdometer_0').css({'cursor': 'pointer'})
+      } else {
+        $('button#captureOdometer_0').css({'cursor': 'wait'})
+      }
+      $('button#captureOdometer_0').toggleClass('d-none', hide)
+    }
+
+    function captureOdometerButton(buttonState) {
+      let iconInitial = '<i class="fas fa-redo-alt"></i>'
+      let iconSpinner = '<i class="fas fa-spinner fa-spin"></i>'
+      let textInitial = 'Km stand ophalen mislukt. Km stand nogmaals ophalen.'
+      let txtRequesting = 'Kilometerstand ophalen aanvragen...'
+      let txtRequested = 'Kilometerstand ophalen aangevraagd.'
+      switch (buttonState) {
+        case BUTTONSTATE_REQUESTING:
+          updateCaptureOdometerButton(iconSpinner, txtRequesting, false)
+          break
+        case BUTTONSTATE_REQUESTED:
+          updateCaptureOdometerButton(iconSpinner, txtRequested, false)
+          break
+        case BUTTONSTATE_DONE:
+        case BUTTONSTATE_HIDE:
+          updateCaptureOdometerButton(iconInitial, textInitial, false, true)
+          break
+        case BUTTONSTATE_FAILED:
+        case BUTTONSTATE_INITIAL:
+        default:
+          updateCaptureOdometerButton(iconInitial, textInitial, true)
+          break
+      }
+    }
+    function captureOdometer() {
+      console.log(timestamp() + ' captureOdometer()')            
+      $('.spinner').show()
+      captureOdometerButton(BUTTONSTATE_REQUESTING)
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/request_odometer_update/',
+        contentType : "application/json",
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 400:   // Bad requests
+            switch(data.code) {
+              case 31:
+                autoHideNotify('warning','top-left', 'Mislukt', 'Geen actieve laadsessie!')
+                break
+              default:
+                autoHideNotify('warning','top-left', 'Mislukt', 'Onbekende oorzaak.')
+            }
+            captureOdometerButton(BUTTONSTATE_FAILED)
+            break
+          case 405:   // Method not allowed
+            switch(data.code) {
+              case 47:
+                autoHideNotify('warning','top-left', 'Al actief', 'Taak is al actief.')
+                break
+              default:
+                autoHideNotify('warning','top-left', 'Mislukt', 'Onbekende oorzaak.')
+            }
+            captureOdometerButton(BUTTONSTATE_FAILED)
+            break
+          case 202:   // Accepted
+            autoHideNotify('success','top-left', 'Verzoek succesvol', 'Kilometerstand wordt opgehaald voor sessie ' + 
+                            data.chargeSession + ', condense is ' + (data.condense ? 'in' : 'uit') + 'geschakeld.')
+            captureOdometerButton(BUTTONSTATE_REQUESTED)
+            break
+          default:
+            autoHideNotify('warning','top-left', 'Mislukt', 'Onbekende oorzaak.')
+            captureOdometerButton(BUTTONSTATE_FAILED)
+        }
+      })
+      .fail(function() {
+        autoHideNotify('warning','top-left', 'Mislukt', 'Kilometerstand ophalen mislukt.')
+        captureOdometerButton(BUTTONSTATE_FAILED)
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
     let rfidTokens = {}
-    let dt = undefined
     let unfilteredData = null
     let filters = []
     function getRfidTokens() {
@@ -117,7 +365,7 @@
         })
       })
       .fail(function() {
-        notify('error','top-left', 'Probleem', 'RFID Token data niet beschikbaar.');
+        autoHideNotify('error','top-left', 'Probleem fout', 'RFID Token data niet beschikbaar.')
       })
       .always(function() {
       })
@@ -386,7 +634,7 @@
             //  "sorting": false,
             "orderable": true,
             "type": "omilage",
-            "render": function (data, type, row) {
+            "render": function (data, type, row, rcIx) {
               // Render for screen: type = 'display'
               // Render for Excel export: type = { display: 'Plain'}
               if (type.hasOwnProperty('display') && (type.display == 'Plain')) {
@@ -395,7 +643,37 @@
               } else {
                 // Default - type = 'display' - on screen or other exports
                 return data == undefined || data === "None" ? 
-                        "-" : 
+                        ( rcIx.row == 0 ? 
+                          // First row
+                          '- <button' +
+                          '   type="button"' +
+                          '   id="captureOdometer_' + rcIx.row + '"' +
+                          '   class="btn btn-xs waves-effect waves-light btn-outline-primary" ' +
+                          '   style="float: right;"' +
+                          '   data-toggle="tooltip" ' +
+                          '   data-placement="bottom" ' +
+                          '   data-html="true" ' +
+                          '   title="<em>Km stand ophalen mislukt. Km stand nogmaals ophalen.</em>"' +
+//                          '   onclick="captureOdometer();"' +
+                          '   >' +
+                          '   <i class="fas fa-redo-alt"></i>' +
+                          '</button>'
+                        :
+                          '- <button' +
+                          '   type="button"' +
+                          '   id="editOdometer_' + rcIx.row + '"' +
+                          '   class="btn btn-xs waves-effect waves-light btn-outline-warning" ' +
+                          '   style="float: right;"' +
+                          '   data-toggle="tooltip" ' +
+                          '   data-placement="bottom" ' +
+                          '   data-html="true" ' +
+                          '   title="<em>KM stand ophalen mislukt. Handmatig km stand bijwerken.</em>"' +
+//                          '   onclick=""' +
+                          '   >' +
+                          '   <i class="far fa-edit"></i>' +
+                          '</button>' 
+                        )
+                        : 
                         '<span style="text-align: right;">' + data + 'km</span>'
               }
             }
@@ -496,6 +774,9 @@
         // Make sure tooltips are initialized on each draw
         $('table#charge_sessions').on('draw.dt', function() {
           $('[data-toggle="tooltip"]').tooltip()
+          if ($('button#captureOdometer_0').length > 0) {
+            captureOdometerButton(BUTTONSTATE_INITIAL)
+          }
         })
 
         // Filter table when filter selected
@@ -609,6 +890,7 @@
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
+      startWebSocket()
       getChargeSessions()
       getRfidTokens()
     })

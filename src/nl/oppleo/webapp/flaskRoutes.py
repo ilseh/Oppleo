@@ -41,7 +41,6 @@ from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
-from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.GitUtil import GitUtil
@@ -85,8 +84,8 @@ DETAIL_CODE_43_PASSWORD_INVALID_CHARACTER           =  43    # HTTP_CODE_400_BAD
 DETAIL_CODE_44_PASSWORD_UPPERCASE_REQUIRED          =  44    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_45_PASSWORD_LOWERCASE_REQUIRED          =  45    # HTTP_CODE_400_BAD_REQUEST
 DETAIL_CODE_46_PASSWORD_SPECIAL_CHARACTER_REQUIRED  =  46    # HTTP_CODE_400_BAD_REQUEST
+DETAIL_CODE_47_TASK_ALREADY_RUNNING                 =  47    # HTTP_CODE_405_METHOD_NOT_ALLOWED
 DETAIL_CODE_51_WAKEUP_VEHICLE_FAILED                =  51    # HTTP_CODE_424_FAILED_DEPENDENCY
-
 DETAIL_CODE_200_OK                                  = 200    # HTTP_CODE_200_OK
 DETAIL_CODE_202_ACCEPTED                            = 202    # HTTP_CODE_202_ACCEPTED
 
@@ -2189,11 +2188,12 @@ def systemStatus():
     flaskRoutesLogger.debug('/system_status/')
 
     return jsonify({
-        'status': HTTP_CODE_200_OK, 
-        'restartRequired': (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
-        'softwareUpdateInProgress': oppleoConfig.softwareUpdateInProgress,
-        'startTime': oppleoConfig.upSinceDatetimeStr,
-        'backupInProgress' : BackupUtil().backupInProgress
+        'status'                    : HTTP_CODE_200_OK, 
+        'restartRequired'           : (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
+        'softwareUpdateInProgress'  : oppleoConfig.softwareUpdateInProgress,
+        'startTime'                 : oppleoConfig.upSinceDatetimeStr,
+        'backupInProgress'          : BackupUtil().backupInProgress,
+        'odometerCaptureInProgress' : True if oppleoConfig.vuThread is not None and oppleoConfig.vuThread.is_alive() else False
         })
 
 
@@ -2331,8 +2331,11 @@ def account(username:str=None, param:str=None, value:str=None):
             request.files['value'].save(os.path.join(app.config['AVATAR_FOLDER'], filename))
             user = User.get(username)
             # Remove current avatar - if not the default one
-            if (user.avatar != 'unknown.png'):
-                os.remove(app.config['AVATAR_FOLDER'] + user.avatar)
+            if (user.avatar is not None and user.avatar != 'unknown.png'):
+                try:
+                    os.remove(app.config['AVATAR_FOLDER'] + user.avatar)
+                except OSError:
+                    pass
             user.avatar = filename
             user.save()
             return jsonify({
@@ -2665,3 +2668,46 @@ def wakeupVehicle():
         'msg'   : 'Wakeup requested'
         })
 
+
+# Always returns json
+@flaskRoutes.route("/request_odometer_update", methods=["GET"])
+@flaskRoutes.route("/request_odometer_update/", methods=["GET"])
+@authenticated_resource
+def requestOdometerUpdate():
+    global flaskRoutesLogger, oppleoConfig
+
+    flaskRoutesLogger.debug('/request_odometer_update/')
+
+    chargeSession = ChargeSessionModel.getOpenChargeSession(device=oppleoConfig.chargerName)
+    if chargeSession is None:
+        return jsonify({
+            'status': HTTP_CODE_400_BAD_REQUEST,
+            'code'  : DETAIL_CODE_31_NO_ACTIVE_CHARGE_SESSION,
+            'action': request.method,
+            'msg'   : 'No active charge session'
+            })
+    uotu = UpdateOdometerTeslaUtil()
+    uotu.charge_session_id = chargeSession.id
+    uotu.condense = oppleoConfig.autoSessionCondenseSameOdometer
+    # update_odometer takes some time, so put in own thread
+
+    if oppleoConfig.vuThread is not None and oppleoConfig.vuThread.is_alive():
+        # Thread (task) already running
+        return jsonify({
+            'status': HTTP_CODE_405_METHOD_NOT_ALLOWED,
+            'code'  : DETAIL_CODE_47_TASK_ALREADY_RUNNING,
+            'action': request.method,
+            'msg'   : 'Already running'
+            })
+
+    oppleoConfig.vuThread = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
+    oppleoConfig.vuThread.start()
+
+    return jsonify({ 
+        'status'        : HTTP_CODE_202_ACCEPTED,
+        'code'          : DETAIL_CODE_202_ACCEPTED,
+        'action'        : request.method,
+        'msg'           : 'Requested',
+        'chargeSession' : chargeSession.id,
+        'condense'      : oppleoConfig.autoSessionCondenseSameOdometer
+        })

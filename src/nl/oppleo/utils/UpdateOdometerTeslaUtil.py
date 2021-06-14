@@ -1,9 +1,11 @@
 import logging
+from nl.oppleo import config
 import threading
 import datetime
 from flask_socketio import SocketIO
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
@@ -24,48 +26,76 @@ oppleoConfig = OppleoConfig()
 
 class UpdateOdometerTeslaUtil:
     __logger = None
-    charge_session_id = None
-    thread = None
-    threadLock = None
-    condense = False
+    __charge_session_id = None
+    __thread = None
+    __threadLock = None
+    __condense = False
 
 
     def __init__(self):
         self.__logger = logging.getLogger('nl.oppleo.utils.UpdateOdometerTeslaUtil')
         self.__logger.debug('UpdateOdometerTeslaUtil.__init__')
-        self.thread = None
-        self.threadLock = threading.Lock()
+        self.__thread = None
+        self.__threadLock = threading.Lock()
 
+    @property
+    def charge_session_id(self):
+        return self.__charge_session_id
 
-    def set_charge_session_id(self, charge_session_id=None):
-        self.charge_session_id = charge_session_id
+    @charge_session_id.setter
+    def charge_session_id(self, value):
+        with self.__threadLock:
+            self.__charge_session_id = value
 
+    @property
+    def condense(self):
+        return self.__condense
 
-    def set_condense(self, condense=False):
-        self.condense = condense
+    @condense.setter
+    def condense(self, value):
+        with self.__threadLock:
+            self.__condense = value
 
 
     def start(self):
         self.__logger.debug(f'{datetime.datetime.now()} - Launching background task...')
-        self.thread = oppleoConfig.appSocketIO.start_background_task(self.update_odometer)
+        self.__thread = oppleoConfig.appSocketIO.start_background_task(self.update_odometer)
 
+
+    def sendChargeSessionUpdate(self, event:str=None, data:str=None, namespace:str='/charge_session', public:bool=False):
+        if event is None or data is None:
+            return
+        WebSocketUtil.emit(
+                wsEmitQueue=oppleoConfig.wsEmitQueue,
+                event=event,
+                id=oppleoConfig.chargerName,
+                data=data,
+                namespace='/charge_session',
+                public=public
+            )            
 
     def update_odometer(self):
         self.__logger.debug("update_odometer()")
+        self.sendChargeSessionUpdate(event='odomoter_update_started', data={ 'status': True, 'chargeSessionId': self.charge_session_id })
+
         # This method starts a thread which grabs the odometer value and updates the session table
-        if self.charge_session_id is None:
+        if self.__charge_session_id is None:
             self.__logger.debug("update_odometer() - No session id")
+            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 481, 'reason': 'No session id' })
             return
-        charge_session = ChargeSessionModel.get_one_charge_session(self.charge_session_id)
+        charge_session = ChargeSessionModel.get_one_charge_session(self.__charge_session_id)
         if charge_session is None:
-            self.__logger.debug("update_odometer() - Session with id {} not found.".format(self.charge_session_id))
+            self.__logger.debug("update_odometer() - Session with id {} not found.".format(self.__charge_session_id))
+            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 482, 'reason': 'No session' })
             return
         rfid_model = RfidModel.get_one(charge_session.rfid)
         if rfid_model is None:
             self.__logger.debug("update_odometer() - Rfid {} not found.".format(charge_session.rfid))
+            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 483, 'reason': 'No rfid token' })
             return
         if rfid_model.api_access_token is None:
             self.__logger.debug("update_odometer() - API Access token for Rfid {} not found.".format(charge_session.rfid))
+            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 484, 'reason': 'No API Access Token' })
             return
         # Valid token?
         t_api = TeslaAPI()
@@ -78,6 +108,7 @@ class UpdateOdometerTeslaUtil:
                 self.__logger.debug("update_odometer() token not valid, done here for now")
             else:
                 self.__logger.warn("update_odometer() checkout failed, not sure what went wrong")
+            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 491, 'reason': 'API Access Token in use' })
             return
 
         UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model=rfid_model, tesla_api=t_api)
@@ -94,6 +125,7 @@ class UpdateOdometerTeslaUtil:
                     rfid_model.rfid
                     )
                 )
+            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 485, 'reason': 'API Access Token not valid' })
             return
 
         # Refresh if required
@@ -105,10 +137,10 @@ class UpdateOdometerTeslaUtil:
             tKey = tokenMediator.checkout(token=rfid_model.api_access_token, ref='UpdateOdometerTeslaUtil: '+rfid_model.rfid, wait=True)
             rfid_model.save()
 
-        # get the odometer
-        odometer = t_api.getOdometerWithId(rfid_model.vehicle_id)
+        # get the odometer (always wakes up)
+        odometer = t_api.getOdometerWithId(id=rfid_model.vehicle_id)
 
-       # Did the token still work?
+        # Did the token still work?
         if t_api.got401Unauthorized:
             # Nah, report
             self.__logger.warn('Token led to 401 Unauthorized. Removing token')
@@ -121,7 +153,7 @@ class UpdateOdometerTeslaUtil:
                 "Encountered 401 Unauthorized when updating odometer for charge session {}." + \
                     " Removing token from rfid tag {} ({})."
                 .format(
-                    self.charge_session_id,
+                    self.__charge_session_id,
                     rfid_model.name,
                     rfid_model.rfid
                     )
@@ -130,18 +162,38 @@ class UpdateOdometerTeslaUtil:
         # Release the token
         tokenMediator.release(token=rfid_model.api_access_token, key=tKey)
 
-        with self.threadLock:
-            charge_session = ChargeSessionModel.get_one_charge_session(self.charge_session_id)
+        if odometer is None:
+            self.__logger.debug("Odometer not retrieved for {} with rfid {} ({}) on charge session {} ".format(
+                rfid_model.vehicle_name,
+                rfid_model.name,
+                rfid_model.rfid,
+                self.__charge_session_id
+            ))
+            PushMessage.sendMessage(
+                "Tesla odometer update failed", 
+                "Could not retrieve odometer value for rfid {} ({}) on charge session {}."
+                .format(
+                    rfid_model.name,
+                    rfid_model.rfid,
+                    self.__charge_session_id
+                    )
+                )
+            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 486, 'reason': 'No odometer value' })
+            return
+
+        with self.__threadLock:
+            charge_session = ChargeSessionModel.get_one_charge_session(self.__charge_session_id)
             if charge_session is None:
-                self.__logger.error("Charge session with id {} could no longer be found. (Condensed?)".format(self.charge_session_id))
+                self.__logger.error("Charge session with id {} could no longer be found. (Condensed?)".format(self.__charge_session_id))
                 # Inform through push messages if configured
                 PushMessage.sendMessage(
                     "Charge session not found", 
                     "Charge session with id {} could no longer be found, when adding odometer value. (Condensed?)."
                     .format(
-                        self.charge_session_id
+                        self.__charge_session_id
                         )
                     )
+                self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 487, 'reason': 'No charge session' })
                 return
             charge_session.km = odometer
             charge_session.save()
@@ -149,6 +201,10 @@ class UpdateOdometerTeslaUtil:
             charge_session.km,
             rfid_model.vehicle_name
         ))
+
+        self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': True, 'chargeSessionId': self.charge_session_id })
+        self.sendChargeSessionUpdate(event='charge_session_data_update', data=charge_session.to_str())
+
         """
         CONDENSE
             - if condense was requested (only for auto-generated sessions with odometer value)
@@ -160,14 +216,15 @@ class UpdateOdometerTeslaUtil:
         """ 
         self.__logger.debug("Check condense... (condense = {}, odometer = {}, ChargeSession.trigger = {} "
                     .format(
-                        self.condense,
+                        self.__condense,
                         odometer,
                         charge_session.trigger
                     ))
-        if self.condense and \
-           odometer is not None and \
-           charge_session.trigger == ChargeSessionModel.TRIGGER_AUTO:
-            with self.threadLock:
+        if ( self.__condense and
+             odometer is not None and
+             charge_session.trigger == ChargeSessionModel.TRIGGER_AUTO
+           ):
+            with self.__threadLock:
                 # charge_session is the new charge session, was there a previous charge session just like this one?
                 same_charge_session = ChargeSessionModel.get_specific_charge_session(
                                                 energy_device_id=charge_session.energy_device_id, 
@@ -182,7 +239,12 @@ class UpdateOdometerTeslaUtil:
                                             closed_charge_session=same_charge_session,
                                             new_charge_session=charge_session
                                             )
- 
+                    if (condenseSucceeded and
+                        len(oppleoConfig.connectedClients) > 0
+                       ):
+                        # Send change notification
+                        self.sendChargeSessionUpdate(event='charge_session_deleted', data=same_charge_session.to_str())
+                        self.sendChargeSessionUpdate(event='charge_session_data_update', data=charge_session.to_str())
 
 
     @staticmethod
