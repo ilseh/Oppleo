@@ -72,6 +72,10 @@
       margin-left: 10px;
       margin-right: 10px;
     }
+    .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+      background-color: #ffaa00 !important;
+      color: white;
+    }
   </style>
 
   <script>
@@ -486,7 +490,7 @@
             className: 'btn btn-low-key btn-sm',
             title: 'Oppleo laadsessies',
             messageTop: dStr,
-            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            messageBottom: 'Oppleo laadpunt (c) 2021 oppleo.nl',
             filename: ('Oppleo laadsessies - ' + dStr.replace(':', '.')),
             footer: false,
             exportOptions: {
@@ -509,7 +513,7 @@
             pageSize: 'A4',
             title: 'Oppleo laadsessies',
             messageTop: dStr,
-            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            messageBottom: 'Oppleo laadpunt (c) 2021 oppleo.nl',
             filename: ('Oppleo laadsessies - ' + dStr.replace(':', '.')),
             footer: true,
             exportOptions: {
@@ -526,7 +530,7 @@
             pageSize: 'A4',
             title: 'Oppleo laadsessies',
             messageTop: dStr,
-            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            messageBottom: 'Oppleo laadpunt (c) 2021 oppleo.nl',
             filename: ('Oppleo laadsessies - ' + dStr.replace(':', '.')),
             footer: true,
             exportOptions: {
@@ -544,7 +548,7 @@
             }
           },{
             text: '<select class="form-control form-control-sm" id="filterReport" name="filterReport">' + getOptionList('Uitsluiten:', '-', data) + '</select>',
-            className: 'mt-0 mb-0 ml-3 pt-0 pb-0 pl-0 pr-0 btn btn-secondary-outline'
+            className: 'mt-0 mb-0 ml-3 pt-0 pb-0 pl-0 pr-0'
           }],
           "createdRow": function(row, data, dataIndex) {
             $(row).toggleClass("text-info").fadeOut(800, function() {              
@@ -642,39 +646,31 @@
                 return data == undefined || data === "None" ? "" : data
               } else {
                 // Default - type = 'display' - on screen or other exports
+                // Valid token (existing and not expired), and odometer capture enabled
+                let validToken = (rfidTokens != undefined && row[1] in rfidTokens &&
+                                  new Date((parseInt(rfidTokens[row[1]].api_created_at) + parseInt(rfidTokens[row[1]].api_expires_in)) * 1000) > new Date() &&
+                                  rfidTokens[row[1]].get_odometer === "True"
+                                 )
                 return data == undefined || data === "None" ? 
-                        ( rcIx.row == 0 ? 
+                        ( validToken && rcIx.row == 0 ? 
                           // First row
                           '- <button' +
                           '   type="button"' +
                           '   id="captureOdometer_' + rcIx.row + '"' +
-                          '   class="btn btn-xs waves-effect waves-light btn-outline-primary" ' +
+                          '   class="btn btn-xs waves-effect waves-light btn-outline-primary d-none" ' +
                           '   style="float: right;"' +
                           '   data-toggle="tooltip" ' +
                           '   data-placement="bottom" ' +
                           '   data-html="true" ' +
                           '   title="<em>Km stand ophalen mislukt. Km stand nogmaals ophalen.</em>"' +
-//                          '   onclick="captureOdometer();"' +
                           '   >' +
                           '   <i class="fas fa-redo-alt"></i>' +
                           '</button>'
                         :
-                          '- <button' +
-                          '   type="button"' +
-                          '   id="editOdometer_' + rcIx.row + '"' +
-                          '   class="btn btn-xs waves-effect waves-light btn-outline-warning" ' +
-                          '   style="float: right;"' +
-                          '   data-toggle="tooltip" ' +
-                          '   data-placement="bottom" ' +
-                          '   data-html="true" ' +
-                          '   title="<em>KM stand ophalen mislukt. Handmatig km stand bijwerken.</em>"' +
-//                          '   onclick=""' +
-                          '   >' +
-                          '   <i class="far fa-edit"></i>' +
-                          '</button>' 
+                          '-'
                         )
-                        : 
-                        '<span style="text-align: right;">' + data + 'km</span>'
+                      : 
+                      '<span style="text-align: right;">' + data + 'km</span>'
               }
             }
           }, {
@@ -893,6 +889,23 @@
       startWebSocket()
       getChargeSessions()
       getRfidTokens()
+      // Admin?
+      $('div#showEnableSessionEdit').toggleClass("d-none", false)
+
+      $('input#enableSessionEdit').change(function() {
+        if ($(this).prop('checked')) {
+          $('table#charge_sessions').addClass('table-hover')
+          $('table#charge_sessions').css('cursor', 'pointer')
+          $('table#charge_sessions').on('click', 'tr', function () {
+            var data = dt.row(this).data()
+            alert( 'You clicked on '+data[0]+'\'s row' )
+          })
+        } else {
+          $('table#charge_sessions').removeClass('table-hover')
+          $('table#charge_sessions').css('cursor', 'default')
+          $('table#charge_sessions').off('click', 'tr')
+        }
+      })
     })
 
     </script>
@@ -913,10 +926,32 @@
     </div>
     <!-- end page title end breadcrumb -->
 
-
     <div class="row">
       <div class="col-12">
         <div class="card-box table-responsive">
+          <div id="showEnableSessionEdit" class="d-none" style="position: absolute; top: 20px; right: 85px; z-index: 1000;"
+            data-toggle="tooltip"
+            data-placement="bottom" 
+            data-html="true" 
+            title="<em>Klik om edit-mode in te schakelen</em>"
+            >
+            <input type="checkbox" 
+              name="enableSessionEdit"
+              id="enableSessionEdit"
+              data-toggle="toggle"
+              data-on="<i class='far fa-eye'></i>"
+              data-off="<i class='far fa-eye-slash'></i>"
+              data-onstyle="warning"
+              data-offstyle="secondary"
+              data-size="sm"
+              data-height="20"
+              data-width="50"
+              data-placement="bottom" 
+              data-html="true"
+              title="Toon bewerkingsknoppen"
+              />
+          </div>
+
           <table id="charge_sessions" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
               <tr style="padding-top: 50%;">
@@ -932,7 +967,7 @@
                 <th class="pl-0 pr-0 text-center">Tarief</th>
                 <th class="pl-0 pr-0 text-center">Verbruik</th>
                 <th class="pl-0 pr-0 text-center">Prijs</th>
-                <th class="pl-2 pr-2 text-center">&nbsp;</th>
+                <th class="pl-0 pr-0 text-center">&nbsp;</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>
