@@ -167,7 +167,7 @@
             rowData[1] = msg.data.rfid
             // start time
             rowData[2] = ( (typeof msg.data.start_time === 'string' || msg.data.start_time instanceof String) ?
-                            '<nobr>' + msg.data.start_time + '</nobr>' :
+                            addNobr( msg.data.start_time ) :
                             '-'
                           )
             // trigger
@@ -187,7 +187,7 @@
                         )
             // End time
             rowData[6] = ( (typeof msg.data.end_time === 'string' || msg.data.end_time instanceof String) ?
-                          '<nobr>' + msg.data.end_time + '</nobr>' :
+                          addNobr( msg.data.end_time ) :
                           '-'
                         )
             // End value
@@ -443,9 +443,15 @@
       return '<option value="' + heading_value + '" style="font-style: italic;">' + heading_text + '</option>' +
              Object.values(uniqueList).join('')
     }
+    function addNobr( s ) {
+      return '<nobr>' + s + '</nobr>'
+    }
+    function removeNobr( s ) {
+      return s.replace('<nobr>', '').replace('</nobr>', '').trim()
+    }
     function parseDateStr( d ) {
       // <nobr>DD\MM\YYYY, HH:mm:ss</nobr>  -> YYYY-MM-DDTHH:mm:ss.sss -> Date
-      d = d.replace('<nobr>', '').replace('</nobr>', '').trim()
+      d = removeNobr( d )
       d = d.substring(6, 10) + '-' + d.substring(3, 5) + '-' + d.substring(0, 2) + 'T' + d.substring(12, 20) + '.000'
       return new Date(d)
     }
@@ -856,7 +862,7 @@
             element.id,
             element.rfid,
             ( (typeof element.start_time === 'string' || element.start_time instanceof String) ?
-              '<nobr>' + element.start_time + '</nobr>' :
+              addNobr( element.start_time ) :
               '-'
             ),
             ( ((typeof element.trigger === 'string' || element.trigger instanceof String) && element.trigger != "None") ?
@@ -872,7 +878,7 @@
               '-'
             ),
             ( (typeof element.end_time === 'string' || element.end_time instanceof String) ?
-              '<nobr>' + element.end_time + '</nobr>' :
+              addNobr( element.end_time ) :
               '-'
             ),
             ( (typeof element.end_value === 'string' || element.end_value instanceof String) ?
@@ -923,7 +929,7 @@
 
       // Spiekbriefje
       $('#startTijdSpiekbrief').text( data[2] )
-      let startDate = parseDate(data[2].replace("<nobr>", "").replace("</nobr>", ""))
+      let startDate = parseDate( removeNobr( data[2] ) )
       $('input[name="ccsmStarttimeDate"]').val( startDate.getDate() + ' ' + months[startDate.getMonth()] + ' ' + startDate.getFullYear() )
       $('oppleo-edit-time#ccsmStarttimeTime')[0].value = (startDate.getHours()<10?'0':'') + startDate.getHours() + ":" + (startDate.getMinutes()<10?'0':'') + startDate.getMinutes() + 'u' 
 
@@ -935,7 +941,7 @@
 
       // Spiekbriefje
       $('#eindTijdSpiekbrief').text( data[6] )
-      let endDate = parseDate(data[6].replace("<nobr>", "").replace("</nobr>", ""))
+      let endDate = parseDate( removeNobr( data[6] ) )
       $('input[name="ccsmEndtimeDate"]').val( endDate.getDate() + ' ' + months[endDate.getMonth()] + ' ' + endDate.getFullYear() )
       $('oppleo-edit-time#ccsmEndtimeTime')[0].value = (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u' 
 
@@ -966,7 +972,7 @@
       })
       newDate = ( newDate.length == 9 ? '0' : '' ) + newDate  // Add leading zero if required
       // Use original seconds if time hasn't changed
-      newTime = newTime + (newTime == origStamp.substring(18, 23) ? origStamp.substring(25, 27) : ":00")
+      newTime = newTime + (newTime == origStamp.substring(18, 23) ? origStamp.substring(23, 26) : ":00")
       return newDate + ', ' + newTime
     }
 
@@ -987,6 +993,8 @@
           })[0]
 
       // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
+
+/*      
       let starttimeDate = $('input[name="ccsmStarttimeDate"]').val()
       Object.entries(months).forEach((entry, idx) => {
         //const [key, value] = entry
@@ -994,17 +1002,18 @@
       })
       starttimeDate = ( starttimeDate.length == 9 ? '0' : '' ) + starttimeDate  // Add leading zero if required
       let starttimeTime = $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5)
+*/
 
-
-      newStamp = getStartEndTimestamp($('input[name="ccsmStarttimeDate"]').val(),
-                                      $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5), 
-                                      data[2]
-                                      )
+      newStarttime = getStartEndTimestamp($('input[name="ccsmStarttimeDate"]').val(),
+                                          $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5), 
+                                          data[2]
+                                          )
 
 
 
 
       // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
+/*
       let endtimeDate = $('input[name="ccsmEndtimeDate"]').val()
       Object.entries(months).forEach((entry, idx) => {
         //const [key, value] = entry
@@ -1012,16 +1021,25 @@
       })
       endtimeDate = ( endtimeDate.length == 9 ? '0' : '' ) + endtimeDate  // Add leading zero if required
       let endtimeTime = $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5)
+*/
+      newEndtime = getStartEndTimestamp($('input[name="ccsmEndtimeDate"]').val(),
+                                        $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5), 
+                                        data[6]
+                                        )
+
+
 
       return $($('oppleo-edit-select#ccsmRfidToken')[0].$select).find("option:selected").val() != rfidTokens[data[1]].name ||
-             starttimeDate + ', ' + starttimeTime != data[2].substring(6, 23) || // Compare only minutes
+             //starttimeDate + ', ' + starttimeTime != data[2].substring(6, 23) || // Compare only minutes
+             newStarttime != removeNobr( data[2] ) ||
              $($('oppleo-edit-select#ccsmTrigger')[0].$select).find("option:selected").text() != data[3] ||
              $("oppleo-edit-str#ccsmStartamount")[0].$input.value != data[4] ||
              ( 
                ($('#ccsmOdometer')[0].$input.value != data[5]) &&
                ($('#ccsmOdometer')[0].$input.value != '' && data[5] != 'None')
              ) ||
-             endtimeDate + ', ' + endtimeTime != data[6].substring(6, 23) || // Compare only minutes
+             //endtimeDate + ', ' + endtimeTime != data[6].substring(6, 23) || // Compare only minutes
+             newEndtime != removeNobr( data[6] ) ||
              $("oppleo-edit-str#ccsmEndamount")[0].$input.value != data[7] || 
              $("oppleo-edit-str#ccsmCharger")[0].$input.value != data[8] ||
              $("oppleo-edit-str#ccsmTariff")[0].$input.value.replace(',', '.') != data[9]
@@ -1075,7 +1093,7 @@
         e.preventDefault()
       })
 
-      $("#ccsmRfidToken, #ccsmTrigger, #ccsmStartamount, #ccsmOdometer, #ccsmEndamount, #ccsmCharger, #ccsmTariff").on('change select', function(e) {
+      $("#ccsmRfidToken, #ccsmStarttimeDate, #ccsmStarttimeTime, #ccsmTrigger, #ccsmStartamount, #ccsmOdometer, #ccsmEndtimeDate, #ccsmEndtimeTime, #ccsmEndamount, #ccsmCharger, #ccsmTariff").on('change select changeTime', function(e) {
         // Anything changed, and all valid?
         let valid = isChargeSessionModalValid()
         let changed = isChargeSessionModalChanged()

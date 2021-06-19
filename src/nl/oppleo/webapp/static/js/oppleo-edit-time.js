@@ -168,7 +168,9 @@ class OppleoEditTime extends HTMLElement {
     this.$input.addEventListener('click', (ev) => {
       ev.stopPropagation()
     })
-
+    this.$input.addEventListener('keypress', () => { this.triggerChangeEvent() })
+    this.$input.addEventListener('paste', () => { this.triggerChangeEvent() })
+    this.$input.addEventListener('input', () => { this.triggerChangeEvent() })
 
     this.$info.addEventListener('mouseenter', () => { 
       this.$info.classList.remove("bg-secondary")
@@ -189,7 +191,7 @@ class OppleoEditTime extends HTMLElement {
       this.locked = true
       this.options = this.prevOptions
       $(this.$input).timepicker('destroy').timepicker( this.options )
-
+  
       this.render()
 
     })
@@ -252,6 +254,7 @@ class OppleoEditTime extends HTMLElement {
 
   // Timeticker options - json in string format in the attribute (can only hold strings)
   get options() {
+    let thisEl = this
     let defaultOptions = {
       timeFormat: 'HH:mmu',
       interval: 1,
@@ -262,6 +265,19 @@ class OppleoEditTime extends HTMLElement {
       dynamic: false,
       dropdown: ((!this.locked) || this.unlock),
       scrollbar: true,
+      change: function(newValue) {
+        // Note: newValue is a full Date string, not just time!
+        thisEl.value = thisEl.$input.value
+        thisEl.dispatchEvent(
+          new CustomEvent('changeTime', {
+              bubbles: true, 
+              detail: { 
+                value: thisEl.value,
+                target: thisEl.$input
+              }
+          })
+        )
+      },
       zindex: 9999999 // Required to popup in front of modals etc
     }
     if (this.hasAttribute('options') && IsJsonString(this.getAttribute('options'))) {
@@ -301,7 +317,7 @@ class OppleoEditTime extends HTMLElement {
     
     this.prevOptions = this.options
     $(this.$input).timepicker( this.options )
-    
+
     this.render() // needed, doesn't call it by itself
   }
   render() {
