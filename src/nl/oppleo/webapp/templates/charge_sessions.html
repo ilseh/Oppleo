@@ -31,7 +31,35 @@
   <!-- Responsive -->
   <script src="{{ url_for('static', filename='plugins/datatables/dataTables.responsive.min.js') }}"></script>
   <script src="{{ url_for('static', filename='plugins/datatables/responsive.bootstrap4.min.js') }}"></script>
-  
+
+  <!-- Datepicker, Date range picker -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.css') }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/oppleo.css') }}">
+
+  <!-- Moment, required for date range picker -->
+  <script src="{{ url_for('static', filename='plugins/moment/moment.js') }}"></script>
+
+  <!-- Datepicker, Date range picker -->
+  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/datepicker-nl.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
+
+  <!-- https://timepicker.co/ -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/timepicker/1.3.5/jquery.timepicker.min.css') }}">
+  <script src="{{ url_for('static', filename='plugins/timepicker/1.3.5/jquery.timepicker.min.js') }}"></script>
+
+  <!-- https://select2.org/ -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.css') }}">
+  <script src="{{ url_for('static', filename='plugins/select2/4.0.7/select2.min.js') }}"></script>
+
+  <!-- Oppleo edit web components -->
+  <script src="{{ url_for('static', filename='js/oppleo-edit-str.js') }}" shadydom></script>
+  <script src="{{ url_for('static', filename='js/oppleo-edit-select.js') }}" shadydom></script>
+  <script src="{{ url_for('static', filename='js/oppleo-edit-time.js') }}" shadydom></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/oppleo-edit-select.css') }}">
+
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
@@ -359,7 +387,9 @@
           rfidTokens[val.rfid] = val
         })
         // Force redraw
-        dt.rows().invalidate().draw()
+        if (dt != undefined) {
+          dt.rows().invalidate().draw()
+        }
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
         // Redraw filter select
         $("select#filterReport > option").each(function() {
@@ -883,7 +913,119 @@
       })
     }
 
+    let changeChargeSessionModal = null
+    function showChangeChargeSessionModal(data) {
+      // Init modal dialog
+      $('span#ccsmChargeSessionId').html(data[0])
 
+      $('oppleo-edit-select#ccsmRfidToken')[0].options = 
+          '[' + Object.values(rfidTokens).map(token => '{ "text": "'+token.name+'", "value": "'+token.rfid+'"'+(token.rfid==data[1]?', "selected": "true"':'')+' }').join(", ") + ']'
+
+      // Spiekbriefje
+      $('#startTijdSpiekbrief').text( data[2] )
+      let startDate = parseDate(data[2].replace("<nobr>", "").replace("</nobr>", ""))
+      $('input[name="ccsmStarttimeDate"]').val( startDate.getDate() + ' ' + months[startDate.getMonth()] + ' ' + startDate.getFullYear() )
+      $('oppleo-edit-time#ccsmStarttimeTime')[0].value = (startDate.getHours()<10?'0':'') + startDate.getHours() + ":" + (startDate.getMinutes()<10?'0':'') + startDate.getMinutes() + 'u' 
+
+      $('oppleo-edit-select#ccsmTrigger')[0].options = 
+          '[' + ['AUTO', 'RFID', 'WEB'].map(trigger => '{ "text": "'+trigger+'", "value": "'+trigger+'"'+(trigger==data[3]?', "selected": "true"':'')+' }').join(", ") + ']'
+      
+      $('#ccsmStartamount')[0].$input.value = data[4]
+      $('#ccsmOdometer')[0].$input.value = (data[5] == 'None' ? '' : data[5])
+
+      // Spiekbriefje
+      $('#eindTijdSpiekbrief').text( data[6] )
+      let endDate = parseDate(data[6].replace("<nobr>", "").replace("</nobr>", ""))
+      $('input[name="ccsmEndtimeDate"]').val( endDate.getDate() + ' ' + months[endDate.getMonth()] + ' ' + endDate.getFullYear() )
+      $('oppleo-edit-time#ccsmEndtimeTime')[0].value = (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u' 
+
+      $('#ccsmEndamount')[0].$input.value = data[7]
+      $('#ccsmCharger')[0].$input.value = data[8]
+
+      $('#ccsmTariff')[0].$input.value = data[9].replace('.', ',')
+
+      $('span#ccsmTotalUsage').html(Math.round(data[10] * 10) /10)
+      $('span#ccsmPrice').html((Math.round(data[11] * 100) /100).toFixed(2).toString().replace('.', ','))
+
+      $('.date-picker').datepicker({
+          todayHighlight: true,
+          autoclose: true,
+          startDate : undefined,
+          endDate   : undefined,
+          format: "d MM yyyy",    // 7 January 2020
+          language: 'nl'
+      })
+
+      changeChargeSessionModal.modal('show')
+    }    
+
+    function getStartEndTimestamp(newDate, newTime, origStamp) {
+      // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
+      Object.entries(months).forEach((entry, idx) => {
+        newDate = newDate.replace(' '+entry[1]+' ', '/'+(idx+1<10?'0':'')+(idx+1)+'/')
+      })
+      newDate = ( newDate.length == 9 ? '0' : '' ) + newDate  // Add leading zero if required
+      // Use original seconds if time hasn't changed
+      newTime = newTime + (newTime == origStamp.substring(18, 23) ? origStamp.substring(25, 27) : ":00")
+      return newDate + ', ' + newTime
+    }
+
+    function isChargeSessionModalValid() {
+        // Anuthion changed, and all valid?
+      return $("oppleo-edit-str#ccsmStartamount")[0].valid() &&
+             $("oppleo-edit-str#ccsmOdometer")[0].valid() &&
+             $("oppleo-edit-str#ccsmEndamount")[0].valid() &&
+             $("oppleo-edit-str#ccsmCharger ")[0].valid() &&
+             $("oppleo-edit-str#ccsmTariff")[0].valid()
+    }
+    function isChargeSessionModalChanged() {
+      // Changed?
+      let sessionId = $('span#ccsmChargeSessionId').text()
+      // Selected charge session
+      let data = dt.rows().data().filter(function ( row, idx ) {             
+            return (row[0] == sessionId)
+          })[0]
+
+      // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
+      let starttimeDate = $('input[name="ccsmStarttimeDate"]').val()
+      Object.entries(months).forEach((entry, idx) => {
+        //const [key, value] = entry
+        starttimeDate = starttimeDate.replace(' '+entry[1]+' ', '/'+(idx+1<10?'0':'')+(idx+1)+'/')
+      })
+      starttimeDate = ( starttimeDate.length == 9 ? '0' : '' ) + starttimeDate  // Add leading zero if required
+      let starttimeTime = $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5)
+
+
+      newStamp = getStartEndTimestamp($('input[name="ccsmStarttimeDate"]').val(),
+                                      $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5), 
+                                      data[2]
+                                      )
+
+
+
+
+      // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
+      let endtimeDate = $('input[name="ccsmEndtimeDate"]').val()
+      Object.entries(months).forEach((entry, idx) => {
+        //const [key, value] = entry
+        endtimeDate = endtimeDate.replace(' '+entry[1]+' ', '/'+(idx+1<10?'0':'')+(idx+1)+'/')
+      })
+      endtimeDate = ( endtimeDate.length == 9 ? '0' : '' ) + endtimeDate  // Add leading zero if required
+      let endtimeTime = $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5)
+
+      return $($('oppleo-edit-select#ccsmRfidToken')[0].$select).find("option:selected").val() != rfidTokens[data[1]].name ||
+             starttimeDate + ', ' + starttimeTime != data[2].substring(6, 23) || // Compare only minutes
+             $($('oppleo-edit-select#ccsmTrigger')[0].$select).find("option:selected").text() != data[3] ||
+             $("oppleo-edit-str#ccsmStartamount")[0].$input.value != data[4] ||
+             ( 
+               ($('#ccsmOdometer')[0].$input.value != data[5]) &&
+               ($('#ccsmOdometer')[0].$input.value != '' && data[5] != 'None')
+             ) ||
+             endtimeDate + ', ' + endtimeTime != data[6].substring(6, 23) || // Compare only minutes
+             $("oppleo-edit-str#ccsmEndamount")[0].$input.value != data[7] || 
+             $("oppleo-edit-str#ccsmCharger")[0].$input.value != data[8] ||
+             $("oppleo-edit-str#ccsmTariff")[0].$input.value.replace(',', '.') != data[9]
+    }
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       startWebSocket()
@@ -897,8 +1039,7 @@
           $('table#charge_sessions').addClass('table-hover')
           $('table#charge_sessions').css('cursor', 'pointer')
           $('table#charge_sessions').on('click', 'tr', function () {
-            var data = dt.row(this).data()
-            alert( 'You clicked on '+data[0]+'\'s row' )
+            showChangeChargeSessionModal(dt.row(this).data())
           })
         } else {
           $('table#charge_sessions').removeClass('table-hover')
@@ -906,6 +1047,57 @@
           $('table#charge_sessions').off('click', 'tr')
         }
       })
+      changeChargeSessionModal = $('#changeChargeSessionModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $('#changeChargeSessionModal').on('shown.bs.modal', function (e) {
+        $('select#ccsmRfidToken').focus()
+      })
+      $('button#change-chargesession-modal-footer-cancel').on("click", function(e) {
+        changeChargeSessionModal.modal('hide')
+        e.preventDefault()
+      })
+      $('button#change-chargesession-modal-footer-saveaction').on("click", function(e) {
+        // Validate
+        if (!isChargeSessionModalValid()) {
+          autoHideNotify('warning','top-left', 'Niet valide', 'Laadsessiewijziging niet valide.')
+          return
+        }
+
+        // Update server - spinner
+        // Server complete - spinner done
+        // Update table (from update charge session event through websocket)
+
+
+        changeChargeSessionModal.modal('hide')
+        e.preventDefault()
+      })
+
+      $("#ccsmRfidToken, #ccsmTrigger, #ccsmStartamount, #ccsmOdometer, #ccsmEndamount, #ccsmCharger, #ccsmTariff").on('change select', function(e) {
+        // Anything changed, and all valid?
+        let valid = isChargeSessionModalValid()
+        let changed = isChargeSessionModalChanged()
+        $('button#change-chargesession-modal-footer-saveaction').attr("disabled", !valid || !changed)
+      })
+      $("oppleo-edit-str#ccsmStartamount, oppleo-edit-str#ccsmEndamount, oppleo-edit-str#ccsmTariff").on('change', function(e) {
+        // e.detail.value
+        if (typeof parseFloat($('#ccsmEndamount')[0].$input.value) == 'number' && typeof parseFloat($('#ccsmStartamount')[0].$input.value) == 'number') {
+          $('span#ccsmTotalUsage').html(Math.round((parseFloat($('#ccsmEndamount')[0].$input.value) - parseFloat($('#ccsmStartamount')[0].$input.value)) * 10) /10)
+        } else {
+          $('span#ccsmTotalUsage').html( '-' )
+        }
+        if (typeof parseFloat($('#ccsmTotalUsage').text()) == 'number' && typeof parseFloat($('#ccsmTariff')[0].$input.value) == 'number') {
+          $('span#ccsmPrice').html((Math.round((parseFloat($('#ccsmTotalUsage').text()) * parseFloat($('#ccsmTariff')[0].$input.value)) * 100) /100).toFixed(2).toString().replace('.', ','))
+        } else {
+          $('span#ccsmPrice').html( '-' )
+        }     
+      })
+
+
+        
+
     })
 
     </script>
@@ -939,8 +1131,8 @@
               name="enableSessionEdit"
               id="enableSessionEdit"
               data-toggle="toggle"
-              data-on="<i class='far fa-eye'></i>"
-              data-off="<i class='far fa-eye-slash'></i>"
+              data-on="<i class='fas fa-lock-open'></i>"
+              data-off="<i class='fas fa-lock'></i>"
               data-onstyle="warning"
               data-offstyle="secondary"
               data-size="sm"
@@ -979,4 +1171,203 @@
 
   </div>
 </div>
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="changeChargeSessionModal" tabindex="-1" role="dialog" aria-labelledby="changeChargeSessionModalLabel" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="changeChargeSessionModalLabel">Wijzig laadsessie</h3>
+        <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true"><i class="fas fa-times"></i></span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="col-lg-12">
+
+          <table class="w-100 text-center">
+            <tr class="" style="background-color: brown;">
+              <td class="bg-primary text-white pl-5 pr-5" colspan="3" style="font-size: 1.3rem;">Laadsessie <span id="ccsmChargeSessionId" class="font-weight: bold;"></span></td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5" style="width: 35%;">Laadpas</td>
+              <td class="" colspan="2">
+                <oppleo-edit-select 
+                  id="ccsmRfidToken"
+                  options='[]'
+                  placeholder="Maak een keuze..."                                
+                  info="Kies een laadpas voor deze laadsessie"
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Starttijd</td>
+              <td id="startTijdSpiekbrief">
+              </td>
+            </tr>        
+
+            <tr class="">
+              <td class="text-right pr-5">Starttijd</td>
+              <td>
+                <div class="input-daterange input-group date-picker">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary border border-secondary text-muted b-0">
+                      <i class="far fa-calendar-alt"></i>
+                    </span>
+                  </div>
+                  <input type="text" class="form-control form-control-sm" name="ccsmStarttimeDate" id="ccsmStarttimeDate"
+                         value=""/>
+                </div>                
+              </td>
+              <td class="">
+                <oppleo-edit-time 
+                  id="ccsmStarttimeTime"
+                  options=''
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Trigger</td>
+              <td class="text-left" colspan="2">
+                <oppleo-edit-select 
+                  id="ccsmTrigger"
+                  options='[]'
+                  placeholder="Maak een keuze..."                                
+                  info="Trigger methode"
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Startmeting</td>
+              <td class="" colspan="2">
+                <oppleo-edit-str 
+                  id="ccsmStartamount"
+                  value=""
+                  suffix="kWh"
+                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  info="Startmeting in kilowattuur."
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Kilometerstand</td>
+              <td class="" colspan="2">
+                <oppleo-edit-str 
+                  id="ccsmOdometer"
+                  value=""
+                  suffix="km"
+                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  info="Kilometerstand bij aanvang van de laadsessie."
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Eindtijd</td>
+              <td id="eindTijdSpiekbrief">
+              </td>
+            </tr>        
+
+            <tr class="">
+              <td class="text-right pr-5">Eindtijd</td>
+              <td>
+                <div class="input-daterange input-group date-picker">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary border border-secondary text-muted b-0">
+                      <i class="far fa-calendar-alt"></i>
+                    </span>
+                  </div>
+                  <input type="text" class="form-control form-control-sm" name="ccsmEndtimeDate" id="ccsmEndtimeDate"
+                         value=""/>
+                </div>                
+              </td>
+              <td class="">
+                <oppleo-edit-time 
+                  id="ccsmEndtimeTime"
+                  options=''
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Eindmeting</td>
+              <td class="" colspan="2">
+                <oppleo-edit-str 
+                  id="ccsmEndamount"
+                  value=""
+                  suffix="kWh"
+                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  info="Eindmeting in kilowattuur."
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Laadpunt</td>
+              <td class="" colspan="2">
+                <oppleo-edit-str 
+                  id="ccsmCharger"
+                  value=""
+                  validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
+                  info="Het Laadpunt. De naam van dit laadpunt is <em>{{ oppleoconfig.chargerName }}</em>."
+                  unlock=true
+                />
+                <input type="text" class="form-control text-right" id="ccsmCharger" />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-right pr-5">Tarief</td>
+              <td class="" colspan="2">
+                <oppleo-edit-str 
+                  id="ccsmTariff"
+                  value=""
+                  prefix="&euro; "
+                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  info="Tarief per kWh [&euro;]."
+                  unlock=true
+                />
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-primary text-right pr-5">Verbruik</td>
+              <td class="text-right pr-5 text-white" colspan="2">
+                <span id="ccsmTotalUsage"></span>kWh
+              </td>
+            </tr>
+
+            <tr class="">
+              <td class="text-primary text-right pr-5">Prijs</td>
+              <td class="text-right text-warning pr-5" colspan="2">
+                &euro; <span id="ccsmPrice"></span>
+              </td>
+            </tr>
+          </table>
+
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary mr-2" id="change-chargesession-modal-footer-cancel">Annuleren</button>
+        <button type="button" class="btn btn-primary" id="change-chargesession-modal-footer-saveaction" disabled="true"> Wijziging opslaan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

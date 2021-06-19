@@ -13,7 +13,14 @@
 
 */
 
-
+function IsJsonString(str) {
+  try {
+      JSON.parse(str)
+  } catch (e) {
+      return false
+  }
+  return true
+}
 
 class OppleoEditTime extends HTMLElement {
   constructor() {
@@ -234,6 +241,7 @@ class OppleoEditTime extends HTMLElement {
   }
   set value(value) {
     this.setAttribute('value', value)
+    $(this.$input).val(value)
   }
   get info() {
     return this.getAttribute('info')
@@ -251,11 +259,12 @@ class OppleoEditTime extends HTMLElement {
       maxTime: '23:59',
       defaultTime: '05:00',
       startTime: '00:00',
-      dynamic: true,
+      dynamic: false,
       dropdown: ((!this.locked) || this.unlock),
-      scrollbar: true
+      scrollbar: true,
+      zindex: 9999999 // Required to popup in front of modals etc
     }
-    if (this.hasAttribute('options')) {
+    if (this.hasAttribute('options') && IsJsonString(this.getAttribute('options'))) {
       // Combine settings in attribute with defaults
       return Object.assign(defaultOptions, JSON.parse(this.getAttribute('options')))
     }
@@ -269,7 +278,7 @@ class OppleoEditTime extends HTMLElement {
     if (typeof value !== "string") {
       this.setAttribute('options', JSON.stringify(value))
     } else {
-      this.setAttribute('options', value)
+      this.setAttribute('options', (IsJsonString(value)?value:'{}'))
     }
   }
   get unlock() {
@@ -279,7 +288,7 @@ class OppleoEditTime extends HTMLElement {
     this.setAttribute('lock', value)
   }
   static get observedAttributes() {
-    return ['options', 'info', 'unlock']
+    return ['options', 'info', 'unlock', 'value']
   }
   attributeChangedCallback(name, oldVal, newVal) {
     this.render()
@@ -354,11 +363,9 @@ class OppleoEditTime extends HTMLElement {
         $(this.$cancelButton).show()
         $(this.$editApplyButton).show()
       }
-
     }
-
+    
     this.$info.setAttribute('data-original-title', this.info)
-
   }
 }
 window.customElements.define('oppleo-edit-time', OppleoEditTime)

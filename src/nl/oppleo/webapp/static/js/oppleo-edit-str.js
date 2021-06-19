@@ -403,12 +403,24 @@ class OppleoEditStr extends HTMLElement {
     } else {                                  // Invalid
       this.$input.classList.add("border", "border-danger")
     }
+    this.dispatchEvent(
+      new CustomEvent('change', {
+          bubbles: true, 
+          detail: { 
+            value: this.$input.value,
+            target: this.$input
+          }
+      })
+    )
   }
   validate(newValue) {
     // If Locked valid by definition
     if (this.$editApplyButton.innerHTML.indexOf("fa-lock") >= 0) { return true }
     if (this.$regex == undefined) { this.$regex = new RegExp(this.validation) }
     return (this.validation == "" || this.$regex.test(newValue)) 
+  }
+  valid() {
+    return this.validate(this.$input.value) 
   }
   render() {
     this.$info.setAttribute('data-original-title', this.info)

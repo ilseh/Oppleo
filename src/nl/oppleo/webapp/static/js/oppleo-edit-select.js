@@ -239,8 +239,15 @@ class OppleoEditSelect extends HTMLElement {
       this.setAttribute('options', value)
       this.prevOptions = JSON.parse(value)
     }
-    if (this.prevOptions.filter( (el) => { return (el.selected == true || el.selected === 'true')} ).length == 0)
+    if (this.prevOptions.filter( (el) => { return (el.selected == true || el.selected === 'true')} ).length == 0) {
       $(this.$select).select2().val('').change()
+    }
+    // Change selected text if locked
+    if (this.locked && !this.unlock) {
+      $(this.$text).find('span#text_value').text(
+        this.prevOptions.filter( (el) => { return (el.selected == true || el.selected === 'true')} ).map(el => el.text).join(", ")
+      )
+    }
   }
   get info() {
     return this.getAttribute('info')
