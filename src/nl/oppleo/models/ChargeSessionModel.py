@@ -498,6 +498,8 @@ class ChargeSessionModel(Base):
     def date_str_to_datetime(self, date_time_str: str) -> datetime:
         return datetime.strptime(date_time_str, '%d/%m/%Y, %H:%M:%S')
 
+    def datetime_to_date_str(self, date_time:datetime=None) -> str:
+        return str(date_time.strftime("%d/%m/%Y, %H:%M:%S")) if date_time is not None else None
 
     """
         Overview total energy and price amounts per month
@@ -567,9 +569,7 @@ class ChargeSessionModel(Base):
             json.dumps({
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
-                "start_time": (
-                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None
-                    ),
+                "start_time": self.datetime_to_date_str( self.start_time ),
                 "rfid": self.rfid,
                 "start_value": str(self.start_value),
                 "end_value": str(self.end_value),
@@ -577,9 +577,7 @@ class ChargeSessionModel(Base):
                 "total_energy": str(self.total_energy),
                 "total_price": str(self.total_price),
                 "km": str(self.km),
-                "end_time": (
-                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None
-                    ),
+                "end_time": self.datetime_to_date_str( self.end_time ),
                 "trigger": str(self.trigger)
             })
         )
@@ -590,9 +588,7 @@ class ChargeSessionModel(Base):
         return ({
                 "id": str(self.id),
                 "energy_device_id": str(self.energy_device_id),
-                "start_time": (
-                    str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None
-                    ),
+                "start_time": self.datetime_to_date_str( self.start_time ),
                 "rfid": self.rfid,
                 "start_value": str(self.start_value),
                 "end_value": str(self.end_value),
@@ -600,9 +596,7 @@ class ChargeSessionModel(Base):
                 "total_energy": str(self.total_energy),
                 "total_price": str(self.total_price),
                 "km": str(self.km),
-                "end_time": (
-                    str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None
-                    ),
+                "end_time": self.datetime_to_date_str( self.end_time ),
                 "trigger": str(self.trigger)
             })
 
@@ -612,9 +606,7 @@ class ChargeSessionModel(Base):
         return ({
             "id": str(self.id),
             "energy_device_id": str(self.energy_device_id),
-            "start_time": (
-                str(self.start_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.start_time is not None else None
-                ),
+            "start_time": self.datetime_to_date_str( self.start_time ),
             "rfid": self.rfid,
             "start_value": str(self.start_value),
             "end_value": str(self.end_value),
@@ -622,9 +614,7 @@ class ChargeSessionModel(Base):
             "total_energy": str(self.total_energy),
             "total_price": str(self.total_price),
             "km": str(self.km),
-            "end_time": (
-                str(self.end_time.strftime("%d/%m/%Y, %H:%M:%S")) if self.end_time is not None else None
-                ),
+            "end_time": self.datetime_to_date_str( self.end_time ),
             "trigger": str(self.trigger)
         })
 

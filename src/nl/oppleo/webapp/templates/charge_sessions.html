@@ -254,29 +254,7 @@
 
       })
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
+   
     function updateCaptureOdometerButton(icon, text, clickEnabled, hide=false) {
       $('button#captureOdometer_0').html(icon)
       $('button#captureOdometer_0').attr('data-original-title','<em>'+text+'</em>')
@@ -931,8 +909,6 @@
       $('oppleo-edit-select#ccsmRfidToken')[0].options = 
           '[' + Object.values(rfidTokens).map(token => '{ "text": "'+token.name+'", "id": "'+token.rfid+'"'+(token.rfid==data[1]?', "selected": "true"':'')+' }').join(", ") + ']'
 
-      // Spiekbriefje
-      $('#startTijdSpiekbrief').text( data[2] )
       let startDate = parseDate( removeNobr( data[2] ) )
       $('input[name="ccsmStarttimeDate"]').val( startDate.getDate() + ' ' + months[startDate.getMonth()] + ' ' + startDate.getFullYear() )
       $('oppleo-edit-time#ccsmStarttimeTime')[0].value = (startDate.getHours()<10?'0':'') + startDate.getHours() + ":" + (startDate.getMinutes()<10?'0':'') + startDate.getMinutes() + 'u' 
@@ -943,8 +919,6 @@
       $('#ccsmStartValue')[0].$input.value = data[4]
       $('#ccsmOdometer')[0].$input.value = (data[5] == 'None' ? '' : data[5])
 
-      // Spiekbriefje
-      $('#eindTijdSpiekbrief').text( data[6] )
       let endDate = parseDate( removeNobr( data[6] ) )
       $('input[name="ccsmEndtimeDate"]').val( endDate.getDate() + ' ' + months[endDate.getMonth()] + ' ' + endDate.getFullYear() )
       $('oppleo-edit-time#ccsmEndtimeTime')[0].value = (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u' 
@@ -965,6 +939,9 @@
           format: "d MM yyyy",    // 7 January 2020
           language: 'nl'
       })
+
+      // Default disabled
+      $('button#change-chargesession-modal-footer-saveaction').attr("disabled", true)
 
       changeChargeSessionModal.modal('show')
     }    
@@ -1035,7 +1012,7 @@
              modalData['end_time'] != removeNobr( data[6] ) ||
              modalData['end_value'] != data[7] || 
              modalData['charger'] != data[8] ||
-             modalData['rariff'] != data[9]
+             modalData['tariff'] != data[9]
     }
     function highlightCell( rowIndex, cellIndex ) {
       let el = $(dt.row(rowIndex).nodes().to$().find('td:eq('+cellIndex+')')[0])
@@ -1100,18 +1077,19 @@
         dt.rows(function ( idx, rdata, node ) {             
             if (rdata[0] == data.session) rowIndex = idx
         })
-
-        // Update table to reflect changes, or wait for web socket update?
+        // Update table to reflect changes. and add Change animation
         for (fieldName in data.update) {
           if (data.update[fieldName]['updated']) {
-
             switch (fieldName) {
               case 'rfid':
+/*
                 dt.cell( rowIndex, 1 ).data(
                   (data.update[fieldName]['value'] in rfidTokens && isData(rfidTokens[data.update[fieldName]['value']].name)) ?
                   rfidTokens[data.update[fieldName]['value']].name :
                   data.update[fieldName]['value']
                   )
+*/
+                  dt.cell( rowIndex, 1 ).data( data.update[fieldName]['value'] )
                   highlightCell( rowIndex, 1 )
                 break
               case 'start_time':
@@ -1157,17 +1135,8 @@
               default:  // session id etc, no change
                 break
             }
-            // Change animation
-
-            let d2 = dt.cell( rowIndex, 2 ).data()
-
-//            dt.rows(rowIndex).nodes().to$().toggleClass("highlight-changes").fadeOut(6000, function() {              
-//              $(this).toggleClass("highlight-changes").fadeIn(6000)
-//            })
-
           }
         }
-
         autoHideNotify('success','top-left', 'Gewijzigd', 'Laadsessie '+data.session+' is gewijzigd.')
         changeChargeSessionModal.modal('hide')
       })
@@ -1349,12 +1318,6 @@
 
             <tr class="">
               <td class="text-right pr-5">Starttijd</td>
-              <td id="startTijdSpiekbrief">
-              </td>
-            </tr>        
-
-            <tr class="">
-              <td class="text-right pr-5">Starttijd</td>
               <td>
                 <div class="input-daterange input-group date-picker">
                   <div class="input-group-prepend">
@@ -1415,12 +1378,6 @@
                 />
               </td>
             </tr>
-
-            <tr class="">
-              <td class="text-right pr-5">Eindtijd</td>
-              <td id="eindTijdSpiekbrief">
-              </td>
-            </tr>        
 
             <tr class="">
               <td class="text-right pr-5">Eindtijd</td>

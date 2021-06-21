@@ -1110,7 +1110,13 @@ def charge_session(id:int=None):
     resultDict = {}
     for fieldName in chargeSession.fieldList:
         resultDict[fieldName] = { 'updated': False }
-        if fieldName in jsonD and jsonD[fieldName] != chargeSession.__dict__[fieldName]:
+        if ( (fieldName in jsonD) and
+            ( ( fieldName in ['start_time', 'end_time'] and 
+                chargeSession.datetime_to_date_str( chargeSession.__dict__[fieldName] ) != jsonD[fieldName] ) or
+              ( fieldName not in ['start_time', 'end_time'] and 
+                chargeSession.__dict__[fieldName] != jsonD[fieldName] and str(chargeSession.__dict__[fieldName]) != jsonD[fieldName] )
+            )
+           ):
             if fieldName in ['start_time', 'end_time']:
                 # datetime
                 try:
@@ -1123,6 +1129,12 @@ def charge_session(id:int=None):
                     chargeSession.__dict__[fieldName] = float(jsonD[fieldName])
                 except ValueError as ve:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field type error ({})'.format(fieldName) })
+            elif fieldName in ['trigger']:
+                if ( jsonD[fieldName].upper() in [ChargeSessionModel.TRIGGER_RFID, ChargeSessionModel.TRIGGER_AUTO, ChargeSessionModel.TRIGGER_WEB] and
+                     jsonD[fieldName].upper() != chargeSession.__dict__[fieldName] ):
+                    chargeSession.__dict__[fieldName] = jsonD[fieldName]
+                else:
+                    return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field value error ({})'.format(fieldName) })
             else:
                 # str
                 chargeSession.__dict__[fieldName] = jsonD[fieldName]
