@@ -106,6 +106,12 @@
             const BUTTONSTATE_FAILED = 3
             const BUTTONSTATE_DONE = 4
             const BUTTONSTATE_HIDE = 5
+            // parseFloat accepting , next to .
+            function oParseFloat( value ) {
+                return parseFloat( 
+                    ( typeof( value) == 'string' ? value.replace(',', '.') : value )
+                 )
+            }
             function timestamp() {
                 d = new Date();
                 return (d.getFullYear() + "-" + 

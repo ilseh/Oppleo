@@ -21,7 +21,8 @@ class ChargeSessionModel(Base):
 
     # table name
     __tablename__ = 'charge_session'  # -> sessions
-
+    fieldList = ['rfid', 'energy_device_id', 'start_value', 'end_value', 'start_time', 'end_time', 'tariff', 'total_energy', 'total_price', 'km', 'trigger']
+   
     id = Column(Integer, primary_key=True)
     rfid = Column(String(128), nullable=False)
     energy_device_id = Column(String(128), nullable=False)

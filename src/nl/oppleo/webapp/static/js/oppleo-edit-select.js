@@ -232,6 +232,7 @@ class OppleoEditSelect extends HTMLElement {
   // Attributes can only contain a string, convert array to string when setting
   // Don't convert when the value is already a string
   set options(value) {
+    // options should have 'text' for visibe text, 'id' for the value, and 'selected' set to 'true' if selected.
     if (typeof value !== "string") {
       this.setAttribute('options', JSON.stringify(value))
       this.prevOptions = value
@@ -260,6 +261,9 @@ class OppleoEditSelect extends HTMLElement {
   }
   set unlock(value) {
     this.setAttribute('lock', value)
+  }
+  get selected() {
+    return $(this.$select).select2('data')
   }
   static get observedAttributes() {
     return ['info', 'options']

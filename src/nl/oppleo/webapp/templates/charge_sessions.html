@@ -104,6 +104,10 @@
       background-color: #ffaa00 !important;
       color: white;
     }
+    .highlight-changes, .highlight-changes span, .highlight-changes span a {
+      background-color: #ffaa00 !important;
+      color: white !important;
+    }
   </style>
 
   <script>
@@ -925,7 +929,7 @@
       $('span#ccsmChargeSessionId').html(data[0])
 
       $('oppleo-edit-select#ccsmRfidToken')[0].options = 
-          '[' + Object.values(rfidTokens).map(token => '{ "text": "'+token.name+'", "value": "'+token.rfid+'"'+(token.rfid==data[1]?', "selected": "true"':'')+' }').join(", ") + ']'
+          '[' + Object.values(rfidTokens).map(token => '{ "text": "'+token.name+'", "id": "'+token.rfid+'"'+(token.rfid==data[1]?', "selected": "true"':'')+' }').join(", ") + ']'
 
       // Spiekbriefje
       $('#startTijdSpiekbrief').text( data[2] )
@@ -934,9 +938,9 @@
       $('oppleo-edit-time#ccsmStarttimeTime')[0].value = (startDate.getHours()<10?'0':'') + startDate.getHours() + ":" + (startDate.getMinutes()<10?'0':'') + startDate.getMinutes() + 'u' 
 
       $('oppleo-edit-select#ccsmTrigger')[0].options = 
-          '[' + ['AUTO', 'RFID', 'WEB'].map(trigger => '{ "text": "'+trigger+'", "value": "'+trigger+'"'+(trigger==data[3]?', "selected": "true"':'')+' }').join(", ") + ']'
+          '[' + ['AUTO', 'RFID', 'WEB'].map(trigger => '{ "text": "'+trigger+'", "id": "'+trigger+'"'+(trigger==data[3]?', "selected": "true"':'')+' }').join(", ") + ']'
       
-      $('#ccsmStartamount')[0].$input.value = data[4]
+      $('#ccsmStartValue')[0].$input.value = data[4]
       $('#ccsmOdometer')[0].$input.value = (data[5] == 'None' ? '' : data[5])
 
       // Spiekbriefje
@@ -945,7 +949,7 @@
       $('input[name="ccsmEndtimeDate"]').val( endDate.getDate() + ' ' + months[endDate.getMonth()] + ' ' + endDate.getFullYear() )
       $('oppleo-edit-time#ccsmEndtimeTime')[0].value = (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u' 
 
-      $('#ccsmEndamount')[0].$input.value = data[7]
+      $('#ccsmEndValue')[0].$input.value = data[7]
       $('#ccsmCharger')[0].$input.value = data[8]
 
       $('#ccsmTariff')[0].$input.value = data[9].replace('.', ',')
@@ -965,6 +969,12 @@
       changeChargeSessionModal.modal('show')
     }    
 
+    function getRowDataForSessionId(sessionId) {
+      // Selected charge session
+      return dt.rows().data().filter(function ( row, idx ) {             
+        return (row[0] == sessionId)
+      })[0]
+    }
     function getStartEndTimestamp(newDate, newTime, origStamp) {
       // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
       Object.entries(months).forEach((entry, idx) => {
@@ -978,72 +988,196 @@
 
     function isChargeSessionModalValid() {
         // Anuthion changed, and all valid?
-      return $("oppleo-edit-str#ccsmStartamount")[0].valid() &&
+      return $("oppleo-edit-str#ccsmStartValue")[0].valid() &&
              $("oppleo-edit-str#ccsmOdometer")[0].valid() &&
-             $("oppleo-edit-str#ccsmEndamount")[0].valid() &&
+             $("oppleo-edit-str#ccsmEndValue")[0].valid() &&
              $("oppleo-edit-str#ccsmCharger ")[0].valid() &&
              $("oppleo-edit-str#ccsmTariff")[0].valid()
     }
+    function chargeSessionModalData() {
+      let modalData = {}
+      modalData['id'] = $('span#ccsmChargeSessionId').text()
+      // Selected charge session
+      let data = getRowDataForSessionId( modalData['id'] )
+      modalData['rfid'] = $('oppleo-edit-select#ccsmRfidToken')[0].selected[0].id
+      modalData['start_time'] = getStartEndTimestamp($('input[name="ccsmStarttimeDate"]').val(),
+                                                     $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5), 
+                                                     data[2]
+                                                     )
+      modalData['trigger'] = $($('oppleo-edit-select#ccsmTrigger')[0].$select).find("option:selected").text()
+      modalData['start_value'] = $("oppleo-edit-str#ccsmStartValue")[0].$input.value.replace(',', '.')
+      modalData['km'] = $('#ccsmOdometer')[0].$input.value.replace(',', '.')
+      modalData['end_time'] = getStartEndTimestamp($('input[name="ccsmEndtimeDate"]').val(),
+                                                   $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5), 
+                                                   data[6]
+                                                   )
+      modalData['end_value'] = $("oppleo-edit-str#ccsmEndValue")[0].$input.value.replace(',', '.')
+      modalData['charger'] = $("oppleo-edit-str#ccsmCharger")[0].$input.value
+      modalData['tariff'] = $("oppleo-edit-str#ccsmTariff")[0].$input.value.replace(',', '.')
+      return modalData
+    }    
     function isChargeSessionModalChanged() {
       // Changed?
-      let sessionId = $('span#ccsmChargeSessionId').text()
+      let modalData = chargeSessionModalData()
       // Selected charge session
-      let data = dt.rows().data().filter(function ( row, idx ) {             
-            return (row[0] == sessionId)
-          })[0]
+      let data = getRowDataForSessionId( modalData['id'] )
 
-      // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
-
-/*      
-      let starttimeDate = $('input[name="ccsmStarttimeDate"]').val()
-      Object.entries(months).forEach((entry, idx) => {
-        //const [key, value] = entry
-        starttimeDate = starttimeDate.replace(' '+entry[1]+' ', '/'+(idx+1<10?'0':'')+(idx+1)+'/')
-      })
-      starttimeDate = ( starttimeDate.length == 9 ? '0' : '' ) + starttimeDate  // Add leading zero if required
-      let starttimeTime = $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5)
-*/
-
-      newStarttime = getStartEndTimestamp($('input[name="ccsmStarttimeDate"]').val(),
-                                          $('oppleo-edit-time#ccsmStarttimeTime')[0].value.substring(0, 5), 
-                                          data[2]
-                                          )
-
-
-
-
-      // <nobr>dd/MM/YYYY, HH:mm:ss</nobr>
-/*
-      let endtimeDate = $('input[name="ccsmEndtimeDate"]').val()
-      Object.entries(months).forEach((entry, idx) => {
-        //const [key, value] = entry
-        endtimeDate = endtimeDate.replace(' '+entry[1]+' ', '/'+(idx+1<10?'0':'')+(idx+1)+'/')
-      })
-      endtimeDate = ( endtimeDate.length == 9 ? '0' : '' ) + endtimeDate  // Add leading zero if required
-      let endtimeTime = $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5)
-*/
-      newEndtime = getStartEndTimestamp($('input[name="ccsmEndtimeDate"]').val(),
-                                        $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5), 
-                                        data[6]
-                                        )
-
-
-
-      return $($('oppleo-edit-select#ccsmRfidToken')[0].$select).find("option:selected").val() != rfidTokens[data[1]].name ||
+      return modalData['rfid'] != data[1] ||
              //starttimeDate + ', ' + starttimeTime != data[2].substring(6, 23) || // Compare only minutes
-             newStarttime != removeNobr( data[2] ) ||
-             $($('oppleo-edit-select#ccsmTrigger')[0].$select).find("option:selected").text() != data[3] ||
-             $("oppleo-edit-str#ccsmStartamount")[0].$input.value != data[4] ||
+             modalData['start_time'] != removeNobr( data[2] ) ||
+             modalData['trigger'] != data[3] ||
+             modalData['start_value'] != data[4] ||
              ( 
-               ($('#ccsmOdometer')[0].$input.value != data[5]) &&
-               ($('#ccsmOdometer')[0].$input.value != '' && data[5] != 'None')
+               (modalData['km'] != data[5]) &&
+               (modalData['km'] != '' && data[5] != 'None')
              ) ||
              //endtimeDate + ', ' + endtimeTime != data[6].substring(6, 23) || // Compare only minutes
-             newEndtime != removeNobr( data[6] ) ||
-             $("oppleo-edit-str#ccsmEndamount")[0].$input.value != data[7] || 
-             $("oppleo-edit-str#ccsmCharger")[0].$input.value != data[8] ||
-             $("oppleo-edit-str#ccsmTariff")[0].$input.value.replace(',', '.') != data[9]
+             modalData['end_time'] != removeNobr( data[6] ) ||
+             modalData['end_value'] != data[7] || 
+             modalData['charger'] != data[8] ||
+             modalData['rariff'] != data[9]
     }
+    function highlightCell( rowIndex, cellIndex ) {
+      let el = $(dt.row(rowIndex).nodes().to$().find('td:eq('+cellIndex+')')[0])
+      let origBgColor = el.css("background-color")
+      let origColor = el.css("color")
+      let origFontWeight = el.css("font-weight")
+      el.animate({
+          backgroundColor: "#00b19d",
+          color: "#fffff",
+          fontWeight: "bold"
+        }, 300, function() {
+          $(this).animate({
+              backgroundColor: origBgColor,
+              color: origColor,
+              fontWeight: origFontWeight
+            }, 1000, function() {
+              $(this).animate({
+                  backgroundColor: "#00b19d",
+                  color: "#fffff",
+                  fontWeight: "bold"
+                }, 100, function() {
+                  $(this).animate({
+                      backgroundColor: origBgColor,
+                      color: origColor,
+                      fontWeight: origFontWeight
+                    }, 2000, function() {
+                      $(this).css("background-color", "")
+                      $(this).css("color", "")
+                      $(this).css("font-weight", "")
+                    }
+                  )
+                }
+              )
+            }
+          )
+        }
+      )
+    }
+
+    function updateChargeSession( sessionData ) {
+      console.log(timestamp() + ' updateChargeSession()')            
+      $('.spinner').show()
+      data = {
+        csrf_token    : '{{ csrf_token() }}',
+        session       : sessionData['id'],
+        data          : JSON.stringify(sessionData)
+      }
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/charge_session/' + data['id'] + '/update/',
+        //contentType : "application/json",
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+
+        let rowIndex = -1
+        dt.rows(function ( idx, rdata, node ) {             
+            if (rdata[0] == data.session) rowIndex = idx
+        })
+
+        // Update table to reflect changes, or wait for web socket update?
+        for (fieldName in data.update) {
+          if (data.update[fieldName]['updated']) {
+
+            switch (fieldName) {
+              case 'rfid':
+                dt.cell( rowIndex, 1 ).data(
+                  (data.update[fieldName]['value'] in rfidTokens && isData(rfidTokens[data.update[fieldName]['value']].name)) ?
+                  rfidTokens[data.update[fieldName]['value']].name :
+                  data.update[fieldName]['value']
+                  )
+                  highlightCell( rowIndex, 1 )
+                break
+              case 'start_time':
+                dt.cell( rowIndex, 2 ).data( addNobr( data.update[fieldName]['value'] ) )
+                highlightCell( rowIndex, 2 )
+                break
+              case 'trigger':
+                dt.cell( rowIndex, 3 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 3 )
+                break
+              case 'start_value':
+                dt.cell( rowIndex, 4 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 4 )
+                break
+              case 'km':
+                dt.cell( rowIndex, 5 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 5 )
+                break
+              case 'end_time':
+                dt.cell( rowIndex, 6 ).data( addNobr( data.update[fieldName]['value'] ) )
+                highlightCell( rowIndex, 6 )
+                break
+              case 'end_value':
+                dt.cell( rowIndex, 7 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 7 )
+                break
+              case 'charger':
+                dt.cell( rowIndex, 8 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 8 )
+                break
+              case 'tariff':
+                dt.cell( rowIndex, 9 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 9 )
+                break
+              case 'total_usage':
+                dt.cell( rowIndex, 10 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 10 )
+                break
+              case 'total_price':
+                dt.cell( rowIndex, 11 ).data( data.update[fieldName]['value'] )
+                highlightCell( rowIndex, 11 )
+                break
+              default:  // session id etc, no change
+                break
+            }
+            // Change animation
+
+            let d2 = dt.cell( rowIndex, 2 ).data()
+
+//            dt.rows(rowIndex).nodes().to$().toggleClass("highlight-changes").fadeOut(6000, function() {              
+//              $(this).toggleClass("highlight-changes").fadeIn(6000)
+//            })
+
+          }
+        }
+
+        autoHideNotify('success','top-left', 'Gewijzigd', 'Laadsessie '+data.session+' is gewijzigd.')
+        changeChargeSessionModal.modal('hide')
+      })
+      .fail(function(data) {
+        autoHideNotify('error','top-left', 'Mislukt', 'Wijzigen van laadsessie mislukt.')
+      })
+      .always(function(data) {
+        $('.spinner').hide()
+      })
+    }    
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       startWebSocket()
@@ -1083,39 +1217,30 @@
           autoHideNotify('warning','top-left', 'Niet valide', 'Laadsessiewijziging niet valide.')
           return
         }
-
-        // Update server - spinner
-        // Server complete - spinner done
-        // Update table (from update charge session event through websocket)
-
-
-        changeChargeSessionModal.modal('hide')
+        // (Try to) Submit
+        updateChargeSession( chargeSessionModalData() )
         e.preventDefault()
       })
 
-      $("#ccsmRfidToken, #ccsmStarttimeDate, #ccsmStarttimeTime, #ccsmTrigger, #ccsmStartamount, #ccsmOdometer, #ccsmEndtimeDate, #ccsmEndtimeTime, #ccsmEndamount, #ccsmCharger, #ccsmTariff").on('change select changeTime', function(e) {
+      $("#ccsmRfidToken, #ccsmStarttimeDate, #ccsmStarttimeTime, #ccsmTrigger, #ccsmStartValue, #ccsmOdometer, #ccsmEndtimeDate, #ccsmEndtimeTime, #ccsmEndValue, #ccsmCharger, #ccsmTariff").on('change select changeTime', function(e) {
         // Anything changed, and all valid?
         let valid = isChargeSessionModalValid()
         let changed = isChargeSessionModalChanged()
         $('button#change-chargesession-modal-footer-saveaction').attr("disabled", !valid || !changed)
       })
-      $("oppleo-edit-str#ccsmStartamount, oppleo-edit-str#ccsmEndamount, oppleo-edit-str#ccsmTariff").on('change', function(e) {
+      $("oppleo-edit-str#ccsmStartValue, oppleo-edit-str#ccsmEndValue, oppleo-edit-str#ccsmTariff").on('change', function(e) {
         // e.detail.value
-        if (typeof parseFloat($('#ccsmEndamount')[0].$input.value) == 'number' && typeof parseFloat($('#ccsmStartamount')[0].$input.value) == 'number') {
-          $('span#ccsmTotalUsage').html(Math.round((parseFloat($('#ccsmEndamount')[0].$input.value) - parseFloat($('#ccsmStartamount')[0].$input.value)) * 10) /10)
+        if (typeof oParseFloat($('#ccsmEndValue')[0].$input.value) == 'number' && typeof oParseFloat($('#ccsmStartValue')[0].$input.value) == 'number') {
+          $('span#ccsmTotalUsage').html(Math.round((oParseFloat($('#ccsmEndValue')[0].$input.value) - oParseFloat($('#ccsmStartValue')[0].$input.value)) * 10) /10)
         } else {
           $('span#ccsmTotalUsage').html( '-' )
         }
-        if (typeof parseFloat($('#ccsmTotalUsage').text()) == 'number' && typeof parseFloat($('#ccsmTariff')[0].$input.value) == 'number') {
-          $('span#ccsmPrice').html((Math.round((parseFloat($('#ccsmTotalUsage').text()) * parseFloat($('#ccsmTariff')[0].$input.value)) * 100) /100).toFixed(2).toString().replace('.', ','))
+        if (typeof oParseFloat($('#ccsmTotalUsage').text()) == 'number' && typeof oParseFloat($('#ccsmTariff')[0].$input.value) == 'number') {
+          $('span#ccsmPrice').html((Math.round((oParseFloat($('#ccsmTotalUsage').text()) * oParseFloat($('#ccsmTariff')[0].$input.value)) * 100) /100).toFixed(2).toString().replace('.', ','))
         } else {
           $('span#ccsmPrice').html( '-' )
         }     
       })
-
-
-        
-
     })
 
     </script>
@@ -1267,7 +1392,7 @@
               <td class="text-right pr-5">Startmeting</td>
               <td class="" colspan="2">
                 <oppleo-edit-str 
-                  id="ccsmStartamount"
+                  id="ccsmStartValue"
                   value=""
                   suffix="kWh"
                   validation="^[0-9]*[,|.]?[0-9]*$"
@@ -1323,7 +1448,7 @@
               <td class="text-right pr-5">Eindmeting</td>
               <td class="" colspan="2">
                 <oppleo-edit-str 
-                  id="ccsmEndamount"
+                  id="ccsmEndValue"
                   value=""
                   suffix="kWh"
                   validation="^[0-9]*[,|.]?[0-9]*$"

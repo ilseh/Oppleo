@@ -5,6 +5,7 @@ from flask import Flask, Blueprint, render_template, abort, request, url_for, re
 from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
 
 from jinja2.exceptions import TemplateNotFound
+import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -1091,6 +1092,62 @@ def charge_sessions(since_timestamp=None):
     for o in qr:
         qr_l.append(o.to_dict())
     return jsonify(qr_l)
+
+
+@flaskRoutes.route("/charge_session/<path:id>/update", methods=["POST"])
+@flaskRoutes.route("/charge_session/<path:id>/update/", methods=["POST"])
+#@authenticated_resource
+def charge_session(id:int=None):
+    global flaskRoutesLogger, oppleoConfig
+
+    try:
+        id = request.form.get('session', default='None', type=str)
+        jsonD = json.loads(request.form.get('data', default='None', type=str))
+    except JSONDecodeError as jde:
+        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'JSON decode error' })
+
+    chargeSession = ChargeSessionModel.get_one_charge_session(id)
+    resultDict = {}
+    for fieldName in chargeSession.fieldList:
+        resultDict[fieldName] = { 'updated': False }
+        if fieldName in jsonD and jsonD[fieldName] != chargeSession.__dict__[fieldName]:
+            if fieldName in ['start_time', 'end_time']:
+                # datetime
+                try:
+                    chargeSession.__dict__[fieldName] = chargeSession.date_str_to_datetime(jsonD[fieldName])
+                except ValueError as ve:
+                    return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
+            elif fieldName in ['start_value', 'end_value', 'tariff', 'km']:
+                # float
+                try:
+                    chargeSession.__dict__[fieldName] = float(jsonD[fieldName])
+                except ValueError as ve:
+                    return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field type error ({})'.format(fieldName) })
+            else:
+                # str
+                chargeSession.__dict__[fieldName] = jsonD[fieldName]
+            resultDict[fieldName] = { 'updated': True, 'value': jsonD[fieldName] }
+
+    # Calulate total energy and total price
+    total_energy = float(chargeSession.end_value) - float(chargeSession.start_value)
+    if total_energy != chargeSession.total_energy:
+        chargeSession.total_energy = total_energy
+        resultDict['total_energy'] = { 'updated': True, 'value': total_energy }
+
+    total_price = round(chargeSession.total_energy * chargeSession.tariff * 100) /100
+    if total_price != chargeSession.total_price:
+        chargeSession.total_price = total_price
+        resultDict['total_price'] = { 'updated': True, 'value': total_price }
+
+
+    #  chargeSession.save()
+
+    return jsonify({ 
+            'status'    : HTTP_CODE_200_OK,
+            'session'   : id,
+            'update'    : resultDict
+        })
+
 
 
 @flaskRoutes.route("/charge_history", methods=["GET"])
