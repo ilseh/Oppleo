@@ -1113,7 +1113,9 @@ def charge_session(id:int=None):
         if ( (fieldName in jsonD) and
             ( ( fieldName in ['start_time', 'end_time'] and 
                 chargeSession.datetime_to_date_str( chargeSession.__dict__[fieldName] ) != jsonD[fieldName] ) or
-              ( fieldName not in ['start_time', 'end_time'] and 
+              ( fieldName in ['start_value', 'end_value', 'tariff', 'km'] and 
+                chargeSession.__dict__[fieldName] != jsonD[fieldName] and jsonD[fieldName] != '' and isinstance(jsonD[fieldName], (str, int, float)) and float(chargeSession.__dict__[fieldName]) != float(jsonD[fieldName]) ) or
+              ( fieldName not in ['start_time', 'end_time', 'start_value', 'end_value', 'tariff', 'km'] and 
                 chargeSession.__dict__[fieldName] != jsonD[fieldName] and str(chargeSession.__dict__[fieldName]) != jsonD[fieldName] )
             )
            ):

@@ -920,8 +920,12 @@
       $('#ccsmOdometer')[0].$input.value = (data[5] == 'None' ? '' : data[5])
 
       let endDate = parseDate( removeNobr( data[6] ) )
-      $('input[name="ccsmEndtimeDate"]').val( endDate.getDate() + ' ' + months[endDate.getMonth()] + ' ' + endDate.getFullYear() )
-      $('oppleo-edit-time#ccsmEndtimeTime')[0].value = (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u' 
+      if (endDate != undefined) {
+        $('input[name="ccsmEndtimeDate"]').val( endDate.getDate() + ' ' + months[endDate.getMonth()] + ' ' + endDate.getFullYear() )
+        $('oppleo-edit-time#ccsmEndtimeTime')[0].value = (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u' 
+      }
+      $("#chargeSessionModalEndTimeOpenSession").toggleClass('d-none', (endDate != undefined))
+      $("#chargeSessionModalEndTimeClosedSession").toggleClass('d-none', (endDate == undefined))
 
       $('#ccsmEndValue')[0].$input.value = data[7]
       $('#ccsmCharger')[0].$input.value = data[8]
@@ -984,10 +988,15 @@
       modalData['trigger'] = $($('oppleo-edit-select#ccsmTrigger')[0].$select).find("option:selected").text()
       modalData['start_value'] = $("oppleo-edit-str#ccsmStartValue")[0].$input.value.replace(',', '.')
       modalData['km'] = $('#ccsmOdometer')[0].$input.value.replace(',', '.')
-      modalData['end_time'] = getStartEndTimestamp($('input[name="ccsmEndtimeDate"]').val(),
-                                                   $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5), 
-                                                   data[6]
-                                                   )
+
+      // Open session, no end_time
+      if ($("#chargeSessionModalEndTimeOpenSession").hasClass('d-none')) {
+        // Closed session, has end_time
+        modalData['end_time'] = getStartEndTimestamp($('input[name="ccsmEndtimeDate"]').val(),
+                                                     $('oppleo-edit-time#ccsmEndtimeTime')[0].value.substring(0, 5), 
+                                                     data[6]
+                                                     )
+      }
       modalData['end_value'] = $("oppleo-edit-str#ccsmEndValue")[0].$input.value.replace(',', '.')
       modalData['charger'] = $("oppleo-edit-str#ccsmCharger")[0].$input.value
       modalData['tariff'] = $("oppleo-edit-str#ccsmTariff")[0].$input.value.replace(',', '.')
@@ -1006,10 +1015,10 @@
              modalData['start_value'] != data[4] ||
              ( 
                (modalData['km'] != data[5]) &&
-               (modalData['km'] != '' && data[5] != 'None')
+               (modalData['km'] != '' && data[5] == 'None')
              ) ||
              //endtimeDate + ', ' + endtimeTime != data[6].substring(6, 23) || // Compare only minutes
-             modalData['end_time'] != removeNobr( data[6] ) ||
+             ('end_time' in modalData && modalData['end_time'] != removeNobr( data[6] )) ||
              modalData['end_value'] != data[7] || 
              modalData['charger'] != data[8] ||
              modalData['tariff'] != data[9]
@@ -1055,31 +1064,31 @@
     function updateChargeSession( sessionData ) {
       console.log(timestamp() + ' updateChargeSession()')            
       $('.spinner').show()
-      data = {
+      postData = {
         csrf_token    : '{{ csrf_token() }}',
         session       : sessionData['id'],
         data          : JSON.stringify(sessionData)
       }
       $.ajax({
         type		    : 'POST',
-        url			    : '/charge_session/' + data['id'] + '/update/',
+        url			    : '/charge_session/' + sessionData['id'] + '/update/',
         //contentType : "application/json",
         dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
         encode		  : true,
-        data        : data
+        data        : postData
       }) // using the done promise callback
-      .done(function(data) {
+      .done(function(result) {
         // log data to the console so we can see
-        console.log(data)
+        console.log(result)
 
         let rowIndex = -1
         dt.rows(function ( idx, rdata, node ) {             
-            if (rdata[0] == data.session) rowIndex = idx
+            if (rdata[0] == result.session) rowIndex = idx
         })
         // Update table to reflect changes. and add Change animation
-        for (fieldName in data.update) {
-          if (data.update[fieldName]['updated']) {
+        for (fieldName in result.update) {
+          if (result.update[fieldName]['updated']) {
             switch (fieldName) {
               case 'rfid':
 /*
@@ -1089,47 +1098,47 @@
                   data.update[fieldName]['value']
                   )
 */
-                  dt.cell( rowIndex, 1 ).data( data.update[fieldName]['value'] )
+                  dt.cell( rowIndex, 1 ).data( result.update[fieldName]['value'] )
                   highlightCell( rowIndex, 1 )
                 break
               case 'start_time':
-                dt.cell( rowIndex, 2 ).data( addNobr( data.update[fieldName]['value'] ) )
+                dt.cell( rowIndex, 2 ).data( addNobr( result.update[fieldName]['value'] ) )
                 highlightCell( rowIndex, 2 )
                 break
               case 'trigger':
-                dt.cell( rowIndex, 3 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 3 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 3 )
                 break
               case 'start_value':
-                dt.cell( rowIndex, 4 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 4 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 4 )
                 break
               case 'km':
-                dt.cell( rowIndex, 5 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 5 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 5 )
                 break
               case 'end_time':
-                dt.cell( rowIndex, 6 ).data( addNobr( data.update[fieldName]['value'] ) )
+                dt.cell( rowIndex, 6 ).data( addNobr( result.update[fieldName]['value'] ) )
                 highlightCell( rowIndex, 6 )
                 break
               case 'end_value':
-                dt.cell( rowIndex, 7 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 7 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 7 )
                 break
               case 'charger':
-                dt.cell( rowIndex, 8 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 8 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 8 )
                 break
               case 'tariff':
-                dt.cell( rowIndex, 9 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 9 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 9 )
                 break
               case 'total_usage':
-                dt.cell( rowIndex, 10 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 10 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 10 )
                 break
               case 'total_price':
-                dt.cell( rowIndex, 11 ).data( data.update[fieldName]['value'] )
+                dt.cell( rowIndex, 11 ).data( result.update[fieldName]['value'] )
                 highlightCell( rowIndex, 11 )
                 break
               default:  // session id etc, no change
@@ -1137,13 +1146,13 @@
             }
           }
         }
-        autoHideNotify('success','top-left', 'Gewijzigd', 'Laadsessie '+data.session+' is gewijzigd.')
+        autoHideNotify('success','top-left', 'Gewijzigd', 'Laadsessie '+result.session+' is gewijzigd.')
         changeChargeSessionModal.modal('hide')
       })
-      .fail(function(data) {
+      .fail(function(result) {
         autoHideNotify('error','top-left', 'Mislukt', 'Wijzigen van laadsessie mislukt.')
       })
-      .always(function(data) {
+      .always(function(result) {
         $('.spinner').hide()
       })
     }    
@@ -1358,7 +1367,7 @@
                   id="ccsmStartValue"
                   value=""
                   suffix="kWh"
-                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  validation="^[0-9]*[,|.]?[0-9]?$"
                   info="Startmeting in kilowattuur."
                   unlock=true
                 />
@@ -1372,14 +1381,14 @@
                   id="ccsmOdometer"
                   value=""
                   suffix="km"
-                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  validation="^[0-9]*[,|.]?[0-9]?$"
                   info="Kilometerstand bij aanvang van de laadsessie."
                   unlock=true
                 />
               </td>
             </tr>
 
-            <tr class="">
+            <tr id="chargeSessionModalEndTimeClosedSession" class="">
               <td class="text-right pr-5">Eindtijd</td>
               <td>
                 <div class="input-daterange input-group date-picker">
@@ -1401,6 +1410,36 @@
               </td>
             </tr>
 
+            <tr id="chargeSessionModalEndTimeOpenSession" class="">
+              <td class="text-right pr-5">Eindtijd</td>
+              <td class="text-left font-italic" colspan="2">
+                <div class="input-group">
+                  <span class="input-group-prepend">
+                    <span 
+                      class="input-group-text bg-dark b-1 text-secondary"
+                      id="info_text"
+                      data-toggle="tooltip" 
+                      data-placement="bottom" 
+                      data-html="true" 
+                      title="Sluit laadsessie eerst af om de eindtijd te kunnen wijzigen"
+                      >
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </span>
+                  <span id="input_container" class="input-group-append" style="width: calc(100% - 42px);">
+                    <input 
+                      class="form-control form-control-sm font-italic" 
+                      type="text"
+                      readonly="readonly"
+                      style="text-align: left; width: 100%;"
+                      placeholder=""
+                      value="Laadsessie open"
+                    />
+                  </span>
+                </div>          
+              </td>
+            </tr>
+
             <tr class="">
               <td class="text-right pr-5">Eindmeting</td>
               <td class="" colspan="2">
@@ -1408,7 +1447,7 @@
                   id="ccsmEndValue"
                   value=""
                   suffix="kWh"
-                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  validation="^[0-9]*[,|.]?[0-9]?$"
                   info="Eindmeting in kilowattuur."
                   unlock=true
                 />
@@ -1436,7 +1475,7 @@
                   id="ccsmTariff"
                   value=""
                   prefix="&euro; "
-                  validation="^[0-9]*[,|.]?[0-9]*$"
+                  validation="^(?:0|[1-9][0-9]*)(?:[,|.][0-9]{1,2})?$"
                   info="Tarief per kWh [&euro;]."
                   unlock=true
                 />
