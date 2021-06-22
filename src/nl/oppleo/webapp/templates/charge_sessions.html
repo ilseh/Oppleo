@@ -916,8 +916,8 @@
       $('oppleo-edit-select#ccsmTrigger')[0].options = 
           '[' + ['AUTO', 'RFID', 'WEB'].map(trigger => '{ "text": "'+trigger+'", "id": "'+trigger+'"'+(trigger==data[3]?', "selected": "true"':'')+' }').join(", ") + ']'
       
-      $('#ccsmStartValue')[0].$input.value = data[4]
-      $('#ccsmOdometer')[0].$input.value = (data[5] == 'None' ? '' : data[5])
+      $('#ccsmStartValue')[0].value = data[4]
+      $('#ccsmOdometer')[0].value = (data[5] == 'None' ? '' : data[5])
 
       let endDate = parseDate( removeNobr( data[6] ) )
       if (endDate != undefined) {
@@ -927,10 +927,10 @@
       $("#chargeSessionModalEndTimeOpenSession").toggleClass('d-none', (endDate != undefined))
       $("#chargeSessionModalEndTimeClosedSession").toggleClass('d-none', (endDate == undefined))
 
-      $('#ccsmEndValue')[0].$input.value = data[7]
-      $('#ccsmCharger')[0].$input.value = data[8]
+      $('#ccsmEndValue')[0].value = data[7]
+      $('#ccsmCharger')[0].value = data[8]
 
-      $('#ccsmTariff')[0].$input.value = data[9].replace('.', ',')
+      $('#ccsmTariff')[0].value = data[9].replace('.', ',')
 
       $('span#ccsmTotalUsage').html(Math.round(data[10] * 10) /10)
       $('span#ccsmPrice').html((Math.round(data[11] * 100) /100).toFixed(2).toString().replace('.', ','))
@@ -968,7 +968,7 @@
     }
 
     function isChargeSessionModalValid() {
-        // Anuthion changed, and all valid?
+      // Anuthion changed, and all valid?
       return $("oppleo-edit-str#ccsmStartValue")[0].valid() &&
              $("oppleo-edit-str#ccsmOdometer")[0].valid() &&
              $("oppleo-edit-str#ccsmEndValue")[0].valid() &&
@@ -1014,7 +1014,7 @@
              modalData['trigger'] != data[3] ||
              modalData['start_value'] != data[4] ||
              ( 
-               (modalData['km'] != data[5]) &&
+               (modalData['km'] != data[5] && data[5] != 'None') ||
                (modalData['km'] != '' && data[5] == 'None')
              ) ||
              //endtimeDate + ', ' + endtimeTime != data[6].substring(6, 23) || // Compare only minutes
@@ -1075,7 +1075,7 @@
         //contentType : "application/json",
         dataType	  : 'json',
         headers     : { 'ignore-login-next': 'true' },
-        encode		  : true,
+        encode		  : false,
         data        : postData
       }) // using the done promise callback
       .done(function(result) {
@@ -1354,7 +1354,7 @@
                   id="ccsmTrigger"
                   options='[]'
                   placeholder="Maak een keuze..."                                
-                  info="Trigger methode"
+                  info="Trigger methode. WEB is via de web interface, RFID via aanbieden van de rfid kaart op het laadpunt, AUTO is automatisch via auto-sessie."
                   unlock=true
                 />
               </td>
@@ -1368,7 +1368,7 @@
                   value=""
                   suffix="kWh"
                   validation="^[0-9]*[,|.]?[0-9]?$"
-                  info="Startmeting in kilowattuur."
+                  info="Startmeting in kilowattuur, nauwkeurigheid 1 decimaal."
                   unlock=true
                 />
               </td>
@@ -1382,7 +1382,7 @@
                   value=""
                   suffix="km"
                   validation="^[0-9]*[,|.]?[0-9]?$"
-                  info="Kilometerstand bij aanvang van de laadsessie."
+                  info="Kilometerstand bij aanvang van de laadsessie, nauwkeurigheid 1 decimaal."
                   unlock=true
                 />
               </td>
@@ -1448,7 +1448,7 @@
                   value=""
                   suffix="kWh"
                   validation="^[0-9]*[,|.]?[0-9]?$"
-                  info="Eindmeting in kilowattuur."
+                  info="Eindmeting in kilowattuur, nauwkeurigheid 1 decimaal."
                   unlock=true
                 />
               </td>
@@ -1460,7 +1460,7 @@
                 <oppleo-edit-str 
                   id="ccsmCharger"
                   value=""
-                  validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
+                  validation="^[0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-]+$"
                   info="Het Laadpunt. De naam van dit laadpunt is <em>{{ oppleoconfig.chargerName }}</em>."
                   unlock=true
                 />
@@ -1476,7 +1476,7 @@
                   value=""
                   prefix="&euro; "
                   validation="^(?:0|[1-9][0-9]*)(?:[,|.][0-9]{1,2})?$"
-                  info="Tarief per kWh [&euro;]."
+                  info="Tarief per kWh [&euro;], nauwkeurigheid 2 decimalen."
                   unlock=true
                 />
               </td>

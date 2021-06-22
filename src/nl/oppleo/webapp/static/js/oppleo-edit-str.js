@@ -314,6 +314,8 @@ class OppleoEditStr extends HTMLElement {
   }
   set value(value) {
     this.setAttribute('value', value)
+    this.$input.value = value  
+    this.drawValidationBorder()
   }
   get validation() {
     return this.getAttribute('validation')
