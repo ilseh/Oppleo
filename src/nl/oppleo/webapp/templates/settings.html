@@ -1543,8 +1543,8 @@
                                   id="chargerTariff"
                                   prefix="&euro; " 
                                   value="{{ oppleoconfig.chargerTariff }}"
-                                  validation="^[0-9]*[.]*[0-9]+$"
-                                  info="Standaard tarief in Den Haag in 2020 is &euro; 0.34. Het tarif kan alleen worden gewijzigd wanneer de laadsessie is afgesloten."
+                                  validation="^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$"
+                                  info="Standaard tarief in Den Haag in 2020 is &euro; 0.34. Het tarif kan alleen worden gewijzigd wanneer de laadsessie is afgesloten. De nauwkeurigheid is nu 2 decimalen."
                                   />
                             </tr>
                             {% endif %}
@@ -1554,7 +1554,6 @@
                               <td class="text-primary">{{ charger_config['modified_at'] }}</td>
                             </tr>
                             {% endif %}
-
 
                             <tr>
                               <th colspan="2">&nbsp;</th>

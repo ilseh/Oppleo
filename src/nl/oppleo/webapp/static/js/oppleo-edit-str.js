@@ -243,6 +243,7 @@ class OppleoEditStr extends HTMLElement {
           // Show the hide/show button in edit view
           this.$hideEditButton.style.display = ""
         }
+        this.drawValidationBorder()        
       } else {
         // Apply - validate first
         let newValue = this.$input.value

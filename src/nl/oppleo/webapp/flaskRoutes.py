@@ -1096,15 +1096,28 @@ def charge_sessions(since_timestamp=None):
 
 @flaskRoutes.route("/charge_session/<path:id>/update", methods=["POST"])
 @flaskRoutes.route("/charge_session/<path:id>/update/", methods=["POST"])
-#@authenticated_resource
+@authenticated_resource
 def charge_session(id:int=None):
     global flaskRoutesLogger, oppleoConfig
 
+    id = request.form.get('session', default='None', type=str)
+
+    # First validate password
+    password = request.form.get('password', default='None', type=str)
+    if password is None or not check_password_hash(current_user.password, password):
+        return jsonify({ 'status': HTTP_CODE_401_UNAUTHORIZED, 'session': -1 if id is None else id, 'reason' : 'Authorization error' })
+
     try:
-        id = request.form.get('session', default='None', type=str)
         jsonD = json.loads(request.form.get('data', default='None', type=str))
     except JSONDecodeError as jde:
         return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'JSON decode error' })
+
+    fieldValidation = { 'start_value'   : "^[0-9]*[,|.]?[0-9]?$",
+                        'km'            : "^[0-9]*[,|.]?[0-9]?$",
+                        'end_value'     : "^[0-9]*[,|.]?[0-9]?$",
+                        'charger'       : "^[0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-]+$",
+                        'tariff'        : "^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$" 
+                      }
 
     chargeSession = ChargeSessionModel.get_one_charge_session(id)
     resultDict = {}
@@ -1112,11 +1125,23 @@ def charge_session(id:int=None):
         resultDict[fieldName] = { 'updated': False }
         if ( (fieldName in jsonD) and
             ( ( fieldName in ['start_time', 'end_time'] and 
-                chargeSession.datetime_to_date_str( chargeSession.__dict__[fieldName] ) != jsonD[fieldName] ) or
-              ( fieldName in ['start_value', 'end_value', 'tariff', 'km'] and 
-                chargeSession.__dict__[fieldName] != jsonD[fieldName] and jsonD[fieldName] != '' and isinstance(jsonD[fieldName], (str, int, float)) and float(chargeSession.__dict__[fieldName]) != float(jsonD[fieldName]) ) or
+                ( chargeSession.__dict__[fieldName] == None or chargeSession.datetime_to_date_str( chargeSession.__dict__[fieldName] ) != jsonD[fieldName] )
+              ) or
+              ( fieldName in ['start_value', 'end_value', 'tariff'] and 
+                chargeSession.__dict__[fieldName] != jsonD[fieldName] and 
+                jsonD[fieldName] != '' and 
+                isinstance(jsonD[fieldName], (str, int, float)) and 
+                ( chargeSession.__dict__[fieldName] == None or float(chargeSession.__dict__[fieldName]) != float(jsonD[fieldName]) )
+              ) or
+              ( fieldName in ['km'] and 
+                chargeSession.__dict__[fieldName] != jsonD[fieldName] and 
+                isinstance(jsonD[fieldName], (str, int, float)) and 
+                ( chargeSession.__dict__[fieldName] == None or jsonD[fieldName] == '' or float(chargeSession.__dict__[fieldName]) != float(jsonD[fieldName]) )
+              ) or
               ( fieldName not in ['start_time', 'end_time', 'start_value', 'end_value', 'tariff', 'km'] and 
-                chargeSession.__dict__[fieldName] != jsonD[fieldName] and str(chargeSession.__dict__[fieldName]) != jsonD[fieldName] )
+                chargeSession.__dict__[fieldName] != jsonD[fieldName] and 
+                ( chargeSession.__dict__[fieldName] == None or str(chargeSession.__dict__[fieldName]) != jsonD[fieldName] )
+              )
             )
            ):
             if fieldName in ['start_time', 'end_time']:
@@ -1126,9 +1151,12 @@ def charge_session(id:int=None):
                 except ValueError as ve:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
             elif fieldName in ['start_value', 'end_value', 'tariff', 'km']:
+                if fieldName in fieldValidation and not re.match(fieldValidation[fieldName], jsonD[fieldName]):
+                    # Not valid
+                    return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
                 # float
                 try:
-                    chargeSession.__dict__[fieldName] = float(jsonD[fieldName])
+                    chargeSession.__dict__[fieldName] = float(jsonD[fieldName]) if jsonD[fieldName] != '' else None
                 except ValueError as ve:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field type error ({})'.format(fieldName) })
             elif fieldName in ['trigger']:
@@ -1138,6 +1166,9 @@ def charge_session(id:int=None):
                 else:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field value error ({})'.format(fieldName) })
             else:
+                if fieldName in fieldValidation and not re.match(fieldValidation[fieldName], jsonD[fieldName]):
+                    # Not valid
+                    return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
                 # str
                 chargeSession.__dict__[fieldName] = jsonD[fieldName]
             resultDict[fieldName] = { 'updated': True, 'value': jsonD[fieldName] }
@@ -1153,8 +1184,8 @@ def charge_session(id:int=None):
         chargeSession.total_price = total_price
         resultDict['total_price'] = { 'updated': True, 'value': total_price }
 
-
-    #  chargeSession.save()
+    # Store the changes
+    chargeSession.save()
 
     return jsonify({ 
             'status'    : HTTP_CODE_200_OK,
@@ -1522,11 +1553,6 @@ def update_settings(param=None, value=None):
             oppleoConfig.energyDevice.enable( edm.device_enabled )
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
 
-    # With an open charge session, there params are not allowed to change
-    if param in ['chargerName', 'chargerTariff'] and \
-       ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerName):
-        return jsonify({ 'status': 409, 'param': param, 'reason': 'Er is een laadsessie actief.' })
-
 
     if (param == 'offpeakEnabled'):
         oppleoConfig.offpeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
@@ -1590,6 +1616,10 @@ def update_settings(param=None, value=None):
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # chargerName
+    # With an open charge session, there params are not allowed to change
+    if (param == 'chargerName' and
+        ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerName)):
+        return jsonify({ 'status': 409, 'param': param, 'reason': 'Er is een laadsessie actief.' })
     if (param == 'chargerName') and isinstance(value, str) and len(value) > 0:
         oppleoConfig.chargerName = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
@@ -1600,7 +1630,12 @@ def update_settings(param=None, value=None):
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # chargerTariff
-    if (param == 'chargerTariff') and (isinstance(value, float) or RepresentsFloat(value)):
+    # With an open charge session, there params are not allowed to change
+    if (param == 'chargerTariff' and
+        ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerName)):
+        return jsonify({ 'status': 409, 'param': param, 'reason': 'Er is een laadsessie actief.' })
+    validation="^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$"
+    if (param == 'chargerTariff') and (isinstance(value, float) or RepresentsFloat(value)) and re.match(validation, value):
         oppleoConfig.chargerTariff = float(value)
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 

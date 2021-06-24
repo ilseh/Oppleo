@@ -902,10 +902,12 @@
     }
 
     let changeChargeSessionModal = null
+    let askPasswordModal = null
     function showChangeChargeSessionModal(data) {
       // Init modal dialog
       $('span#ccsmChargeSessionId').html(data[0])
-
+      $('span#apmChargeSessionId').html(data[0])
+      
       $('oppleo-edit-select#ccsmRfidToken')[0].options = 
           '[' + Object.values(rfidTokens).map(token => '{ "text": "'+token.name+'", "id": "'+token.rfid+'"'+(token.rfid==data[1]?', "selected": "true"':'')+' }').join(", ") + ']'
 
@@ -1067,6 +1069,7 @@
       postData = {
         csrf_token    : '{{ csrf_token() }}',
         session       : sessionData['id'],
+        password      : sessionData['password'],
         data          : JSON.stringify(sessionData)
       }
       $.ajax({
@@ -1082,72 +1085,87 @@
         // log data to the console so we can see
         console.log(result)
 
-        let rowIndex = -1
-        dt.rows(function ( idx, rdata, node ) {             
-            if (rdata[0] == result.session) rowIndex = idx
-        })
-        // Update table to reflect changes. and add Change animation
-        for (fieldName in result.update) {
-          if (result.update[fieldName]['updated']) {
-            switch (fieldName) {
-              case 'rfid':
-/*
-                dt.cell( rowIndex, 1 ).data(
-                  (data.update[fieldName]['value'] in rfidTokens && isData(rfidTokens[data.update[fieldName]['value']].name)) ?
-                  rfidTokens[data.update[fieldName]['value']].name :
-                  data.update[fieldName]['value']
-                  )
-*/
-                  dt.cell( rowIndex, 1 ).data( result.update[fieldName]['value'] )
-                  highlightCell( rowIndex, 1 )
-                break
-              case 'start_time':
-                dt.cell( rowIndex, 2 ).data( addNobr( result.update[fieldName]['value'] ) )
-                highlightCell( rowIndex, 2 )
-                break
-              case 'trigger':
-                dt.cell( rowIndex, 3 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 3 )
-                break
-              case 'start_value':
-                dt.cell( rowIndex, 4 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 4 )
-                break
-              case 'km':
-                dt.cell( rowIndex, 5 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 5 )
-                break
-              case 'end_time':
-                dt.cell( rowIndex, 6 ).data( addNobr( result.update[fieldName]['value'] ) )
-                highlightCell( rowIndex, 6 )
-                break
-              case 'end_value':
-                dt.cell( rowIndex, 7 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 7 )
-                break
-              case 'charger':
-                dt.cell( rowIndex, 8 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 8 )
-                break
-              case 'tariff':
-                dt.cell( rowIndex, 9 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 9 )
-                break
-              case 'total_usage':
-                dt.cell( rowIndex, 10 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 10 )
-                break
-              case 'total_price':
-                dt.cell( rowIndex, 11 ).data( result.update[fieldName]['value'] )
-                highlightCell( rowIndex, 11 )
-                break
-              default:  // session id etc, no change
-                break
+        switch (result.status) {
+          case 401: // Unauthorized
+            // Keep password form open, show error
+            autoHideNotify('error','top-left', 'Autorisatie mislukt', 'Het wachtwoord is niet correct.')
+            break
+          case 200: // Ok
+            // Close password form
+            askPasswordModal.modal('hide')
+
+            let rowIndex = -1
+            dt.rows(function ( idx, rdata, node ) {             
+                if (rdata[0] == result.session) rowIndex = idx
+            })
+            // Update table to reflect changes. and add Change animation
+            for (fieldName in result.update) {
+              if (result.update[fieldName]['updated']) {
+                switch (fieldName) {
+                  case 'rfid':
+                      dt.cell( rowIndex, 1 ).data( result.update[fieldName]['value'] )
+                      highlightCell( rowIndex, 1 )
+                    break
+                  case 'start_time':
+                    dt.cell( rowIndex, 2 ).data( addNobr( result.update[fieldName]['value'] ) )
+                    highlightCell( rowIndex, 2 )
+                    break
+                  case 'trigger':
+                    dt.cell( rowIndex, 3 ).data( result.update[fieldName]['value'] )
+                    highlightCell( rowIndex, 3 )
+                    break
+                  case 'start_value':
+                    dt.cell( rowIndex, 4 ).data( result.update[fieldName]['value'] )
+                    highlightCell( rowIndex, 4 )
+                    break
+                  case 'km':
+                    dt.cell( rowIndex, 5 ).data( 
+                      (result.update[fieldName]['value'] != '' ?
+                        result.update[fieldName]['value'] :
+                        'None'
+                      )
+                    )
+                    highlightCell( rowIndex, 5 )
+                    break
+                  case 'end_time':
+                    dt.cell( rowIndex, 6 ).data( addNobr( result.update[fieldName]['value'] ) )
+                    highlightCell( rowIndex, 6 )
+                    break
+                  case 'end_value':
+                    dt.cell( rowIndex, 7 ).data( result.update[fieldName]['value'] )
+                    highlightCell( rowIndex, 7 )
+                    break
+                  case 'charger':
+                    dt.cell( rowIndex, 8 ).data( result.update[fieldName]['value'] )
+                    highlightCell( rowIndex, 8 )
+                    break
+                  case 'tariff':
+                    dt.cell( rowIndex, 9 ).data( result.update[fieldName]['value'] )
+                    highlightCell( rowIndex, 9 )
+                    break
+                  case 'total_usage':
+                    dt.cell( rowIndex, 10 ).data( result.update[fieldName]['value'] )
+                    highlightCell( rowIndex, 10 )
+                    break
+                  case 'total_price':
+                    dt.cell( rowIndex, 11 ).data( result.update[fieldName]['value'] )
+                    highlightCell( rowIndex, 11 )
+                    break
+                  default:  // session id etc, no change
+                    break
+                }
+              }
             }
-          }
+            autoHideNotify('success','top-left', 'Gewijzigd', 'Laadsessie '+result.session+' is gewijzigd.')
+            break
+          case 400: // Bad request
+          default:  // Unknown
+            // Close password form, open change charge session dialog
+            autoHideNotify('error','top-left', 'Mislukt', 'Wijzigen van laadsessie mislukt.')
+            askPasswordModal.modal('hide')
+            changeChargeSessionModal.modal('show')
+            break
         }
-        autoHideNotify('success','top-left', 'Gewijzigd', 'Laadsessie '+result.session+' is gewijzigd.')
-        changeChargeSessionModal.modal('hide')
       })
       .fail(function(result) {
         autoHideNotify('error','top-left', 'Mislukt', 'Wijzigen van laadsessie mislukt.')
@@ -1182,6 +1200,11 @@
         keyboard: false,
         show: false
       })
+      askPasswordModal = $('#askPasswordModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
       $('#changeChargeSessionModal').on('shown.bs.modal', function (e) {
         $('select#ccsmRfidToken').focus()
       })
@@ -1195,11 +1218,14 @@
           autoHideNotify('warning','top-left', 'Niet valide', 'Laadsessiewijziging niet valide.')
           return
         }
-        // (Try to) Submit
-        updateChargeSession( chargeSessionModalData() )
+        // Ask password
+        changeChargeSessionModal.modal('hide')
+        askPasswordModal.modal('show')
         e.preventDefault()
       })
-
+      $('button#deleteOdometerValueButton').on("click", function(e) {
+        $('#ccsmOdometer')[0].value = ''
+      })
       $("#ccsmRfidToken, #ccsmStarttimeDate, #ccsmStarttimeTime, #ccsmTrigger, #ccsmStartValue, #ccsmOdometer, #ccsmEndtimeDate, #ccsmEndtimeTime, #ccsmEndValue, #ccsmCharger, #ccsmTariff").on('change select changeTime', function(e) {
         // Anything changed, and all valid?
         let valid = isChargeSessionModalValid()
@@ -1219,6 +1245,32 @@
           $('span#ccsmPrice').html( '-' )
         }     
       })
+      $('button#ask-password-modal-footer-cancel').on("click", function(e) {
+        askPasswordModal.modal('hide')
+        changeChargeSessionModal.modal('show')
+        e.preventDefault()
+      })
+      $('button#askPasswordModalCloseButton').on("click", function(e) {
+        changeChargeSessionModal.modal('show')
+        e.preventDefault()
+      })
+
+      $("button[id^=show_]").click(function() {
+        id = $(this).attr('id').split("show_").pop()
+        $('input[id='+id).attr(
+            'type', 
+            ( $('input[id='+id).attr('type') === "password" ? 'text' : 'password')
+        )
+        $(this).find('i').toggleClass('fa-eye')     // far fa-eye
+        $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
+      })
+
+      $('button#ask-password-modal-footer-saveaction').on("click", function(e) {
+        // Add password to charge session and submit
+        updateChargeSession( {...chargeSessionModalData(), ...{'password': $('input#password').val()}} )
+        e.preventDefault()
+      })
+
     })
 
     </script>
@@ -1308,13 +1360,13 @@
         <div class="col-lg-12">
 
           <table class="w-100 text-center">
-            <tr class="" style="background-color: brown;">
-              <td class="bg-primary text-white pl-5 pr-5" colspan="3" style="font-size: 1.3rem;">Laadsessie <span id="ccsmChargeSessionId" class="font-weight: bold;"></span></td>
+            <tr class="">
+              <td class="bg-primary text-white pl-5 pr-5" colspan="4" style="font-size: 1.3rem;">Laadsessie <span id="ccsmChargeSessionId" class="font-weight: bold;"></span></td>
             </tr>
 
             <tr class="">
               <td class="text-right pr-5" style="width: 35%;">Laadpas</td>
-              <td class="" colspan="2">
+              <td class="" colspan="3">
                 <oppleo-edit-select 
                   id="ccsmRfidToken"
                   options='[]'
@@ -1338,7 +1390,7 @@
                          value=""/>
                 </div>                
               </td>
-              <td class="">
+              <td class="" colspan="2">
                 <oppleo-edit-time 
                   id="ccsmStarttimeTime"
                   options=''
@@ -1349,7 +1401,7 @@
 
             <tr class="">
               <td class="text-right pr-5">Trigger</td>
-              <td class="text-left" colspan="2">
+              <td class="text-left" colspan="3">
                 <oppleo-edit-select 
                   id="ccsmTrigger"
                   options='[]'
@@ -1362,7 +1414,7 @@
 
             <tr class="">
               <td class="text-right pr-5">Startmeting</td>
-              <td class="" colspan="2">
+              <td class="" colspan="3">
                 <oppleo-edit-str 
                   id="ccsmStartValue"
                   value=""
@@ -1381,10 +1433,26 @@
                   id="ccsmOdometer"
                   value=""
                   suffix="km"
+                  style="width: calc(100% - 42px);"
                   validation="^[0-9]*[,|.]?[0-9]?$"
                   info="Kilometerstand bij aanvang van de laadsessie, nauwkeurigheid 1 decimaal."
                   unlock=true
                 />
+              </td>
+              <td class="ml-0 mr-0 pl-0 pr-0" style="width: 32px;"
+                <span id="input_container" class="input-group-append" style="width: 32px;">
+                  <button
+                    type="button" 
+                    id="deleteOdometerValueButton"
+                    class="btn btn-sm pl-2 pr-2 waves-effect waves-light btn-outline-primary"
+                    data-toggle="tooltip" 
+                    data-placement="bottom" 
+                    data-html="true" 
+                    title="<em>Verwijder kilometerstand</em>"
+                    >
+                    <i class="far fa-trash-alt"></i>
+                  </button>
+                </span>
               </td>
             </tr>
 
@@ -1401,7 +1469,7 @@
                          value=""/>
                 </div>                
               </td>
-              <td class="">
+              <td class="" colspan="2">
                 <oppleo-edit-time 
                   id="ccsmEndtimeTime"
                   options=''
@@ -1442,7 +1510,7 @@
 
             <tr class="">
               <td class="text-right pr-5">Eindmeting</td>
-              <td class="" colspan="2">
+              <td class="" colspan="3">
                 <oppleo-edit-str 
                   id="ccsmEndValue"
                   value=""
@@ -1456,7 +1524,7 @@
 
             <tr class="">
               <td class="text-right pr-5">Laadpunt</td>
-              <td class="" colspan="2">
+              <td class="" colspan="3">
                 <oppleo-edit-str 
                   id="ccsmCharger"
                   value=""
@@ -1470,7 +1538,7 @@
 
             <tr class="">
               <td class="text-right pr-5">Tarief</td>
-              <td class="" colspan="2">
+              <td class="" colspan="3">
                 <oppleo-edit-str 
                   id="ccsmTariff"
                   value=""
@@ -1484,14 +1552,14 @@
 
             <tr class="">
               <td class="text-primary text-right pr-5">Verbruik</td>
-              <td class="text-right pr-5 text-white" colspan="2">
+              <td class="text-right pr-5 text-white" colspan="3">
                 <span id="ccsmTotalUsage"></span>kWh
               </td>
             </tr>
 
             <tr class="">
               <td class="text-primary text-right pr-5">Prijs</td>
-              <td class="text-right text-warning pr-5" colspan="2">
+              <td class="text-right text-warning pr-5" colspan="3">
                 &euro; <span id="ccsmPrice"></span>
               </td>
             </tr>
@@ -1504,6 +1572,61 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary mr-2" id="change-chargesession-modal-footer-cancel">Annuleren</button>
         <button type="button" class="btn btn-primary" id="change-chargesession-modal-footer-saveaction" disabled="true"> Wijziging opslaan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="askPasswordModal" tabindex="-1" role="dialog" aria-labelledby="askPasswordModalLabel" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog modal-password" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h3 class="modal-title" id="changeChargeSessionModalLabel">Wachtwoord</h3>
+        <button type="button" class="close-x bg-warning" data-dismiss="modal" aria-label="Close" id="askPasswordModalCloseButton">
+          <span aria-hidden="true"><i class="fas fa-times"></i></span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="col-lg-12">
+
+          <div class="text-center text-warning pb-5">
+            <div style="font-size: 1.3rem;">Voer het wachtwoord van {{ current_user.username }} in om laadsessie <span id="apmChargeSessionId" class="font-weight: bold;"></span> te wijzigen</div>
+          </div>
+
+          <div>
+            <div class="input-group">
+              <div class="text-right pr-5">Wachtwoord</div>
+              <span class="input-group-prepend">
+                <span class="input-group-text bg-secondary border border-secondary text-muted">
+                    <i class="mdi mdi-radar"></i>
+                </span>
+              </span>
+              <input class="form-control" id="password" name="password" type="password" required="" placeholder="Password" value="">
+              <span class="input-group-append">
+                <button 
+                    id="show_password"
+                    type="button" 
+                    class="btn waves-effect waves-light btn-primary" 
+                    data-toggle="tooltip" 
+                    data-placement="bottom" 
+                    data-html="true" 
+                    title="<em>Klik om de tekst zichtbaar te maken</em>"
+                    >
+                    <i class="far fa-eye"></i>
+                </button>
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary mr-2" id="ask-password-modal-footer-cancel">Annuleren</button>
+        <button type="button" class="btn btn-warning" id="ask-password-modal-footer-saveaction"> Wijziging opslaan</button>
       </div>
     </div>
   </div>
