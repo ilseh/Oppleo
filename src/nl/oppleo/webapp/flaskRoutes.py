@@ -1112,11 +1112,11 @@ def charge_session(id:int=None):
     except JSONDecodeError as jde:
         return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'JSON decode error' })
 
-    fieldValidation = { 'start_value'   : "^[0-9]*[,|.]?[0-9]?$",
-                        'km'            : "^[0-9]*[,|.]?[0-9]?$",
-                        'end_value'     : "^[0-9]*[,|.]?[0-9]?$",
-                        'charger'       : "^[0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-]+$",
-                        'tariff'        : "^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$" 
+    fieldValidation = { 'start_value'       : "^[0-9]*[,|.]?[0-9]?$",
+                        'km'                : "^[0-9]*[,|.]?[0-9]?$",
+                        'end_value'         : "^[0-9]*[,|.]?[0-9]?$",
+                        'energy_device_id'  : "^[0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-]+$",
+                        'tariff'            : "^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$" 
                       }
 
     chargeSession = ChargeSessionModel.get_one_charge_session(id)

@@ -930,7 +930,7 @@
       $("#chargeSessionModalEndTimeClosedSession").toggleClass('d-none', (endDate == undefined))
 
       $('#ccsmEndValue')[0].value = data[7]
-      $('#ccsmCharger')[0].value = data[8]
+      $('#ccsmCharger').val( data[8] )
 
       $('#ccsmTariff')[0].value = data[9].replace('.', ',')
 
@@ -974,7 +974,6 @@
       return $("oppleo-edit-str#ccsmStartValue")[0].valid() &&
              $("oppleo-edit-str#ccsmOdometer")[0].valid() &&
              $("oppleo-edit-str#ccsmEndValue")[0].valid() &&
-             $("oppleo-edit-str#ccsmCharger ")[0].valid() &&
              $("oppleo-edit-str#ccsmTariff")[0].valid()
     }
     function chargeSessionModalData() {
@@ -1000,7 +999,7 @@
                                                      )
       }
       modalData['end_value'] = $("oppleo-edit-str#ccsmEndValue")[0].$input.value.replace(',', '.')
-      modalData['charger'] = $("oppleo-edit-str#ccsmCharger")[0].$input.value
+      modalData['charger'] = $("input#ccsmCharger").val()
       modalData['tariff'] = $("oppleo-edit-str#ccsmTariff")[0].$input.value.replace(',', '.')
       return modalData
     }    
@@ -1226,7 +1225,7 @@
       $('button#deleteOdometerValueButton').on("click", function(e) {
         $('#ccsmOdometer')[0].value = ''
       })
-      $("#ccsmRfidToken, #ccsmStarttimeDate, #ccsmStarttimeTime, #ccsmTrigger, #ccsmStartValue, #ccsmOdometer, #ccsmEndtimeDate, #ccsmEndtimeTime, #ccsmEndValue, #ccsmCharger, #ccsmTariff").on('change select changeTime', function(e) {
+      $("#ccsmRfidToken, #ccsmStarttimeDate, #ccsmStarttimeTime, #ccsmTrigger, #ccsmStartValue, #ccsmOdometer, #ccsmEndtimeDate, #ccsmEndtimeTime, #ccsmEndValue, #ccsmTariff").on('change select changeTime', function(e) {
         // Anything changed, and all valid?
         let valid = isChargeSessionModalValid()
         let changed = isChargeSessionModalChanged()
@@ -1524,18 +1523,35 @@
 
             <tr class="">
               <td class="text-right pr-5">Laadpunt</td>
-              <td class="" colspan="3">
-                <oppleo-edit-str 
-                  id="ccsmCharger"
-                  value=""
-                  validation="^[0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-]+$"
-                  info="Het Laadpunt. De naam van dit laadpunt is <em>{{ oppleoconfig.chargerName }}</em>."
-                  unlock=true
-                />
-                <input type="text" class="form-control text-right" id="ccsmCharger" />
+              <td class="text-left font-italic" colspan="2">
+                <div class="input-group">
+                  <span class="input-group-prepend">
+                    <span 
+                      class="input-group-text bg-dark b-1 text-secondary"
+                      id="info_text"
+                      data-toggle="tooltip" 
+                      data-placement="bottom" 
+                      data-html="true" 
+                      title="Deze laadsessie is gelinkt aan dit laadpunt. Wijzig de naam van dit laadpunt in de instellingen om de naam van het laadpunt van deze laadsessie te wijzigen."
+                      >
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </span>
+                  <span id="input_container" class="input-group-append" style="width: calc(100% - 42px);">
+                    <input 
+                      class="form-control form-control-sm font-italic"
+                      id="ccsmCharger"
+                      type="text"
+                      readonly="readonly"
+                      style="text-align: left; width: 100%;"
+                      placeholder=""
+                      value=""
+                    />
+                  </span>
+                </div>          
               </td>
             </tr>
-
+            
             <tr class="">
               <td class="text-right pr-5">Tarief</td>
               <td class="" colspan="3">
