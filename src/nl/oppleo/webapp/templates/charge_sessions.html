@@ -670,7 +670,7 @@
                                   rfidTokens[row[1]].get_odometer === "True"
                                  )
                 return data == undefined || data === "None" ? 
-                        ( validToken && rcIx.row == 0 ? 
+                        ( validToken && rcIx.row == 0 && !isEditMode() ? 
                           // First row
                           '- <button' +
                           '   type="button"' +
@@ -747,7 +747,7 @@
               } else {
                 // Default - type = 'display' - on screen or other exports
                 // Empty and closed charge session?
-                if (row[11] == 0 && row[6] != "-") {
+                if (row[11] == 0 && row[6] != "-" && !isEditMode()) {
                   // Show delete button
                   return '<button' +
                          '   type="button"' +
@@ -762,7 +762,7 @@
                          '</button>'
                 }
                 // Open charge session?
-                if (row[6] == "-") {
+                if (row[6] == "-" && !isEditMode()) {
                   // Show close button
                   return '<button' +
                          '   type="button"' +
@@ -1173,6 +1173,9 @@
         $('.spinner').hide()
       })
     }    
+    function isEditMode() {
+      return $('table#charge_sessions').hasClass('table-hover')
+    }
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       startWebSocket()
@@ -1193,6 +1196,7 @@
           $('table#charge_sessions').css('cursor', 'default')
           $('table#charge_sessions').off('click', 'tr')
         }
+        dt.rows().invalidate().draw()
       })
       changeChargeSessionModal = $('#changeChargeSessionModal').modal({
         backdrop: 'static',
@@ -1331,7 +1335,7 @@
                 <th class="pl-0 pr-0 text-center">Tarief</th>
                 <th class="pl-0 pr-0 text-center">Verbruik</th>
                 <th class="pl-0 pr-0 text-center">Prijs</th>
-                <th class="pl-0 pr-0 text-center">&nbsp;</th>
+                <th class="pl-0 pr-0 text-center" style="width: 35.5px;"><i class="far fa-hand-point-up"></i></th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">
             <tbody>
