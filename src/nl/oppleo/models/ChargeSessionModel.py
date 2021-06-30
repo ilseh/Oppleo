@@ -138,7 +138,7 @@ class ChargeSessionModel(Base):
     Returns session with specific values, used for condensing charge sessions
     """
     @staticmethod
-    def get_specific_charge_session(energy_device_id, rfid, km, end_value, tariff) -> ChargeSessionModel | None:
+    def get_specific_closed_charge_session(energy_device_id, rfid, km, end_value, tariff) -> ChargeSessionModel | None:
         db_session = DbSession()
         csm = None
         try:
@@ -149,6 +149,7 @@ class ChargeSessionModel(Base):
                             .filter(ChargeSessionModel.end_value == end_value) \
                             .filter(ChargeSessionModel.end_time != None) \
                             .filter(ChargeSessionModel.tariff == tariff) \
+                            .order_by(desc(ChargeSessionModel.id)) \
                             .first()
         except InvalidRequestError as e:
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)

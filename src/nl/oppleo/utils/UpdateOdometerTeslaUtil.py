@@ -63,6 +63,7 @@ class UpdateOdometerTeslaUtil:
 
 
     def sendChargeSessionUpdate(self, event:str=None, data:str=None, namespace:str='/charge_session', public:bool=False):
+        self.__logger.debug('sendChargeSessionUpdate() - event:{}, data:{}'.format(event, data))
         if event is None or data is None:
             return
         WebSocketUtil.emit(
@@ -225,25 +226,26 @@ class UpdateOdometerTeslaUtil:
              charge_session.trigger == ChargeSessionModel.TRIGGER_AUTO
            ):
             with self.__threadLock:
+                # TODO - keep condensing, get_specific_closed_charge_session order by highest number
                 # charge_session is the new charge session, was there a previous charge session just like this one?
-                same_charge_session = ChargeSessionModel.get_specific_charge_session(
+                same_charge_session = ChargeSessionModel.get_specific_closed_charge_session(
                                                 energy_device_id=charge_session.energy_device_id, 
                                                 rfid=charge_session.rfid, 
                                                 km=charge_session.km, 
-                                                end_value=charge_session.end_value, 
+                                                end_value=charge_session.start_value, 
                                                 tariff=charge_session.tariff
                                                 )
                 if same_charge_session != None:
-                    self.__logger.debug("same_charge_session found! Condense...")
-                    condenseSucceeded = ChargeSessionModel.condense_charge_sessions(
-                                            closed_charge_session=same_charge_session,
-                                            new_charge_session=charge_session
-                                            )
-                    if (condenseSucceeded and
-                        len(oppleoConfig.connectedClients) > 0
-                       ):
+                    self.__logger.debug("same_charge_session found ({})! Condense...".format(same_charge_session.id))
+                    # Save the id, get's lost if condensed
+                    same_charge_session_id = same_charge_session.id
+                    ChargeSessionModel.condense_charge_sessions(
+                        closed_charge_session=same_charge_session,
+                        new_charge_session=charge_session
+                        )
+                    if (len(oppleoConfig.connectedClients) > 0):
                         # Send change notification
-                        self.sendChargeSessionUpdate(event='charge_session_deleted', data=same_charge_session.to_str())
+                        self.sendChargeSessionUpdate(event='charge_session_condensed', data={ 'surviveId': charge_session.id, 'deleteId': same_charge_session_id })
                         self.sendChargeSessionUpdate(event='charge_session_data_update', data=charge_session.to_str())
 
 

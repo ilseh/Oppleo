@@ -201,6 +201,9 @@ class ChangeLog():
         branches = {}
         for branchName in branchNames:
             changeLogText = GitUtil.getChangeLogForBranch(branchName)
+            if changeLogText is None:
+                # Timeout or similar, return what we have untill now
+                return branches
             parsedChangeLog = changeLog.parse(changeLogText=changeLogText)
             (versionNumber, versionDate) = changeLog.getMostRecentVersion(changeLogObj=parsedChangeLog)
             branches[branchName] = {

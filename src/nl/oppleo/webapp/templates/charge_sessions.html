@@ -67,11 +67,13 @@
     .paginate_button {
         padding: 0px !important;
     }
+/*
     tbody td {
       padding: 2px 2px !important;
       text-align: center;
       background-color: #36404a;
     }
+*/    
     div .dataTables_info {
       color: #98a6ad !important;
       margin-left: 5px;
@@ -134,17 +136,29 @@
       chargeSessionSocket.on('charge_session_deleted', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
         // The charge session is effectively removed, delete from datatables
-        // TODO
+        let row = dt
+                    .rows( function ( idx, data, node ) {
+                      return parseInt(data[0]) == msg.data.deleteId
+                    })
+        autoHideNotify('success','top-left', 'Delete', 'Laadsessie '+msg.data.deleteId+' is verwijderd.')
+        highlightRow( row, function() {
+          row.remove()
+          dt.draw()
+        })                      
 
-        if (dt != undefined) {
-          // Remove a row by column[0] value
-          dt
-            .rows( function ( idx, data, node ) {
-              return data[0] === msg.data.id
-            })
-            .remove()
-            .draw()
-        }
+      })
+      chargeSessionSocket.on('charge_session_condensed', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        // The charge session is effectively removed, delete from datatables
+        let row = dt
+                    .rows( function ( idx, data, node ) {
+                      return parseInt(data[0]) == msg.data.deleteId
+                    })
+        autoHideNotify('success','top-left', 'Condense', 'Laadsessie '+msg.data.deleteId+' wordt samengevoegd met automatisch aangemaakte laadsessie '+msg.data.surviveId+'.')
+        highlightRow( row, function() {
+          row.remove()
+          dt.draw()
+        })                      
       })
       chargeSessionSocket.on('charge_session_data_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
@@ -256,17 +270,17 @@
     }
    
     function updateCaptureOdometerButton(icon, text, clickEnabled, hide=false) {
-      $('button#captureOdometer_0').html(icon)
-      $('button#captureOdometer_0').attr('data-original-title','<em>'+text+'</em>')
-      $('button#captureOdometer_0').tooltip('hide')
-      $('button#captureOdometer_0').off('click', captureOdometer)
+      $('button#captureOdometer').html(icon)
+      $('button#captureOdometer').attr('data-original-title','<em>'+text+'</em>')
+      $('button#captureOdometer').tooltip('hide')
+      $('button#captureOdometer').off('click', captureOdometer)
       if (clickEnabled) {
-        $('button#captureOdometer_0').on('click', captureOdometer)
-        $('button#captureOdometer_0').css({'cursor': 'pointer'})
+        $('button#captureOdometer').on('click', captureOdometer)
+        $('button#captureOdometer').css({'cursor': 'pointer'})
       } else {
-        $('button#captureOdometer_0').css({'cursor': 'wait'})
+        $('button#captureOdometer').css({'cursor': 'wait'})
       }
-      $('button#captureOdometer_0').toggleClass('d-none', hide)
+      $('button#captureOdometer').toggleClass('d-none', hide)
     }
 
     function captureOdometerButton(buttonState) {
@@ -669,12 +683,12 @@
                                   new Date((parseInt(rfidTokens[row[1]].api_created_at) + parseInt(rfidTokens[row[1]].api_expires_in)) * 1000) > new Date() &&
                                   rfidTokens[row[1]].get_odometer === "True"
                                  )
-                return data == undefined || data === "None" ? 
-                        ( validToken && rcIx.row == 0 && !isEditMode() ? 
+                return ( data == undefined || data === "None" ? 
+                        ( validToken && row[6] == "-" && !isEditMode() ? 
                           // First row
                           '- <button' +
                           '   type="button"' +
-                          '   id="captureOdometer_' + rcIx.row + '"' +
+                          '   id="captureOdometer"' +
                           '   class="btn btn-xs waves-effect waves-light btn-outline-primary d-none" ' +
                           '   style="float: right;"' +
                           '   data-toggle="tooltip" ' +
@@ -689,6 +703,7 @@
                         )
                       : 
                       '<span style="text-align: right;">' + data + 'km</span>'
+                      )
               }
             }
           }, {
@@ -788,7 +803,7 @@
         // Make sure tooltips are initialized on each draw
         $('table#charge_sessions').on('draw.dt', function() {
           $('[data-toggle="tooltip"]').tooltip()
-          if ($('button#captureOdometer_0').length > 0) {
+          if ($('button#captureOdometer').length > 0) {
             captureOdometerButton(BUTTONSTATE_INITIAL)
           }
         })
@@ -837,7 +852,6 @@
           }
         })
 
-        dt.draw('full-reset')
         data.forEach(element => {
 
           dt.row.add([
@@ -903,6 +917,10 @@
 
     let changeChargeSessionModal = null
     let askPasswordModal = null
+    let APF_CHANGE_SESSION = 1 
+    let APF_STOP_SESSION = 2 
+    let APF_DELETE_SESSION = 3 
+    let askPasswordFor = 0
     function showChangeChargeSessionModal(data) {
       // Init modal dialog
       $('span#ccsmChargeSessionId').html(data[0])
@@ -934,7 +952,7 @@
 
       $('#ccsmTariff')[0].value = data[9].replace('.', ',')
 
-      $('span#ccsmTotalUsage').html(Math.round(data[10] * 10) /10)
+      $('span#ccsmTotalEnergy').html(Math.round(data[10] * 10) /10)
       $('span#ccsmPrice').html((Math.round(data[11] * 100) /100).toFixed(2).toString().replace('.', ','))
 
       $('.date-picker').datepicker({
@@ -1062,6 +1080,49 @@
       )
     }
 
+    function highlightRow( rowIndex, callback = undefined ) {
+      let rowEl = $(dt.row(rowIndex).nodes().to$())
+      let origBgColor = rowEl.css("background-color")
+      let origColor = rowEl.css("color")
+      let origFontWeight = rowEl.css("font-weight")
+      // 
+      rowEl.animate({
+          backgroundColor: "#ff0000 !important",
+          color: "#fffff",
+          fontWeight: "bold"
+        }, 300, function() {
+          $(this).animate({
+              backgroundColor: origBgColor,
+              color: origColor,
+              fontWeight: origFontWeight
+            }, 1000, function() {
+              $(this).animate({
+                  backgroundColor: "#ff0000 !important",
+                  color: "#fffff",
+                  fontWeight: "bold"
+                }, 100, function() {
+                  $(this).animate({
+                      backgroundColor: origBgColor,
+                      color: origColor,
+                      fontWeight: origFontWeight
+                    }, 2000, function() {
+                      $(this).css("background-color", "")
+                      $(this).css("color", "")
+                      $(this).css("font-weight", "")
+                      if ( callback != undefined ) {
+                        callback()
+                      }
+                    }
+                  )
+                }
+              )
+            }
+          )
+        }
+      )
+    }
+
+
     function updateChargeSession( sessionData ) {
       console.log(timestamp() + ' updateChargeSession()')            
       $('.spinner').show()
@@ -1142,7 +1203,7 @@
                     dt.cell( rowIndex, 9 ).data( result.update[fieldName]['value'] )
                     highlightCell( rowIndex, 9 )
                     break
-                  case 'total_usage':
+                  case 'total_energy':
                     dt.cell( rowIndex, 10 ).data( result.update[fieldName]['value'] )
                     highlightCell( rowIndex, 10 )
                     break
@@ -1223,6 +1284,7 @@
         }
         // Ask password
         changeChargeSessionModal.modal('hide')
+        askPasswordFor = APF_CHANGE_SESSION
         askPasswordModal.modal('show')
         e.preventDefault()
       })
@@ -1238,23 +1300,39 @@
       $("oppleo-edit-str#ccsmStartValue, oppleo-edit-str#ccsmEndValue, oppleo-edit-str#ccsmTariff").on('change', function(e) {
         // e.detail.value
         if (typeof oParseFloat($('#ccsmEndValue')[0].$input.value) == 'number' && typeof oParseFloat($('#ccsmStartValue')[0].$input.value) == 'number') {
-          $('span#ccsmTotalUsage').html(Math.round((oParseFloat($('#ccsmEndValue')[0].$input.value) - oParseFloat($('#ccsmStartValue')[0].$input.value)) * 10) /10)
+          $('span#ccsmTotalEnergy').html(Math.round((oParseFloat($('#ccsmEndValue')[0].$input.value) - oParseFloat($('#ccsmStartValue')[0].$input.value)) * 10) /10)
         } else {
-          $('span#ccsmTotalUsage').html( '-' )
+          $('span#ccsmTotalEnergy').html( '-' )
         }
-        if (typeof oParseFloat($('#ccsmTotalUsage').text()) == 'number' && typeof oParseFloat($('#ccsmTariff')[0].$input.value) == 'number') {
-          $('span#ccsmPrice').html((Math.round((oParseFloat($('#ccsmTotalUsage').text()) * oParseFloat($('#ccsmTariff')[0].$input.value)) * 100) /100).toFixed(2).toString().replace('.', ','))
+        if (typeof oParseFloat($('#ccsmTotalEnergy').text()) == 'number' && typeof oParseFloat($('#ccsmTariff')[0].$input.value) == 'number') {
+          $('span#ccsmPrice').html((Math.round((oParseFloat($('#ccsmTotalEnergy').text()) * oParseFloat($('#ccsmTariff')[0].$input.value)) * 100) /100).toFixed(2).toString().replace('.', ','))
         } else {
           $('span#ccsmPrice').html( '-' )
         }     
       })
       $('button#ask-password-modal-footer-cancel').on("click", function(e) {
         askPasswordModal.modal('hide')
-        changeChargeSessionModal.modal('show')
+        switch (askPasswordFor) {
+          case APF_CHANGE_SESSION:
+            changeChargeSessionModal.modal('show')
+            break
+          case APF_STOP_SESSION:
+            break
+          case APF_STOP_SESSION:
+            break
+        }
         e.preventDefault()
       })
       $('button#askPasswordModalCloseButton').on("click", function(e) {
-        changeChargeSessionModal.modal('show')
+        switch (askPasswordFor) {
+          case APF_CHANGE_SESSION:
+            changeChargeSessionModal.modal('show')
+            break
+          case APF_STOP_SESSION:
+            break
+          case APF_STOP_SESSION:
+            break
+        }
         e.preventDefault()
       })
 
@@ -1269,11 +1347,18 @@
       })
 
       $('button#ask-password-modal-footer-saveaction').on("click", function(e) {
-        // Add password to charge session and submit
-        updateChargeSession( {...chargeSessionModalData(), ...{'password': $('input#password').val()}} )
+        switch (askPasswordFor) {
+          case APF_CHANGE_SESSION:
+            // Add password to charge session and submit
+            updateChargeSession( {...chargeSessionModalData(), ...{'password': $('input#password').val()}} )
+            break
+          case APF_STOP_SESSION:
+            break
+          case APF_STOP_SESSION:
+            break
+        }
         e.preventDefault()
       })
-
     })
 
     </script>
@@ -1573,7 +1658,7 @@
             <tr class="">
               <td class="text-primary text-right pr-5">Verbruik</td>
               <td class="text-right pr-5 text-white" colspan="3">
-                <span id="ccsmTotalUsage"></span>kWh
+                <span id="ccsmTotalEnergy"></span>kWh
               </td>
             </tr>
 

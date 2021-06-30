@@ -2022,7 +2022,11 @@
                             </tr>
                             <tr>
                               <td class="text-dark"> Changelog <span class="text-primary font-italic">{{ changelog.activeBranch() }}</span>:</td>
+                              {% if changelogs is not none and changelog.activeBranch() in changelogs and 'version' in changelogs[changelog.activeBranch()] %}
                               <td class="text-primary">v{{ changelogs[changelog.activeBranch()]['version'] }}, {{ changelogs[changelog.activeBranch()]['date'] }}<small class="pr-5" style="float: right;"><a href="{{ url_for('flaskRoutes.changelog') }}" class="stay font-italic text-success font-smaller pl-5"><i class="fas fa-link"></i> Change log</a></small></td>
+                              {% else %}
+                              <td class="text-primary"><small class="pr-5" style="float: right;"><a href="{{ url_for('flaskRoutes.changelog') }}" class="stay font-italic text-success font-smaller pl-5"><i class="fas fa-link"></i> Change log</a></small></td>
+                              {% endif %}
                             </tr>
                             <tr>
                               <td class="text-dark"> </td>
@@ -2030,7 +2034,11 @@
                             </tr>
                             <tr>
                               <td class="text-dark"> Changelog <span class="text-primary font-italic">master</span>:</td>
+                              {% if changelogs is not none and 'master' in changelogs and 'version' in changelogs['master'] %}
                               <td class="text-primary">v{{ changelogs['master']['version'] }}, {{ changelogs['master']['date'] }}<small class="pr-5" style="float: right;"><a href="https://github.com/ilseh/Oppleo/blob/master/doc/changelog.txt" class="font-italic text-warning font-smaller pl-5" target="_new"><i class="fas fa-external-link-alt"></i> Change log</a></small></td>
+                              {% else %}
+                              <td class="text-primary"><small class="pr-5" style="float: right;"><a href="https://github.com/ilseh/Oppleo/blob/master/doc/changelog.txt" class="font-italic text-warning font-smaller pl-5" target="_new"><i class="fas fa-external-link-alt"></i> Change log</a></small></td>
+                              {% endif %}
                             </tr>
                             <tr id="softwateUpdateCurrentVersionRow">
                               <td class="text-dark"> </td>

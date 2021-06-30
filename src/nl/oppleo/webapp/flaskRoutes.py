@@ -676,6 +676,16 @@ def delete_charge_session(id=None):
         flaskRoutesLogger.debug('delete_charge_session requested and authorized.')
         charge_session = ChargeSessionModel.get_one_charge_session(id)
         charge_session.delete()
+        flaskRoutesLogger.debug('delete_charge_session() - id:{} - deleted'.format(id))
+        # Send ws update
+        WebSocketUtil.emit(
+                wsEmitQueue=oppleoConfig.wsEmitQueue,
+                event='charge_session_deleted',
+                id=oppleoConfig.chargerName,
+                data={ 'deleteId': id },
+                namespace='/charge_session',
+                public=False
+            )
         return redirect(url_for('flaskRoutes.charge_sessions'))
     else:
         return render_template("authorize.html", 
@@ -1119,35 +1129,44 @@ def charge_session(id:int=None):
                         'tariff'            : "^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$" 
                       }
 
+    """ 
+        NOTE: don't use 
+            chargeSession.__dict__[fieldName] = X 
+        sqlalchemy doesn't detect the change and will not save it on commit. Use 
+            setattr(obj, field, value)
+        instead.
+    """
+
+
     chargeSession = ChargeSessionModel.get_one_charge_session(id)
     resultDict = {}
     for fieldName in chargeSession.fieldList:
         resultDict[fieldName] = { 'updated': False }
         if ( (fieldName in jsonD) and
             ( ( fieldName in ['start_time', 'end_time'] and 
-                ( chargeSession.__dict__[fieldName] == None or chargeSession.datetime_to_date_str( chargeSession.__dict__[fieldName] ) != jsonD[fieldName] )
+                ( getattr(chargeSession, fieldName) == None or chargeSession.datetime_to_date_str( getattr(chargeSession, fieldName) ) != jsonD[fieldName] )
               ) or
               ( fieldName in ['start_value', 'end_value', 'tariff'] and 
-                chargeSession.__dict__[fieldName] != jsonD[fieldName] and 
+                getattr(chargeSession, fieldName) != jsonD[fieldName] and 
                 jsonD[fieldName] != '' and 
                 isinstance(jsonD[fieldName], (str, int, float)) and 
-                ( chargeSession.__dict__[fieldName] == None or float(chargeSession.__dict__[fieldName]) != float(jsonD[fieldName]) )
+                ( getattr(chargeSession, fieldName) == None or float(getattr(chargeSession, fieldName)) != float(jsonD[fieldName]) )
               ) or
               ( fieldName in ['km'] and 
-                chargeSession.__dict__[fieldName] != jsonD[fieldName] and 
+                getattr(chargeSession, fieldName) != jsonD[fieldName] and 
                 isinstance(jsonD[fieldName], (str, int, float)) and 
-                ( chargeSession.__dict__[fieldName] == None or jsonD[fieldName] == '' or float(chargeSession.__dict__[fieldName]) != float(jsonD[fieldName]) )
+                ( getattr(chargeSession, fieldName) == None or jsonD[fieldName] == '' or float(getattr(chargeSession, fieldName)) != float(jsonD[fieldName]) )
               ) or
               ( fieldName not in ['start_time', 'end_time', 'start_value', 'end_value', 'tariff', 'km'] and 
-                chargeSession.__dict__[fieldName] != jsonD[fieldName] and 
-                ( chargeSession.__dict__[fieldName] == None or str(chargeSession.__dict__[fieldName]) != jsonD[fieldName] )
+                getattr(chargeSession, fieldName) != jsonD[fieldName] and 
+                ( getattr(chargeSession, fieldName) == None or str(getattr(chargeSession, fieldName)) != jsonD[fieldName] )
               )
             )
            ):
             if fieldName in ['start_time', 'end_time']:
                 # datetime
                 try:
-                    chargeSession.__dict__[fieldName] = chargeSession.date_str_to_datetime(jsonD[fieldName])
+                    setattr(chargeSession, fieldName, chargeSession.date_str_to_datetime(jsonD[fieldName]))
                 except ValueError as ve:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
             elif fieldName in ['start_value', 'end_value', 'tariff', 'km']:
@@ -1156,13 +1175,13 @@ def charge_session(id:int=None):
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
                 # float
                 try:
-                    chargeSession.__dict__[fieldName] = float(jsonD[fieldName]) if jsonD[fieldName] != '' else None
+                    setattr(chargeSession, fieldName, float(jsonD[fieldName]) if jsonD[fieldName] != '' else None)
                 except ValueError as ve:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field type error ({})'.format(fieldName) })
             elif fieldName in ['trigger']:
                 if ( jsonD[fieldName].upper() in [ChargeSessionModel.TRIGGER_RFID, ChargeSessionModel.TRIGGER_AUTO, ChargeSessionModel.TRIGGER_WEB] and
-                     jsonD[fieldName].upper() != chargeSession.__dict__[fieldName] ):
-                    chargeSession.__dict__[fieldName] = jsonD[fieldName]
+                     jsonD[fieldName].upper() != getattr(chargeSession, fieldName) ):
+                    setattr(chargeSession, fieldName, jsonD[fieldName])
                 else:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field value error ({})'.format(fieldName) })
             else:
@@ -1170,7 +1189,7 @@ def charge_session(id:int=None):
                     # Not valid
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
                 # str
-                chargeSession.__dict__[fieldName] = jsonD[fieldName]
+                setattr(chargeSession, fieldName, jsonD[fieldName])
             resultDict[fieldName] = { 'updated': True, 'value': jsonD[fieldName] }
 
     # Calulate total energy and total price

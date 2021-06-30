@@ -6,7 +6,7 @@ import requests
 class GitUtil(object):
     GIT_OPPLEO_CHANGELOG_URL = 'https://raw.githubusercontent.com/ilseh/Oppleo/{branch}/doc/changelog.txt'
     DEFAULT_BRANCH = "master"
-    HTTP_TIMEOUT = 30
+    HTTP_TIMEOUT = 5    # 30
 
     HTTP_200_OK = 200
     HTTP_401_UNAUTHORIZED = 401
