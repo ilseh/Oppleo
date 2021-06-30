@@ -110,6 +110,15 @@
       background-color: #ffaa00 !important;
       color: white !important;
     }
+    /* No padding in the button column */
+    table tbody tr td:nth-child(13) {
+      padding-top: 0px !important;
+      padding-bottom: 0px !important;
+    }
+    /* Move the icon up in to small buttons in the button column */
+    table tbody tr td .svg-inline--fa {
+      vertical-align: .2em !important;
+    }
   </style>
 
   <script>
@@ -289,8 +298,8 @@
     }
 
     function captureOdometerButton(buttonState) {
-      let iconInitial = '<i class="fas fa-redo-alt"></i>'
-      let iconSpinner = '<i class="fas fa-spinner fa-spin"></i>'
+      let iconInitial = '<i class="fas fa-redo-alt" style="font-size: 12px;"></i>'
+      let iconSpinner = '<i class="fas fa-spinner fa-spin" style="font-size: 12px;"></i>'
       let textInitial = 'Km stand ophalen mislukt. Km stand nogmaals ophalen.'
       let txtRequesting = 'Kilometerstand ophalen aanvragen...'
       let txtRequested = 'Kilometerstand ophalen aangevraagd.'
@@ -695,14 +704,14 @@
                           '   type="button"' +
                           '   id="captureOdometer"' +
                           '   class="btn btn-xs waves-effect waves-light btn-outline-primary d-none" ' +
-                          '   style="float: right;"' +
+                          '   style="float: right; height: 16px; padding-top: 0px;"' +
                           '   data-toggle="tooltip" ' +
                           '   data-placement="bottom" ' +
                           '   data-html="true" ' +
                           '   title="<em>Km stand ophalen mislukt. Km stand nogmaals ophalen.</em>"' +
                           '   >' +
-                          '   <i class="fas fa-redo-alt"></i>' +
-                          '</button>'
+                          '   <i class="fas fa-redo-alt" style="font-size: 12px;"></i>' +
+                          '  </button>'
                         :
                           '-'
                         )
@@ -772,13 +781,14 @@
                   return '<button' +
                          '   type="button"' +
                          '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+                         '   style="height: 18px; padding-top: 0px;"' +
                          '   data-toggle="tooltip" ' +
                          '   data-placement="bottom" ' +
                          '   data-html="true" ' +
                          '   title="<em>Verwijder lege laadsessie (' + row[0] + ').</em>"' +
                          '   onclick="window.location.href=\'/delete_charge_session/' + row[0] + '\'"' +
                          '   >' +
-                         '   <i class="fas fa-trash-alt"></i>' +
+                         '   <i class="fas fa-trash-alt" style="font-size: 12px;"></i>' +
                          '</button>'
                 }
                 // Open charge session?
@@ -787,13 +797,14 @@
                   return '<button' +
                          '   type="button"' +
                          '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+                         '   style="height: 18px; padding-top: 0px;"' +
                          '   data-toggle="tooltip" ' +
                          '   data-placement="bottom" ' +
                          '   data-html="true" ' +
                          '   title="<em>Be&euml;indig open laadsessie.</em>"' +
                          '   onclick="window.location.href=\'/stop_charge_session/' + row[0] + '\'"' +
                          '   >' +
-                         '   <i class="far fa-hand-paper"></i>' +
+                         '   <i class="far fa-hand-paper" style="font-size: 12px;"></i>' +
                          '</button>'
                 }
 
