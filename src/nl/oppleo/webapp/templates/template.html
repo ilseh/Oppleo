@@ -161,6 +161,71 @@
                     return undefined
                 }
             }
+            function formatDate(dateObj = new Date(), thisMonths) {
+                return (
+                    (dateObj.getHours() < 9 ? '0' : '') + dateObj.getHours() + ':' + (dateObj.getMinutes() < 9 ? '0' : '') + dateObj.getMinutes() + 'u, ' + 
+                     dateObj.getDate() + ' ' + thisMonths[d.getMonth()] + ' ' + d.getFullYear() 
+                    )
+            }
+            let notifications = []
+            function addNotification( obj ) {
+                notifications.push(obj)
+
+                $('span#notificationCounter').html(notifications.length)
+                $('div#notificationPreview').empty()
+                $('div#notificationPreview').append(
+                                '<div class="dropdown-item noti-title">' +
+                                '    <h5 class="font-16">' + 
+                                '       <span class="badge badge-danger float-right">' +
+                                            notifications.length + 
+                                '       </span>' +
+                                '       Meldingen' +
+                                '    </h5>' +
+                                '</div>'
+                            )
+                notifications.forEach((notification, index) => { 
+                    if (index < 3) {
+                        $('div#notificationPreview').append(
+                                    '<a href="javascript:void(0);" class="dropdown-item notify-item">' + 
+                                    '    <div class="notify-icon bg-'+notification.theme+'"><i class="mdi mdi-comment-account"></i></div>' +
+                                    '       <p class="notify-details">' + 
+                                                notification.title +
+                                    '           <small class="text-muted">' +
+                                                formatDate(notification.timestamp, months) +
+                                    '           </small>' + 
+                                    '       </p>' +
+                                    '</a>'
+                                )
+                    }
+                })                            
+                if (notifications.length > 3) {
+                    $('div#notificationPreview').append(
+                                    '<a href="javascript:void(0);" class="dropdown-item notify-item notify-all">' +
+                                    '   Meer' +
+                                    '</a>'
+                                )
+                }
+
+            }
+            function debugTriggerNotification() {
+                switch (Math.floor(Math.random() * 3)) {
+                    default:
+                    case 0:
+                        autoHideNotify('success','top-left', 'Success', 'Bladiebla enzo...')
+                        break
+                    case 1:
+                        autoHideNotify('warning','top-left', 'Warning', 'Bladiebla enzo...')
+                        break
+                    case 2:
+                        autoHideNotify('error','top-left', 'Error', 'Bladiebla enzo...')
+                        break
+                }
+                setTimeout(debugTriggerNotification, 5000)
+            }
+            jQuery(document).ready(function () {
+                setTimeout(debugTriggerNotification, 3000)
+            })
+
             function autoHideNotify( theme='success', position='top-left', title, message, duration=2500 ) {
                 if (theme=='danger') { theme = 'error' }
                 window.createNotification({
@@ -176,6 +241,7 @@
                             title: title,
                             message: message
                         })
+                addNotification({ theme: theme, title: title, message: message, timestamp: new Date() })
             }
             function formatFilesize(size) {
                 let type = ['Bytes', 'kB', 'MB', 'GB', 'TB']
@@ -954,9 +1020,9 @@
                             <a class="nav-link dropdown-toggle arrow-none waves-effect" data-toggle="dropdown" href="#" role="button"
                                aria-haspopup="false" aria-expanded="false">
                                 <i class="mdi mdi-bell noti-icon"></i>
-                                <span class="badge badge-pink noti-icon-badge">4</span>
+                                <span id="notificationCounter" class="badge badge-pink noti-icon-badge">4</span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right dropdown-arrow dropdown-menu-lg" aria-labelledby="Preview">
+                            <div id="notificationPreview" class="dropdown-menu dropdown-menu-right dropdown-arrow dropdown-menu-lg" aria-labelledby="Preview">
                                 <!-- item-->
                                 <div class="dropdown-item noti-title">
                                     <h5 class="font-16"><span class="badge badge-danger float-right">5</span>Notification</h5>
