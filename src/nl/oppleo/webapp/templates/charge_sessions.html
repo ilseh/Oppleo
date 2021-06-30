@@ -612,6 +612,9 @@
                 return data == undefined || data === "None" ? "" : data
               } else {
                 // Default - type = 'display' - on screen or other exports
+                if (isEditMode()) {
+                  return '<span>' + (data in rfidTokens && isData(rfidTokens[data].name) ? rfidTokens[data].name : data) + '</span>'
+                }
                 tooltipText = data  // First line is the token id (rfid)
                 tooltipText = (data in rfidTokens && isData(rfidTokens[data].vehicle_make) ? 
                               addOnNewline(tooltipText, rfidTokens[data].vehicle_make, '<br/>') : 
