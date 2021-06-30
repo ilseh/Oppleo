@@ -1206,6 +1206,15 @@ def charge_session(id:int=None):
     # Store the changes
     chargeSession.save()
 
+    WebSocketUtil.emit(
+            wsEmitQueue=oppleoConfig.wsEmitQueue,
+            event='charge_session_data_update', 
+            id=oppleoConfig.chargerName,
+            data=chargeSession.to_str(), 
+            namespace='/charge_session',
+            public=False
+        )
+
     return jsonify({ 
             'status'    : HTTP_CODE_200_OK,
             'session'   : id,

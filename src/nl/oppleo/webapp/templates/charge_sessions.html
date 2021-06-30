@@ -140,8 +140,8 @@
                     .rows( function ( idx, data, node ) {
                       return parseInt(data[0]) == msg.data.deleteId
                     })
-        autoHideNotify('success','top-left', 'Delete', 'Laadsessie '+msg.data.deleteId+' is verwijderd.')
-        highlightRow( row, function() {
+        autoHideNotify('warning','top-left', 'Laadsessie verwijderd', 'Laadsessie '+msg.data.deleteId+' is verwijderd.')
+        highlightRowDanger( row, function() {
           row.remove()
           dt.draw()
         })                      
@@ -154,8 +154,8 @@
                     .rows( function ( idx, data, node ) {
                       return parseInt(data[0]) == msg.data.deleteId
                     })
-        autoHideNotify('success','top-left', 'Condense', 'Laadsessie '+msg.data.deleteId+' wordt samengevoegd met automatisch aangemaakte laadsessie '+msg.data.surviveId+'.')
-        highlightRow( row, function() {
+        autoHideNotify('warning','top-left', 'Condense', 'Laadsessie '+msg.data.deleteId+' wordt samengevoegd met automatisch aangemaakte laadsessie '+msg.data.surviveId+'.')
+        highlightRowDanger( row, function() {
           row.remove()
           dt.draw()
         })                      
@@ -237,10 +237,15 @@
               //Do stuff when clicked
               window.location = location + $(this).attr('id').split("_").pop();
             })
+
+            autoHideNotify('success','top-left', 'Laadsessie update', 'De details van laadsessie '+msg.data.id+' zijn gewijzigd.')
             // Change animation
+            highlightRowSuccess( dt.row(rowIndex) )                      
+/*
             dt.rows(rowIndex).nodes().to$().toggleClass("text-info").fadeOut(800, function() {              
               $(this).toggleClass("text-info").fadeIn(50)
             })
+*/
           }
         }
 
@@ -1080,14 +1085,26 @@
       )
     }
 
-    function highlightRow( rowIndex, callback = undefined ) {
+    function highlightRowDanger( rowIndex, callback = undefined ) {
+      return highlightRow( rowIndex, '#ef5350', callback )
+    }
+    function highlightRowWarning( rowIndex, callback = undefined ) {
+      return highlightRow( rowIndex, '#ffaa00', callback )
+    }
+    function highlightRowSuccess( rowIndex, callback = undefined ) {
+      return highlightRow( rowIndex, '#00b19d', callback )
+    }
+    function highlightRowPrimary( rowIndex, callback = undefined ) {
+      return highlightRow( rowIndex, '#3bafda', callback )
+    }
+    function highlightRow( rowIndex, color = '#ff0000', callback = undefined ) {
       let rowEl = $(dt.row(rowIndex).nodes().to$())
       let origBgColor = rowEl.css("background-color")
       let origColor = rowEl.css("color")
       let origFontWeight = rowEl.css("font-weight")
       // 
       rowEl.animate({
-          backgroundColor: "#ff0000 !important",
+          backgroundColor: color + " !important",
           color: "#fffff",
           fontWeight: "bold"
         }, 300, function() {
@@ -1097,7 +1114,7 @@
               fontWeight: origFontWeight
             }, 1000, function() {
               $(this).animate({
-                  backgroundColor: "#ff0000 !important",
+                  backgroundColor: color + " !important",
                   color: "#fffff",
                   fontWeight: "bold"
                 }, 100, function() {
