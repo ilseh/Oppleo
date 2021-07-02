@@ -363,7 +363,6 @@
             function notModMarkAllReadClickHandler(el) {
                 notifications.forEach((notification, index) => {
                     // Mark read only if not filtered
-                    notification.ack = true
                     let filtered = false
                     let ar = ["notModFilUnread", "notModFilRead", "notModFilSuccess", "notModFilWarning", "notModFilDanger"]
                     ar.forEach( (el) => {
