@@ -207,24 +207,31 @@
                 notifications.forEach((notification, index) => {
                         maxImportance = Math.max( maxImportance, importance.indexOf(notification.theme))
                     })
-                if (!$('span#notificationCounter').length) {
-                    $('a#notificationCounterLink').append(
-                        '<span id="notificationCounter" class="badge badge-'+importanceStr[maxImportance]+' noti-icon-badge">1</span>'
-                    )
+                if (!notifications.length) {
+                    $('span#notificationCounter').remove()
                 } else {
-                    $('span#notificationCounter').html(notifications.length)
-                    $('span#notificationCounter').removeClass(function (index, className) {
-                        return (className.match (/(^|\s)badge-\S+/g) || []).join(' ');
-                    })
-                    $('span#notificationCounter').addClass('badge-'+importanceStr[maxImportance])
+                    // Notifications
+                    if (!$('span#notificationCounter').length) {
+                        // Add badge
+                        $('a#notificationCounterLink').append(
+                            '<span id="notificationCounter" class="badge badge-'+importanceStr[maxImportance]+' noti-icon-badge">1</span>'
+                        )
+                    } else {
+                        // Update badge
+                        $('span#notificationCounter').html(notifications.length)
+                        $('span#notificationCounter').removeClass(function (index, className) {
+                            return (className.match (/(^|\s)badge-\S+/g) || []).join(' ');
+                        })
+                        $('span#notificationCounter').addClass('badge-'+importanceStr[maxImportance])
+                    }
                 }
 
                 $('div#notificationPreview').empty()
                 $('div#notificationPreview').append(
                                 '<div class="dropdown-item noti-title">' +
                                 '    <h5 class="font-16">' + 
-                                '       <span class="badge badge-'+importanceStr[maxImportance]+' float-right">' +
-                                            notifications.length + 
+                                '       <span class="badge '+(notifications.length?'badge-'+importanceStr[maxImportance]:'badge-dark text-muted')+'  float-right">' +
+                                            notifications.length +
                                 '       </span>' +
                                 '       Meldingen' +
                                 '    </h5>' +
@@ -258,7 +265,7 @@
                 }
                 if (notifications.length == 0) {
                     $('div#notificationPreview').append(
-                                    '<a href="javascript:notificationsModal.modal(\'show\');" class="dropdown-item notify-item notify-all font-italic" style="font-size: smaller;">' +
+                                    '<a href="javascript:notificationsModal.modal(\'show\');" class="dropdown-item notify-item notify-all font-italic text-muted" style="font-size: smaller;">' +
                                     '   Geen meldingen' +
                                     '</a>'
                                 )
@@ -355,12 +362,33 @@
             }
             function notModMarkAllReadClickHandler(el) {
                 notifications.forEach((notification, index) => {
+                    // Mark read only if not filtered
                     notification.ack = true
+                    let filtered = false
+                    let ar = ["notModFilUnread", "notModFilRead", "notModFilSuccess", "notModFilWarning", "notModFilDanger"]
+                    ar.forEach( (el) => {
+                        let filterEnabled = false
+                        $('button#'+el).attr('class').split(/\s+/).forEach( (cn) => { 
+                            filterEnabled = filterEnabled || cn.includes('btn-outline-') 
+                        })
+                        filtered = filtered || ( 
+                                        [ (notification.theme=='error'?'danger':notification.theme),
+                                            ((notification.ack?'':'un')+'read')
+                                        ].includes(
+                                            el.replace('notModFil', '').toLowerCase()
+                                            )
+                                    && filterEnabled
+                                   )
+                    })
+                    if (!filtered) {
+                        notification.ack = true
+                    }
                 })
-
+                drawMenuNotificationList()
             }
             function notModDeleteAllClickHandler(el) {
                 notifications = notifications.filter( (notification) => {return !notification.ack})
+                drawMenuNotificationList()
             }
 
             let debugTriggerNotificationCounter = 1
@@ -378,10 +406,10 @@
                         break
                 }
                 debugTriggerNotificationCounter++
-                // setTimeout(debugTriggerNotification, 8000)
+                setTimeout(debugTriggerNotification, 8000)
             }
             jQuery(document).ready(function () {
-                 setTimeout(debugTriggerNotification, 1000)
+                setTimeout(debugTriggerNotification, 1000)
             })
 
             function autoHideNotify( theme='success', position='top-left', title, message, duration=3500 ) {
@@ -1227,7 +1255,6 @@
                             <!-- End mobile menu toggle-->
                         </li>
  
-
                         <li class="list-inline-item dropdown notification-list">
                             <a id="notificationCounterLink" class="nav-link dropdown-toggle arrow-none waves-effect" data-toggle="dropdown" href="#" role="button"
                                aria-haspopup="false" aria-expanded="false">
@@ -1236,16 +1263,15 @@
                             <div id="notificationPreview" class="dropdown-menu dropdown-menu-right dropdown-arrow dropdown-menu-lg" aria-labelledby="Preview">
                                 <!-- item-->
                                 <div class="dropdown-item noti-title">
-                                    <h5 class="font-16" style="min-width: 180px;">Meldingen <span class="badge badge-dark border-success float-right mr-1">0</span></h5>
+                                    <h5 class="font-16" style="min-width: 180px;">Meldingen <span class="badge badge-dark text-muted float-right mr-1">0</span></h5>
                                 </div>
-                                <a href="javascript:notificationsModal.modal('show');" class="dropdown-item notify-item notify-all font-italic" style="font-size: smaller;">
+                                <a href="javascript:notificationsModal.modal('show');" class="dropdown-item notify-item notify-all font-italic text-muted" style="font-size: smaller;">
                                    Geen meldingen
                                 </a>
 
                             </div>
                         </li>
-                 
-
+ 
                         {% if current_user.is_authenticated %}
 
                         <li class="list-inline-item dropdown notification-list">
@@ -1515,7 +1541,7 @@
             <div class="modal-header bg-primary">
             <h3 class="modal-title" id="changeChargeSessionModalLabel">Meldingen</h3>
             
-            <button type="button" class="close-x bg-primary" data-dismiss="modal" aria-label="Close" id="askPasswordModalCloseButton">
+            <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true"><i class="fas fa-times"></i></span>
             </button>
             </div>
