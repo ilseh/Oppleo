@@ -161,11 +161,29 @@
                     return undefined
                 }
             }
-            function formatDate(dateObj = new Date(), thisMonths) {
-                return (
-                    (dateObj.getHours() < 9 ? '0' : '') + dateObj.getHours() + ':' + (dateObj.getMinutes() < 9 ? '0' : '') + dateObj.getMinutes() + 'u, ' + 
-                     dateObj.getDate() + ' ' + thisMonths[d.getMonth()] + ' ' + d.getFullYear() 
-                    )
+            function formatDate(dateObj = new Date(), thisMonths, format = 0) {
+                switch (format) {
+                    case 2: //  calIcon dd month yyyy clockIcon hh:mm
+                        return (
+                            '<i class="far fa-calendar-check"></i> ' +
+                            dateObj.getDate() + ' ' + thisMonths[d.getMonth()] + ' ' + d.getFullYear() + ' ' +
+                            '<i class="far fa-clock"></i> ' + 
+                            (dateObj.getHours() < 9 ? '0' : '') + dateObj.getHours() + ':' + (dateObj.getMinutes() < 9 ? '0' : '') + dateObj.getMinutes() + 'u' 
+                            )
+                    case 1: // clockIcon hh:mm calIcon dd month yyyy
+                        return (
+                            '<i class="far fa-clock"></i> ' + 
+                            (dateObj.getHours() < 9 ? '0' : '') + dateObj.getHours() + ':' + (dateObj.getMinutes() < 9 ? '0' : '') + dateObj.getMinutes() + 'u ' + 
+                            '<i class="far fa-calendar-check"></i> ' +
+                            dateObj.getDate() + ' ' + thisMonths[d.getMonth()] + ' ' + d.getFullYear() 
+                            )
+                    case 0: // hh:mm, dd month yyyy
+                    default:
+                        return (
+                                (dateObj.getHours() < 9 ? '0' : '') + dateObj.getHours() + ':' + (dateObj.getMinutes() < 9 ? '0' : '') + dateObj.getMinutes() + 'u, ' + 
+                                dateObj.getDate() + ' ' + thisMonths[d.getMonth()] + ' ' + d.getFullYear() 
+                                )
+                }
             }
             let notifications = []
             let icons = {}
@@ -178,6 +196,11 @@
             function addNotification( obj ) {
                 notifications.push(obj)
 
+                drawMenuNotificationList()
+                // Add to modal
+                drawModalNotificationList() 
+            }
+            function drawMenuNotificationList() {
                 let importance = ['success', 'warning', 'danger', 'error']
                 let importanceStr = ['success', 'warning', 'danger', 'danger']
                 let maxImportance = 0
@@ -228,43 +251,137 @@
                 })                            
                 if (notifications.length > 3) {
                     $('div#notificationPreview').append(
-                                    '<a href="javascript:notificationsModal.modal(\'show\');" class="dropdown-item notify-item notify-all">' +
+                                    '<a href="javascript:notificationsModal.modal(\'show\');" class="dropdown-item notify-item notify-all font-italic" style="font-size: smaller;">' +
                                     '   Meer' +
                                     '</a>'
                                 )
                 }
-                // Add to modal
-                $('div#modalNotificationList').prepend(
-                        `<div class="notify-item border-`+(obj.theme=='error'?'danger':obj.theme)+` `+(obj.ack?'':'un')+`read">
-                            <div class="notify-icon bg-`+(obj.theme=='error'?'danger':obj.theme)+`">
-                                <img src="data:image/png;base64, `+icons[obj.theme]+`" style="width: 18px; height: 18px; margin-top: -4px;">
-                            </div>
-                            <p class="notify-details">
-                                <span class="text-`+(obj.theme=='error'?'danger':obj.theme)+`" style="font-size: larger;">`+obj.title+`</span>
-                                <div class="text-white" style="padding-left: 45px; width: 100%; max-width: 400px; font-size: smaller;">`+obj.message+`</div>
-                                <small class="text-muted float-right">`+formatDate(obj.timestamp, months)+`</small>
-                            </p>
-                        </div>`
-                    )
+                if (notifications.length == 0) {
+                    $('div#notificationPreview').append(
+                                    '<a href="javascript:notificationsModal.modal(\'show\');" class="dropdown-item notify-item notify-all font-italic" style="font-size: smaller;">' +
+                                    '   Geen meldingen' +
+                                    '</a>'
+                                )
+                }
             }
 
+            function drawModalNotificationList() {
+                // Add to modal
+                $('div#modalNotificationList').empty()
+                $(".tooltip").tooltip("hide")
+                notifications.forEach((notification, index) => {
+                    // Check filter buttons
+                    let filter = false
+                    let ar = ["notModFilUnread", "notModFilRead", "notModFilSuccess", "notModFilWarning", "notModFilDanger"]
+                    ar.forEach( (el) => {
+                        let filterEnabled = false
+                        $('button#'+el).attr('class').split(/\s+/).forEach( (cn) => { 
+                            filterEnabled = filterEnabled || cn.includes('btn-outline-') 
+                        })
+                        filter = filter || ( 
+                                        [ (notification.theme=='error'?'danger':notification.theme),
+                                            ((notification.ack?'':'un')+'read')
+                                        ].includes(
+                                            el.replace('notModFil', '').toLowerCase()
+                                            )
+                                    && filterEnabled
+                                   )
+                    })
+                    if (!filter) {
+                        $('div#modalNotificationList').prepend(
+                                `<div class="notify-item border-`+(notification.theme=='error'?'danger':notification.theme)+` `+(notification.ack?'':'un')+`read" style="position: relative;">
+                                    <div class="notify-icon bg-`+(notification.theme=='error'?'danger':notification.theme)+`">
+                                        <img src="data:image/png;base64, `+icons[notification.theme]+`" style="width: 18px; height: 18px; margin-top: -4px;">
+                                    </div>
+                                    <p class="notify-details">
+                                        <span class="text-`+(notification.theme=='error'?'danger':notification.theme)+`" style="font-size: larger;">`+notification.title+`</span>
+                                        <div style="padding-left: 45px; width: 100%; max-width: 400px; font-size: smaller;">`+notification.message+`</div>
+                                        <small class="text-muted float-right">[<span class="entry font-italic">`+(index+1)+`</span>] `+formatDate(notification.timestamp, months, 2)+`</small>
+                                    </p>
+                                    <div>
+                                        <button type="button" class="delete-notification-button btn btn-icon btn-sm waves-effect waves-light btn-outline-dark" 
+                                            style="position: absolute; top:5px; right: 5px; height: 18px; width: 18px; padding: 0px; z-index: 9999;"
+                                            data-toggle="tooltip" data-placement="bottom" title="Verwijder melding" entry="`+index+`">
+                                            <span aria-hidden="true"><i class="fas fa-times" style="position: absolute; top: 2px; left: 4px; font-size: 12px;"></i></span>
+                                        </button>
+                                    </div>
+                                    
+                                </div>`
+                            )
+                    }
+                })
+                $('[data-toggle=tooltip]').tooltip({ 
+                    boundary: 'window', 
+                    trigger : 'hover'   // Allow button clicks
+                })
+                $('div#modalNotificationList .notify-item').off('click')
+                $('div#modalNotificationList .unread').on('click', (e) => { 
+                    $(e.currentTarget).removeClass('unread')
+                    $(e.currentTarget).addClass('read')
+                    $(e.currentTarget).off('click')
+                    let entry = ($(e.currentTarget).find('.entry').text() -1)
+                    notifications[entry].ack = true
+                    drawMenuNotificationList()
+                    drawModalNotificationList() 
+                })
+                $('button.delete-notification-button').off('click')
+                $('button.delete-notification-button').on('click', (e) => { 
+                    let entry = $(e.currentTarget).attr('entry')
+                    notifications.splice(entry, 1)
+                    drawMenuNotificationList()
+                    drawModalNotificationList() 
+                })
+            }
+            function notModFilUnreadClickHandler(el) {
+                // Toggle button
+                el.toggleClass('btn-outline-primary')
+                el.toggleClass('btn-primary')
+            }
+            function notModFilReadClickHandler(el) {
+                el.toggleClass('btn-outline-primary')
+                el.toggleClass('btn-primary')
+            }
+            function notModFilSuccessClickHandler(el) {
+                el.toggleClass('btn-outline-success')
+                el.toggleClass('btn-success')
+            }
+            function notModFilWarningClickHandler(el) {
+                el.toggleClass('btn-outline-warning')
+                el.toggleClass('btn-warning')
+            }
+            function notModFilDangerClickHandler(el) {
+                el.toggleClass('btn-outline-danger')
+                el.toggleClass('btn-danger')
+            }
+            function notModMarkAllReadClickHandler(el) {
+                notifications.forEach((notification, index) => {
+                    notification.ack = true
+                })
+
+            }
+            function notModDeleteAllClickHandler(el) {
+                notifications = notifications.filter( (notification) => {return !notification.ack})
+            }
+
+            let debugTriggerNotificationCounter = 1
             function debugTriggerNotification() {
                 switch (Math.floor(Math.random() * 3)) {
                     default:
                     case 0:
-                        autoHideNotify('success','top-left', 'Success', 'Bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla enzo...')
+                        autoHideNotify('success','top-left', 'Success ' + debugTriggerNotificationCounter, 'Bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla enzo...')
                         break
                     case 1:
-                        autoHideNotify('warning','top-left', 'Warning', 'Bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla  enzo...')
+                        autoHideNotify('warning','top-left', 'Warning ' + debugTriggerNotificationCounter, 'Bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla bladiebla  enzo...')
                         break
                     case 2:
-                        autoHideNotify('error','top-left', 'Error', 'Bladiebla enzo...')
+                        autoHideNotify('error','top-left', 'Error ' + debugTriggerNotificationCounter, 'Bladiebla enzo...')
                         break
                 }
-                setTimeout(debugTriggerNotification, 4000)
+                debugTriggerNotificationCounter++
+                // setTimeout(debugTriggerNotification, 8000)
             }
             jQuery(document).ready(function () {
-                setTimeout(debugTriggerNotification, 1000)
+                 setTimeout(debugTriggerNotification, 1000)
             })
 
             function autoHideNotify( theme='success', position='top-left', title, message, duration=3500 ) {
@@ -605,7 +722,6 @@
                             autoHideNotify('success', 'top-left', 'Up to date!', 'Oppleo is up-to-date. Er is geen nieuwere software beschikbaar' +
                                 (result.activeBranch != "master" ? ' voor developer branch ' + result.activeBranch : '') +                            
                                 '.')
-
                         }
                         break
                     default:
@@ -665,6 +781,11 @@
                     notificationsModal.modal('hide')
                     e.preventDefault()
                 })
+                $("#notModFilUnread, #notModFilRead, #notModFilSuccess, #notModFilWarning, #notModFilDanger, #notModMarkAllRead, #notModDeleteAll").on('click', (e) => {
+                    window[e.currentTarget.id+'ClickHandler']($(e.currentTarget))
+                    drawModalNotificationList()
+                })
+
             })
         </script>
 
@@ -1039,6 +1160,7 @@
             border: 1px solid;
             border-radius: 5px;
             margin-bottom: 2px;
+            /* max-width: 419px; */
         }
         .notification-modal .border-success {
             border-color: #00b19d;
@@ -1056,12 +1178,16 @@
         }
         .notification-modal .unread:hover {
             cursor: pointer;
-            background-color: chartreuse;
+            background-color: #485561;
         }
         .notification-modal .read {
             font-weight: normal;
             font-style: italic;
             cursor: default;
+            color: #98a6ad !important;
+        }
+        .notification-modal .read:hover {
+            background-color: #434f5c;
         }
         </style>
         {% endblock %}
@@ -1110,8 +1236,11 @@
                             <div id="notificationPreview" class="dropdown-menu dropdown-menu-right dropdown-arrow dropdown-menu-lg" aria-labelledby="Preview">
                                 <!-- item-->
                                 <div class="dropdown-item noti-title">
-                                    <h5 class="font-16"><span class="badge badge-danger float-right">0</span>Notification</h5>
+                                    <h5 class="font-16" style="min-width: 180px;">Meldingen <span class="badge badge-dark border-success float-right mr-1">0</span></h5>
                                 </div>
+                                <a href="javascript:notificationsModal.modal('show');" class="dropdown-item notify-item notify-all font-italic" style="font-size: smaller;">
+                                   Geen meldingen
+                                </a>
 
                             </div>
                         </li>
@@ -1394,15 +1523,15 @@
     
                 <div class="col-lg-12">
     
-                    <button class="btn btn-icon btn-sm waves-effect waves-light btn-outline-primary m-b-5" data-toggle="tooltip" data-placement="bottom" title="Alle meldingen"> <i class="fas fa-book-reader"></i> </button>
-                    <button class="btn btn-icon btn-sm waves-effect waves-light btn-outline-primary m-b-5" data-toggle="tooltip" data-placement="bottom" title="Ongelezen meldingen"> <i class="fas fa-book"></i> </button>
-                    <button class="btn btn-icon btn-sm waves-effect waves-light btn-outline-primary m-b-5" data-toggle="tooltip" data-placement="bottom" title="Gelezen meldingen"> <i class="fas fa-book-open"></i> </button>
+                    <button id="notModFilUnread" class="btn btn-icon btn-sm waves-effect waves-light btn-primary m-b-5" data-toggle="tooltip" data-placement="bottom" title="Ongelezen meldingen"> <i class="fas fa-book"></i> </button>
+                    <button id="notModFilRead" class="btn btn-icon btn-sm waves-effect waves-light btn-primary m-b-5" data-toggle="tooltip" data-placement="bottom" title="Gelezen meldingen"> <i class="fas fa-book-open"></i> </button>
 
-                    <button class="btn btn-icon btn-sm waves-effect waves-light btn-outline-success m-b-5 ml-5" data-toggle="tooltip" data-placement="bottom" title="Success meldingen"> <img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADsSURBVEhLY2AYBfQMgf///3P8+/evAIgvA/FsIF+BavYDDWMBGroaSMMBiE8VC7AZDrIFaMFnii3AZTjUgsUUWUDA8OdAH6iQbQEhw4HyGsPEcKBXBIC4ARhex4G4BsjmweU1soIFaGg/WtoFZRIZdEvIMhxkCCjXIVsATV6gFGACs4Rsw0EGgIIH3QJYJgHSARQZDrWAB+jawzgs+Q2UO49D7jnRSRGoEFRILcdmEMWGI0cm0JJ2QpYA1RDvcmzJEWhABhD/pqrL0S0CWuABKgnRki9lLseS7g2AlqwHWQSKH4oKLrILpRGhEQCw2LiRUIa4lwAAAABJRU5ErkJggg==" style="width: 18px; height: 18px; margin-top: -4px;"> </button>
-                    <button class="btn btn-icon btn-sm waves-effect waves-light btn-outline-warning m-b-5" data-toggle="tooltip" data-placement="bottom" title="Waarschuwingen"> <img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGYSURBVEhL5ZSvTsNQFMbXZGICMYGYmJhAQIJAICYQPAACiSDB8AiICQQJT4CqQEwgJvYASAQCiZiYmJhAIBATCARJy+9rTsldd8sKu1M0+dLb057v6/lbq/2rK0mS/TRNj9cWNAKPYIJII7gIxCcQ51cvqID+GIEX8ASG4B1bK5gIZFeQfoJdEXOfgX4QAQg7kH2A65yQ87lyxb27sggkAzAuFhbbg1K2kgCkB1bVwyIR9m2L7PRPIhDUIXgGtyKw575yz3lTNs6X4JXnjV+LKM/m3MydnTbtOKIjtz6VhCBq4vSm3ncdrD2lk0VgUXSVKjVDJXJzijW1RQdsU7F77He8u68koNZTz8Oz5yGa6J3H3lZ0xYgXBK2QymlWWA+RWnYhskLBv2vmE+hBMCtbA7KX5drWyRT/2JsqZ2IvfB9Y4bWDNMFbJRFmC9E74SoS0CqulwjkC0+5bpcV1CZ8NMej4pjy0U+doDQsGyo1hzVJttIjhQ7GnBtRFN1UarUlH8F3xict+HY07rEzoUGPlWcjRFRr4/gChZgc3ZL2d8oAAAAASUVORK5CYII=" style="width: 18px; height: 18px; margin-top: -4px;"> </button>
-                    <button class="btn btn-icon btn-sm waves-effect waves-light btn-outline-danger m-b-5" data-toggle="tooltip" data-placement="bottom" title="Foutmeldingen"> <img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHOSURBVEhLrZa/SgNBEMZzh0WKCClSCKaIYOED+AAKeQQLG8HWztLCImBrYadgIdY+gIKNYkBFSwu7CAoqCgkkoGBI/E28PdbLZmeDLgzZzcx83/zZ2SSXC1j9fr+I1Hq93g2yxH4iwM1vkoBWAdxCmpzTxfkN2RcyZNaHFIkSo10+8kgxkXIURV5HGxTmFuc75B2RfQkpxHG8aAgaAFa0tAHqYFfQ7Iwe2yhODk8+J4C7yAoRTWI3w/4klGRgR4lO7Rpn9+gvMyWp+uxFh8+H+ARlgN1nJuJuQAYvNkEnwGFck18Er4q3egEc/oO+mhLdKgRyhdNFiacC0rlOCbhNVz4H9FnAYgDBvU3QIioZlJFLJtsoHYRDfiZoUyIxqCtRpVlANq0EU4dApjrtgezPFad5S19Wgjkc0hNVnuF4HjVA6C7QrSIbylB+oZe3aHgBsqlNqKYH48jXyJKMuAbiyVJ8KzaB3eRc0pg9VwQ4niFryI68qiOi3AbjwdsfnAtk0bCjTLJKr6mrD9g8iq/S/B81hguOMlQTnVyG40wAcjnmgsCNESDrjme7wfftP4P7SP4N3CJZdvzoNyGq2c/HWOXJGsvVg+RA/k2MC/wN6I2YA2Pt8GkAAAAASUVORK5CYII=" style="width: 18px; height: 18px; margin-top: -4px;"> </button>
+                    <button id="notModFilSuccess" class="btn btn-icon btn-sm waves-effect waves-light btn-success m-b-5 ml-5" data-toggle="tooltip" data-placement="bottom" title="Success meldingen"> <img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADsSURBVEhLY2AYBfQMgf///3P8+/evAIgvA/FsIF+BavYDDWMBGroaSMMBiE8VC7AZDrIFaMFnii3AZTjUgsUUWUDA8OdAH6iQbQEhw4HyGsPEcKBXBIC4ARhex4G4BsjmweU1soIFaGg/WtoFZRIZdEvIMhxkCCjXIVsATV6gFGACs4Rsw0EGgIIH3QJYJgHSARQZDrWAB+jawzgs+Q2UO49D7jnRSRGoEFRILcdmEMWGI0cm0JJ2QpYA1RDvcmzJEWhABhD/pqrL0S0CWuABKgnRki9lLseS7g2AlqwHWQSKH4oKLrILpRGhEQCw2LiRUIa4lwAAAABJRU5ErkJggg==" style="width: 18px; height: 18px; margin-top: -4px;"> </button>
+                    <button id="notModFilWarning" class="btn btn-icon btn-sm waves-effect waves-light btn-warning m-b-5" data-toggle="tooltip" data-placement="bottom" title="Waarschuwingen"> <img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGYSURBVEhL5ZSvTsNQFMbXZGICMYGYmJhAQIJAICYQPAACiSDB8AiICQQJT4CqQEwgJvYASAQCiZiYmJhAIBATCARJy+9rTsldd8sKu1M0+dLb057v6/lbq/2rK0mS/TRNj9cWNAKPYIJII7gIxCcQ51cvqID+GIEX8ASG4B1bK5gIZFeQfoJdEXOfgX4QAQg7kH2A65yQ87lyxb27sggkAzAuFhbbg1K2kgCkB1bVwyIR9m2L7PRPIhDUIXgGtyKw575yz3lTNs6X4JXnjV+LKM/m3MydnTbtOKIjtz6VhCBq4vSm3ncdrD2lk0VgUXSVKjVDJXJzijW1RQdsU7F77He8u68koNZTz8Oz5yGa6J3H3lZ0xYgXBK2QymlWWA+RWnYhskLBv2vmE+hBMCtbA7KX5drWyRT/2JsqZ2IvfB9Y4bWDNMFbJRFmC9E74SoS0CqulwjkC0+5bpcV1CZ8NMej4pjy0U+doDQsGyo1hzVJttIjhQ7GnBtRFN1UarUlH8F3xict+HY07rEzoUGPlWcjRFRr4/gChZgc3ZL2d8oAAAAASUVORK5CYII=" style="width: 18px; height: 18px; margin-top: -4px;"> </button>
+                    <button id="notModFilDanger" class="btn btn-icon btn-sm waves-effect waves-light btn-danger m-b-5" data-toggle="tooltip" data-placement="bottom" title="Foutmeldingen"> <img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHOSURBVEhLrZa/SgNBEMZzh0WKCClSCKaIYOED+AAKeQQLG8HWztLCImBrYadgIdY+gIKNYkBFSwu7CAoqCgkkoGBI/E28PdbLZmeDLgzZzcx83/zZ2SSXC1j9fr+I1Hq93g2yxH4iwM1vkoBWAdxCmpzTxfkN2RcyZNaHFIkSo10+8kgxkXIURV5HGxTmFuc75B2RfQkpxHG8aAgaAFa0tAHqYFfQ7Iwe2yhODk8+J4C7yAoRTWI3w/4klGRgR4lO7Rpn9+gvMyWp+uxFh8+H+ARlgN1nJuJuQAYvNkEnwGFck18Er4q3egEc/oO+mhLdKgRyhdNFiacC0rlOCbhNVz4H9FnAYgDBvU3QIioZlJFLJtsoHYRDfiZoUyIxqCtRpVlANq0EU4dApjrtgezPFad5S19Wgjkc0hNVnuF4HjVA6C7QrSIbylB+oZe3aHgBsqlNqKYH48jXyJKMuAbiyVJ8KzaB3eRc0pg9VwQ4niFryI68qiOi3AbjwdsfnAtk0bCjTLJKr6mrD9g8iq/S/B81hguOMlQTnVyG40wAcjnmgsCNESDrjme7wfftP4P7SP4N3CJZdvzoNyGq2c/HWOXJGsvVg+RA/k2MC/wN6I2YA2Pt8GkAAAAASUVORK5CYII=" style="width: 18px; height: 18px; margin-top: -4px;"> </button>
                     
-                    <button class="btn btn-icon btn-sm waves-effect waves-light btn-outline-primary m-b-5 float-right" data-toggle="tooltip" data-placement="bottom" title="Markeer alles gelezen" > <i class="fas fa-tasks"></i> </button>
+                    <button id="notModDeleteAll" class="btn btn-icon btn-sm waves-effect waves-light btn-outline-warning m-b-5 float-right" data-toggle="tooltip" data-placement="bottom" title="Verwijder alle meldingen"> <i class="far fa-trash-alt"></i> </button>
+                    <button id="notModMarkAllRead" class="btn btn-icon btn-sm waves-effect waves-light btn-outline-success m-b-5 float-right mr-1" data-toggle="tooltip" data-placement="bottom" title="Markeer alles gelezen"> <i class="fas fa-tasks"></i> </button>
 
                     <div id="modalNotificationList" class="notification-list notification-modal overflow-auto">
                     </div>
