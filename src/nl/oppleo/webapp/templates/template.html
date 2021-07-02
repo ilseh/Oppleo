@@ -204,21 +204,23 @@
                 let importance = ['success', 'warning', 'danger', 'error']
                 let importanceStr = ['success', 'warning', 'danger', 'danger']
                 let maxImportance = 0
+                let newNotifications = 0
                 notifications.forEach((notification, index) => {
-                        maxImportance = Math.max( maxImportance, importance.indexOf(notification.theme))
+                        maxImportance = notification.ack ? maxImportance : Math.max( maxImportance, importance.indexOf(notification.theme))
+                        newNotifications += (notification.ack ? 0 : 1)
                     })
-                if (!notifications.length) {
+                if (newNotifications == 0) {
                     $('span#notificationCounter').remove()
                 } else {
-                    // Notifications
+                    // Notifications badge present?
                     if (!$('span#notificationCounter').length) {
                         // Add badge
                         $('a#notificationCounterLink').append(
-                            '<span id="notificationCounter" class="badge badge-'+importanceStr[maxImportance]+' noti-icon-badge">1</span>'
+                            '<span id="notificationCounter" class="badge badge-'+importanceStr[maxImportance]+' noti-icon-badge">'+newNotifications+'</span>'
                         )
                     } else {
                         // Update badge
-                        $('span#notificationCounter').html(notifications.length)
+                        $('span#notificationCounter').html(newNotifications)
                         $('span#notificationCounter').removeClass(function (index, className) {
                             return (className.match (/(^|\s)badge-\S+/g) || []).join(' ');
                         })
@@ -230,8 +232,8 @@
                 $('div#notificationPreview').append(
                                 '<div class="dropdown-item noti-title">' +
                                 '    <h5 class="font-16">' + 
-                                '       <span class="badge '+(notifications.length?'badge-'+importanceStr[maxImportance]:'badge-dark text-muted')+'  float-right">' +
-                                            notifications.length +
+                                '       <span class="badge '+(newNotifications>0?'badge-'+importanceStr[maxImportance]:'badge-dark text-muted')+'  float-right">' +
+                                            newNotifications +
                                 '       </span>' +
                                 '       Meldingen' +
                                 '    </h5>' +
@@ -246,7 +248,7 @@
                                     //'       <i class="notification-icon-'+notification.theme+'" style="width: 100px; height: 20px;">&nbsp;</i>' +
                                     '       <img src="data:image/png;base64, '+icons[notification.theme]+'" style="width: 18px; height: 18px; margin-top: -4px;">' +
                                     '   </div>' +
-                                    '   <p class="notify-details">' + 
+                                    '   <p class="notify-details'+(notification.ack?' text-muted font-italic':' text-white')+'">' + 
                                             notification.title +
                                     '       <small class="text-muted">' +
                                                 formatDate(notification.timestamp, months) +
@@ -408,7 +410,7 @@
                 setTimeout(debugTriggerNotification, 8000)
             }
             jQuery(document).ready(function () {
-                // setTimeout(debugTriggerNotification, 1000)
+                 // setTimeout(debugTriggerNotification, 1000)
             })
 
             function autoHideNotify( theme='success', position='top-left', title, message, duration=3500 ) {
