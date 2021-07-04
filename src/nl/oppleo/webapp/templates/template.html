@@ -1307,7 +1307,7 @@
                         <li class="list-inline-item dropdown notification-list">
                             <a class="nav-link dropdown-toggle waves-effect nav-user" data-toggle="dropdown" href="#" role="button"
                                aria-haspopup="false" aria-expanded="false">
-                               <img src="{{ url_for('static', filename='images/users/unknown2.png') }}" alt="user" class="rounded-circle">
+                               <img src="{{ url_for('static', filename='images/avatars/unknown.png') }}" alt="user" class="rounded-circle">
                             </a>
                             <div class="dropdown-menu dropdown-menu-right profile-dropdown " aria-labelledby="Preview">
 
@@ -1333,8 +1333,15 @@
                 <div id="navigation">
                     <ul class="navigation-menu">
                         <li{% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %} class="has-submenu"{% endif %}>
-                            <a href="#"><i class="fa fa-charging-station"></i> Oppleo</a>
 
+                            {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
+                            <a href="#"><i class="fa fa-charging-station"></i> Oppleo</a>
+                            {% else %}
+                            <a href="{{ url_for('flaskRoutes.index') }}" class="stay">
+                                <i class="fa fa-charging-station"></i> Oppleo
+                            </a>
+                            {% endif %}
+    
                             {% if (not oppleoconfig.restrictMenu or current_user.is_authenticated) %}
                             <ul class="submenu">
                                 <li>
