@@ -116,7 +116,7 @@
       padding-bottom: 0px !important;
     }
     /* Move the icon up in to small buttons in the button column */
-    table tbody tr td .svg-inline--fa {
+    table tbody tr td button.btn-table-row .svg-inline--fa {
       vertical-align: .2em !important;
     }
   </style>
@@ -783,7 +783,7 @@
                   // Show delete button
                   return '<button' +
                          '   type="button"' +
-                         '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-primary" ' +
                          '   style="height: 18px; padding-top: 0px;"' +
                          '   data-toggle="tooltip" ' +
                          '   data-placement="bottom" ' +
@@ -799,7 +799,7 @@
                   // Show close button
                   return '<button' +
                          '   type="button"' +
-                         '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
+                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-primary" ' +
                          '   style="height: 18px; padding-top: 0px;"' +
                          '   data-toggle="tooltip" ' +
                          '   data-placement="bottom" ' +
@@ -1558,7 +1558,7 @@
                   unlock=true
                 />
               </td>
-              <td class="ml-0 mr-0 pl-0 pr-0" style="width: 32px;"
+              <td class="ml-0 mr-0 pl-0 pr-0" style="width: 32px;">
                 <span id="input_container" class="input-group-append" style="width: 32px;">
                   <button
                     type="button" 
