@@ -991,6 +991,40 @@ def usage_data_since(since_timestamp, cnt=-1):
     return jsonify(qr_l)
 
 
+@flaskRoutes.route("/charge_session/<path:id>/usage_data", methods=["GET"])
+@flaskRoutes.route("/charge_session/<path:id>/usage_data/", methods=["GET"])
+@config_dashboard_access_restriction
+def charge_session_usage_data(id=None):
+    global flaskRoutesLogger
+
+    flaskRoutesLogger.debug('/charge_session/{}/usage_data/'.format(id))
+    
+    chargeSession = ChargeSessionModel.get_one_charge_session(id=id)
+    if (chargeSession is None):
+        return jsonify({ 
+            'status'        : HTTP_CODE_404_NOT_FOUND,
+            'id'            : id
+            })
+
+    device_measurement = EnergyDeviceMeasureModel()
+    device_measurement.energy_device_id = oppleoConfig.chargerName
+
+    qr = device_measurement.get_between(energy_device_id=oppleoConfig.chargerName, 
+                                        since_ts=chargeSession.start_time, 
+                                        until_ts=chargeSession.end_time if chargeSession.end_time is not None else datetime.now()
+                                        )
+    qr_l = []
+    for o in qr:
+        qr_l.append(o.to_dict())  
+
+    return jsonify({ 
+            'status'        : HTTP_CODE_200_OK,
+            'id'            : id,
+            'data'          : qr_l
+            })
+
+
+
 @flaskRoutes.route("/active_charge_session", methods=["GET"])
 @flaskRoutes.route("/active_charge_session/", methods=["GET"])
 # @authenticated_resource

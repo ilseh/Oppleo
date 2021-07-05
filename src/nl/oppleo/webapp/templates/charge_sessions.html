@@ -60,6 +60,29 @@
   <script src="{{ url_for('static', filename='js/oppleo-edit-time.js') }}" shadydom></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/oppleo-edit-select.css') }}">
 
+  <!-- Required Flot prereq -->
+  <script src="{{ url_for('static', filename='js/jquery.event.drag-1.6.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery.mousewheel-3.0.6.js') }}"></script>
+
+  <!-- Required Flot -->
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.canvaswrapper.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.colorhelpers.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.saturated.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.browser.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.drawSeries.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.uiConstants.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.axislabels.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.time.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.resize.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.selection.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.stack.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.crosshair.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.navigate.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.touchNavigate.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.hover.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/flot-charts/jquery.flot.legend.js') }}"></script>
+
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
 
@@ -118,6 +141,38 @@
     /* Move the icon up in to small buttons in the button column */
     table tbody tr td button.btn-table-row .svg-inline--fa {
       vertical-align: .2em !important;
+    }
+    #graph_tooltip {
+      position: absolute;
+      display: none;
+      border: 1px solid #fdd;
+      padding: 2px;
+      background-color: #fee;
+      opacity: 0.80;
+      z-index: 10000;
+    }
+    g.flot-x1-axis text {
+      fill: #98a6ad;  /* text color */
+    }
+    g.flot-y1-axis text, .y1LabelLayer text {
+      fill: #00b19d;  /* text color */
+    }
+    g.flot-y2-axis text, .y2LabelLayer text {
+      fill: #ffaa00;  /* text color */
+    }
+    div.legend svg.legendLayer {
+      fill: rgba(76, 83, 87, 0.4);/*
+      fill-opacity: '0.4';*/
+      border: 1px solid #98a6ad;
+      background: rgba(76, 83, 87, 0.6);
+    }
+    div.legend svg.legendLayer g:nth-of-type(1) text tspan {
+      fill: #00b19d;
+      font-size: smaller;
+    }
+    div.legend svg.legendLayer g:nth-of-type(2) text tspan {
+      fill: #ffaa00;
+      font-size: smaller;
     }
   </style>
 
@@ -783,7 +838,7 @@
                   // Show delete button
                   return '<button' +
                          '   type="button"' +
-                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-primary" ' +
+                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-danger" ' +
                          '   style="height: 18px; padding-top: 0px;"' +
                          '   data-toggle="tooltip" ' +
                          '   data-placement="bottom" ' +
@@ -799,7 +854,7 @@
                   // Show close button
                   return '<button' +
                          '   type="button"' +
-                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-primary" ' +
+                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-warning" ' +
                          '   style="height: 18px; padding-top: 0px;"' +
                          '   data-toggle="tooltip" ' +
                          '   data-placement="bottom" ' +
@@ -808,6 +863,23 @@
                          '   onclick="window.location.href=\'/stop_charge_session/' + row[0] + '\'"' +
                          '   >' +
                          '   <i class="far fa-hand-paper" style="font-size: 12px;"></i>' +
+                         '</button>'
+                }
+
+                // Graph for charge session?
+                if (row[11] != 0 && !isEditMode()) {
+                  // Show Graph button
+                  return '<button' +
+                         '   type="button"' +
+                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-success" ' +
+                         '   style="height: 18px; padding-top: 0px;"' +
+                         '   data-toggle="tooltip" ' +
+                         '   data-placement="bottom" ' +
+                         '   data-html="true" ' +
+                         '   title="<em>Toon grafiek</em>"' +
+                         '   onclick="javascript:showGraph(' + row[0] + ');"' +
+                         '   >' +
+                         '   <i class="fas fa-chart-line" style="font-size: 12px;"></i>' +
                          '</button>'
                 }
 
@@ -1268,6 +1340,244 @@
     function isEditMode() {
       return $('table#charge_sessions').hasClass('table-hover')
     }
+
+    function getChargeSessionUsageData( sessionId, successCallback = undefined, failedCallback = undefined, n = undefined ) {
+      console.log(timestamp() + ' getUsageData()')
+      $('.spinner').show()
+      $.ajax({
+        type		  : 'GET',
+        url			  : ('/charge_session/' + encodeURI(sessionId) + '/usage_data/'),
+        dataType	: 'json',
+        headers   : { 'ignore-login-next': 'true' },
+        encode		: true
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        // Call callback
+        if (successCallback != null) { successCallback(data) }
+      })
+      .fail(function() {
+        if (failedCallback != null) { failedCallback(data) }
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
+    function showGraph( sessionId ) {
+      autoHideNotify('warning','top-left', 'Grafiek', 'Grafiek voor laadsessie ' + sessionId + '.')
+      $('#modal_flotgraph').empty()
+      showGraphModal.modal('show')
+
+      //let data = getRowDataForSessionId( sessionId )
+
+      getChargeSessionUsageData( sessionId, 
+        (result) => {
+          // successCallback
+          var flotDataset = [ 
+            { label: 'Stroom [A]', data: [], color: "#00b19d", yaxis: 1, lines: { show: true, fill: true } },
+            { label: 'Energie [kWh]', data: [], color: "#ffaa00", yaxis: 2 } 
+          ]
+          var flotData_A = []
+          var flotData_kWh = []
+
+          var axis = { 
+            'x': {
+              'min': 0,
+              'max': 0
+            },
+            'y1': {
+              'min': 0,
+              'max': 0
+            },
+            'y2': {
+              'min': 0,
+              'max': 0
+            }
+          }
+        
+          result.data.forEach( (element) => {
+            // created_at format 01/04/2020, 13:58:44
+            var ts = Math.round(parseDate(element.created_at).getTime() /1000)
+            var a = Math.round( (
+                      parseFloat(element.a_l1) +
+                      parseFloat(element.a_l1) +
+                      parseFloat(element.a_l1)
+                    ) * 10 ) / 10
+            flotData_A.push( [ ts, a ] )
+            flotData_kWh.push( [ ts, element.kw_total ] )
+            axis.x.min = (axis.x.min == 0 ? ts : Math.min(ts, axis.x.min))
+            axis.x.max = Math.max(ts, axis.x.max)
+            axis.y1.min = Math.min(a, axis.y1.min)
+            axis.y1.max = Math.max(a, axis.y1.max)
+            axis.y2.min = Math.min(element.kw_total, axis.y2.min)
+            axis.y2.max = Math.max(element.kw_total, axis.y2.max)
+          })
+
+          flotDataset[0].data = flotData_A
+          flotDataset[1].data = flotData_kWh
+
+          // Blue:    "3bafda"
+          // Orange:  "#ffaa00"
+          // Green:   "#00b19d"
+          flotObj = $.plot($("#modal_flotgraph"), flotDataset, {
+            xaxis: { 
+              timezone: 'browser',
+                tickSize: [ 1, 'hour' ],
+                timeformat: '%H:%M', // %H:%M",
+                /*
+                tickSize: [ 2, 'hour' ],
+                timeformat: '%H:%M', // %H:%M",
+
+                tickSize: [ 6, 'hour' ],
+                timeformat: '%e %b %H:%M', // %H:%M",
+
+                tickSize: [ 1, 'day' ],
+                timeformat: '%e %b', // %H:%M",
+
+                tickSize: [ 7, 'day' ],
+                timeformat: '%e %b', // %H:%M",
+
+                tickSize: [ 1, 'day' ],
+                timeformat: '%e %b', // %H:%M",
+                */
+                color: "#98a6ad", // Color of the horizontal line (not the numbers)
+                font: { 
+                  size: 11,
+                  lineHeight: 11
+                },
+                mode: "time",
+                min: axis.x.min,
+                max: axis.x.max,
+                zoomRange: [7200000, null],
+                panRange: [axis.x.min*0.9, axis.x.max*1.1]
+              },
+              yaxes: [{   // Amps 0-25
+                min: 0, 
+                max: 25,
+                color: "#00b19d", // Color of the vertical line (not the numbers) "#00b19d"
+                // axisLabel: "Stroom [A]",
+                axisLabelUseCanvas: true,
+                axisLabelColor: '#FF0000',
+                tickFormatter: function (val, axis) {
+                  return Math.round(val) + ' (' + Math.round((parseFloat(val)*230) / factor_Whkm) + 'km/u)'
+                },
+                font: { 
+                  size: 11,
+                  lineHeight: 11,
+                  color: "#00b19d" //"#00b19d"
+                },
+                position: 'right'
+              }, {      // Energie 0-300
+                min: 0, 
+                max: 25,
+                color: "#ffaa00", // Color of the vertical line (not the numbers) "#00b19d"
+                // axisLabel: "Energie [kWh]",
+                font: { 
+                  size: 11,
+                  lineHeight: 11,
+                  color: "#ffaa00" //"#00b19d"
+                },
+                position: 'left'
+                }
+              ],
+              grid : {
+                show : true,
+                aboveData : false,
+                color : '#98a6ad', 
+                borderColor : '#98a6ad', 
+                labelMargin : 15,
+                axisMargin : 0,
+                borderWidth : 0,
+                minBorderMargin : 5,
+                hoverable: true,
+                clickable: true
+              },
+              zoom: {
+                interactive: true
+              },
+              pan: {
+                interactive: true,
+                enableTouch: true
+              },
+              legend: {
+                position: 'nw',
+                show: true,
+                backgroundOpacity: 0.9,
+                noColumns: 1
+              }
+            })
+
+            var axes = flotObj.getAxes()
+            axes.xaxis.options.min = axis.x.min 
+            axes.xaxis.options.max = axis.x.max
+            axes.yaxis.options.min = axis.y1.min
+            axes.yaxis.options.max = axis.y1.max 
+            axes.y2axis.options.min = axis.y2.min 
+            axes.y2axis.options.max = axis.y2.max
+            flotObj.setupGrid()             // if axis have changed
+            flotObj.draw()
+
+            $("#modal_flotgraph").bind("plothover", function (event, pos, item) {
+              if (!pos.x || !pos.y) {
+                return
+              }
+
+              if (item) {
+                var x = item.datapoint[0].toFixed(2)
+                var y = item.datapoint[1].toFixed(2)
+
+                  
+                var d = new Date(parseInt(item.datapoint[0]) *1000)
+                var monthNames = [
+                  "January", "February", "March",
+                  "April", "May", "June", "July",
+                  "August", "September", "October",
+                  "November", "December"
+                ]
+                var ttStr = '<span style="color: ' + item.series.color + ' !important; font-size: smaller;">' +
+                    '<i class="fas fa-charging-station"></i> ' + 
+                    item.datapoint[1] + 
+                    (item.series.label.endsWith('[A]') ? 'A (' + Math.round((parseFloat(item.datapoint[1])*230) / factor_Whkm) + 'km/u)' : 
+                      (item.series.label.endsWith('[kWh]') ? 'kWh (' + Math.round((parseFloat(item.datapoint[1])*1000) / factor_Whkm).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + 'km)' : '')
+                    ) +
+                    '</span><br>' + 
+                    '<span style="color: #98a6ad !important; font-size: smaller;">' + 
+                    '<i class="fa fa-calendar"></i> ' + 
+                    d.getDate() + " " + 
+                    monthNames[d.getMonth()] + 
+                    " " + d.getFullYear() + 
+                    " " + (d.getHours() < 10 ? "0" : "" ) + d.getHours() +
+                    ":" + (d.getMinutes() < 10 ? "0" : "" ) + d.getMinutes() +
+                    'u</span>'
+
+                $("#graph_tooltip").html( ttStr )
+                  .css({top: item.pageY+5, left: item.pageX+5})
+                  .fadeIn(200);
+              } else {
+                $("#graph_tooltip").hide()
+              }
+            })
+            $("#modal_flotgraph").bind("plothovercleanup", function (event, pos, item) {
+              $("#graph_tooltip").hide()
+            })
+
+            $("#modal_flotgraph").bind("plotclick", function (event, pos, item) {
+              if (item) {
+                plot.highlight(item.series, item.datapoint)
+              }
+            })
+
+        },
+        (result) => {
+          // failedCallback
+        }
+      )
+    }
+
+
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       startWebSocket()
@@ -1296,6 +1606,11 @@
         show: false
       })
       askPasswordModal = $('#askPasswordModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      showGraphModal = $('#showGraphModal').modal({
         backdrop: 'static',
         keyboard: false,
         show: false
@@ -1388,6 +1703,10 @@
           case APF_STOP_SESSION:
             break
         }
+        e.preventDefault()
+      })
+      $('button#show-graph-modal-footer-closeaction').on("click", function(e) {
+        showGraphModal.modal('hide')
         e.preventDefault()
       })
     })
@@ -1719,7 +2038,7 @@
   <div class="modal-dialog modal-password" role="document">
     <div class="modal-content">
       <div class="modal-header bg-warning">
-        <h3 class="modal-title" id="changeChargeSessionModalLabel">Wachtwoord</h3>
+        <h3 class="modal-title" id="askPasswordModalLabel">Wachtwoord</h3>
         <button type="button" class="close-x bg-warning" data-dismiss="modal" aria-label="Close" id="askPasswordModalCloseButton">
           <span aria-hidden="true"><i class="fas fa-times"></i></span>
         </button>
@@ -1767,5 +2086,49 @@
     </div>
   </div>
 </div>
+
+
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="showGraphModal" tabindex="-1" role="dialog" aria-labelledby="showGraphModalLabel" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary">
+        <h3 class="modal-title" id="showGraphModalLabel">Laadsessieverloop</h3>
+        <button type="button" class="close-x bg-primary" data-dismiss="modal" aria-label="Close" id="showGraphModalCloseButton">
+          <span aria-hidden="true"><i class="fas fa-times"></i></span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="col-lg-12">
+
+          <div class="text-center text-warning pb-5">
+            <div style="font-size: 1.3rem;">Laadsessie <span id="csgChargeSessionId" class="font-weight: bold;"></span></div>
+          </div>
+
+          <div>
+
+            <div class="portlet"><!-- /primary heading -->
+                <div id="portlet 1" class="panel-collapse collapse show">
+                    <div class="portlet-body">
+                        <div id="modal_flotgraph" style="height: 320px;" class="flot-chart"></div>
+                    </div>
+                </div>
+            </div>
+      
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="show-graph-modal-footer-closeaction"> Sluiten</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="graph_tooltip"></div>
 
 {% endblock %}

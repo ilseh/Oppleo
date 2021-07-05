@@ -118,6 +118,24 @@ class EnergyDeviceMeasureModel(Base):
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return edmm
 
+    def get_between(self, energy_device_id, since_ts:datetime=None, until_ts:datetime=None):
+        db_session = DbSession()
+        edmm = None
+        try:
+            edmm = db_session.query(EnergyDeviceMeasureModel) \
+                                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                                .filter(EnergyDeviceMeasureModel.created_at >= since_ts) \
+                                .filter(EnergyDeviceMeasureModel.created_at <= until_ts) \
+                                .order_by(desc(EnergyDeviceMeasureModel.created_at)) \
+                                .all()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
+        except Exception as e:
+            # Nothing to roll back
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
+        return edmm
+
 
     def get_usage_since(self, energy_device_id, since_ts):
         self.__logger.debug("get_usage_since() energy_device_id {} since_ts {}".format(energy_device_id, str(since_ts)))
