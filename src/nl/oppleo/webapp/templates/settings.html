@@ -779,12 +779,15 @@
           let cnt = $("span.subnetOrIP").length
           let pel = el.parent().parent() // td - tr
           pel = el.closest('tr')
-          if (pel.is('#subnetOrIPFirstRow') && cnt == 1) {
+          let elIdx = (pel.prevAll('.subnetOrIPRow').length + 1)
+          // Only one entry, delete and show empty
+          if (pel.is('.subnetOrIPRow') && cnt == 1) {
             // First row, and only. Remove
             pel.find('td:nth-child(2)').empty()
-            pel.find('td:nth-child(2)').append('<span class="subnetOrIP"><i class="far fa-clipboard"></i> Geen</span>')
+            pel.find('td:nth-child(2)').append('<span class="subnetOrIP"><i class="far fa-clipboard"></i> <span class="pl-2">Geen</span></span>')
           }
-          if (pel.is('#subnetOrIPFirstRow') && cnt > 1) {
+          // Multiple entries, and first one deleted, move one up
+          if (pel.is('.subnetOrIPRow') && cnt > 1 && elIdx == 1) {
             // First row, move second one up and remove that one
             let pel2 = pel.next()
             //pel.find('td:nth-child(2)').html(pel2.find('td:nth-child(2)').html())
@@ -792,7 +795,8 @@
             pel.find('td:nth-child(2)').append(pel2.find('td:nth-child(2)').contents())
             pel2.remove()
           }
-          if (!pel.is('#subnetOrIPFirstRow')) {
+          // Multiple entries, and not first one deleted, just remove
+          if (pel.is('.subnetOrIPRow') && cnt > 1 && elIdx > 1) {
             // Not the first row, just remove this one
             pel.remove()
           }
@@ -1075,7 +1079,6 @@
           $('button#backup-local-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens ophalen')
         })
       
-//xxxxx
       })
       $('button#backup-offsite-showinfo').on('click', function(ev) {
         $('button#backup-offsite-showinfo').prop('disabled', true)
@@ -1361,6 +1364,13 @@
         $('#newSubnetOrIPButton').addClass('d-none')
         $('#newSubnetOrIPCancel').removeClass('d-none')
         $('#newSubnetOrIPSave').removeClass('d-none')
+        // Is this the only entry, and is it empty?
+        $('tr#newSubnetOrIPInputRow td:nth-child(1)').html(
+          ($('.subnetOrIPRow').length == 1 && $('.subnetOrIPRow').html().includes('<i class="far fa-clipboard"></i>') ? 'Extern netwerk/ Reverse Proxy:' : '&nbsp;' )
+        )
+        if ($('.subnetOrIPRow').length == 1 && $('.subnetOrIPRow').html().includes('<i class="far fa-clipboard"></i>')) {
+          $('.subnetOrIPRow').addClass('d-none')
+        }
       })
       $('#newSubnetOrIPCancel').on('click', function(e) {
         e.preventDefault()
@@ -1372,6 +1382,9 @@
         $('#newSubnetOrIPButton').removeClass('d-none')
         $('#newSubnetOrIPCancel').addClass('d-none')
         $('#newSubnetOrIPSave').addClass('d-none')
+        if ($('.subnetOrIPRow').length == 1) {
+          $('.subnetOrIPRow').removeClass('d-none')
+        }
       })
       $('#newSubnetOrIPInput').on('paste input', (e) => {
         // Only accept digits, dot and slash
@@ -1399,7 +1412,6 @@
           return
         }
         // Submit
-//XXXXXX
         updateExternalSubnet( $('#newSubnetOrIPInput').val(), 'POST', 
           function(result) {
             // successCallback
@@ -1410,16 +1422,17 @@
                           <i class="fas fa-trash-alt"></i> Verwijder 
                         </button>`
 
-            let cnt = $("span.subnetOrIP").length
+            let cnt = $(".subnetOrIPRow").length
             // 
-            if (cnt == 1 && $("span.subnetOrIP i.fa-clipboard").length > 0) {
+            if (cnt == 1 && $('.subnetOrIPRow').hasClass('d-none')) {
               // Empty - fill first entry - find First row and Replace
-              let el = $('#subnetOrIPFirstRow').find('td:nth-child(2)')
+              let el = $('.subnetOrIPRow').find('td:nth-child(2)')
               el.empty()
               el.append($(nsoi))
+              $('.subnetOrIPRow').removeClass('d-none')
             } else {
               // Not empty - add entry
-              let newRow = `<tr>
+              let newRow = `<tr class="subnetOrIPRow">
                               <td class="text-dark">&nbsp;</td>
                               <td class="text-primary">
                               ` + nsoi + `
@@ -1439,8 +1452,6 @@
                     boundary: 'window', 
                     trigger : 'hover'   // Allow button clicks
             })
-
-
             // Hide input
             $('#newSubnetOrIPInputRow').addClass('d-none')
             $('#newSubnetOrIPButton').removeClass('d-none')
@@ -1953,7 +1964,7 @@
                             </tr>
 
                             {% for subnetOrIP in oppleoconfig.routerIPAddress %}
-                            <tr id="subnetOrIPFirstRow">
+                            <tr class="subnetOrIPRow">
                               <td class="text-dark">{% if subnetOrIP == (oppleoconfig.routerIPAddress | first) %}Extern netwerk/ Reverse Proxy:{% else %}&nbsp;{% endif %}</td>
                               <td class="text-primary">
                                 <i class="{% if ipv4.isSingleIP(subnetOrIP) %}fas fa-desktop{% else %}fas fa-network-wired{%endif%} w-20px mr-2"></i>
@@ -1965,9 +1976,9 @@
                             </tr>
                             {% endfor %}
                             {% if oppleoconfig.routerIPAddress | length == 0 %}
-                            <tr id="subnetOrIPFirstRow">
+                            <tr class="subnetOrIPRow">
                               <td class="text-dark">Extern netwerk/ Reverse Proxy:</td>
-                              <td class="text-primary"><span class="subnetOrIP"><i class="far fa-clipboard pr-2"></i> Geen</span></td>
+                              <td class="text-primary"><span class="subnetOrIP"><i class="far fa-clipboard"></i> <span class="pl-2">Geen</span></span></td>
                             </tr>
                             {% endif %}
                             <tr id="newSubnetOrIPInputRow" class="d-none">
