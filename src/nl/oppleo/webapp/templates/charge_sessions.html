@@ -707,13 +707,22 @@
                                      data-placement="bottom" \
                                      data-html="true" \
                                      stype="cursor: pointer;" \
+                                     onMouseOver="javascript:mouseOverTableRowButton(false);" \
+                                     onMouseOut="javascript:mouseOverTableRowButton(true);" \
                                      title="<em>' +  tooltipText + '</em>" \
                                      >' : 
                               '<span>'
                     )
                 return (data == undefined || data === "None" ? 
-                        returnStr + '<i class="fas fa-ban"></i></span>' : 
-                        returnStr + '<a href="/rfid_tokens/' + data + '" target="_self">' + (data in rfidTokens && isData(rfidTokens[data].name) ? rfidTokens[data].name : data) + '</a></span>'
+                        returnStr + '<i class="fas fa-ban"></i>' + 
+                                  '</span>' 
+                        : 
+                        returnStr + '<a href="/rfid_tokens/' + data + '" target="_self"' +
+                                      ' onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+                                      ' onMouseOut="javascript:mouseOverTableRowButton(true);">' + 
+                                      (data in rfidTokens && isData(rfidTokens[data].name) ? rfidTokens[data].name : data) + 
+                                    '</a>' +
+                                  '</span>'
                        )
               }
             }
@@ -1448,24 +1457,30 @@
 
       let endDate = parseDate( removeNobr( data[6] ) )
       $('#csgUntill').html(
-          (startDate.getDate() != endDate.getDate() || startDate.getMonth() != endDate.getMonth() || startDate.getFullYear() != endDate.getFullYear() ? 
-          endDate.getDate() + ' ' + months[endDate.getMonth()] 
-            : 
-            ''
-          ) + 
-          (startDate.getFullYear() != endDate.getFullYear() ? 
-            ' ' + endDate.getFullYear() + ', '
-            :
-            (startDate.getDate() != endDate.getDate() || startDate.getMonth() != endDate.getMonth() ?
-              ', '
+            (endDate == undefined ? 
+              'nu'  // Open session
               :
-              ''
+              (startDate.getDate() != endDate.getDate() || startDate.getMonth() != endDate.getMonth() || startDate.getFullYear() != endDate.getFullYear() ? 
+              endDate.getDate() + ' ' + months[endDate.getMonth()] 
+                : 
+                ''
+              ) + 
+              (startDate.getFullYear() != endDate.getFullYear() ? 
+                ' ' + endDate.getFullYear() + ', '
+                :
+                (startDate.getDate() != endDate.getDate() || startDate.getMonth() != endDate.getMonth() ?
+                  ', '
+                  :
+                  ''
+                )
+              ) + 
+              (
+                (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u'
+              )
             )
-          ) + 
-          (
-            (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u'
           )
-        )
+      // For open sessions use end date now
+      endDate = (endDate == undefined ? new Date() : endDate)
       let diffInSeconds = Math.abs(endDate - startDate) / 1000
       // calculate days
       const days = Math.round(diffInSeconds / 86400)
@@ -1719,8 +1734,11 @@
           $('table#charge_sessions').addClass('table-hover-success')
           // $('table#charge_sessions').css('cursor', 'default')
           $('table#charge_sessions').off('click', 'tr')
-          $('table#charge_sessions').on('click', 'tr', function () {
-            showGraph(dt.row(this).data())
+          $('table#charge_sessions').on('click', 'tr', (ev) => {
+            // Only if highlighted
+            if ($('table#charge_sessions').hasClass('table-hover-success')) {
+              showGraph(dt.row(this).data())
+            }
           })
         }
         dt.rows().invalidate().draw()
@@ -1833,7 +1851,10 @@
       $('table#charge_sessions').addClass('table-hover-success')
       $('table#charge_sessions').css('cursor', 'pointer')
       $('table#charge_sessions').on('click', 'tr', function () {
-        showGraph(dt.row(this).data())
+        // Only if highlighted
+        if ($('table#charge_sessions').hasClass('table-hover-success')) {
+          showGraph(dt.row(this).data())
+        }
       })
       $('button#show-graph-modal-footer-closeaction').on("click", function(e) {
         showGraphModal.modal('hide')
