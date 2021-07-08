@@ -1564,9 +1564,7 @@
               },
               mode: "time",
               min: axis.x.min,
-              max: axis.x.max,
-              zoomRange: [7200000, null],
-              panRange: [axis.x.min*0.9, axis.x.max*1.1]
+              max: axis.x.max
             },
             yaxes: [{   // Amps 0-25
               min: 0, 
@@ -1576,7 +1574,7 @@
               axisLabelUseCanvas: true,
               axisLabelColor: '#FF0000',
               tickFormatter: function (val, axis) {
-                return Math.round(val) + ' (' + Math.round((parseFloat(val)*230) / factor_Whkm) + 'km/u)'
+                return Math.round(val) + 'A'
               },
               font: { 
                 size: 11,
@@ -1589,6 +1587,9 @@
               max: axis.y2.max*1.1,
               color: "#ffaa00", // Color of the vertical line (not the numbers) "#00b19d"
               // axisLabel: "Energie [kWh]",
+              tickFormatter: function (val, axis) {
+                return val.toFixed(1) + 'kWh'
+              },
               font: { 
                 size: 11,
                 lineHeight: 11,
