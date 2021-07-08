@@ -125,8 +125,12 @@
       margin-left: 10px;
       margin-right: 10px;
     }
-    .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+    .table-hover-warning tbody tr:hover td, .table-hover-warning tbody tr:hover th {
       background-color: #ffaa00 !important;
+      color: white;
+    }
+    .table-hover-success tbody tr:hover td, .table-hover-success tbody tr:hover th {
+      background-color: #00b19d !important;
       color: white;
     }
     .highlight-changes, .highlight-changes span, .highlight-changes span a {
@@ -145,9 +149,9 @@
     #graph_tooltip {
       position: absolute;
       display: none;
-      border: 1px solid #fdd;
+      border: 1px solid rgb(148, 148, 148);
       padding: 2px;
-      background-color: #fee;
+      background-color: rgb(73, 73, 73);
       opacity: 0.80;
       z-index: 10000;
     }
@@ -174,6 +178,21 @@
       fill: #ffaa00;
       font-size: smaller;
     }
+
+    .charge-session-summary {
+      font-size: smaller; 
+      width: calc(100% - 134px);
+    }
+    .charge-session-summary span {
+      padding-right: 5px;
+    }
+    .charge-session-summary span:nth-child(18) {
+      padding-right: 0px;
+    }
+    .charge-session-summary span:nth-child(even) {
+      color: #3bafda;
+    }
+
   </style>
 
   <script>
@@ -766,6 +785,8 @@
                           '   data-toggle="tooltip" ' +
                           '   data-placement="bottom" ' +
                           '   data-html="true" ' +
+                          '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+                          '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
                           '   title="<em>Km stand ophalen mislukt. Km stand nogmaals ophalen.</em>"' +
                           '   >' +
                           '   <i class="fas fa-redo-alt" style="font-size: 12px;"></i>' +
@@ -845,6 +866,8 @@
                          '   data-html="true" ' +
                          '   title="<em>Verwijder lege laadsessie (' + row[0] + ').</em>"' +
                          '   onclick="window.location.href=\'/delete_charge_session/' + row[0] + '\'"' +
+                         '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+                         '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
                          '   >' +
                          '   <i class="fas fa-trash-alt" style="font-size: 12px;"></i>' +
                          '</button>'
@@ -861,25 +884,10 @@
                          '   data-html="true" ' +
                          '   title="<em>Be&euml;indig open laadsessie.</em>"' +
                          '   onclick="window.location.href=\'/stop_charge_session/' + row[0] + '\'"' +
+                         '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+                         '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
                          '   >' +
                          '   <i class="far fa-hand-paper" style="font-size: 12px;"></i>' +
-                         '</button>'
-                }
-
-                // Graph for charge session?
-                if (row[11] != 0 && !isEditMode()) {
-                  // Show Graph button
-                  return '<button' +
-                         '   type="button"' +
-                         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-success" ' +
-                         '   style="height: 18px; padding-top: 0px;"' +
-                         '   data-toggle="tooltip" ' +
-                         '   data-placement="bottom" ' +
-                         '   data-html="true" ' +
-                         '   title="<em>Toon grafiek</em>"' +
-                         '   onclick="javascript:showGraph(' + row[0] + ');"' +
-                         '   >' +
-                         '   <i class="fas fa-chart-line" style="font-size: 12px;"></i>' +
                          '</button>'
                 }
 
@@ -1338,7 +1346,7 @@
       })
     }    
     function isEditMode() {
-      return $('table#charge_sessions').hasClass('table-hover')
+      return $('table#charge_sessions').hasClass('table-hover-warning')
     }
 
     function getChargeSessionUsageData( sessionId, successCallback = undefined, failedCallback = undefined, n = undefined ) {
@@ -1366,14 +1374,126 @@
       })
     }
 
-    function showGraph( sessionId ) {
-      autoHideNotify('warning','top-left', 'Grafiek', 'Grafiek voor laadsessie ' + sessionId + '.')
+    function mouseOverTableRowButton( showRowHighlight ) {
+      $('table#charge_sessions').toggleClass('table-hover-success', showRowHighlight)
+    }
+    function formatGraphXAxis( min, max ) {
+
+          /*
+          min/max = seconds sinds epoch 
+          1616101994 
+          1615734632 
+          diff 367362 - 102 u (/3600) 
+          */
+      let diffInSeconds = Math.abs(min - max)
+      // calculate days
+      const days = Math.round(diffInSeconds / 86400)
+      diffInSeconds -= (Math.floor(diffInSeconds / 86400)) * 86400
+      // calculate hours
+      const hours = Math.round(diffInSeconds / 3600) % 24
+      diffInSeconds -= (Math.floor(diffInSeconds / 3600) % 24) * 3600
+      // calculate minutes
+      const minutes = Math.round(diffInSeconds / 60) % 60
+
+      if (days > 12) {
+        return { tickSize: [ 7, 'day' ],
+                 timeformat: '%e %b'
+               }
+      }
+      if (days > 1) {
+        return { tickSize: [ 1, 'day' ],
+                 timeformat: '%e %b'
+               }
+      }
+      if (hours > 12) {
+        return { tickSize: [ 2, 'hour' ],
+                 timeformat: '%H:%M', // %H:%M",
+               }
+      }
+      if (hours > 1) {
+        return { tickSize: [ 1, 'hour' ],
+                 timeformat: '%H:%M', // %H:%M",
+               }
+      }
+      if (minutes > 12) {
+        return { tickSize: [ 5, 'minute' ],
+                 timeformat: '%H:%M', // %H:%M",
+               }
+      }
+      return { tickSize: [ 1, 'minute' ],
+               timeformat: '%H:%M', // %H:%M",
+             }
+    }
+    function getGraphModalData( dataset, from, to) {
+      // Deep copy
+      let deepCopy = jQuery.extend(true, { }, dataset)
+
+      for (const [key, entry] of Object.entries(deepCopy)) {
+        entry.data = entry.data.filter( (dp) => dp[0] > from && dp[0] < to ) 
+        let i = 0
+      }
+      return deepCopy
+    }
+            
+    function showGraph( data ) {
       $('#modal_flotgraph').empty()
       showGraphModal.modal('show')
 
-      //let data = getRowDataForSessionId( sessionId )
+      $('#csgChargerName').html(data[8])
+      $('#csgRfid').html((data[1] in rfidTokens?rfidTokens[data[1]].name:data[1]))
+      $('#csgChargeSessionId').html(data[0])
+      $('#csgChargeSessionIdTitle').html(data[0])
+      let startDate = parseDate( removeNobr( data[2] ) )
+      $('#csgFrom').html(startDate.getDate() + ' ' + months[startDate.getMonth()] + ' ' + startDate.getFullYear() + ', ' + (startDate.getHours()<10?'0':'') + startDate.getHours() + ":" + (startDate.getMinutes()<10?'0':'') + startDate.getMinutes() + 'u')
 
-      getChargeSessionUsageData( sessionId, 
+      let endDate = parseDate( removeNobr( data[6] ) )
+      $('#csgUntill').html(
+          (startDate.getDate() != endDate.getDate() || startDate.getMonth() != endDate.getMonth() || startDate.getFullYear() != endDate.getFullYear() ? 
+          endDate.getDate() + ' ' + months[endDate.getMonth()] 
+            : 
+            ''
+          ) + 
+          (startDate.getFullYear() != endDate.getFullYear() ? 
+            ' ' + endDate.getFullYear() + ', '
+            :
+            (startDate.getDate() != endDate.getDate() || startDate.getMonth() != endDate.getMonth() ?
+              ', '
+              :
+              ''
+            )
+          ) + 
+          (
+            (endDate.getHours()<10?'0':'') + endDate.getHours() + ":" + (endDate.getMinutes()<10?'0':'') + endDate.getMinutes() + 'u'
+          )
+        )
+      let diffInSeconds = Math.abs(endDate - startDate) / 1000
+      // calculate days
+      const days = Math.round(diffInSeconds / 86400)
+      diffInSeconds -= (Math.floor(diffInSeconds / 86400)) * 86400
+      // calculate hours
+      const hours = Math.round(diffInSeconds / 3600) % 24
+      diffInSeconds -= (Math.floor(diffInSeconds / 3600) % 24) * 3600
+      // calculate minutes
+      const minutes = Math.round(diffInSeconds / 60) % 60
+      let diffStr = (
+          (days > 0 ?
+            (days > 1 ? days + ' dagen' : days + ' dag')
+            :
+            (hours > 0 ? 
+              hours + ' uur' 
+              : 
+              (minutes == 1 ? minutes + ' minuut' : minutes + ' minuten')
+            )
+          )
+        )
+      $('#csgDuration').html(diffStr)
+      $('#csgTariff').html('&euro; '+data[9].replace('.', ','))
+      $('#csgTotalusage').html((Math.round(data[10] * 10) /10)+'kWh')
+      $('#csgPrice').html(('<nobr>&euro; '+(Math.round(data[11] * 100) /100).toFixed(2).toString()+'</nobr>').replace('.', ','))
+
+      
+      let flotObj = undefined
+      getChargeSessionUsageData( data[0], 
         (result) => {
           // successCallback
           var flotDataset = [ 
@@ -1393,11 +1513,17 @@
               'max': 0
             },
             'y2': {
-              'min': 0,
+              'min': -1,
               'max': 0
             }
           }
-        
+
+          // Determine min/max - y2 (kWh total) is relative to the starting value
+          result.data.forEach( (element) => {
+            axis.y2.min = ( axis.y2.min == -1 ? element.kw_total : Math.min(element.kw_total, axis.y2.min) )
+            axis.y2.max = Math.max(element.kw_total, axis.y2.max)
+          })
+          // Adjust values
           result.data.forEach( (element) => {
             // created_at format 01/04/2020, 13:58:44
             var ts = Math.round(parseDate(element.created_at).getTime() /1000)
@@ -1407,14 +1533,18 @@
                       parseFloat(element.a_l1)
                     ) * 10 ) / 10
             flotData_A.push( [ ts, a ] )
-            flotData_kWh.push( [ ts, element.kw_total ] )
+            // Absolute to relative
+            flotData_kWh.push( [ ts, (element.kw_total - axis.y2.min).toFixed(1) ] )
             axis.x.min = (axis.x.min == 0 ? ts : Math.min(ts, axis.x.min))
             axis.x.max = Math.max(ts, axis.x.max)
             axis.y1.min = Math.min(a, axis.y1.min)
             axis.y1.max = Math.max(a, axis.y1.max)
-            axis.y2.min = Math.min(element.kw_total, axis.y2.min)
-            axis.y2.max = Math.max(element.kw_total, axis.y2.max)
           })
+          // Make absolute
+          axis.y2.max = axis.y2.max - axis.y2.min
+          axis.y2.min = 0
+
+          xaxisFormat = formatGraphXAxis( axis.x.min, axis.x.max )
 
           flotDataset[0].data = flotData_A
           flotDataset[1].data = flotData_kWh
@@ -1422,153 +1552,141 @@
           // Blue:    "3bafda"
           // Orange:  "#ffaa00"
           // Green:   "#00b19d"
-          flotObj = $.plot($("#modal_flotgraph"), flotDataset, {
+          graphOptions = {
             xaxis: { 
               timezone: 'browser',
-                tickSize: [ 1, 'hour' ],
-                timeformat: '%H:%M', // %H:%M",
-                /*
-                tickSize: [ 2, 'hour' ],
-                timeformat: '%H:%M', // %H:%M",
-
-                tickSize: [ 6, 'hour' ],
-                timeformat: '%e %b %H:%M', // %H:%M",
-
-                tickSize: [ 1, 'day' ],
-                timeformat: '%e %b', // %H:%M",
-
-                tickSize: [ 7, 'day' ],
-                timeformat: '%e %b', // %H:%M",
-
-                tickSize: [ 1, 'day' ],
-                timeformat: '%e %b', // %H:%M",
-                */
-                color: "#98a6ad", // Color of the horizontal line (not the numbers)
-                font: { 
-                  size: 11,
-                  lineHeight: 11
-                },
-                mode: "time",
-                min: axis.x.min,
-                max: axis.x.max,
-                zoomRange: [7200000, null],
-                panRange: [axis.x.min*0.9, axis.x.max*1.1]
+              tickSize: xaxisFormat.tickSize,
+              timeformat: xaxisFormat.timeformat,
+              color: "#98a6ad", // Color of the horizontal line (not the numbers)
+              font: { 
+                size: 11,
+                lineHeight: 11
               },
-              yaxes: [{   // Amps 0-25
-                min: 0, 
-                max: 25,
-                color: "#00b19d", // Color of the vertical line (not the numbers) "#00b19d"
-                // axisLabel: "Stroom [A]",
-                axisLabelUseCanvas: true,
-                axisLabelColor: '#FF0000',
-                tickFormatter: function (val, axis) {
-                  return Math.round(val) + ' (' + Math.round((parseFloat(val)*230) / factor_Whkm) + 'km/u)'
-                },
-                font: { 
-                  size: 11,
-                  lineHeight: 11,
-                  color: "#00b19d" //"#00b19d"
-                },
-                position: 'right'
-              }, {      // Energie 0-300
-                min: 0, 
-                max: 25,
-                color: "#ffaa00", // Color of the vertical line (not the numbers) "#00b19d"
-                // axisLabel: "Energie [kWh]",
-                font: { 
-                  size: 11,
-                  lineHeight: 11,
-                  color: "#ffaa00" //"#00b19d"
-                },
-                position: 'left'
-                }
-              ],
-              grid : {
-                show : true,
-                aboveData : false,
-                color : '#98a6ad', 
-                borderColor : '#98a6ad', 
-                labelMargin : 15,
-                axisMargin : 0,
-                borderWidth : 0,
-                minBorderMargin : 5,
-                hoverable: true,
-                clickable: true
+              mode: "time",
+              min: axis.x.min,
+              max: axis.x.max,
+              zoomRange: [7200000, null],
+              panRange: [axis.x.min*0.9, axis.x.max*1.1]
+            },
+            yaxes: [{   // Amps 0-25
+              min: 0, 
+              max: 25,
+              color: "#00b19d", // Color of the vertical line (not the numbers) "#00b19d"
+              // axisLabel: "Stroom [A]",
+              axisLabelUseCanvas: true,
+              axisLabelColor: '#FF0000',
+              tickFormatter: function (val, axis) {
+                return Math.round(val) + ' (' + Math.round((parseFloat(val)*230) / factor_Whkm) + 'km/u)'
               },
-              zoom: {
-                interactive: true
+              font: { 
+                size: 11,
+                lineHeight: 11,
+                color: "#00b19d" //"#00b19d"
               },
-              pan: {
-                interactive: true,
-                enableTouch: true
+              position: 'right'
+            }, {      // Energie 0-300
+              min: axis.y2.min, 
+              max: axis.y2.max*1.1,
+              color: "#ffaa00", // Color of the vertical line (not the numbers) "#00b19d"
+              // axisLabel: "Energie [kWh]",
+              font: { 
+                size: 11,
+                lineHeight: 11,
+                color: "#ffaa00" //"#00b19d"
               },
-              legend: {
-                position: 'nw',
-                show: true,
-                backgroundOpacity: 0.9,
-                noColumns: 1
-              }
-            })
+              position: 'left'
+            }],
+            grid : {
+              show : true,
+              aboveData : false,
+              color : '#98a6ad', 
+              borderColor : '#98a6ad', 
+              labelMargin : 15,
+              axisMargin : 0,
+              borderWidth : 0,
+              minBorderMargin : 5,
+              hoverable: true,
+              clickable: true
+/*
+            },
+            selection: {
+              mode: "xy"
+*/              
+			      }
+          }
 
-            var axes = flotObj.getAxes()
-            axes.xaxis.options.min = axis.x.min 
-            axes.xaxis.options.max = axis.x.max
-            axes.yaxis.options.min = axis.y1.min
-            axes.yaxis.options.max = axis.y1.max 
-            axes.y2axis.options.min = axis.y2.min 
-            axes.y2axis.options.max = axis.y2.max
-            flotObj.setupGrid()             // if axis have changed
-            flotObj.draw()
+          flotObj = $.plot($("#modal_flotgraph"), flotDataset, graphOptions)
 
-            $("#modal_flotgraph").bind("plothover", function (event, pos, item) {
-              if (!pos.x || !pos.y) {
-                return
-              }
+          var axes = flotObj.getAxes()
+          axes.xaxis.options.min = axis.x.min 
+          axes.xaxis.options.max = axis.x.max
+          axes.yaxis.options.min = axis.y1.min
+          axes.yaxis.options.max = axis.y1.max 
+          axes.y2axis.options.min = axis.y2.min 
+          axes.y2axis.options.max = axis.y2.max
+          flotObj.setupGrid()             // if axis have changed
+          flotObj.draw()
 
-              if (item) {
-                var x = item.datapoint[0].toFixed(2)
-                var y = item.datapoint[1].toFixed(2)
+/*
+          $("#modal_flotgraph").bind("plotselected", function (event, ranges) {
+            // clamp the zooming to prevent eternal zoom
+            if (ranges.xaxis.to - ranges.xaxis.from < 0.00001) {
+              ranges.xaxis.to = ranges.xaxis.from + 0.00001
+            }
+            if (ranges.yaxis.to - ranges.yaxis.from < 0.00001) {
+              ranges.yaxis.to = ranges.yaxis.from + 0.00001
+            }
+            // do the zooming
+            flotObj = $.plot("#modal_flotgraph", getGraphModalData(flotDataset, ranges.xaxis.from, ranges.xaxis.to),
 
-                  
-                var d = new Date(parseInt(item.datapoint[0]) *1000)
-                var monthNames = [
-                  "January", "February", "March",
-                  "April", "May", "June", "July",
-                  "August", "September", "October",
-                  "November", "December"
+              $.extend(true, {}, graphOptions, {
+                xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to },
+                yaxes: [
+                  { min: ranges.yaxis.from, max: ranges.yaxis.to },
+                  { min: ranges.y2axis.from, max: ranges.y2axis.to }
                 ]
-                var ttStr = '<span style="color: ' + item.series.color + ' !important; font-size: smaller;">' +
-                    '<i class="fas fa-charging-station"></i> ' + 
-                    item.datapoint[1] + 
-                    (item.series.label.endsWith('[A]') ? 'A (' + Math.round((parseFloat(item.datapoint[1])*230) / factor_Whkm) + 'km/u)' : 
-                      (item.series.label.endsWith('[kWh]') ? 'kWh (' + Math.round((parseFloat(item.datapoint[1])*1000) / factor_Whkm).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + 'km)' : '')
-                    ) +
-                    '</span><br>' + 
-                    '<span style="color: #98a6ad !important; font-size: smaller;">' + 
-                    '<i class="fa fa-calendar"></i> ' + 
-                    d.getDate() + " " + 
-                    monthNames[d.getMonth()] + 
-                    " " + d.getFullYear() + 
-                    " " + (d.getHours() < 10 ? "0" : "" ) + d.getHours() +
-                    ":" + (d.getMinutes() < 10 ? "0" : "" ) + d.getMinutes() +
-                    'u</span>'
+              })
+            )
 
-                $("#graph_tooltip").html( ttStr )
-                  .css({top: item.pageY+5, left: item.pageX+5})
-                  .fadeIn(200);
-              } else {
-                $("#graph_tooltip").hide()
-              }
-            })
-            $("#modal_flotgraph").bind("plothovercleanup", function (event, pos, item) {
+          })
+*/
+          $("#modal_flotgraph").bind("plothover", function (event, pos, item) {
+            if (!pos.x || !pos.y) {
+              return
+            }
+
+            if (item) {
+              var x = item.datapoint[0].toFixed(2)
+              var y = item.datapoint[1].toFixed(2)
+
+                
+              var d = new Date(parseInt(item.datapoint[0]) *1000)
+              var ttStr = '<span style="color: ' + item.series.color + ' !important; font-size: smaller;">' +
+                  '<i class="fas fa-charging-station"></i> ' + 
+                  item.datapoint[1] + 
+                  (item.series.label.endsWith('[A]') ? 'A (' + Math.round((parseFloat(item.datapoint[1])*230) / factor_Whkm) + 'km/u)' : 
+                    (item.series.label.endsWith('[kWh]') ? 'kWh (' + Math.round((parseFloat(item.datapoint[1])*1000) / factor_Whkm).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + 'km)' : '')
+                  ) +
+                  '</span><br>' + 
+                  '<span style="color: #98a6ad !important; font-size: smaller;">' + 
+                  '<i class="fa fa-calendar"></i> ' + 
+                  d.getDate() + " " + 
+                  months[d.getMonth()] + 
+                  " " + d.getFullYear() + 
+                  " " + (d.getHours() < 10 ? "0" : "" ) + d.getHours() +
+                  ":" + (d.getMinutes() < 10 ? "0" : "" ) + d.getMinutes() +
+                  'u</span>'
+
+              $("#graph_tooltip").html( ttStr )
+                .css({top: item.pageY+5, left: item.pageX+5})
+                .fadeIn(200);
+            } else {
               $("#graph_tooltip").hide()
-            })
-
-            $("#modal_flotgraph").bind("plotclick", function (event, pos, item) {
-              if (item) {
-                plot.highlight(item.series, item.datapoint)
-              }
-            })
+            }
+          })
+          $("#modal_flotgraph").bind("plothovercleanup", function (event, pos, item) {
+            $("#graph_tooltip").hide()
+          })
 
         },
         (result) => {
@@ -1588,15 +1706,21 @@
 
       $('input#enableSessionEdit').change(function() {
         if ($(this).prop('checked')) {
-          $('table#charge_sessions').addClass('table-hover')
+          $('table#charge_sessions').addClass('table-hover-warning')
+          $('table#charge_sessions').removeClass('table-hover-success')
           $('table#charge_sessions').css('cursor', 'pointer')
+          $('table#charge_sessions').off('click', 'tr')
           $('table#charge_sessions').on('click', 'tr', function () {
             showChangeChargeSessionModal(dt.row(this).data())
           })
         } else {
-          $('table#charge_sessions').removeClass('table-hover')
-          $('table#charge_sessions').css('cursor', 'default')
+          $('table#charge_sessions').removeClass('table-hover-warning')
+          $('table#charge_sessions').addClass('table-hover-success')
+          // $('table#charge_sessions').css('cursor', 'default')
           $('table#charge_sessions').off('click', 'tr')
+          $('table#charge_sessions').on('click', 'tr', function () {
+            showGraph(dt.row(this).data())
+          })
         }
         dt.rows().invalidate().draw()
       })
@@ -1705,9 +1829,18 @@
         }
         e.preventDefault()
       })
+      $('table#charge_sessions').addClass('table-hover-success')
+      $('table#charge_sessions').css('cursor', 'pointer')
+      $('table#charge_sessions').on('click', 'tr', function () {
+        showGraph(dt.row(this).data())
+      })
       $('button#show-graph-modal-footer-closeaction').on("click", function(e) {
         showGraphModal.modal('hide')
         e.preventDefault()
+      })
+      // Close the hover tooltip on closed modal
+      $('#showGraphModal').on('hidden.bs.modal', function () {
+        $("#graph_tooltip").hide()
       })
     })
 
@@ -2094,8 +2227,8 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header bg-primary">
-        <h3 class="modal-title" id="showGraphModalLabel">Laadsessieverloop</h3>
-        <button type="button" class="close-x bg-primary" data-dismiss="modal" aria-label="Close" id="showGraphModalCloseButton">
+        <h3 class="modal-title" id="showGraphModalLabel">Laadsessieverloop <span id="csgChargeSessionIdTitle"></span></h3>
+        <button type="button" class="close-x" data-dismiss="modal" aria-label="Close" id="showGraphModalCloseButton">
           <span aria-hidden="true"><i class="fas fa-times"></i></span>
         </button>
       </div>
@@ -2103,12 +2236,72 @@
 
         <div class="col-lg-12">
 
-          <div class="text-center text-warning pb-5">
-            <div style="font-size: 1.3rem;">Laadsessie <span id="csgChargeSessionId" class="font-weight: bold;"></span></div>
+          <div style="position: relative; display: flex; min-height: 3.4em;">
+            <div class="text-center pb-3 charge-session-summary">
+              <span>Transactie</span><span id="csgChargeSessionId"></span><span>met laadpas</span><span id="csgRfid"></span><span>op laadpunt</span><span id="csgChargerName"></span><span>gestart op</span><span id="csgFrom"></span><span>lopend tot</span><span id="csgUntill"></span><span>gedurende</span><span id="csgDuration"></span><span>voor een tarief</span><span id="csgTariff"></span><span>met een totaalverbruik van</span><span id="csgTotalusage"></span><span>en een totaalprijs van</span><span id="csgPrice"></span>.
+            </div>
+
+            <div class="legend" style="width: 130px; height: 3.2em; pointer-events: none; float: right;">
+              <svg class="legendLayer" style="width:inherit;height:inherit;">
+                <rect class="background" width="100%" height="100%"></rect>
+                <defs>
+                  <symbol id="line" fill="none" viewBox="-5 -5 25 25">
+                    <polyline points="0,15 5,5 10,10 15,0"></polyline>
+                  </symbol>
+                  <symbol id="area" stroke-width="1" viewBox="-5 -5 25 25">
+                    <polyline points="0,15 5,5 10,10 15,0, 15,15, 0,15"></polyline>
+                  </symbol>
+                  <symbol id="bars" stroke-width="1" viewBox="-5 -5 25 25">
+                    <polyline points="1.5,15.5 1.5,12.5, 4.5,12.5 4.5,15.5 6.5,15.5 6.5,3.5, 9.5,3.5 9.5,15.5 11.5,15.5 11.5,7.5 14.5,7.5 14.5,15.5 1.5,15.5"></polyline>
+                  </symbol>
+                  <symbol id="circle" viewBox="-5 -5 25 25">
+                    <circle cx="0" cy="15" r="2.5"></circle>
+                    <circle cx="5" cy="5" r="2.5"></circle>
+                    <circle cx="10" cy="10" r="2.5"></circle>
+                    <circle cx="15" cy="0" r="2.5"></circle>
+                  </symbol>
+                  <symbol id="rectangle" viewBox="-5 -5 25 25">
+                    <rect x="-2.1" y="12.9" width="4.2" height="4.2"></rect>
+                    <rect x="2.9" y="2.9" width="4.2" height="4.2"></rect>
+                    <rect x="7.9" y="7.9" width="4.2" height="4.2"></rect>
+                    <rect x="12.9" y="-2.1" width="4.2" height="4.2"></rect>
+                  </symbol>
+                  <symbol id="diamond" viewBox="-5 -5 25 25">
+                    <path d="M-3,15 L0,12 L3,15, L0,18 Z"></path>
+                    <path d="M2,5 L5,2 L8,5, L5,8 Z"></path>
+                    <path d="M7,10 L10,7 L13,10, L10,13 Z"></path>
+                    <path d="M12,0 L15,-3 L18,0, L15,3 Z"></path>
+                  </symbol>
+                  <symbol id="cross" fill="none" viewBox="-5 -5 25 25">
+                    <path d="M-2.1,12.9 L2.1,17.1, M2.1,12.9 L-2.1,17.1 Z"></path>
+                    <path d="M2.9,2.9 L7.1,7.1 M7.1,2.9 L2.9,7.1 Z"></path>
+                    <path d="M7.9,7.9 L12.1,12.1 M12.1,7.9 L7.9,12.1 Z"></path>
+                    <path d="M12.9,-2.1 L17.1,2.1 M17.1,-2.1 L12.9,2.1 Z"></path>
+                  </symbol>
+                  <symbol id="plus" fill="none" viewBox="-5 -5 25 25">
+                    <path d="M0,12 L0,18, M-3,15 L3,15 Z"></path>
+                    <path d="M5,2 L5,8 M2,5 L8,5 Z"></path>
+                    <path d="M10,7 L10,13 M7,10 L13,10 Z"></path>
+                    <path d="M15,-3 L15,3 M12,0 L18,0 Z"></path>
+                  </symbol>
+                </defs>
+                <g>
+                  <use xlink:href="#area" class="legendIcon" x="3px" y="0em" fill="#00b19d" width="1.5em" height="1.5em"></use>
+                  <text x="3px" y="0em" text-anchor="start">
+                    <tspan dx="2em" dy="1.2em">Stroom [A]</tspan>
+                  </text>
+                </g>
+                <g>
+                  <use xlink:href="#line" class="legendIcon" x="3px" y="1.5em" stroke="#ffaa00" stroke-width="1" width="1.5em" height="1.5em"></use>
+                  <text x="3px" y="1.5em" text-anchor="start">
+                    <tspan dx="2em" dy="1.2em">Energie [kWh]</tspan>
+                  </text>
+                </g>
+              </svg>
+            </div>
           </div>
 
           <div>
-
             <div class="portlet"><!-- /primary heading -->
                 <div id="portlet 1" class="panel-collapse collapse show">
                     <div class="portlet-body">

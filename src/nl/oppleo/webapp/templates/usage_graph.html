@@ -68,7 +68,7 @@
   <script>
     var flotObj = null
     function timestamp() {
-      d = new Date();
+      d = new Date()
       return (d.getFullYear() + "-" + 
              (d.getMonth()<10?'0':'') + (d.getMonth()+1) + "-" + 
              (d.getDate()<10?'0':'') + d.getDate() + '.' + 
@@ -241,21 +241,15 @@
 
         $("#stecapg_1_flotgraph").bind("plothover", function (event, pos, item) {
           if (!pos.x || !pos.y) {
-            return;
+            return
           }
 
           if (item) {
             var x = item.datapoint[0].toFixed(2),
-              y = item.datapoint[1].toFixed(2);
+              y = item.datapoint[1].toFixed(2)
 
               
-            var d = new Date(parseInt(item.datapoint[0]) *1000);
-            var monthNames = [
-              "January", "February", "March",
-              "April", "May", "June", "July",
-              "August", "September", "October",
-              "November", "December"
-            ]
+            var d = new Date(parseInt(item.datapoint[0]) *1000)
             var ttStr = '<span style="color: ' + item.series.color + ' !important; font-size: smaller;">' +
                 '<i class="fas fa-charging-station"></i> ' + 
                 item.datapoint[1] + 
@@ -266,7 +260,7 @@
                 '<span style="color: #98a6ad !important; font-size: smaller;">' + 
                 '<i class="fa fa-calendar"></i> ' + 
                 d.getDate() + " " + 
-                monthNames[d.getMonth()] + 
+                months[d.getMonth()] + 
                 " " + d.getFullYear() + 
                 " " + (d.getHours() < 10 ? "0" : "" ) + d.getHours() +
                 ":" + (d.getMinutes() < 10 ? "0" : "" ) + d.getMinutes() +
@@ -274,22 +268,22 @@
 
             $("#tooltip").html( ttStr )
               .css({top: item.pageY+5, left: item.pageX+5})
-              .fadeIn(200);
+              .fadeIn(200)
           } else {
-            $("#tooltip").hide();
+            $("#tooltip").hide()
           }
         })
         $("#stecapg_1_flotgraph").bind("plothovercleanup", function (event, pos, item) {
-          $("#tooltip").hide();
+          $("#tooltip").hide()
         })
 
         $("#stecapg_1_flotgraph").bind("plotclick", function (event, pos, item) {
           if (item) {
-            plot.highlight(item.series, item.datapoint);
+            plot.highlight(item.series, item.datapoint)
           }
         })
 
-        $('#stecapg_1_waiting').toggleClass( 'invisible', true );
+        $('#stecapg_1_waiting').toggleClass( 'invisible', true )
       })
       .fail(function() {
       })
