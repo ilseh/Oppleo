@@ -1,11 +1,19 @@
 Version 1.3.1           2021-06-04
 
 Added
+- edit charge sessions
+- show graphs per charge session
+- notifications menu. Auto-dissapearing notifications readable in menu
+- start/stop charge sessions from rfid token list
+- token list row highlight and edit clickable
+- retry odometer read button on charge session page
 
 Fixed
 - default avatar if none set
 - OS info in settings
 - update urllib3 to 1.26.5
+- page title
+- menu link on small (mobile) screen
 
 Version 1.3.0           2021-05-31
 

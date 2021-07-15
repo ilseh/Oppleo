@@ -122,6 +122,20 @@
   width: 0;
   height: 0;
 }
+  .table-hover-success tbody tr:hover td, .table-hover-success tbody tr:hover th {
+    background-color: #00b19d !important;
+    color: white;
+  }
+  /* No padding in the button column */
+  table tbody tr td:nth-child(13) {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+  }
+  /* Move the icon up in to small buttons in the button column */
+  table tbody tr td button.btn-table-row .svg-inline--fa {
+    vertical-align: .2em !important;
+  }
+
 </style>
 
 
@@ -137,6 +151,91 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
+
+    var chargeSessionSocket = undefined
+    function startWebSocket() {
+      console.log(timestamp() + ' startWebSocket()')
+      // start up the SocketIO connection to the server on namespace /usage
+      chargeSessionSocket = io.connect(window.location.protocol+'//'+window.location.hostname+':'+window.location.port+'/charge_session')
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+      chargeSessionSocket.on('charge_session_started', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+          // Active charge session, active token can stop it
+        drawSessionStartStopButtons( msg.data.id, msg.data.rfid )
+      })
+      chargeSessionSocket.on('charge_session_ended', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        // No charge session found (green)
+        drawSessionStartStopButtons( undefined, undefined )
+      })
+    }
+
+    function drawSessionStartStopButtons( sessionId = undefined, activeToken = undefined ) {
+        if ( sessionId != undefined ) {
+          // Session active, active token can stop it
+          dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var data = this.data()
+            data[12] = ''
+            if (data[1] == activeToken) {
+              // This token started the current charge session, it can stop it
+              data[12] = '<button' +
+                        '   type="button"' +
+                        '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-warning" ' +
+                        '   style="height: 18px; padding-top: 0px;"' +
+                        '   data-toggle="tooltip" ' +
+                        '   data-placement="bottom" ' +
+                        '   data-html="true" ' +
+                        '   title="<em>Stop laadsessie met ' + data[0] + '.</em>"' +
+                        '   onclick="window.location.href=\'/stop_charge_session/' + sessionId + '?next=charge_sessions\'"' +
+                        '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+                        '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
+                        '   >' +
+                        '   <i class="fa fa-hand-paper" style="font-size: 12px;"></i>' +
+                        '</button>'
+            }
+            this.invalidate()
+          })
+        } else {
+          // No session active, valid tokens can start one
+          dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var data = this.data()
+            // No charge session active, can this RFID start one?
+            if (isRfidValid(data[2], data[3], data[4])) {
+              data[12] = '<button' +
+                        '   type="button"' +
+                        '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-success" ' +
+                        '   style="height: 18px; padding-top: 0px;"' +
+                        '   data-toggle="tooltip" ' +
+                        '   data-placement="bottom" ' +
+                        '   data-html="true" ' +
+                        '   title="<em>Start laadsessie met ' + data[0] + '.</em>"' +
+                        '   onclick="window.location.href=\'/start_charge_session/' + data[1] + '?next=charge_sessions\'"' +
+                        '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+                        '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
+                        '   >' +
+                        '   <i class="fas fa-charging-station" style="font-size: 12px;"></i>' +
+                        '</button>'
+            } else {
+              data[12] = '<button' +
+                        '   type="button"' +
+                        '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-secondary disabled" ' +
+                        '   style="height: 18px; padding-top: 0px;"' +
+                        '   data-toggle="tooltip" ' +
+                        '   data-placement="bottom" ' +
+                        '   data-html="true" ' +
+                        '   title="<em>Kan geen laadsessie starten met inactief token.</em>"' +
+                        '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+                        '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
+                        '   >' +
+                        '   <i class="fas fa-charging-station" style="font-size: 12px;"></i>' +
+                        '</button>'
+            }
+            this.invalidate()
+        })
+      }
+    }
+
+
     var dt = undefined
     function getChargeSessionStatus( ) {
       console.log(timestamp() + ' getChargeSessionStatus()')
@@ -152,46 +251,18 @@
         console.log(result)
         switch(parseInt(result.status)) {
           case 404:                   // No charge session found (green)
-          case EVSE_STATE_INACTIVE:   // No charge session (green)
-            // Can start a change session
-            dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
-                var data = this.data()
-                // No charge session active, can this RFID start one?
-                if (isRfidValid(data[2], data[3], data[4])) {
-                  data[13] = '<button' +
-                            '   type="button"' +
-                            '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
-                            '   data-toggle="tooltip" ' +
-                            '   data-placement="bottom" ' +
-                            '   data-html="true" ' +
-                            '   title="<em>Start laadsessie met ' + data[0] + '.</em>"' +
-                            '   onclick="window.location.href=\'/start_charge_session/' + data[1] + '?next=charge_sessions\'"' +
-                            '   >' +
-                            '   <i class="fas fa-charging-station"></i>' +
-                            '</button>'
-                } else {
-                  data[13] = '<button' +
-                            '   type="button"' +
-                            '   class="btn btn-sm waves-effect waves-light btn-outline-secondary disabled" ' +
-                            '   data-toggle="tooltip" ' +
-                            '   data-placement="bottom" ' +
-                            '   data-html="true" ' +
-                            '   title="<em>Niet actief.</em>"' +
-                            '   >' +
-                            '   <i class="fas fa-charging-station"></i>' +
-                            '</button>'
-                }
-                this.invalidate()
-            })
+            drawSessionStartStopButtons( undefined, undefined )
             break
-          case EVSE_STATE_CONNECTED:  // Ready for charging, but no activity (yellow)
-          case EVSE_STATE_CHARGING:   // Charging activity (blue)
-          case EVSE_STATE_UNKNOWN:    // Error (red)
+          case 200:                   // Charge session found (yellow/blue)
+            // Can stop a charge session, if active token
+            drawSessionStartStopButtons( result.data.id, result.rfid.rfid )
+            break
+          case 500:                   // Internal server error
           default:
             // Cannot start a charge session
             dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
                 var data = this.data()
-                data[13] = ''
+                data[12] = ''
                 this.invalidate()
             })
             break
@@ -309,7 +380,7 @@
     }
 
     function createTokenTable() {
-      dt = $('table#usage').DataTable( {
+      dt = $('table#rfidTokens').DataTable( {
           "pageLength": 25,
           "order": [[ 5, "desc" ]], // Last used
           dom: 'frt',
@@ -321,7 +392,7 @@
             })
           },
           "columnDefs": [{
-            "targets": [1, 10, 12, 13],
+            "targets": [1, 10, 12],
             "sorting": false,
             "orderable": false
           }, {
@@ -380,13 +451,16 @@
           '<button' +
           '   type="button"' +
           '   id="delete_' + element.rfid + '"' +
-          '   class="btn btn-sm waves-effect waves-light btn-outline-danger" ' +
+          '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-danger" ' +
+          '   style="height: 18px; padding-top: 0px;"' +
           '   data-toggle="tooltip" ' +
           '   data-placement="bottom" ' +
           '   data-html="true" ' +
-          '   title="<em>Geen laadsessie historie.</em>"' +
+          '   title="<em>Verwijder token \''+ (element.name == 'None' ? element.rfid : element.name) +'\' zonder laadsessie historie.</em>"' +
+          '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+          '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
           '   >' +
-          '   <i class="far fa-trash-alt"></i>' +
+          '   <i class="fas fa-trash-alt" style="font-size: 12px;"></i>' +
           '</button>'
         ),
         ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
@@ -396,24 +470,16 @@
         (element.api_access_token + '|' + element.api_created_at + '|' + element.api_expires_in),
         '<button' +
         '   type="button"' +
-        '   id="edit_' + element.rfid + '"' +
-        '   class="btn btn-sm waves-effect waves-light btn-outline-primary" ' +
-        '   data-toggle="tooltip" ' +
-        '   data-placement="bottom" ' +
-        '   data-html="true" ' +
-        '   title="<em>Edit ' + ((element.name == undefined || element.name == 'None') ? element.rfid : element.name) + '.</em>"' +
-        '   >' +
-        '   <i class="fas fa-edit"></i>' +
-        '</button>',
-        '<button' +
-        '   type="button"' +
-        '   class="btn btn-sm waves-effect waves-light btn-outline-secondary disabled" ' +
+        '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-secondary disabled" ' +
+        '   style="height: 18px; padding-top: 0px;"' +
         '   data-toggle="tooltip" ' +
         '   data-placement="bottom" ' +
         '   data-html="true" ' +
         '   title="<em>Niet actief.</em>"' +
+        '   onMouseOver="javascript:mouseOverTableRowButton(false);"' +
+        '   onMouseOut="javascript:mouseOverTableRowButton(true);"' +
         '   >' +
-        '   <i class="fas fa-charging-station"></i>' +
+        '   <i class="fas fa-charging-station" style="font-size: 12px;"></i>' +
         '</button>'
       ]).draw()
 
@@ -465,6 +531,9 @@
       })
     }
 
+    function mouseOverTableRowButton( showRowHighlight ) {
+      $('table#rfidTokens').toggleClass('table-hover-success', showRowHighlight)
+    }
 
 
     var dialog;
@@ -571,6 +640,17 @@
     
 
       getRfidTokens()
+
+      $('table#rfidTokens').addClass('table-hover-success')
+      $('table#rfidTokens').css('cursor', 'pointer')
+      $('table#rfidTokens').on('click', 'tr', function () {
+        // Only if highlighted
+        if ($('table#rfidTokens').hasClass('table-hover-success')) {
+          window.location = '/rfid_tokens/' + dt.row(this).data()[1]
+        }
+      })
+
+      startWebSocket()
     })
     </script>
 
@@ -595,10 +675,10 @@
     <div class="row">
       <div class="col-12">
         <div class="card-box table-responsive">
-          <table id="usage" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
+          <table id="rfidTokens" class="table table-bordered" cellpadding="0" cellspacing="0" style="font-size: 10px;">
             <thead style="background-color: #3bafda; color: white; border-color: #3bafda;">
               <tr>
-                <th style="text-align: center;">Naam</th>
+                <th style="text-align: center; min-width: 80px;">Naam</th>
                 <th style="text-align: center;">Pasnummer</th>
                 <th style="text-align: center;">Actief</th>
                 <th style="text-align: center;">Geldig van</th>
@@ -610,7 +690,6 @@
                 <th style="text-align: center;">Kenteken</th>
                 <th style="text-align: center;">Update km stand</th>
                 <th style="text-align: center;">Token</th>
-                <th style="text-align: center;">&nbsp;</th>
                 <th style="text-align: center;">&nbsp;</th>
               </tr>
             </thead style="background-color: #3bafda; color: white; font-size: 14pt; font-weight: bold; border-color: #3bafda;">

@@ -19,6 +19,8 @@ class ChargeSessionModel(Base):
     Charge Session Model
     """
 
+    __logger = logging.getLogger('nl.oppleo.models.ChargeSessionModel')
+
     # table name
     __tablename__ = 'charge_session'  # -> sessions
     fieldList = ['rfid', 'energy_device_id', 'start_value', 'end_value', 'start_time', 'end_time', 'tariff', 'total_energy', 'total_price', 'km', 'trigger']
@@ -43,7 +45,7 @@ class ChargeSessionModel(Base):
 
     # class constructor
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.models.ChargeSessionModel')
+        self.__logger = logging.getLogger('nl.oppleo.models.ChargeSessionModel')
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
@@ -68,7 +70,7 @@ class ChargeSessionModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
 
@@ -84,7 +86,7 @@ class ChargeSessionModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not update to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not update to {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not update to {} table in database".format(self.__tablename__ ))
 
 
@@ -97,7 +99,7 @@ class ChargeSessionModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
 
@@ -112,7 +114,7 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return csm
 
@@ -121,18 +123,21 @@ class ChargeSessionModel(Base):
     def get_one_charge_session(id) -> ChargeSessionModel | None:
         db_session = DbSession()
         csm = None
+
         try:
             csm = db_session.query(ChargeSessionModel) \
                             .filter(ChargeSessionModel.id == id) \
                             .limit(1) \
-                            .all()[0]
+                            .all()
         except InvalidRequestError as e:
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
-        except:
+        except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
-        return csm
+
+        return None if len(csm) < 1 else csm[0]
+       
 
     """
     Returns session with specific values, used for condensing charge sessions
@@ -155,7 +160,7 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
         except:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return csm
 
@@ -196,7 +201,7 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return latest_charge_session
 
@@ -217,12 +222,12 @@ class ChargeSessionModel(Base):
                         .first()
 
         except InvalidRequestError as e:
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
             return None
         except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
 
         if (latest is None or latest.end_time != None):
@@ -248,7 +253,7 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return open_charge_session_for_device
 
@@ -268,7 +273,7 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return open_charge_session_for_device != None
 
@@ -286,7 +291,7 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return charge_session_count
 
@@ -418,7 +423,7 @@ class ChargeSessionModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return csm
 
@@ -484,7 +489,7 @@ class ChargeSessionModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return csm
 
@@ -559,7 +564,7 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargeSessionModel.logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return csm
 
