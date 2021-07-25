@@ -469,7 +469,8 @@
           $(row).toggleClass('highlight-row-success', 
                              searchDate.highlightRows && 
                              ( ( displayNum == searchDate.entry - (searchDate.page * pageInfo.length) ) ||
-                               ( displayNum == pageInfo.length -1 && (searchDate.entry - (searchDate.page * pageInfo.length)) == pageInfo.length ) 
+                               // Is this beyond the last entry? Highlight the last entry
+                               ( ((searchDate.page * pageInfo.length) + displayNum) >= pageInfo.recordsDisplay -1 ) 
                              ) &&
                              pageInfo.page == searchDate.page
                             )
