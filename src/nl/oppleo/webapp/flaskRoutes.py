@@ -955,6 +955,132 @@ def settings(active=1):
             )
 
 
+"""
+    Get Usage data timestamp entry
+"""
+@flaskRoutes.route("/usage_data_tse/<path:ts>", methods=["GET"])
+@flaskRoutes.route("/usage_data_tse/<path:ts>/", methods=["GET"])
+@config_dashboard_access_restriction
+def usage_data_tse(ts:str=None):
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/usage_data_tse/')
+
+    device_measurement = EnergyDeviceMeasureModel()
+    device_measurement.energy_device_id = oppleoConfig.chargerName
+
+    recordsTotal = device_measurement.get_count()
+
+    entry_id = device_measurement.get_count_at_timestamp(energy_device_id=oppleoConfig.chargerName, 
+                                                            ts=device_measurement.date_str_to_datetime(ts)
+                                                        )
+    return {
+            "recordsTotal": recordsTotal,
+            "timestamp": ts,
+            "entry": entry_id
+        }
+                          
+
+
+"""
+    TODO: search
+           - zoek in alle searchable velden
+           - zoek op specifieke datum/tijd
+"""
+
+@flaskRoutes.route("/usage_data_ssdt", methods=["GET"])
+@flaskRoutes.route("/usage_data_ssdt/", methods=["GET"])
+@config_dashboard_access_restriction
+def usage_data_serviceside_datatable():
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/usage_data_ssdt/')
+
+    """ Default column order """
+    defaultColumns = [ 'created_at', 'kw_total', 'kwh_l1', 'kwh_l2', 'kwh_l3', 'a_l1', 'a_l2', 'a_l3', 
+                       'p_l1', 'p_l2', 'p_l3', 'v_l1', 'v_l2', 'v_l3', 'hz' ]
+
+    method = request.method
+    draw = request.args.get('draw', default=0, type=int)
+    start = request.args.get('start', default=0, type=int)
+    length = request.args.get('length', default=0, type=int)
+    searchValue = request.args.get('search[value]', default='', type=str)
+    searchRegex = request.args.get('search[regex]', default=False, type=bool)
+    orderColumn = request.args.get('order[0][column]', default=0, type=int)
+    orderDir = request.args.get('order[0][dir]', default='asc', type=str)
+
+    columnList = []
+    i = 0
+    while request.args.get(f'columns[{i}][data]', default=None, type=str) is not None:
+        columnList.append({ 'name'          : request.args.get(f'columns[{i}][name]', default=defaultColumns[i] if i in defaultColumns else '', type=str), 
+                            'data'          : request.args.get(f'columns[{i}][data]', default=defaultColumns[i] if i in defaultColumns else '', type=str), 
+                            'searchable'    : True if request.args.get(f'columns[{i}][searchable]', default='false', type=str) in ['true'] else False,
+                            'orderable'     : True if request.args.get(f'columns[{i}][orderable]', default='false', type=str) in ['true'] else False,
+                            'searchValue'   : request.args.get(f'columns[{i}][search][value]', default='', type=str), 
+                            'searchRegex'   : True if request.args.get(f'columns[{i}]search][regex]', default='false', type=str) in ['true'] else False
+                          })
+        i += 1
+    if len(columnList) == 0:
+        """ Default """
+        for column in defaultColumns:
+            columnList.append({ 'name'          : column, 
+                                'data'          : column, 
+                                'searchable'    : True,
+                                'orderable'     : True,
+                                'searchValue'   : '', 
+                                'searchRegex'   : False
+                            })
+
+    device_measurement = EnergyDeviceMeasureModel()
+    device_measurement.energy_device_id = oppleoConfig.chargerName
+
+    recordsTotal = device_measurement.get_count()
+
+    """ 
+        Filter or search 
+        - create_at is search from (if order asc) or untill (if order is desc)
+        - other column search not yet supported
+    """
+    created_at = next((column for column in columnList if column['data'] == 'created_at'), None)
+
+    if 'searchValue' in created_at and created_at['searchValue'] != '':
+        """ search for date """
+        entry_id = device_measurement.get_count_at_timestamp(energy_device_id=oppleoConfig.chargerName, 
+                                                             ts=device_measurement.date_str_to_datetime(created_at['searchValue'])
+                                                            )
+        """ Default order desc, start at the entry (or -1?) """
+        start = entry_id
+        """ If order asc, start at total - entry - length """
+        if orderColumn == columnList.index(created_at) and orderDir.lower() == 'asc':
+            start = recordsTotal - entry_id - length
+
+
+    qr = device_measurement.paginate(energy_device_id = oppleoConfig.chargerName,
+                                     offset           = start, 
+                                     limit            = length, 
+                                     orderColumn      = getattr(EnergyDeviceMeasureModel, columnList[orderColumn]['data']),
+                                     orderDir         = orderDir
+                                    )
+    qr_pl = []
+    for o in qr:
+        entry = {}
+        for column in columnList:
+            if column['data'] == 'created_at':
+                entry['created_at'] = o.get_created_at_str()
+            else:
+                entry[column['data']] = getattr(o, column['data'])
+        qr_pl.append(entry)
+
+    return {
+            "draw": draw,
+            "recordsTotal": recordsTotal,
+            "recordsFiltered": recordsTotal,
+            "start": start,
+            "length": length,
+            "data": qr_pl
+        }
+
+
+
+
 @flaskRoutes.route("/usage_data")
 @flaskRoutes.route("/usage_data/")
 @flaskRoutes.route("/usage_data/<int:cnt>")

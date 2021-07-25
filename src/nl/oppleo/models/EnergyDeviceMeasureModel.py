@@ -3,7 +3,8 @@ import logging
 
 from marshmallow import fields, Schema
 
-from sqlalchemy import orm, Column, Integer, String, DateTime, Float, desc
+from sqlalchemy import orm, Column, Integer, String, DateTime, Float, asc, desc, func
+
 from sqlalchemy.exc import InvalidRequestError
 
 from nl.oppleo.models.Base import Base, DbSession
@@ -135,6 +136,53 @@ class EnergyDeviceMeasureModel(Base):
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return edmm
+
+    def get_count_at_timestamp(self, energy_device_id, ts:datetime=None):
+        db_session = DbSession()
+        edmm = None
+        try:
+            edmm = db_session.query(func.count(EnergyDeviceMeasureModel.id)) \
+                             .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                             .filter(
+                                 EnergyDeviceMeasureModel.created_at >= ts if asc else EnergyDeviceMeasureModel.created_at <= ts
+                                 ) \
+                             .scalar()
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
+        except Exception as e:
+            # Nothing to roll back
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
+        return edmm
+
+    def paginate(self, energy_device_id, offset:int=0, limit:int=0, orderColumn:Column=None, orderDir:str=None):
+        db_session = DbSession()
+        edmm = None
+        try:
+            if orderColumn is not None:
+                edmm = db_session.query(EnergyDeviceMeasureModel) \
+                                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                                .order_by(asc(orderColumn) if orderDir=='asc' else desc(orderColumn)) \
+                                .offset(offset) \
+                                .limit(limit)
+            else: 
+                edmm = db_session.query(EnergyDeviceMeasureModel) \
+                                .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id) \
+                                .offset(offset) \
+                                .limit(limit)
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
+        except Exception as e:
+            # Nothing to roll back
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
+        return edmm
+
+
+    def get_count(self):
+        db_session = DbSession()
+        rows = db_session.query(func.count(EnergyDeviceMeasureModel.id)).scalar()
+        return rows
 
 
     def get_usage_since(self, energy_device_id, since_ts):

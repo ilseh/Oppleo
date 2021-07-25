@@ -1218,8 +1218,24 @@
         .notification-modal .read:hover {
             background-color: #434f5c;
         }
+        li.paginate_button.page-item.previous.disabled {
+            cursor: not-allowed;
+        }
+        li.paginate_button.page-item.previous.disabled a {
+            color: #98a6ad !important;
+            font-style: italic;
+            pointer-events: none;
+        }
+        li.paginate_button.page-item.next.disabled {
+            cursor: not-allowed;
+        }
+        li.paginate_button.page-item.next.disabled a {
+            color: #98a6ad !important;
+            font-style: italic;
+            pointer-events: none;
+        }
         </style>
-        {% endblock %}
+    {% endblock %}
     
     </head>
 
