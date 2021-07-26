@@ -168,6 +168,8 @@
             return
           }
           // Cannot add locally, need to trigger a server side data refresh
+          autoHideNotify('success','top-left', 'Verbruiksgegevens opntvangen', 'Verbruiksgegevens opntvangen, ' + msg.data.kw_total + 'kWh op ' + msg.data.created_at + '.')
+
           dt.draw()
         } // Else don't add, will be shown when skipping to the first or last pages
 
@@ -297,11 +299,13 @@
             className: 'btn btn-low-key btn-sm'
           }
         ],
+/*
         "createdRow": function(row, data, dataIndex) {
           $(row).toggleClass("text-info").fadeOut(800, function() {              
             $(this).toggleClass("text-info").fadeIn(50)
           })
         },
+*/
         "columnDefs": [{
           // This is for the timestamp column
           "targets": [0],
