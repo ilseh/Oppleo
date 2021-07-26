@@ -149,7 +149,7 @@
 
         let pageInfo = dt.page.info()
         let order = dt.order() // [column][order] with order being desc or asc
-        if ( ( pageInfo.pages == 0 && (order[0][0] == 0 && order[0][1] == 'desc') ) ||
+        if ( ( pageInfo.page == 0 && (order[0][0] == 0 && order[0][1] == 'desc') ) ||
              ( pageInfo.pages == pageInfo.page && (order[0][0] == 0 && order[0][1] == 'asc') ) ) {
           // On an edge page, add this new entry
 
