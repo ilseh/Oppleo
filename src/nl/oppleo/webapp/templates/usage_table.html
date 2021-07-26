@@ -168,9 +168,25 @@
             return
           }
           // Cannot add locally, need to trigger a server side data refresh
-          autoHideNotify('success','top-left', 'Verbruiksgegevens opntvangen', 'Verbruiksgegevens opntvangen, ' + msg.data.kw_total + 'kWh op ' + msg.data.created_at + '.')
 
-          dt.draw()
+          let rud = parseDate(msg.data.created_at)
+          let ruds = (weekday[rud.getDay() %7]) + ' ' + 
+                      rud.getDate() + ' ' + (months[rud.getMonth() %12]) + ' ' + rud.getFullYear() + ' ' +
+                      rud.getHours() + ':' +
+                      (rud.getMinutes() < 10 ? '0' : '') + rud.getMinutes() + 'u ' +
+                      '(' + rud.getSeconds() + 's)'
+
+          autoHideNotify('success','top-left', 'Verbruiksgegevens opntvangen', 'Verbruiksgegevens opntvangen, ' + msg.data.kw_total + 'kWh op ' + ruds + '.')
+
+          newAvailableEntries++
+          $('button#reload').removeClass('disabled')
+          $('button#reload').removeAttr('disabled')
+          $('button#reload').attr('data-original-title', newAvailableEntries + ' nieuwe meting' + (newAvailableEntries==1?'':'en') + ' beschikbaar, ' + (newAvailableEntries==1?'van ':'meest recent van ') + ruds + '.')
+
+          $('span#newMeasuresCounter').html( newAvailableEntries )
+          $('span#newMeasuresCounter').removeClass( 'd-none' )
+
+          // dt.draw()
         } // Else don't add, will be shown when skipping to the first or last pages
 
       })
@@ -187,7 +203,7 @@
       entry: -1,
       page: -1
     }
-   
+    let newAvailableEntries = 0
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
 
@@ -216,6 +232,12 @@
           }
           searchDate.firstLoad = false
         }
+        newAvailableEntries = 0
+        $('button#reload').addClass('disabled')
+        $('button#reload').attr('disabled', 'true')
+        $('button#reload').attr('data-original-title', 'Geen nieuwe metingen')
+        $('span#newMeasuresCounter').html( 0 )
+        $('span#newMeasuresCounter').addClass( 'd-none' )
       })
       $('table#usage').on( 'processing.dt', function ( e, settings, processing ) {
         if (processing) {
@@ -463,6 +485,14 @@
           }
         }],
         "initComplete": function( settings, json ) {
+          $('table#usage').before('<div><span class="ml-4"><button type="button" id="reload" class="btn btn-sm btn-outline-primary disabled" disabled="true" data-toggle="tooltip" data-placement="bottom" data-html="true" title="Geen nieuwe metingen."><i class="fas fa-redo-alt"></i> Vernieuwen <span id="newMeasuresCounter" class="badge noti-icon-badge badge-success d-none">0</span></button></span></div>')
+          $('button#reload').on('click', (ev) => {
+            dt.draw()
+          })
+          $('button#reload').tooltip({ 
+            boundary: 'window', 
+            trigger : 'hover'   // Allow button clicks
+          })
           $('.spinner').hide()
         },
         "rowCallback": function (row, data, displayNum, displayIndex, dataIndex) {

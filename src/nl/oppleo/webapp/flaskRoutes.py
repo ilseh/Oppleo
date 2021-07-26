@@ -1079,8 +1079,6 @@ def usage_data_serviceside_datatable():
         }
 
 
-
-
 @flaskRoutes.route("/usage_data")
 @flaskRoutes.route("/usage_data/")
 @flaskRoutes.route("/usage_data/<int:cnt>")
@@ -1097,6 +1095,7 @@ def usage_data(cnt=100):
         qr_l.append(o.to_dict())  
 
     return jsonify(qr_l)
+
 
 # Cnt is a maximum to limit impact of this request
 @flaskRoutes.route("/usage_data_since/<path:since_timestamp>")
