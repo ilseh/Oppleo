@@ -256,12 +256,20 @@
           { "data":         "hz" }
         ],
         "ajax": {
-            "url": "/usage_data_ssdt/",
-            "data": function ( d ) {
-                d.myKey = "myValue";
-                // d.custom = $('#myInput').val();
-                // etc
-            }
+          "url": "/usage_data_ssdt/",
+          "data": function ( d ) {
+              // What is being sent to the server. Add to d for additional keys
+              console.log( 'Data sent to server: ', d )
+          },
+          "dataFilter" :function( d ){
+            // what is being sent back from the server (if no error)
+            console.log( 'Data received from the server: ', d )
+            return d
+          },
+          "error": function( err, status ) {
+            // what error is seen(it could be either server side or client side.
+            console.err( 'Error received from the server: ', err, status)
+          },            
         },
         "pageLength": 25,
         "lengthMenu": [ 25, 50, 100, 500 ],
@@ -500,7 +508,7 @@
         }) // using the done promise callback
         .done(function(data) {
           // log data to the console so we can see
-          console.log(data)
+          console.log( 'Timestamp entry returns: ', data )
           // Calculate the page to jump to
 
           let pageInfo = dt.page.info()
