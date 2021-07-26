@@ -145,40 +145,47 @@
       socket.on('status_update', function(msg) {
         console.log('Received: ' + JSON.stringify(msg.data))
 
-        // Check if entry does not already exist. After a server restart the last entry is always re-sent. 
-        var entryExists = false
-        dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
-          var data = this.data()
-          if (data[0] === msg.data.created_at) {
-            console.log('Websocket data entry ['+msg.data.created_at+'] already in table through initial pull request.')
-            entryExists = true
-            // currently no way to stop the every() loop... (return false does not work)
-            return false
+        // Don't add it if we are not on page 0 with desc order or on the last page with asc order
+
+        let pageInfo = dt.page.info()
+        let order = dt.order() // [column][order] with order being desc or asc
+        if ( ( pageInfo.pages == 0 && (order[0][0] == 0 && order[0][1] == 'desc') ) ||
+             ( pageInfo.pages == pageInfo.page && (order[0][0] == 0 && order[0][1] == 'asc') ) ) {
+          // On an edge page, add this new entry
+
+          // Check if entry does not already exist. After a server restart the last entry is always re-sent. 
+          var entryExists = false
+          dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var data = this.data()
+            if (data[0] === msg.data.created_at) {
+              console.log('Websocket data entry ['+msg.data.created_at+'] already in table through initial pull request.')
+              entryExists = true
+              // currently no way to stop the every() loop... (return false does not work)
+              return false
+            }
+          })
+          if (entryExists) {
+            return
           }
-        })
-        if (entryExists) {
-          return
-        }
-        dt.row.add([
-            msg.data.created_at,
-            msg.data.kw_total,
-            msg.data.kwh_l1,
-            msg.data.kwh_l2,
-            msg.data.kwh_l3,
-            msg.data.a_l1,
-            msg.data.a_l2,
-            msg.data.a_l3,
-            msg.data.p_l1,
-            msg.data.p_l2,
-            msg.data.p_l3,
-            msg.data.v_l1,
-            msg.data.v_l2,
-            msg.data.v_l3,
-            msg.data.hz
-          ]).draw( false )
-      })
-      $("#tr_41").toggleClass("testbg").fadeOut(400, function() {
-        $(this).toggleClass("testbg").fadeIn(0)
+          dt.row.add([{
+            "created_at": msg.data.created_at,
+            "kw_total"  : msg.data.kw_total,
+            "kwh_l1"    : msg.data.kwh_l1,
+            "kwh_l2"    : msg.data.kwh_l2,
+            "kwh_l3"    : msg.data.kwh_l3,
+            "a_l1"      : msg.data.a_l1,
+            "a_l2"      : msg.data.a_l2,
+            "a_l3"      : msg.data.a_l3,
+            "p_l1"      : msg.data.p_l1,
+            "p_l2"      : msg.data.p_l2,
+            "p_l3"      : msg.data.p_l3,
+            "v_l1"      : msg.data.v_l1,
+            "v_l2"      : msg.data.v_l2,
+            "v_l3"      : msg.data.v_l3,
+            "hz"        : msg.data.hz
+          }]).draw( false )
+        } // Else don't add, will be shown when skipping to the first or last pages
+
       })
     }
     //example of triggering an event on click of a form submit button
