@@ -167,23 +167,8 @@
           if (entryExists) {
             return
           }
-          dt.row.add([{
-            "created_at": msg.data.created_at,
-            "kw_total"  : msg.data.kw_total,
-            "kwh_l1"    : msg.data.kwh_l1,
-            "kwh_l2"    : msg.data.kwh_l2,
-            "kwh_l3"    : msg.data.kwh_l3,
-            "a_l1"      : msg.data.a_l1,
-            "a_l2"      : msg.data.a_l2,
-            "a_l3"      : msg.data.a_l3,
-            "p_l1"      : msg.data.p_l1,
-            "p_l2"      : msg.data.p_l2,
-            "p_l3"      : msg.data.p_l3,
-            "v_l1"      : msg.data.v_l1,
-            "v_l2"      : msg.data.v_l2,
-            "v_l3"      : msg.data.v_l3,
-            "hz"        : msg.data.hz
-          }]).draw( false )
+          // Cannot add locally, need to trigger a server side data refresh
+          dt.draw()
         } // Else don't add, will be shown when skipping to the first or last pages
 
       })
@@ -505,7 +490,6 @@
         // Use original seconds if time hasn't changed
         let time = $('oppleo-edit-time#searchTime')[0].value.substring(0, 5) + ":00"
 
-        // dt.columns(0).search( date + ', ' + time ).draw()
         $.ajax({
           type		  : 'GET',
           url			  : '/usage_data_tse/' + date + ', ' + time + '/',
