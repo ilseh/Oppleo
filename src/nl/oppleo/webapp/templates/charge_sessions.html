@@ -129,9 +129,18 @@
       background-color: #ffaa00 !important;
       color: white;
     }
-    .table-hover-success tbody tr:hover td, .table-hover-success tbody tr:hover th {
+    .table-hover-success tbody tr:hover td,
+    .table-hover-success tbody tr:hover th {
       background-color: #00b19d !important;
       color: white;
+    }
+    .table-hover-success tbody tr:hover td a, .table-hover-success tbody tr:hover td button svg,
+    .table-hover-success tbody tr:hover th a {
+      color: white;
+    }
+    .table-hover-success tbody tr:hover td button,
+    .table-hover-success tbody tr:hover th button {
+      border-color: white;
     }
     .highlight-changes, .highlight-changes span, .highlight-changes span a {
       background-color: #ffaa00 !important;
@@ -470,6 +479,7 @@
         $.each(data, function(i,val) {
           rfidTokens[val.rfid] = val
         })
+        console.log("rfidTokens", rfidTokens)
         // Force redraw
         if (dt != undefined) {
           dt.rows().invalidate().draw()
@@ -477,9 +487,11 @@
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
         // Redraw filter select
         $("select#filterReport > option").each(function() {
+          console.log("filterReport pre:", this.text)
           if (this.value in rfidTokens && isData(rfidTokens[this.value].name)) {
             this.text = rfidTokens[this.value].name
           }
+          console.log("filterReport post:", this.text)
         })
       })
       .fail(function() {
