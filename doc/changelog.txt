@@ -1,4 +1,4 @@
-Version 1.3.1           2021-07-25
+Version 1.3.1           2021-07-28
 
 Added
 - now listing all recorded energy meter entries, incl. seach on date and time
@@ -15,6 +15,8 @@ Fixed
 - update urllib3 to 1.26.5
 - page title
 - menu link on small (mobile) screen
+- Charge sessions filter had rfid id and name in some occasionsß
+- White token name/id and icons in charge sessions highlight
 
 Version 1.3.0           2021-05-31
 
