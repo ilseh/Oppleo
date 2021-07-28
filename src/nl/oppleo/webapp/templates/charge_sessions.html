@@ -479,7 +479,6 @@
         $.each(data, function(i,val) {
           rfidTokens[val.rfid] = val
         })
-        console.log("rfidTokens", rfidTokens)
         // Force redraw
         if (dt != undefined) {
           dt.rows().invalidate().draw()
@@ -488,11 +487,9 @@
         // Redraw filter select
         console.log("select#filterReport > option ", $("select#filterReport > option"))
         $("select#filterReport > option").each(function() {
-          console.log("filterReport pre:", this.text)
           if (this.value in rfidTokens && isData(rfidTokens[this.value].name)) {
             this.text = rfidTokens[this.value].name
           }
-          console.log("filterReport post:", this.text)
         })
       })
       .fail(function() {
@@ -527,13 +524,14 @@
     }
 
     function getOptionList( heading_text, heading_value, data ) {
+      console.log('getOptionList() ', data)
       let uniqueList = []
       $.each(data, function( index, value ) {
         uniqueList[value.energy_device_id] = '<option value="' + value.energy_device_id + '" style="font-style: italic;"><span class="filterText">' + value.energy_device_id + '</span></option>'
         uniqueList[value.rfid] = '<option value="' + value.rfid + '" style="font-style: italic;">' + 
                                  (value.rfid in rfidTokens && isData(rfidTokens[value.rfid].name) ? 
-                                  '<span class="filterText d-none">' + value.rfid + '</span><span>' + rfidTokens[value.rfid].name + '</span>' :
-                                  '<span class="filterText">' + value.rfid + '</span>'
+                                  rfidTokens[value.rfid].name :
+                                  value.rfid
                                  ) +
                                  '</option>'
       })
