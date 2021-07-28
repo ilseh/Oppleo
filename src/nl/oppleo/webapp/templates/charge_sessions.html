@@ -486,6 +486,7 @@
         }
         $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
         // Redraw filter select
+        console.log("select#filterReport > option ", $("select#filterReport > option"))
         $("select#filterReport > option").each(function() {
           console.log("filterReport pre:", this.text)
           if (this.value in rfidTokens && isData(rfidTokens[this.value].name)) {
