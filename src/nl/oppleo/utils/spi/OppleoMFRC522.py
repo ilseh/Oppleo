@@ -62,30 +62,31 @@ class OppleoMFRC522Log():
     last_detected_collission = None
     detected_collision_count = 0
 
+
     def logRead(self):
         with self.threadLock:
-            self.last_read_call = datetime.now()
+            self.last_read_call = str(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             self.read_call_count += 1
 
     def logReadNoBlock(self):
         with self.threadLock:
-            self.last_read_no_block_call = datetime.now()
+            self.last_read_no_block_call = str(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             self.read_no_block_call_count += 1
 
 
     def logDetectedRfid(self):
         with self.threadLock:
-            self.last_detected_rfid = datetime.now()
+            self.last_detected_rfid = str(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             self.detected_rfid_count += 1
 
     def logDetectedNothing(self):
         with self.threadLock:
-            self.last_detected_nothing = datetime.now()
+            self.last_detected_nothing = str(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             self.detected_nothing_count += 1
 
     def logDetectCollission(self):
         with self.threadLock:
-            self.last_detected_collission = datetime.now()
+            self.last_detected_collission = str(datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
             self.detected_collision_count += 1
 
     def to_str(self):
