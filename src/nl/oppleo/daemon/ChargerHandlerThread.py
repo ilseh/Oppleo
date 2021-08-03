@@ -43,6 +43,7 @@ class ChargerHandlerThread(object):
     is_status_charging = False
     device = None
     counter = 0
+    __rfidreader = None
 
     def __init__(self, device, buzzer, evse, evse_reader, appSocketIO):
         self.threadLock = threading.Lock()
@@ -79,6 +80,7 @@ class ChargerHandlerThread(object):
         #   appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
+        self.__rfidReader = RfidReader()
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
         self.rfid_reader_thread.start()
 
@@ -146,12 +148,11 @@ class ChargerHandlerThread(object):
     # rfid_reader_thread
     def rfidReaderLoop(self):
         self.resume_session_if_applicable()
-        rfidReader = RfidReader()
         while not self.stop_event.is_set():
 
             if oppleoSystemConfig.rfidEnabled:
                 # Returns [int, str]
-                rfid, text = rfidReader.read()
+                rfid, text = self.__rfidReader.read()
                 self.logger.info("Handle rfid:{} text:{}".format(rfid, text))
                 self.handleOfferedRfid(str(rfid))
 
@@ -161,6 +162,10 @@ class ChargerHandlerThread(object):
 
         self.logger.info(".rfidReaderLoop() - Stopping RfidReader")
 
+    def rfidReaderLog(self):
+        if self.__rfidReader is not None:
+            return self.__rfidReader.read_log()
+        return {}
 
     # rfid_reader_thread
     def is_other_session_active(self, last_saved_session, rfid):

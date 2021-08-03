@@ -1,3 +1,5 @@
+from datetime import datetime
+import threading
 from mfrc522 import MFRC522
 #import RPi.GPIO as GPIO
 import spidev
@@ -42,8 +44,62 @@ import logging
 
 """
 
+class OppleoMFRC522Log():
+    threadLock = threading.Lock()
+
+    last_read_call = None
+    read_call_count = 0
+
+    last_read_no_block_call = None
+    read_no_block_call_count = 0
+
+    last_detected_rfid = None
+    detected_rfid_count = 0
+
+    last_detected_nothing = None
+    detected_nothing_count = 0
+
+    last_detected_collission = None
+    detected_collision_count = 0
+
+    def logRead(self):
+        with self.threadLock:
+            self.last_read_call = datetime.now()
+            self.read_call_count += 1
+
+    def logReadNoBlock(self):
+        with self.threadLock:
+            self.last_read_no_block_call = datetime.now()
+            self.read_no_block_call_count += 1
+
+
+    def logDetectedRfid(self):
+        with self.threadLock:
+            self.last_detected_rfid = datetime.now()
+            self.detected_rfid_count += 1
+
+    def logDetectedNothing(self):
+        with self.threadLock:
+            self.last_detected_nothing = datetime.now()
+            self.detected_nothing_count += 1
+
+    def logDetectCollission(self):
+        with self.threadLock:
+            self.last_detected_collission = datetime.now()
+            self.detected_collision_count += 1
+
+    def to_str(self):
+        with self.threadLock:
+            return { 'read'              : { 'last': self.last_read_call, 'cnt': self.read_call_count },
+                     'read_no_block'     : { 'last': self.last_read_no_block_call, 'cnt': self.read_no_block_call_count },
+                     'detected_rfid'     : { 'last': self.last_detected_rfid, 'cnt': self.detected_rfid_count },
+                     'detected_nothing'  : { 'last': self.last_detected_nothing, 'cnt': self.detected_nothing_count },
+                     'detected_collision': { 'last': self.last_detected_collission, 'cnt': self.detected_collision_count }
+            }
+
 class OppleoMFRC522(MFRC522):
     logger = None
+    oLog = OppleoMFRC522Log()
 
     KEY = [0xFF,0xFF,0xFF,0xFF,0xFF,0xFF]
     BLOCK_ADDRS = [8, 9, 10]
@@ -64,6 +120,7 @@ class OppleoMFRC522(MFRC522):
     SPI_RST = 22        # SPI Reset Pin
 
     antennaBoost = False
+
 
     def __init__(self):
         self.logger = logging.getLogger('nl.oppleo.utils.spi.OppleoMFRC522')
@@ -101,6 +158,7 @@ class OppleoMFRC522(MFRC522):
 
 
     def read(self, select:bool=True, auth:bool=True):
+        self.oLog.logRead()
         id, text = self.read_no_block()
         while not id:
             id, text = self.read_no_block(select=select, auth=auth)
@@ -110,16 +168,20 @@ class OppleoMFRC522(MFRC522):
 
 
     def read_no_block(self, select:bool=True, auth:bool=True):
+        self.oLog.logReadNoBlock()
         self.logger.debug('read_no_block() select={}, auth={}'.format(select, auth))
-        (status, TagType) = self.MFRC522_Request(self.PICC_REQIDL)
-        # TagType 16 (cc, mtc)
+        (status, tagType) = self.MFRC522_Request(self.PICC_REQIDL)
+        # tagType 16 (cc, mtc)
         if status == self.MI_OK:
-            self.logger.info('Detected rfid tag (type={})'.format(TagType))
+            self.oLog.logDetectedRfid()
+            self.logger.info('Detected rfid tag (type={})'.format(tagType))
         if status != self.MI_OK:
             # No card read, return id=None, text=None
+            self.oLog.logDetectedNothing()
             return None, None
         (status, uid) = self.MFRC522_Anticoll()
         if status != self.MI_OK:
+            self.oLog.logDetectCollission()
             self.logger.info('Collision reading rfid tag, skipping')
             return None, None
         id = self.uid_to_num(uid)

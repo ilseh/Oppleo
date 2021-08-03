@@ -919,6 +919,7 @@ def settings(active=1):
     diag = r.get_all()
     diag['threading'] = {}
     diag['threading']['active_count'] = threading.active_count()
+    diag['threading']['rfid_log'] = oppleoConfig.chThread.rfidReaderLog()
     diag_json = json.dumps(diag)
     # threading.enumerate() not json serializable
     diag['threading']['enum'] = threading.enumerate()

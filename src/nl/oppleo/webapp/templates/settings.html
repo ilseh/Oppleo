@@ -2472,9 +2472,48 @@
                               {% else %}
                               <td class="text-dark">&nbsp;</td>
                               {% endif %}
-                              <td class="text-primary">{{ thread.name }}</td>
+                              <td>
+                                <span class="text-primary"
+                                  data-toggle="tooltip" 
+                                  data-placement="bottom" 
+                                  data-html="true"
+                                  title="{{ thread.ident }}"
+                                >
+                                  {{ thread.name }}
+                                </span>
+                                {% if thread.daemon %} <span class="text-muted small">daemon</span>{% endif %}
+                                {% if thread._initialized and not thread._is_stopped %} <span class="text-success font-italic small">initialized</span>{% endif %}
+                                {% if thread._is_stopped %} <span class="text-danger font-weight-bold">stopped</span>{% endif %}
+                              </td>
                             </tr>
                             {% endfor %}
+                            {% endif %}
+
+                            <tr>
+                              <td class="text-dark">RFID Thread info:</td>
+                              {% if 'read' in diag['threading']['rfid_log'] %}
+                              <td class="text-dark">{{ diag['threading']['rfid_log']['read']['last'] }} {{ diag['threading']['rfid_log']['read']['cnt'] }}</td>
+                              {% else %}
+                              <td class="text-primary">No info</td>
+                              {% endif %}
+                            </tr>
+                            {% if 'read' in diag['threading']['rfid_log'] %}
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-dark">read_no_block {{ diag['threading']['rfid_log']['read_no_block']['last'] }} {{ diag['threading']['rfid_log']['read_no_block']['cnt'] }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-dark">detected_rfid {{ diag['threading']['rfid_log']['detected_rfid']['last'] }} {{ diag['threading']['rfid_log']['detected_rfid']['cnt'] }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-dark">detected_nothing {{ diag['threading']['rfid_log']['detected_nothing']['last'] }} {{ diag['threading']['rfid_log']['detected_nothing']['cnt'] }}</td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">&nbsp;</td>
+                              <td class="text-dark">detected_collision {{ diag['threading']['rfid_log']['detected_collision']['last'] }} {{ diag['threading']['rfid_log']['detected_collision']['cnt'] }}</td>
+                            </tr>
                             {% endif %}
 
                             {% for sid, connectedClient in oppleoconfig.connectedClients.items() %}

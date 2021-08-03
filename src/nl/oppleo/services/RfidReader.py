@@ -64,4 +64,15 @@ class RfidReader(object):
             if oppleoConfig.appSocketIO is not None:
                 oppleoConfig.appSocketIO.sleep(0.05)
             else:
-                time.sleep(0.05)      
+                time.sleep(0.05)
+
+
+    """ Function to read the MFRC522 log """
+    def read_log(self):
+        global modulePresence
+
+        if modulePresence.OppleoMFRC522_IsStub:
+            self.logger.warn("Reading from stub (don't expect reading any values)")
+            return {}
+
+        return modulePresence.OppleoMFRC522.oLog.to_str()
