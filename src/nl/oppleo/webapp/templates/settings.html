@@ -2492,27 +2492,27 @@
                             <tr>
                               <td class="text-dark">RFID Thread info:</td>
                               {% if 'read' in diag['threading']['rfid_log'] %}
-                              <td class="text-dark">{{ diag['threading']['rfid_log']['read']['last'] }} {{ diag['threading']['rfid_log']['read']['cnt'] }}</td>
+                              <td class="text-primary"><span class="font-italic">read</span> function call <i class="fas fa-stopwatch-20"></i> {{ diag['threading']['rfid_log']['read']['last'] }} <i class="fas fa-calculator"></i>{{ diag['threading']['rfid_log']['read']['cnt'] }}</td>
                               {% else %}
                               <td class="text-primary">No info</td>
                               {% endif %}
                             </tr>
                             {% if 'read' in diag['threading']['rfid_log'] %}
                             <tr>
-                              <td class="text-dark">&nbsp;</td>
-                              <td class="text-dark">read_no_block {{ diag['threading']['rfid_log']['read_no_block']['last'] }} {{ diag['threading']['rfid_log']['read_no_block']['cnt'] }}</td>
+                              <td>&nbsp;</td>
+                              <td class="text-primary"><span class="font-italic">read_no_block</span> function call <i class="fas fa-stopwatch-20"></i> {{ diag['threading']['rfid_log']['read_no_block']['last'] }} <i class="fas fa-calculator"></i>{{ diag['threading']['rfid_log']['read_no_block']['cnt'] }}</td>
                             </tr>
                             <tr>
-                              <td class="text-dark">&nbsp;</td>
-                              <td class="text-dark">detected_rfid {{ diag['threading']['rfid_log']['detected_rfid']['last'] }} {{ diag['threading']['rfid_log']['detected_rfid']['cnt'] }}</td>
+                              <td>&nbsp;</td>
+                              <td class="text-primary">Detected rfid <i class="fas fa-stopwatch-20"></i> {{ diag['threading']['rfid_log']['detected_rfid']['last'] }} <i class="fas fa-calculator"></i>{{ diag['threading']['rfid_log']['detected_rfid']['cnt'] }}</td>
                             </tr>
                             <tr>
-                              <td class="text-dark">&nbsp;</td>
-                              <td class="text-dark">detected_nothing {{ diag['threading']['rfid_log']['detected_nothing']['last'] }} {{ diag['threading']['rfid_log']['detected_nothing']['cnt'] }}</td>
+                              <td>&nbsp;</td>
+                              <td class="text-primary">Detected nothing <i class="fas fa-stopwatch-20"></i> {{ diag['threading']['rfid_log']['detected_nothing']['last'] }} <i class="fas fa-calculator"></i>{{ diag['threading']['rfid_log']['detected_nothing']['cnt'] }}</td>
                             </tr>
                             <tr>
-                              <td class="text-dark">&nbsp;</td>
-                              <td class="text-dark">detected_collision {{ diag['threading']['rfid_log']['detected_collision']['last'] }} {{ diag['threading']['rfid_log']['detected_collision']['cnt'] }}</td>
+                              <td>&nbsp;</td>
+                              <td class="text-primary">Collisions <i class="fas fa-stopwatch-20"></i> {{ diag['threading']['rfid_log']['detected_collision']['last'] }} <i class="fas fa-calculator"></i>{{ diag['threading']['rfid_log']['detected_collision']['cnt'] }}</td>
                             </tr>
                             {% endif %}
 
