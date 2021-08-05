@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, make_transient_to_detached
 from nl.oppleo.exceptions.Exceptions import DbException
-import threading
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 
