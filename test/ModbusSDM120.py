@@ -1,7 +1,5 @@
 #!/usr/bin/python
-import threading
 import time
-import subprocess
 
 # The interface
 import minimalmodbus
