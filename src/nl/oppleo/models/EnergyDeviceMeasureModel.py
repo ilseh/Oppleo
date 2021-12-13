@@ -185,6 +185,64 @@ class EnergyDeviceMeasureModel(Base):
         return rows
 
 
+    """
+    SELECT edm.created_at, edm.kw_total 
+    FROM energy_device_measures edm 
+    WHERE edm.created_at in (
+        SELECT DISTINCT MAX(created_at) as created_at
+        FROM energy_device_measures 
+        GROUP BY EXTRACT(YEAR from created_at), EXTRACT(MONTH from created_at)
+    ) 
+    ORDER BY edm.created_at DESC
+    """
+    """
+    SELECT max(energy_device_measures.created_at) AS created_at 
+    FROM energy_device_measures GROUP BY EXTRACT(year FROM energy_device_measures.created_at), EXTRACT(month FROM energy_device_measures.created_at)
+    """
+
+
+    def get_end_month_energy_levels(self, energy_device_id):
+        db_session = DbSession()
+
+        try:
+            # Find timestamps of last entry per month
+            emeTs = db_session.query( \
+                        func.max( EnergyDeviceMeasureModel.created_at ) \
+                        .label("created_at") 
+                        )  \
+                    .group_by( \
+                        func.extract( "year", EnergyDeviceMeasureModel.created_at ), \
+                        func.extract( "month", EnergyDeviceMeasureModel.created_at ) \
+                        )
+            # Add row data
+            emeTs2 = db_session.query( EnergyDeviceMeasureModel ).order_by( asc( EnergyDeviceMeasureModel.created_at ) )
+            lastMonthReadingTimestamps = []
+            for timestamp in emeTs:
+                lastMonthReadingTimestamps.append( timestamp.created_at )
+            emeTs2 = emeTs2.filter( EnergyDeviceMeasureModel.created_at.in_( lastMonthReadingTimestamps ) ).all()
+
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
+        except Exception as e:
+            # Nothing to roll back
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
+
+        # Build json return
+        lastValue = 0
+        eme = []
+        for emee in emeTs2:
+            eme.append({
+                "Month"             : int(emee.created_at.strftime("%m")),
+                "Year"              : int(emee.created_at.strftime("%Y")),
+                "MonthStart_Kwh"    : lastValue,
+                "MonthEnd_Kwh"      : emee.kw_total,
+                "MonthUsed_kWh"     : round((emee.kw_total - lastValue)*10)/10
+            })
+            lastValue = emee.kw_total
+        return eme
+
+
     def get_usage_since(self, energy_device_id, since_ts):
         self.__logger.debug("get_usage_since() energy_device_id {} since_ts {}".format(energy_device_id, str(since_ts)))
         db_session = DbSession()
@@ -227,7 +285,7 @@ class EnergyDeviceMeasureModel(Base):
                              .order_by(EnergyDeviceMeasureModel.created_at.asc()) \
                              .first()
         except InvalidRequestError as e:
-            EnergyDeviceMeasureModel.__cleanupDbSession(db_session, self.__class__.__name__)
+            EnergyDeviceMeasureModel.__cleanupDbSession(db_session, EnergyDeviceMeasureModel.__name__)
         except Exception as e:
             # Nothing to roll back
             EnergyDeviceMeasureModel.__logger.error("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ), exc_info=True)

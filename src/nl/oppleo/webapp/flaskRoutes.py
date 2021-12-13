@@ -3005,3 +3005,20 @@ def requestOdometerUpdate():
         'chargeSession' : chargeSession.id,
         'condense'      : oppleoConfig.autoSessionCondenseSameOdometer
         })
+
+
+
+# Always returns json
+@flaskRoutes.route("/monthly_usage_overview", methods=["GET"])
+@flaskRoutes.route("/monthly_usage_overview/", methods=["GET"])
+@authenticated_resource
+def monthlyUsageOverview():
+    global oppleoConfig
+
+    flaskRoutesLogger.debug('/monthly_usage_overview/')
+
+    edmm = EnergyDeviceMeasureModel()
+    edmm.energy_device_id = oppleoConfig.chargerName
+    eme = edmm.get_end_month_energy_levels(oppleoConfig.chargerName)
+
+    return jsonify(eme)
