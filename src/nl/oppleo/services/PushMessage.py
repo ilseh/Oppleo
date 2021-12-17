@@ -2,8 +2,11 @@ import logging
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+
 from nl.oppleo.services.PushMessageProwl import PushMessageProwl
 from nl.oppleo.services.PushMessagePushover import PushMessagePushover
+
+from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient 
 
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
@@ -43,6 +46,22 @@ class PushMessage(object):
                     chargerName=oppleoConfig.chargerName
                     )
 
+        if oppleoSystemConfig.mqttEnabled:
+            oppleoMqttClient = OppleoMqttClient()
+            topic = 'oppleo/' + oppleoSystemConfig.chargerName + '/notification'
+            msg = {}
+            if title is not None:
+                msg['title'] = title
+            if message is not None:
+                msg['message'] = message
+            if priority is not None:
+                msg['priority'] = priority
+
+            PushMessage.logger.debug(f'Submit msg {msg} to MQTT topic {topic} ...')
+            oppleoMqttClient.publish(topic=topic, message=msg)
+
+
+
 
     @staticmethod
     def __mapPriorityToProwl(priority:int=None):
@@ -72,5 +91,3 @@ class PushMessage(object):
             return PushMessagePushover.priorityHigh
         return PushMessagePushover.priorityNormal
 
-
- def sendMessage(title=None, message='', priority=priorityNormal, apiKey='', userKey='', chargerName='Unknown', device=None, sound=None):
