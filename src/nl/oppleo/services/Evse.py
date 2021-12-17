@@ -4,7 +4,7 @@ import threading
 from nl.oppleo.utils.ModulePresence import ModulePresence
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
@@ -141,13 +141,12 @@ class Evse(object, metaclass=Singleton):
                             )
                         )
             self.evse.switch_on()
-            WebSocketUtil.emit(
-                    wsEmitQueue=oppleoConfig.wsEmitQueue,
-                    event='evse_enabled', 
-                    id=oppleoConfig.chargerName,
-                    namespace='/evse_status',
-                    public=True
-                )
+            OutboundEvent.triggerEvent(
+                event='evse_enabled', 
+                id=oppleoConfig.chargerName,
+                namespace='/evse_status',
+                public=True
+            )
 
         else:
             self.logger.debug('Evse NOT switched on. Waiting for Off Peak hours')
@@ -156,13 +155,12 @@ class Evse(object, metaclass=Singleton):
         global oppleoConfig
 
         self.evse.switch_off()
-        WebSocketUtil.emit(
-                wsEmitQueue=oppleoConfig.wsEmitQueue,
-                event='evse_disabled', 
-                id=oppleoConfig.chargerName,
-                namespace='/evse_status',
-                public=True
-            )
+        OutboundEvent.triggerEvent(
+            event='evse_disabled', 
+            id=oppleoConfig.chargerName,
+            namespace='/evse_status',
+            public=True
+        )
 
     def is_enabled(self):
         return self.evse.is_enabled()

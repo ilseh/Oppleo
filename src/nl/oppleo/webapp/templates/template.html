@@ -4,7 +4,7 @@
         {% block head %}
 
         <meta charset="utf-8" />
-        <title>{% block title %}{% endblock %} - Oppleo 2020</title>
+        <title>{% block title %}{% endblock %} - Oppleo 2022</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta content="Python gebaseerde laadpunt-administratiesoftware draaiend op een Raspberry Pi. Modbus energiemeter (kWh) uitlezing, SmartEVSE aansturing, RFID lezer, status LED en buzzer aansturing." name="description" />
         <meta content="Frans Laemen" name="author" />
@@ -1392,16 +1392,21 @@
                                             </li>
                                             <li>
                                                 <a href="{{ url_for('flaskRoutes.settings', active=5) }}" class="stay">
-                                                    <i class="fas fa-microchip"></i> Hardware
+                                                    <i class="far fa-envelope"></i> Notificaties
                                                 </a>
                                             </li>
                                             <li>
                                                 <a href="{{ url_for('flaskRoutes.settings', active=6) }}" class="stay">
-                                                    <i class="fa fa-download"></i> Backup
+                                                    <i class="fas fa-microchip"></i> Hardware
                                                 </a>
                                             </li>
                                             <li>
                                                 <a href="{{ url_for('flaskRoutes.settings', active=7) }}" class="stay">
+                                                    <i class="fa fa-download"></i> Backup
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('flaskRoutes.settings', active=8) }}" class="stay">
                                                     <i class="fas fa-stethoscope"></i> Diagnostics
                                                 </a>
                                             </li>

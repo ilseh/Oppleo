@@ -4,7 +4,7 @@ import time
 import re
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
@@ -174,8 +174,7 @@ class VehicleChargeStatusMonitorThread(object):
                     if chargeState is not None and oppleoConfig.vehicleDataOnDashboard:
                         self.__logger.debug("monitor() chargeState (not None)")
                         # Send change notification
-                        WebSocketUtil.emit(
-                            wsEmitQueue     = oppleoConfig.wsEmitQueue,
+                        OutboundEvent.triggerEvent(
                             event           = 'vehicle_charge_status_update', 
                             id              = oppleoConfig.chargerName,
                             data            = { 'chargeState'            : formatChargeState(chargeState),
@@ -190,8 +189,7 @@ class VehicleChargeStatusMonitorThread(object):
                         self.__logger.debug('monitor() - could not get charge state (None)')
                         if teslaApi.vehicleWithIdIsAsleep(id=rfidData.vehicle_id):
                             # Send change notification - vehicle asleep
-                            WebSocketUtil.emit(
-                                wsEmitQueue = oppleoConfig.wsEmitQueue,
+                            OutboundEvent.triggerEvent(
                                 event       = 'vehicle_charge_status_update', 
                                 id          = oppleoConfig.chargerName,
                                 data        = { 'chargeState'            : formatChargeState(chargeState),
@@ -232,8 +230,7 @@ class VehicleChargeStatusMonitorThread(object):
             self.__requestVehicleWakeupNow = True
 
         # Send wakeup request notification
-        WebSocketUtil.emit(
-            wsEmitQueue = oppleoConfig.wsEmitQueue,
+        OutboundEvent.triggerEvent(
             event       = 'vehicle_status_update', 
             id          = oppleoConfig.chargerName,
             data        = { 'request' : 'wakeupVehicle',
@@ -249,8 +246,7 @@ class VehicleChargeStatusMonitorThread(object):
             self.__requestVehicleWakeupNow = False
 
         # Send wakeup result notification
-        WebSocketUtil.emit(
-            wsEmitQueue = oppleoConfig.wsEmitQueue,
+        OutboundEvent.triggerEvent(
             event       = 'vehicle_status_update', 
             id          = oppleoConfig.chargerName,
             data        = { 'request' : 'wakeupVehicle',

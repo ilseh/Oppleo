@@ -9,7 +9,6 @@ from json import JSONDecodeError
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.config import Logger
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
 from nl.oppleo.utils.IPv4 import IPv4
 
 """
@@ -459,9 +458,10 @@ class OppleoConfig(object, metaclass=Singleton):
         try: 
             self.__restartRequired = bool(value)
             if (bool(value)):
+                # Import here to prevent instantiation when OppleoSystemConfig is instantiated
+                from nl.oppleo.utils.OutboundEvent import OutboundEvent 
                 # Announce
-                WebSocketUtil.emit(
-                        wsEmitQueue=self.wsEmitQueue,
+                OutboundEvent.triggerEvent(
                         event='update', 
                         id=self.chargerName,
                         data={
@@ -490,9 +490,10 @@ class OppleoConfig(object, metaclass=Singleton):
         try: 
             self.__softwareUpdateInProgress = bool(value)
             if (bool(value)):
+                # Import here to prevent instantiation when OppleoSystemConfig is instantiated
+                from nl.oppleo.utils.OutboundEvent import OutboundEvent 
                 # Announce
-                WebSocketUtil.emit(
-                        wsEmitQueue=self.wsEmitQueue,
+                OutboundEvent.triggerEvent(
                         event='update', 
                         id=self.chargerName,
                         data={

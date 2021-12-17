@@ -92,7 +92,7 @@ try:
     from nl.oppleo.services.EvseReader import EvseReader
 
     from nl.oppleo.webapp.flaskRoutes import flaskRoutes
-    from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+    from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
     from nl.oppleo.utils.BackupUtil import BackupUtil
 
@@ -165,8 +165,7 @@ try:
                         )
                     )
 
-        WebSocketUtil.emit(
-                wsEmitQueue=oppleoConfig.wsEmitQueue,
+        OutboundEvent.triggerEvent(
                 event='update', 
                 id=oppleoConfig.chargerName,
                 data={
@@ -296,8 +295,7 @@ try:
                 )
             )
 
-        WebSocketUtil.emit(
-                wsEmitQueue=oppleoConfig.wsEmitQueue,
+        OutboundEvent.triggerEvent(
                 event='update', 
                 id=oppleoConfig.chargerName,
                 data={

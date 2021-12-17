@@ -43,7 +43,7 @@ from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.services.Evse import Evse
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.utils.GitUtil import GitUtil
 from nl.oppleo.utils.Authenticator import (keyUri, makeQR, generateTotpSharedSecret, encryptAES, decryptAES, validateTotp)
 from nl.oppleo.utils.IPv4 import IPv4
@@ -678,8 +678,7 @@ def delete_charge_session(id=None):
         charge_session.delete()
         flaskRoutesLogger.debug('delete_charge_session() - id:{} - deleted'.format(id))
         # Send ws update
-        WebSocketUtil.emit(
-                wsEmitQueue=oppleoConfig.wsEmitQueue,
+        OutboundEvent.triggerEvent(
                 event='charge_session_deleted',
                 id=oppleoConfig.chargerName,
                 data={ 'deleteId': id },
@@ -1366,8 +1365,7 @@ def charge_session(id:int=None):
     # Store the changes
     chargeSession.save()
 
-    WebSocketUtil.emit(
-            wsEmitQueue=oppleoConfig.wsEmitQueue,
+    OutboundEvent.triggerEvent(
             event='charge_session_data_update', 
             id=oppleoConfig.chargerName,
             data=chargeSession.to_str(), 
@@ -1745,32 +1743,31 @@ def update_settings(param=None, value=None):
     if (param == 'offpeakEnabled'):
         oppleoConfig.offpeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         ophm = OffPeakHoursModel()
-        WebSocketUtil.emit(
-                wsEmitQueue=oppleoConfig.wsEmitQueue,
-                event='off_peak_status_update', 
-                id=oppleoConfig.chargerName,
-                data={ 'isOffPeak': ophm.is_off_peak_now(),
-                       'offPeakEnabled': oppleoConfig.offpeakEnabled,
-                       'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
-                },
-                namespace='/charge_session',
-                public=True
-                )
+        OutboundEvent.triggerEvent(
+            event='off_peak_status_update', 
+            id=oppleoConfig.chargerName,
+            data={ 'isOffPeak': ophm.is_off_peak_now(),
+                    'offPeakEnabled': oppleoConfig.offpeakEnabled,
+                    'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
+            },
+            namespace='/charge_session',
+            public=True
+            )
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.offpeakEnabled })
 
     if (param == 'allowPeakOnePeriod'):
         oppleoConfig.allowPeakOnePeriod = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         ophm = OffPeakHoursModel()
-        WebSocketUtil.emit(
+        OutboundEvent.triggerEvent(
                 event='off_peak_status_update', 
-                    id=oppleoConfig.chargerName,
-                    data={ 'isOffPeak': ophm.is_off_peak_now(),
-                           'offPeakEnabled': oppleoConfig.offpeakEnabled,
-                           'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
-                    },
-                    namespace='/charge_session',
-                    public=True
-                )
+                id=oppleoConfig.chargerName,
+                data={ 'isOffPeak': ophm.is_off_peak_now(),
+                        'offPeakEnabled': oppleoConfig.offpeakEnabled,
+                        'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
+                },
+                namespace='/charge_session',
+                public=True
+            )
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.allowPeakOnePeriod })
 
     if (param == 'autoSessionEnabled'):
@@ -2201,8 +2198,7 @@ def update_settings(param=None, value=None):
         oppleoConfig.vehicleDataOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         if not oppleoConfig.vehicleDataOnDashboard:
             # Announce switching off
-            WebSocketUtil.emit(
-                wsEmitQueue=oppleoConfig.wsEmitQueue,
+            OutboundEvent.triggerEvent(
                 event='vehicle_charge_status_stopped', 
                 id=oppleoConfig.chargerName,
                 namespace='/charge_session',

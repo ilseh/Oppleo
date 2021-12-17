@@ -24,10 +24,7 @@ class PushMessageProwl(object):
         if PushMessageProwl.__logger is None:
             PushMessageProwl.__logger = logging.getLogger('nl.oppleo.services.PushMessageProwl')
         PushMessageProwl.__logger.debug("sendMessage()")
-        """
-        url = "apikey=4198c61d70f8242bd9e2cba22f87dff9db95f2d4&application=HomeSeer&priority=" & priority & "&event=" & mTitle & "&description=" & mMessage
-        url_response = hs.URLAction("https://api.prowlapp.com/publicapi/add", "POST", url, "Content-Type: application/x-www-form-urlencoded")  
-        """
+
         data = {
             'apikey'        : apiKey,
             'priority'      : priority,

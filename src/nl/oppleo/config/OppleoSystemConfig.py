@@ -6,7 +6,7 @@ import os
 from base64 import b64encode
 from werkzeug.security import generate_password_hash, check_password_hash
 from nl.oppleo.config import Logger
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+
 
 
 """
@@ -79,6 +79,18 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_PROWL_ENABLED = 'prowl_enabled'
     __INI_PROWL_API_KEY = 'prowl_api_key'
 
+    __INI_PUSHOVER_ENABLED = 'pushover_enabled'
+    __INI_PUSHOVER_API_KEY = 'pushover_api_key'
+    __INI_PUSHOVER_USER_KEY = 'pushover_user_key'
+    __INI_PUSHOVER_DEVICE = 'pushover_device'
+    __INI_PUSHOVER_SOUND = 'pushover_sound'
+
+    __INI_MQTT_OUTBOUND_ENABLED = 'mqtt_outbound_enabled'
+    __INI_MQTT_HOST = 'mqtt_host'
+    __INI_MQTT_PORT = 'mqtt_port'
+    __INI_MQTT_USERNAME = 'mqtt_username'
+    __INI_MQTT_PASSWORD = 'mqtt_password'
+
     """
         Variables stored in the INI file 
     """
@@ -120,6 +132,18 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     __PROWL_ENABLED = False
     __PROWL_API_KEY = None
+
+    __PUSHOVER_ENABLED = False
+    __PUSHOVER_API_KEY = None
+    __PUSHOVER_USER_KEY = None
+    __PUSHOVER_DEVICE = None
+    __PUSHOVER_SOUND = None
+
+    __MQTT_OUTBOUND_ENABLED = False
+    __MQTT_HOST = None
+    __MQTT_PORT = 1880
+    __MQTT_USERNAME = None
+    __MQTT_PASSWORD = None
 
     __dbAvailable = False
 
@@ -225,6 +249,18 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__PROWL_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_PROWL_ENABLED, default=self.__PROWL_ENABLED, log=log)
         self.__PROWL_API_KEY = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PROWL_API_KEY, default=self.__PROWL_API_KEY, log=log)
 
+        self.__PUSHOVER_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_PUSHOVER_ENABLED, default=self.__PUSHOVER_ENABLED, log=log)
+        self.__PUSHOVER_API_KEY = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PUSHOVER_API_KEY, default=self.__PUSHOVER_API_KEY, log=log)
+        self.__PUSHOVER_USER_KEY = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PUSHOVER_USER_KEY, default=self.__PUSHOVER_USER_KEY, log=log)
+        self.__PUSHOVER_DEVICE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PUSHOVER_DEVICE, default=self.__PUSHOVER_DEVICE, log=log)
+        self.__PUSHOVER_SOUND = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_PUSHOVER_SOUND, default=self.__PUSHOVER_SOUND, log=log)
+
+        self.__MQTT_OUTBOUND_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_OUTBOUND_ENABLED, default=self.__MQTT_OUTBOUND_ENABLED, log=log)
+        self.__MQTT_HOST = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_HOST, default=self.__MQTT_HOST, log=log)
+        self.__MQTT_PORT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_PORT, default=self.__MQTT_PORT, log=log)
+        self.__MQTT_USERNAME = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_USERNAME, default=self.__MQTT_USERNAME, log=log)
+        self.__MQTT_PASSWORD = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_PASSWORD, default=self.__MQTT_PASSWORD, log=log)
+
         self.load_completed = True
         
         lt = 'System configuration loaded'
@@ -288,6 +324,25 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_PROWL_ENABLED] = 'True' if self.__PROWL_ENABLED else 'False'
             if self.__PROWL_API_KEY is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_PROWL_API_KEY] = self.__PROWL_API_KEY
+
+            self.__ini_settings[self.__INI_MAIN][self.__INI_PUSHOVER_ENABLED] = 'True' if self.__PUSHOVER_ENABLED else 'False'
+            if self.__PUSHOVER_API_KEY is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_PUSHOVER_API_KEY] = self.__PUSHOVER_API_KEY
+            if self.__PUSHOVER_USER_KEY is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_PUSHOVER_USER_KEY] = self.__PUSHOVER_USER_KEY
+            if self.__PUSHOVER_DEVICE is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_PUSHOVER_DEVICE] = self.__PUSHOVER_DEVICE
+            if self.__PUSHOVER_SOUND is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_PUSHOVER_SOUND] = self.__PUSHOVER_SOUND
+
+            self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_OUTBOUND_ENABLED] = 'True' if self.__MQTT_OUTBOUND_ENABLED else 'False'
+            if self.__MQTT_HOST is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_HOST] = self.__MQTT_HOST
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HTTP_PORT] = str(self.__MQTT_PORT)
+            if self.__MQTT_USERNAME is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_USERNAME] = self.__MQTT_USERNAME
+            if self.__MQTT_PASSWORD is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_PASSWORD] = self.__MQTT_PASSWORD
 
             # Write actial file
             with open(self.__getConfigFile__(), 'w') as configfile:
@@ -607,9 +662,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         try: 
             self.__restartRequired = bool(value)
             if (bool(value) and self.wsEmitQueue is not None and self.chargerName is not None):
+                # Import here to prevent instantiation when OppleoSystemConfig is instantiated
+                from nl.oppleo.utils.OutboundEvent import OutboundEvent 
                 # Announce
-                WebSocketUtil.emit(
-                        wsEmitQueue=self.wsEmitQueue,
+                OutboundEvent.triggerEvent(
                         event='update', 
                         id=self.chargerName,
                         data={
@@ -699,6 +755,134 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     @prowlApiKey.setter
     def prowlApiKey(self, value:str):
         self.__PROWL_API_KEY = value
+        self.__writeConfig__()
+
+
+
+
+
+
+
+
+
+    """
+        pushoverEnabled -> __PUSHOVER_ENABLED
+    """
+    @property
+    def pushoverEnabled(self):
+        return self.__PUSHOVER_ENABLED
+
+    @pushoverEnabled.setter
+    def pushoverEnabled(self, value:bool):
+        self.__PUSHOVER_ENABLED = value
+        self.__writeConfig__()
+
+    """
+        pushoverApiKey -> __PUSHOVER_API_KEY
+    """
+    @property
+    def pushoverApiKey(self):
+        return self.__PUSHOVER_API_KEY
+
+    @pushoverApiKey.setter
+    def pushoverApiKey(self, value:str):
+        self.__PUSHOVER_API_KEY = value
+        self.__writeConfig__()
+
+    """
+        pushoverUserKey -> __PUSHOVER_USER_KEY
+    """
+    @property
+    def pushoverUserKey(self):
+        return self.__PUSHOVER_USER_KEY
+
+    @pushoverUserKey.setter
+    def pushoverUserKey(self, value:str):
+        self.__PUSHOVER_USER_KEY = value
+        self.__writeConfig__()
+
+    """
+        pushoverDevice -> __PUSHOVER_DEVICE
+    """
+    @property
+    def pushoverDevice(self):
+        return self.__PUSHOVER_DEVICE
+
+    @pushoverDevice.setter
+    def pushoverDevice(self, value:str):
+        self.__PUSHOVER_DEVICE = value
+        self.__writeConfig__()
+
+    """
+        pushoverSound -> __PUSHOVER_SOUND
+    """
+    @property
+    def pushoverSound(self):
+        return self.__PUSHOVER_SOUND
+
+    @pushoverSound.setter
+    def pushoverSound(self, value:str):
+        self.__PUSHOVER_SOUND = value
+        self.__writeConfig__()
+
+    """
+        mqttOutboundEnabled -> __MQTT_OUTBOUND_ENABLED
+    """
+    @property
+    def mqttOutboundEnabled(self):
+        return self.__MQTT_OUTBOUND_ENABLED
+
+    @mqttOutboundEnabled.setter
+    def mqttOutboundEnabled(self, value:bool):
+        self.__MQTT_OUTBOUND_ENABLED = value
+        self.__writeConfig__()
+
+    """
+        mqttHost -> __MQTT_HOST
+    """
+    @property
+    def mqttHost(self):
+        return self.__MQTT_HOST
+
+    @mqttHost.setter
+    def mqttHost(self, value:str):
+        self.__MQTT_HOST = value
+        self.__writeConfig__()
+
+    """
+        mqttPort -> __MQTT_PORT
+    """
+    @property
+    def mqttPort(self):
+        return self.__MQTT_PORT
+
+    @mqttPort.setter
+    def mqttPort(self, value:int):
+        self.__MQTT_PORT = value
+        self.__writeConfig__()
+
+    """
+        mqttUsername -> __MQTT_USERNAME
+    """
+    @property
+    def mqttUsername(self):
+        return self.__MQTT_USERNAME
+
+    @mqttUsername.setter
+    def mqttUsername(self, value:str):
+        self.__MQTT_USERNAME = value
+        self.__writeConfig__()
+
+    """
+        mqttPassword -> __MQTT_PASSWORD
+    """
+    @property
+    def mqttPassword(self):
+        return self.__MQTT_PASSWORD
+
+    @mqttPassword.setter
+    def mqttPassword(self, value:str):
+        self.__MQTT_PASSWORD = value
         self.__writeConfig__()
 
     """

@@ -5,7 +5,7 @@ import datetime
 from flask_socketio import SocketIO
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 from nl.oppleo.api.TeslaApi import TeslaAPI
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
@@ -66,8 +66,7 @@ class UpdateOdometerTeslaUtil:
         self.__logger.debug('sendChargeSessionUpdate() - event:{}, data:{}'.format(event, data))
         if event is None or data is None:
             return
-        WebSocketUtil.emit(
-                wsEmitQueue=oppleoConfig.wsEmitQueue,
+        OutboundEvent.triggerEvent(
                 event=event,
                 id=oppleoConfig.chargerName,
                 data=data,

@@ -1506,13 +1506,16 @@
                   <a href="#v-database" class="nav-link{% if active==4 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-database"></i> Database</a>
                 </li>
                 <li class="nav-item">
-                  <a href="#v-hardware" class="nav-link{% if active==5 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-microchip"></i> Hardware</a>
+                  <a href="#v-notifications" class="nav-link{% if active==5 %} active{% endif %}" data-toggle="tab" aria-expanded="false"><i class="far fa-envelope"></i> Notificaties</a>
                 </li>
                 <li class="nav-item">
-                  <a href="#v-backup" class="nav-link{% if active==6 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-download"></i> Backup</a>
+                  <a href="#v-hardware" class="nav-link{% if active==6 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-microchip"></i> Hardware</a>
                 </li>
                 <li class="nav-item">
-                  <a href="#v-diagnostics" class="nav-link{% if active==7 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
+                  <a href="#v-backup" class="nav-link{% if active==7 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-download"></i> Backup</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#v-diagnostics" class="nav-link{% if active==8 %} active{% endif %}" data-toggle="tab" aria-expanded="true"><i class="fas fa-stethoscope"></i> Diagnostics</a>
                 </li>
               </ul>
 
@@ -1588,8 +1591,6 @@
                                 </form>
                               </td>
                             </tr>          
-
-
 
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -1750,50 +1751,6 @@
                                 </button>
                               </td>
                             </tr>
-
-
-
-
-                            <tr>
-                              <th colspan="2">&nbsp;</th>
-                            </tr>
-                            <tr>
-                              <th colspan="2" style="line-height: 40px;">
-                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Prowl (iOS Push messages)</h4>
-                              </th>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Prowl actief:</td>
-                              <td class="text-primary">
-                                <form id="prowl-enabled-form">
-                                  <input type="checkbox" 
-                                    {% if oppleosystemconfig.prowlEnabled %}checked{% endif %}
-                                    name="prowlEnabled"
-                                    id="prowlEnabled"
-                                    data-toggle="toggle"
-                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
-                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
-                                    data-onstyle="primary"
-                                    data-offstyle="dark"
-                                    data-size="sm"
-                                    data-height="30"
-                                    data-width="70"
-                                  />
-                                </form>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Prowl API key:</td >
-                              <td class="text-primary">
-                                <oppleo-edit-str 
-                                  id="prowlApiKey"
-                                  prefix="" 
-                                  value="{{ oppleosystemconfig.prowlApiKey }}"
-                                  validation="^[A-Za-z0-9]+$"
-                                  info="API key voor je <a href='https://www.prowlapp.com/'>Prowl</a> push message app."
-                                  />
-                            </tr>
-
 
                             <tr>
                               <th colspan="2">&nbsp;</th>
@@ -2081,6 +2038,8 @@
                     </div>
                   </div>
 
+
+
                   <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
                     <div class="col-lg-9">
                       <div class="card-box">
@@ -2109,7 +2068,7 @@
                               <td class="text-dark">Device interface:</td>
                               <td class="text-primary">Modbus</td>
                             </tr>
-                            <tr>{{ energydevicemodel.port_name }}
+                            <tr>
                               <td class="text-dark">Port name:</td>
                               <td class="text-primary">
                                 <oppleo-edit-str 
@@ -2396,7 +2355,210 @@
                     </div>
                   </div>
 
-                  <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-hardware">
+                  <div class="tab-pane{% if active==5 %} active{% endif %}" id="v-notifications">
+                    <div class="col-lg-12">
+                      <div class="card-box">
+                        <h4 class="m-t-0 header-title"><i class="far fa-envelope"></i> Notifications</h4>
+                        <table class="table table-striped table-sm">
+                          <tbody>
+
+                            {% if oppleoconfig %}
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Prowl (iOS Push messages)</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Prowl actief:</td>
+                              <td class="text-primary">
+                                <form id="prowl-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if oppleosystemconfig.prowlEnabled %}checked{% endif %}
+                                    name="prowlEnabled"
+                                    id="prowlEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Prowl API key:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="prowlApiKey"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.prowlApiKey }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="API key voor je <a href='https://www.prowlapp.com/'>Prowl</a> push message app."
+                                  />
+                            </tr>
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Pushover (iOS/Android/Desktop Push messages)</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Pushover actief:</td>
+                              <td class="text-primary">
+                                <form id="prowl-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if oppleosystemconfig.pushoverEnabled %}checked{% endif %}
+                                    name="pushoverEnabled"
+                                    id="pushoverEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Pushover API key:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="pushoverApiKey"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.pushoverApiKey }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="API key voor je <a href='https://pushover.net/api'>Pushover</a> push message app."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Pushover User Key:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="pushoverUserKey"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.pushoverUserKey }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="User key voor je <a href='https://pushover.net/api'>Pushover</a> push message app."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Pushover device:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="pushoverDevice"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.pushoverDevice }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Device naam voor het <a href='https://pushover.net/api'>Prowl</a> push bericht."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Pushover sound:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="pushoverSound"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.pushoverSound }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Sound voor de <a href='https://pushover.net/api'>Prowl</a> push melding."
+                                  />
+                            </tr>
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> MQTT</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Outbound actief:</td>
+                              <td class="text-primary">
+                                <form id="mqtt-outbound-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if oppleosystemconfig.mqttOutboundEnabled %}checked{% endif %}
+                                    name="mqttOutboundEnabled"
+                                    id="mqttOutboundEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Host (naam of IP):</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="mqttHost"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.mqttHost }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Hostnaam of IP adres van de MQTT broker."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Port:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="mqttPort"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.mqttPort }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Poort van de MQTT broker."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Username:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="mqttUsername"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.mqttUsername }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Gebruikersnaam van de MQTT broker."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Password:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="mqttPassword"
+                                  prefix="" 
+                                  value="{{ oppleosystemconfig.mqttPassword }}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Wachtwoord van de MQTT broker."
+                                  />
+                            </tr>
+
+                            {% endif %}
+
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-hardware">
                     <div class="col-lg-12">
                       <div class="card-box">
                         <h4 class="m-t-0 header-title"><i class="fas fa-microchip"></i> Platform</h4>
@@ -2974,7 +3136,7 @@
                     </div>
                   </div>
 
-                  <div class="tab-pane{% if active==6 %} active{% endif %}" id="v-backup">
+                  <div class="tab-pane{% if active==7 %} active{% endif %}" id="v-backup">
                     <div class="col-lg-12">
                       <div class="card-box">
                         <table class="table table-striped table-sm">
@@ -3469,7 +3631,7 @@
                     </div>
                   </div>
 
-                  <div class="tab-pane{% if active==7 %} active{% endif %}" id="v-diagnostics">
+                  <div class="tab-pane{% if active==8 %} active{% endif %}" id="v-diagnostics">
                     <div class="col-lg-12">
                       <div class="card-box">
 

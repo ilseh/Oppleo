@@ -16,7 +16,7 @@ from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.utils.formatFilesize import formatFilesize
 from nl.oppleo.utils.SMBClient import SMBClient
 from nl.oppleo.services.PushMessage import PushMessage
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 
 # A function that returns the length of the value:
@@ -176,8 +176,7 @@ class BackupUtil(object, metaclass=Singleton):
         if self.backupInProgress:
             # Skip this backup request, already running one
             self.logger.debug('createBackup() - backup already active. Additional backup aborted.')
-            WebSocketUtil.emit(
-                    wsEmitQueue=self.oppleoConfig.wsEmitQueue,
+            OutboundEvent.triggerEvent(
                     event='backup_request_ignored', 
                     id=self.oppleoConfig.chargerName,
                     data={"reason" : 'Backup in progress' },
@@ -193,8 +192,7 @@ class BackupUtil(object, metaclass=Singleton):
 
             filesize = 0
             # Announce
-            WebSocketUtil.emit(
-                    wsEmitQueue=self.oppleoConfig.wsEmitQueue,
+            OutboundEvent.triggerEvent(
                     event='backup_started', 
                     id=self.oppleoConfig.chargerName,
                     data=wsData,
@@ -246,8 +244,7 @@ class BackupUtil(object, metaclass=Singleton):
                 self.oppleoConfig.backupSuccessTimestamp = startTime
                 wsEvent = 'backup_completed'
 
-            WebSocketUtil.emit(
-                        wsEmitQueue=self.oppleoConfig.wsEmitQueue,
+            OutboundEvent.triggerEvent(
                         event=wsEvent, 
                         id=self.oppleoConfig.chargerName,
                         data=wsData,
@@ -578,14 +575,13 @@ class BackupUtil(object, metaclass=Singleton):
             filename = os.path.join(localBackups['directory'], file['filename'])
             os.remove(filename)
 
-        WebSocketUtil.emit(
-                    wsEmitQueue=self.oppleoConfig.wsEmitQueue,
-                    event='local_backup_purged',
-                    id=self.oppleoConfig.chargerName,
-                    data=localBackups['files'][0:(-1*n)],
-                    namespace='/backup',
-                    public=False
-                )
+        OutboundEvent.triggerEvent(
+                event='local_backup_purged',
+                id=self.oppleoConfig.chargerName,
+                data=localBackups['files'][0:(-1*n)],
+                namespace='/backup',
+                public=False
+            )
 
 
 
@@ -870,14 +866,13 @@ class BackupUtil(object, metaclass=Singleton):
                                        )
         smb_client.close()
         # Send message to front end
-        WebSocketUtil.emit(
-                    wsEmitQueue=self.oppleoConfig.wsEmitQueue,
-                    event='os_backup_purged',
-                    id=self.oppleoConfig.chargerName,
-                    data=smbBackups['files'][0:(-1*n)],
-                    namespace='/backup',
-                    public=False
-                )
+        OutboundEvent.triggerEvent(
+                event='os_backup_purged',
+                id=self.oppleoConfig.chargerName,
+                data=smbBackups['files'][0:(-1*n)],
+                namespace='/backup',
+                public=False
+            )
         return result
 
 

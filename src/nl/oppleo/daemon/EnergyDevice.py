@@ -3,7 +3,7 @@ import logging
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.utils.EnergyModbusReader import EnergyModbusReader
 
 oppleoConfig = OppleoConfig()
@@ -101,18 +101,16 @@ class EnergyDevice():
             device_measurement.save()
             self.logger.debug("value saved %s %s %s" %
                     (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
-            if self.appSocketIO is not None:
-                # Emit as web socket update
-                self.counter += 1
-                self.logger.debug(f'Queue msg {self.counter} to be send via websocket ...{device_measurement.to_str()}')
-                # Info heeft actuele kWh meter gegevens, geen laadpas info, dus public
-                WebSocketUtil.emit(
-                        wsEmitQueue=oppleoConfig.wsEmitQueue,
-                        event='status_update', 
-                        data=device_measurement.to_str(), 
-                        namespace='/usage',
-                        public=True
-                    )
+            # Emit event
+            self.counter += 1
+            self.logger.debug(f'Queue msg {self.counter} to be send ...{device_measurement.to_str()}')
+            # Info has the current kWh meter data, no rfid tag info, therefor public
+            OutboundEvent.triggerEvent(
+                event='status_update', 
+                data=device_measurement.to_str(), 
+                namespace='/usage',
+                public=True
+            )
 
             # Callbacks to notify update
             self.callback(device_measurement)

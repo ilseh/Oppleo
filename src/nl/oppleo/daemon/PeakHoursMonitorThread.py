@@ -6,7 +6,7 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.services.Evse import Evse
-from nl.oppleo.utils.WebSocketUtil import WebSocketUtil
+from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 oppleoConfig = OppleoConfig()
 
@@ -54,7 +54,7 @@ class PeakHoursMonitorThread(object):
             Check for Off Peak every 5 minutes. 
             -   If a session is active, off peak, and the EVSE is disabled, (re-)enable the EVSE (and possibly wake 
                 car for charging), oh, and reset any 'over-ride off peak for once' authorizations
-            -   If Peak and reader is enabled, disable the EVSE, warn through push message (prowl)?
+            -   If Peak and reader is enabled, disable the EVSE
             Allow overriding off-peak for one period.
             Check only once per 1 or 5 minutes, to prevent database overload and bad rfid response 
         """
@@ -74,8 +74,7 @@ class PeakHoursMonitorThread(object):
                     evse.isOffPeak = ohm.is_off_peak_now()
                     if (wasOffPeak != evse.isOffPeak):
                         # Send change notification
-                        WebSocketUtil.emit(
-                                wsEmitQueue=oppleoConfig.wsEmitQueue,
+                        OutboundEvent.triggerEvent(
                                 event='off_peak_status_update', 
                                 id=oppleoConfig.chargerName,
                                 data={ 'isOffPeak': evse.isOffPeak,
@@ -84,7 +83,7 @@ class PeakHoursMonitorThread(object):
                                     },
                                 namespace='/charge_session',
                                 public=True
-                                )
+                            )
                     self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( 
                                     wasOffPeak, 
                                     evse.isOffPeak
