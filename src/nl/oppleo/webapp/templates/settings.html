@@ -379,6 +379,18 @@
               case 'osBackupEnabled':
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Offsite backup geactiveerd.')
                 break
+
+              case 'pushoverApiKey':
+              case 'pushoverUserKey':
+                if (typeof $('#pushoverApiKey')[0].$input.value === 'string' && $('#pushoverApiKey')[0].$input.value.length > 0) {
+                  loadPushoverSounds( $('#pushoverApiKey')[0].$input.value, $($('#pushoverSound')[0].$select).find("option:selected").val() )
+                  if (typeof $('#pushoverUserKey')[0].$input.value === 'string' && $('#pushoverUserKey')[0].$input.value.length > 0) {
+                    loadPushoverDevices( $('#pushoverUserKey')[0].$input.value, $('#pushoverApiKey')[0].$input.value )
+                  }
+                }
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Offsite backup geactiveerd.')
+                break
+
               default:
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Instelling aangepast.')
                 break
@@ -1600,7 +1612,6 @@
           $('button#'+ev.currentTarget.id).attr('disabled', false)
 
         })
-        alert(type)
       })
       // After init, load pushover sounds with current token
       {% if oppleosystemconfig.pushoverApiKey is not none %}
@@ -2533,7 +2544,7 @@
                                     data-height="30"
                                     data-width="70"
                                   />
-                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="prowl-send-testmessage"> <i class="far fa-paper-plane"></i> Testbericht</button>
+                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="prowl-send-testmessage"> <i class="far fa-paper-plane"></i> Verstuur testbericht</button>
                                 </form>
                               </td>
                             </tr>
@@ -2573,7 +2584,7 @@
                                     data-height="30"
                                     data-width="70"
                                   />
-                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="pushover-send-testmessage"> <i class="far fa-paper-plane"></i> Testbericht</button>
+                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="pushover-send-testmessage"> <i class="far fa-paper-plane"></i> Verstuur testbericht</button>
                                 </form>
                               </td>
                             </tr>
@@ -2655,7 +2666,7 @@
                                     data-height="30"
                                     data-width="70"
                                   />
-                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="mqtt-send-testmessage"> <i class="far fa-paper-plane"></i> Testbericht</button>
+                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="mqtt-send-testmessage"> <i class="far fa-paper-plane"></i>  Verstuur testbericht</button>
                                 </form>
                               </td>
                             </tr>

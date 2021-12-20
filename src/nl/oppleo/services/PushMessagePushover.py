@@ -41,7 +41,7 @@ class PushMessagePushover(object):
         if device is not None:
             data['device'] = device
         if sound is not None:
-            data['sound'] = device
+            data['sound'] = sound
         try:
             r = requests.post(
                 url     = PushMessagePushover.__API_BASE,

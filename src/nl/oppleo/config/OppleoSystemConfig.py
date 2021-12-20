@@ -338,7 +338,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_OUTBOUND_ENABLED] = 'True' if self.__MQTT_OUTBOUND_ENABLED else 'False'
             if self.__MQTT_HOST is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_HOST] = self.__MQTT_HOST
-            self.__ini_settings[self.__INI_MAIN][self.__INI_HTTP_PORT] = str(self.__MQTT_PORT)
+            self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_PORT] = str(self.__MQTT_PORT)
             if self.__MQTT_USERNAME is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_USERNAME] = self.__MQTT_USERNAME
             if self.__MQTT_PASSWORD is not None:
