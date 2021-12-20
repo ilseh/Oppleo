@@ -64,9 +64,9 @@ class OutboundEvent(object):
                                           room=room)
 
         # Send MQTT event if enabled
-        if oppleoSystemConfig.mqttEnabled and room is not None:
+        if oppleoSystemConfig.mqttOutboundEnabled and room is not None:
             OutboundEvent.logger.debug('Webclient specific message (system status on connect) not send to MQTT.')
-        if oppleoSystemConfig.mqttEnabled and room is None:
+        if oppleoSystemConfig.mqttOutboundEnabled and room is None:
             OutboundEvent.emitMQTTEvent( event=event,                               \
                                          data=data,                                 \
                                          status=status,                             \

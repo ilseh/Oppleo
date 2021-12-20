@@ -19,7 +19,7 @@ class PushMessageProwl(object):
     priorityEmergency = 2
 
     @staticmethod
-    def sendMessage(title, message, priority=priorityNormal, apiKey='', chargerName='Unknown'):
+    def sendMessage(title, message, priority=priorityNormal, apiKey='', chargerName='Unknown') -> bool:
 
         if PushMessageProwl.__logger is None:
             PushMessageProwl.__logger = logging.getLogger('nl.oppleo.services.PushMessageProwl')
@@ -47,8 +47,12 @@ class PushMessageProwl(object):
 
         except requests.exceptions.ConnectTimeout as ct:
             PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            return False
         except requests.ReadTimeout as rt:
             PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            return False
         except Exception as e:
             PushMessageProwl.__logger.warn("PushMessageProwl.sendMessage(): Exception {} not Ok!".format(e))
+            return False
 
+        return True

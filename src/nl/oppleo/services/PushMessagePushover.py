@@ -1,5 +1,6 @@
 import logging
 import requests
+import json
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 
@@ -8,7 +9,8 @@ oppleoSystemConfig = OppleoSystemConfig()
 class PushMessagePushover(object):
     __logger = logging.getLogger('nl.oppleo.services.PushMessagePushover')
 
-    __API_BASE = "https://pushover.net/api"
+    __API_BASE = "https://api.pushover.net/1/messages.json"
+    __SOUNDS_BASE = "https://api.pushover.net/1/sounds.json"
 
     HTTP_200_OK = 200
 
@@ -19,7 +21,7 @@ class PushMessagePushover(object):
     priorityEmergency = 2
 
     @staticmethod
-    def sendMessage(title=None, message='', priority=priorityNormal, apiKey='', userKey='', chargerName='Unknown', device=None, sound=None):
+    def sendMessage(title=None, message='', priority=priorityNormal, apiKey='', userKey='', chargerName='Unknown', device=None, sound=None) -> bool:
 
         if PushMessagePushover.__logger is None:
             PushMessagePushover.__logger = logging.getLogger('nl.oppleo.services.PushMessagePushover')
@@ -51,11 +53,39 @@ class PushMessagePushover(object):
             PushMessagePushover.__logger.debug("Result {} - {} ".format(r.status_code, r.reason))
             if r.status_code != PushMessagePushover.HTTP_200_OK:
                 PushMessagePushover.__logger.warn("PushMessagePushover.sendMessage(): status code {} not Ok!".format(r.status_code))
+                return False
 
         except requests.exceptions.ConnectTimeout as ct:
             PushMessagePushover.__logger.warn("PushMessagePushover.sendMessage(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            return False
         except requests.ReadTimeout as rt:
             PushMessagePushover.__logger.warn("PushMessagePushover.sendMessage(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            return False
         except Exception as e:
             PushMessagePushover.__logger.warn("PushMessagePushover.sendMessage(): Exception {} not Ok!".format(e))
+            return False
 
+        return True
+
+
+    @staticmethod
+    def availableSounds(apiKey=''):
+        try:
+            r = requests.get(
+                url     = PushMessagePushover.__SOUNDS_BASE + '?token=' + apiKey,
+                timeout = oppleoSystemConfig.httpTimeout
+            )
+            PushMessagePushover.__logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+            if r.status_code == PushMessagePushover.HTTP_200_OK:
+                PushMessagePushover.__logger.info("PushMessagePushover.availableSounds(): status code {} Ok".format(r.status_code))
+                response_dict = json.loads(r.text)
+                return response_dict['sounds']
+
+        except requests.exceptions.ConnectTimeout as ct:
+            PushMessagePushover.__logger.warn("PushMessagePushover.availableSounds(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+        except requests.ReadTimeout as rt:
+            PushMessagePushover.__logger.warn("PushMessagePushover.availableSounds(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+        except Exception as e:
+            PushMessagePushover.__logger.warn("PushMessagePushover.availableSounds(): Exception {} not Ok!".format(e))
+    
+        return {}

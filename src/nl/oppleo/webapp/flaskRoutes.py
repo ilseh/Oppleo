@@ -3018,3 +3018,74 @@ def monthlyUsageOverview():
     eme = edmm.get_end_month_energy_levels(oppleoConfig.chargerName)
 
     return jsonify(eme)
+
+from nl.oppleo.services.PushMessage import PushMessage
+from nl.oppleo.services.PushMessageProwl import PushMessageProwl
+from nl.oppleo.services.PushMessagePushover import PushMessagePushover
+
+from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient 
+
+
+# Always returns json
+@flaskRoutes.route("/notification/<path:msgType>/", methods=["POST", "PUT"])
+@flaskRoutes.route("/notification/<path:msgType>/", methods=["POST", "PUT"])
+@authenticated_resource
+def sendTestNotification(msgType:str=None):
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/sendTestNotification {}'.format(type))
+
+    message = request.form.get('message', default=None, type=str)
+    if msgType is None or message is None:
+        abort(404)
+
+
+
+    sendSuccess = PushMessagePushover.availableSounds(apiKey=oppleoSystemConfig.pushoverApiKey)
+
+
+    if msgType.lower() == 'prowl':
+        sendSuccess = PushMessageProwl.sendMessage(
+            title='Oppleo ' + oppleoConfig.chargerName,
+            message=message,
+            priority=PushMessageProwl.priorityNormal,
+            apiKey=oppleoSystemConfig.prowlApiKey,
+            chargerName=oppleoConfig.chargerName
+            )
+        return jsonify({ 
+            'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
+            'type'          : msgType.lower(),
+            'message'       : message
+            })            
+
+    if msgType.lower() == 'pushover':
+        sendSuccess = PushMessagePushover.sendMessage(
+            title='Oppleo ' + oppleoConfig.chargerName, 
+            message=message,
+            priority=PushMessagePushover.priorityNormal,
+            apiKey=oppleoSystemConfig.pushoverApiKey,
+            userKey=oppleoSystemConfig.pushoverUserKey,
+            device=oppleoSystemConfig.pushoverDevice,
+            sound=oppleoSystemConfig.pushoverSound,
+            chargerName=oppleoConfig.chargerName
+            )
+        return jsonify({ 
+            'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
+            'type'          : msgType.lower(),
+            'message'       : message
+            })            
+
+    if msgType.lower() == 'mqtt':
+        oppleoMqttClient = OppleoMqttClient()
+        topic = 'oppleo/' + oppleoSystemConfig.chargerName + '/notification/test'
+        msg = {}
+        msg['title'] = 'Oppleo ' + oppleoConfig.chargerName, 
+        msg['message'] = message
+        msg['priority'] = PushMessage.priorityNormal,
+        sendSuccess = oppleoMqttClient.publish(topic=topic, message=msg)
+        return jsonify({ 
+            'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
+            'type'          : msgType.lower(),
+            'message'       : message
+            })            
+
+    abort(404)

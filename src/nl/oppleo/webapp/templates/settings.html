@@ -155,6 +155,39 @@
   </style>
 
   <script>
+
+    function sendMessage( message, type, spinner=false, successCallback=null, failCallback=null ) {
+      console.log(timestamp() + ' sendMessage()')            
+      if (spinner) {
+        // Show spinner
+        $('.spinner').show()
+      }
+      data = {
+          csrf_token    : '{{ csrf_token() }}',
+          message       : message
+        }
+      $.ajax({
+        type		    : 'POST',
+        url			    : ('/notification/'+encodeURIComponent(type)+'/'),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        if (successCallback != null) { successCallback(data) }
+      })
+      .fail(function(data) {
+        if (failCallback != null) { failCallback(data) }
+      })
+      .always(function() {
+        if (spinner) {
+          // Show spinner
+          $('.spinner').hide()
+        }
+      })
+    }
+
     function updateSettings( param, value ) {
       console.log(timestamp() + ' updateSettings()')            
       // Show spinner
@@ -1466,7 +1499,31 @@
 
       })
 
-       // Remove spinner
+
+
+      $("button[id$='-send-testmessage']").on('click', function(ev) {
+        console.log(timestamp() + ' button send test message()')            
+        $('button#'+ev.currentTarget.id).attr('disabled', true)
+        let type = ev.currentTarget.id.replace("-send-testmessage", "")
+
+        sendMessage( 'Testbericht', ev.currentTarget.id.replace("-send-testmessage", ""), true, function(result) {
+          if (result.status == 200) {
+            autoHideNotify('success','top-left', 'Testbericht verzonden', 'Testbericht verzonden.')
+          } else {
+            autoHideNotify('error','top-left', 'Testbericht niet verzonden', 'Testbericht niet verzonden.')
+          }
+          $('button#'+ev.currentTarget.id).attr('disabled', false)
+
+        }, function(result) {
+          autoHideNotify('error','top-left', 'Testbericht niet verzonden', 'Testbericht niet verzonden.')
+          $('button#'+ev.currentTarget.id).attr('disabled', false)
+
+        })
+        alert(type)
+      })
+
+
+      // Remove spinner
       $('.spinner').hide()
     })
 
@@ -2389,6 +2446,7 @@
                                     data-height="30"
                                     data-width="70"
                                   />
+                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="prowl-send-testmessage"> <i class="far fa-paper-plane"></i> Testbericht</button>
                                 </form>
                               </td>
                             </tr>
@@ -2398,12 +2456,11 @@
                                 <oppleo-edit-str 
                                   id="prowlApiKey"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.prowlApiKey }}"
-                                  validation="^[A-Za-z0-9]+$"
+                                  value="{% if oppleosystemconfig.prowlApiKey is not none  %}{{ oppleosystemconfig.prowlApiKey }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]*$"
                                   info="API key voor je <a href='https://www.prowlapp.com/'>Prowl</a> push message app."
                                   />
                             </tr>
-
                             <tr>
                               <th colspan="2">&nbsp;</th>
                             </tr>
@@ -2429,17 +2486,18 @@
                                     data-height="30"
                                     data-width="70"
                                   />
+                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="pushover-send-testmessage"> <i class="far fa-paper-plane"></i> Testbericht</button>
                                 </form>
                               </td>
                             </tr>
-                            <tr>
+                            <tr> 
                               <td class="text-dark">Pushover API key:</td >
                               <td class="text-primary">
                                 <oppleo-edit-str 
                                   id="pushoverApiKey"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.pushoverApiKey }}"
-                                  validation="^[A-Za-z0-9]+$"
+                                  value="{% if oppleosystemconfig.pushoverApiKey is not none  %}{{ oppleosystemconfig.pushoverApiKey }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]*$"
                                   info="API key voor je <a href='https://pushover.net/api'>Pushover</a> push message app."
                                   />
                             </tr>
@@ -2449,8 +2507,8 @@
                                 <oppleo-edit-str 
                                   id="pushoverUserKey"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.pushoverUserKey }}"
-                                  validation="^[A-Za-z0-9]+$"
+                                  value="{% if oppleosystemconfig.pushoverUserKey is not none  %}{{ oppleosystemconfig.pushoverUserKey }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]*$"
                                   info="User key voor je <a href='https://pushover.net/api'>Pushover</a> push message app."
                                   />
                             </tr>
@@ -2460,21 +2518,22 @@
                                 <oppleo-edit-str 
                                   id="pushoverDevice"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.pushoverDevice }}"
-                                  validation="^[A-Za-z0-9]+$"
+                                  value="{% if oppleosystemconfig.pushoverDevice is not none  %}{{ oppleosystemconfig.pushoverDevice }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]*$"
                                   info="Device naam voor het <a href='https://pushover.net/api'>Prowl</a> push bericht."
                                   />
                             </tr>
                             <tr>
                               <td class="text-dark">Pushover sound:</td >
                               <td class="text-primary">
-                                <oppleo-edit-str 
+                                <oppleo-edit-select 
                                   id="pushoverSound"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.pushoverSound }}"
-                                  validation="^[A-Za-z0-9]+$"
+                                  value="{% if oppleosystemconfig.pushoverSound is not none  %}{{ oppleosystemconfig.pushoverSound }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]*$"
                                   info="Sound voor de <a href='https://pushover.net/api'>Prowl</a> push melding."
                                   />
+                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="pushover-load-sounds"> <i class="fas fa-redo"></i> </button>
                             </tr>
 
                             <tr>
@@ -2502,6 +2561,7 @@
                                     data-height="30"
                                     data-width="70"
                                   />
+                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="mqtt-send-testmessage"> <i class="far fa-paper-plane"></i> Testbericht</button>
                                 </form>
                               </td>
                             </tr>
@@ -2511,7 +2571,7 @@
                                 <oppleo-edit-str 
                                   id="mqttHost"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.mqttHost }}"
+                                  value="{% if oppleosystemconfig.mqttHost is not none  %}{{ oppleosystemconfig.mqttHost }}{% else %}{% endif %}"
                                   validation="^[A-Za-z0-9]+$"
                                   info="Hostnaam of IP adres van de MQTT broker."
                                   />
@@ -2522,7 +2582,7 @@
                                 <oppleo-edit-str 
                                   id="mqttPort"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.mqttPort }}"
+                                  value="{% if oppleosystemconfig.mqttPort is not none  %}{{ oppleosystemconfig.mqttPort }}{% else %}{% endif %}"
                                   validation="^[A-Za-z0-9]+$"
                                   info="Poort van de MQTT broker."
                                   />
@@ -2533,7 +2593,7 @@
                                 <oppleo-edit-str 
                                   id="mqttUsername"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.mqttUsername }}"
+                                  value="{% if oppleosystemconfig.mqttUsername is not none  %}{{ oppleosystemconfig.mqttUsername }}{% else %}{% endif %}"
                                   validation="^[A-Za-z0-9]+$"
                                   info="Gebruikersnaam van de MQTT broker."
                                   />
@@ -2544,7 +2604,7 @@
                                 <oppleo-edit-str 
                                   id="mqttPassword"
                                   prefix="" 
-                                  value="{{ oppleosystemconfig.mqttPassword }}"
+                                  value="{% if oppleosystemconfig.mqttPassword is not none  %}{{ oppleosystemconfig.mqttPassword }}{% else %}{% endif %}"
                                   validation="^[A-Za-z0-9]+$"
                                   info="Wachtwoord van de MQTT broker."
                                   />

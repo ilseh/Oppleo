@@ -1,7 +1,7 @@
 import logging
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 
-from paho.mqtt import client as mqtt_client
+from paho.mqtt import client as mqtt_client #, MQTTMessageInfo
 
 oppleoSystemConfig = OppleoSystemConfig()
 
@@ -58,7 +58,7 @@ class OppleoMqttClient(object, metaclass=Singleton):
                                            )
 
 
-    def publish(self, topic, message) -> None:
+    def publish(self, topic, message) -> bool:
         OppleoMqttClient.logger.debug(f'Publish msg {message} to topic {topic} ... ')
 
         if not self.connected or self.mqttClient is None:
@@ -69,4 +69,5 @@ class OppleoMqttClient(object, metaclass=Singleton):
             return
             
         OppleoMqttClient.logger.debug(f'Publishing MQTT msg {message} to topic {topic}')
-        self.mqttClient.publish(topic, message)
+        mqttMessageInfo = self.mqttClient.publish(topic, message)
+        return mqttMessageInfo.rc == 2 #MQTTMessageInfo.MQTT_ERR_SUCCESS

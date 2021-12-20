@@ -46,7 +46,7 @@ class PushMessage(object):
                     chargerName=oppleoConfig.chargerName
                     )
 
-        if oppleoSystemConfig.mqttEnabled:
+        if oppleoSystemConfig.mqttOutboundEnabled:
             oppleoMqttClient = OppleoMqttClient()
             topic = 'oppleo/' + oppleoSystemConfig.chargerName + '/notification'
             msg = {}
