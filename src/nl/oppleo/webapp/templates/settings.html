@@ -1592,8 +1592,6 @@
 
       })
 
-
-
       $("button[id$='-send-testmessage']").on('click', function(ev) {
         console.log(timestamp() + ' button send test message()')            
         $('button#'+ev.currentTarget.id).attr('disabled', true)
@@ -1620,6 +1618,10 @@
       loadPushoverDevices("{{ oppleosystemconfig.pushoverUserKey }}", "{{ oppleosystemconfig.pushoverApiKey }}")
       {% endif %}
       {% endif %}
+      // MQTT
+      $('input#mqttOutboundEnabled').change(function() {
+        updateSettings( 'mqttOutboundEnabled', $(this).prop('checked') )
+      })
 
       // Remove spinner
       $('.spinner').hide()
@@ -2524,7 +2526,17 @@
                             </tr>
                             <tr>
                               <th colspan="2" style="line-height: 40px;">
-                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Prowl (iOS Push messages)</h4>
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Prowl (iOS Push messages)
+                                  <span class="ml-5"
+                                    style="cursor: help;"
+                                    data-toggle="tooltip" 
+                                    data-placement="bottom" 
+                                    data-html="true" 
+                                    title="Prowl berichten worden verzonden met standaard priority <em class='text-warning font-weight-bold'>0</em>. Prowl client is alleen beschikbaar voor iOS."
+                                    >
+                                    <i class="fas fa-info-circle"></i>
+                                  </span>
+                                </h4>
                               </th>
                             </tr>
                             <tr>
@@ -2564,7 +2576,17 @@
                             </tr>
                             <tr>
                               <th colspan="2" style="line-height: 40px;">
-                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Pushover (iOS/Android/Desktop Push messages)</h4>
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Pushover (iOS/Android/Desktop Push messages)
+                                  <span class="ml-5"
+                                    style="cursor: help;"
+                                    data-toggle="tooltip" 
+                                    data-placement="bottom" 
+                                    data-html="true" 
+                                    title="Pushover berichten worden verzonden met standaard priority <em class='text-warning font-weight-bold'>0</em>. Pushover clients zijn beschikbaar voor Android, iOS en desktop browser web clients."
+                                    >
+                                    <i class="fas fa-info-circle"></i>
+                                  </span>
+                                </h4>
                               </th>
                             </tr>
                             <tr>
@@ -2646,7 +2668,17 @@
                             </tr>
                             <tr>
                               <th colspan="2" style="line-height: 40px;">
-                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> MQTT</h4>
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> MQTT 
+                                  <span class="ml-5"
+                                        style="cursor: help;"
+                                        data-toggle="tooltip" 
+                                        data-placement="bottom" 
+                                        data-html="true" 
+                                        title="Berichten worden verzonden naar topic met prefix <em class='text-warning font-weight-bold'>oppleo/{{ oppleoconfig.chargerName }}/</em> zonder retain en QoS waarde 0. Oppleo support alleen tcp verbinding, MQTT versie 3.1.1 (poha default)."
+                                        >
+                                    <i class="fas fa-info-circle"></i>
+                                  </span>
+                                </h4>
                               </th>
                             </tr>
                             <tr>
@@ -2677,7 +2709,7 @@
                                   id="mqttHost"
                                   prefix="" 
                                   value="{% if oppleosystemconfig.mqttHost is not none  %}{{ oppleosystemconfig.mqttHost }}{% else %}{% endif %}"
-                                  validation="^[A-Za-z0-9]+$"
+                                  validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
                                   info="Hostnaam of IP adres van de MQTT broker."
                                   />
                             </tr>

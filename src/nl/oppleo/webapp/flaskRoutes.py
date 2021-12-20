@@ -2014,7 +2014,7 @@ def update_settings(param=None, value=None):
 
     # pushoverDevice
     if (param == 'pushoverDevice') and isinstance(value, str):
-        oppleoSystemConfig.pushoverDevice = value if len(value) > 0 else None
+        oppleoSystemConfig.pushoverDevice = value if len(value) > 0 and value != '*' else None
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # pushoverSound
@@ -2025,10 +2025,14 @@ def update_settings(param=None, value=None):
     # mqttOutboundEnabled
     if (param == 'mqttOutboundEnabled'):
         oppleoSystemConfig.mqttOutboundEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        oppleoMqttClient = OppleoMqttClient()
+        if oppleoMqttClient.is_connected() and not oppleoSystemConfig.mqttOutboundEnabled:
+            oppleoMqttClient.disconnect()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.mqttOutboundEnabled })
 
     # mqttHost
-    if (param == 'mqttHost') and isinstance(value, str):
+    validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
+    if (param == 'mqttHost') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.mqttHost = value if len(value) > 0 else None
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
@@ -3126,12 +3130,12 @@ def sendTestNotification(msgType:str=None):
 
     if msgType.lower() == 'mqtt':
         oppleoMqttClient = OppleoMqttClient()
-        topic = 'oppleo/' + oppleoSystemConfig.chargerName + '/notification/test'
+        topic = 'oppleo/' + oppleoSystemConfig.chargerName + '/notification'
         msg = {}
-        msg['title'] = 'Oppleo ' + oppleoConfig.chargerName, 
+        msg['title'] = "Oppleo {}".format(oppleoConfig.chargerName)
         msg['message'] = message
-        msg['priority'] = PushMessage.priorityNormal,
-        sendSuccess = oppleoMqttClient.publish(topic=topic, message=msg)
+        msg['priority'] = int(PushMessage.priorityNormal)
+        sendSuccess = oppleoMqttClient.publish(topic=topic, message=json.dumps(msg), waitForPublish=True, timeout=1500)
         return jsonify({ 
             'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
             'type'          : msgType.lower(),

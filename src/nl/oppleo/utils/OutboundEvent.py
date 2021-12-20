@@ -29,6 +29,7 @@
 
      
 import logging
+import json
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient
@@ -97,7 +98,7 @@ class OutboundEvent(object):
             msg['status'] = status
 
         OutboundEvent.logger.debug(f'Submit msg to MQTT topic ... {msg}')
-        oppleoMqttClient.publish(topic=topic, message=msg)
+        oppleoMqttClient.publish(topic=topic, message=json.dumps(msg))
 
 
 

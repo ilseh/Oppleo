@@ -2,6 +2,7 @@ import logging
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 
 from paho.mqtt import client as mqtt_client #, MQTTMessageInfo
+from paho.mqtt.client import MQTTMessageInfo, MQTTv311, MQTTv5
 
 oppleoSystemConfig = OppleoSystemConfig()
 
@@ -17,38 +18,32 @@ class Singleton(type):
 class OppleoMqttClient(object, metaclass=Singleton):
     logger = logging.getLogger('nl.oppleo.services.OppleoMqttClient')
     mqttClient = None
-    connected = False
 
     def __init__(self) -> None:
         super().__init__()
         # Set Connecting Client ID
-        self.mqttClient = mqtt_client.Client('Oppleo_'+oppleoSystemConfig.chargerName)
+        self.mqttClient = mqtt_client.Client(client_id='Oppleo_'+oppleoSystemConfig.chargerName, 
+                                             clean_session=True,
+                                             protocol=MQTTv311,
+                                             transport="tcp",
+                                             reconnect_on_failure=True
+                                             )
         self.setUser()
-        # Connect callback
-        def on_connect(client, userdata, flags, rc):
-            if rc == 0:
-                OppleoMqttClient.logger.debug("Connected to MQTT Broker")
-                self.connected = True
-            else:
-                OppleoMqttClient.logger.warn("Failed to connect to MQTT Broker! Return code {}".format(rc))
-                self.connected = False
-        # Disconnect callback
-        def on_disconnect(client, userdata, flags, rc):
-            OppleoMqttClient.logger.warn("Disconnected from MQTT Broker ({})".format(rc))
-            self.connected = False
-        self.mqttClient.on_connect = on_connect
-        self.mqttClient.on_disconnect = on_disconnect
 
 
     def connect(self) -> None:
         OppleoMqttClient.logger.debug("Cconnecting to MQTT Broker...")
-        self.mqttClient.connect(oppleoSystemConfig.mqttHost, oppleoSystemConfig.mqttPort)
+        self.mqttClient.connect(host=oppleoSystemConfig.mqttHost, port=oppleoSystemConfig.mqttPort)
+        self.mqttClient.loop_start()
 
+    def is_connected(self) -> bool:
+        return self.mqttClient.is_connected()
 
     def disconnect(self) -> None:
-        OppleoMqttClient.logger.debug("Disconnecting from MQTT Broker...")
-        self.mqttClient.disconnect()
-
+        OppleoMqttClient.logger.debug("Requesting disconnect from MQTT Broker...")
+        if self.is_connected():
+            OppleoMqttClient.logger.debug("Disconnecting from MQTT Broker...")
+            self.mqttClient.disconnect()
 
     def setUser(self) -> None:
         if oppleoSystemConfig.mqttUsername is not None and oppleoSystemConfig.mqttUsername is not "": 
@@ -56,18 +51,28 @@ class OppleoMqttClient(object, metaclass=Singleton):
             self.mqttClient.username_pw_set( oppleoSystemConfig.mqttUsername, 
                                              oppleoSystemConfig.mqttPassword if oppleoSystemConfig.mqttPassword is not None and oppleoSystemConfig.mqttPassword is not "" else None
                                            )
-
-
-    def publish(self, topic, message) -> bool:
+    """
+        timeout in ms
+    """
+    def publish(self, topic:str='oppleo', message:str=None, waitForPublish:bool=False, timeout:int=1000) -> bool:
         OppleoMqttClient.logger.debug(f'Publish msg {message} to topic {topic} ... ')
 
-        if not self.connected or self.mqttClient is None:
+        if not self.mqttClient.is_connected():
             OppleoMqttClient.logger.debug("Not connected to MQTT Broker, trying to connect")
             self.connect()
-        if not self.connected or self.mqttClient is None:
-            OppleoMqttClient.logger.warn(f'Failed to publish msg {message} to topic {topic}, not connected')
-            return
+
+        # Can be async connected, with self.mqttClient.is_connected() returning false...
+
+        #        if not self.mqttClient.is_connected():
+        #            OppleoMqttClient.logger.warn(f'Failed to publish msg {message} to topic {topic}, not connected')
+        #            return False
             
         OppleoMqttClient.logger.debug(f'Publishing MQTT msg {message} to topic {topic}')
-        mqttMessageInfo = self.mqttClient.publish(topic, message)
-        return mqttMessageInfo.rc == 2 #MQTTMessageInfo.MQTT_ERR_SUCCESS
+        
+        try:
+            mqttMessageInfo = self.mqttClient.publish(topic=topic, payload=message)
+            if waitForPublish:
+                mqttMessageInfo.wait_for_publish(timeout=(timeout/1000))
+        except (ValueError, TypeError, RuntimeError) as e:
+            return False
+        return mqttMessageInfo.is_published()

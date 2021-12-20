@@ -141,7 +141,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     __MQTT_OUTBOUND_ENABLED = False
     __MQTT_HOST = None
-    __MQTT_PORT = 1880
+    __MQTT_PORT = 1883
     __MQTT_USERNAME = None
     __MQTT_PASSWORD = None
 
