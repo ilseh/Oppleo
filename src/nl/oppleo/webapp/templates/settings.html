@@ -188,6 +188,78 @@
       })
     }
 
+    // Load pushover sounds
+    function loadPushoverSounds(apiKey, selectedSound=undefined) {
+      data = {
+          csrf_token    : '{{ csrf_token() }}'
+        }
+      $.ajax({
+        type		    : 'GET',
+        url			    : ('/pushover/'+encodeURIComponent(apiKey)+'/sounds/'),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // pushoverSound
+        if (data.status == 200) {
+          // data.sounds
+          let dObj = []
+          for (var sound in data.sounds) {
+            if (data.sounds.hasOwnProperty(sound)) {
+              dObj.push( { id: sound, text: data.sounds[sound], selected: (sound == selectedSound || (selectedSound == undefined && sound == 'pushover')) } )
+            }
+          }
+          $('oppleo-edit-select#pushoverSound').prop('options', JSON.stringify(dObj))
+        } else {
+          console.log('Failed to load sounds for pushover token ' + data.apiKey)
+        }
+      })
+      .fail(function(data) {
+        console.log('Failed to load sounds for pushover token ' + data.apiKey)
+      })
+      .always(function() {
+      })
+    }
+
+
+    // Load pushover sounds
+    function loadPushoverDevices(userKey, apiKey, selectedDevice=undefined) {
+      data = {
+          csrf_token    : '{{ csrf_token() }}'
+        }
+      $.ajax({
+        type		    : 'GET',
+        url			    : ('/pushover/'+encodeURIComponent(userKey)+'/'+encodeURIComponent(apiKey)+'/devices/'),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // pushoverDevices
+        if (data.status == 200) {
+          // data.sounds
+          let dObj = []
+          dObj.push( { id: '*', text: 'Alle actieve devices', selected: (selectedDevice == undefined) } )
+          for (var device in data.devices) {
+            if (data.devices.hasOwnProperty(device)) {
+              dObj.push( { id: device, text: data.devices[device], selected: (device == selectedDevice) } )
+            }
+          }
+          $('oppleo-edit-select#pushoverDevice').prop('options', JSON.stringify(dObj))
+        } else {
+          console.log('Failed to load devices for pushover userKey ' + data.userKey + ' apiKey ' + data.apiKey)
+        }
+      })
+      .fail(function(data) {
+        console.log('Failed to load devices for pushover userKey ' + data.userKey + ' apiKey ' + data.apiKey)
+      })
+      .always(function() {
+      })
+    }
+
     function updateSettings( param, value ) {
       console.log(timestamp() + ' updateSettings()')            
       // Show spinner
@@ -1017,6 +1089,15 @@
       // Oppleo web component applied change
       $('oppleo-edit-str').on('apply', (e) => {
         console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+        // Pushover?
+        if (e.target.id == 'pushoverApiKey' || e.target.id == 'pushoverUserKey') {
+          let pushoverSound = $($('#pushoverSound')[0].$select).find("option:selected").val()
+          let pushoverSoundName = $($('#pushoverSound')[0].$select).find("option:selected").text()
+          $('oppleo-edit-select#pushoverSound').prop('options', JSON.stringify([{ id: pushoverSound, text: pushoverSoundName, selected: true }]))
+          let device = $($('#pushoverDevice')[0].$select).find("option:selected").val()
+          let deviceName = $($('#pushoverDevice')[0].$select).find("option:selected").text()
+          $('oppleo-edit-select#pushoverDevice').prop('options', JSON.stringify([{ id: device, text: deviceName, selected: true }]))
+        }
         // Submit
         updateSettings( e.target.id, e.detail.newValue )
       })
@@ -1521,7 +1602,13 @@
         })
         alert(type)
       })
-
+      // After init, load pushover sounds with current token
+      {% if oppleosystemconfig.pushoverApiKey is not none %}
+      loadPushoverSounds( "{{ oppleosystemconfig.pushoverApiKey }}", "{{ oppleosystemconfig.pushoverSound }}" )
+      {% if oppleosystemconfig.pushoverUserKey is not none %}
+      loadPushoverDevices("{{ oppleosystemconfig.pushoverUserKey }}", "{{ oppleosystemconfig.pushoverApiKey }}")
+      {% endif %}
+      {% endif %}
 
       // Remove spinner
       $('.spinner').hide()
@@ -2515,12 +2602,16 @@
                             <tr>
                               <td class="text-dark">Pushover device:</td >
                               <td class="text-primary">
-                                <oppleo-edit-str 
+                                <oppleo-edit-select 
                                   id="pushoverDevice"
-                                  prefix="" 
-                                  value="{% if oppleosystemconfig.pushoverDevice is not none  %}{{ oppleosystemconfig.pushoverDevice }}{% else %}{% endif %}"
-                                  validation="^[A-Za-z0-9]*$"
-                                  info="Device naam voor het <a href='https://pushover.net/api'>Prowl</a> push bericht."
+                                  {% if oppleosystemconfig.pushoverDevice is not none  %}
+                                  options='[ { "text": "{{ oppleoconfig.pushoverDevice }}", "id": "{{ oppleoconfig.pushoverDevice }}", "selected": "true" } ]'
+                                  {% else %}
+                                  options='[ ]'
+                                  {% endif %}
+                                  info="Device naam voor het <a href='https://pushover.net/api'>Pushover</a> push bericht."
+                                  placeholder="Maak een keuze..."
+                                  unlock=false
                                   />
                             </tr>
                             <tr>
@@ -2528,12 +2619,15 @@
                               <td class="text-primary">
                                 <oppleo-edit-select 
                                   id="pushoverSound"
-                                  prefix="" 
-                                  value="{% if oppleosystemconfig.pushoverSound is not none  %}{{ oppleosystemconfig.pushoverSound }}{% else %}{% endif %}"
-                                  validation="^[A-Za-z0-9]*$"
-                                  info="Sound voor de <a href='https://pushover.net/api'>Prowl</a> push melding."
+                                  {% if oppleosystemconfig.pushoverSound is not none  %}
+                                  options='[ { "text": "{{ oppleoconfig.pushoverSound }}", "id": "{{ oppleoconfig.pushoverSound }}", "selected": "true" } ]'
+                                  {% else %}
+                                  options='[ ]'
+                                  {% endif %}
+                                  info="Geluid voor de <a href='https://pushover.net/api'>Pushover</a> push melding."
+                                  placeholder="Maak een keuze..."
+                                  unlock=false
                                   />
-                                  <button type="button" class="btn btn-sm btn-outline-primary ml-5" id="pushover-load-sounds"> <i class="fas fa-redo"></i> </button>
                             </tr>
 
                             <tr>

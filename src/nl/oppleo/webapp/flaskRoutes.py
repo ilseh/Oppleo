@@ -1997,6 +1997,57 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.prowlApiKey = value if len(value) > 0 else None
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
+    # pushoverEnabled
+    if (param == 'pushoverEnabled'):
+        oppleoSystemConfig.pushoverEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.pushoverEnabled })
+
+    # pushoverApiKey
+    if (param == 'pushoverApiKey') and isinstance(value, str):
+        oppleoSystemConfig.pushoverApiKey = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # pushoverUserKey
+    if (param == 'pushoverUserKey') and isinstance(value, str):
+        oppleoSystemConfig.pushoverUserKey = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # pushoverDevice
+    if (param == 'pushoverDevice') and isinstance(value, str):
+        oppleoSystemConfig.pushoverDevice = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # pushoverSound
+    if (param == 'pushoverSound') and isinstance(value, str):
+        oppleoSystemConfig.pushoverSound = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # mqttOutboundEnabled
+    if (param == 'mqttOutboundEnabled'):
+        oppleoSystemConfig.mqttOutboundEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.mqttOutboundEnabled })
+
+    # mqttHost
+    if (param == 'mqttHost') and isinstance(value, str):
+        oppleoSystemConfig.mqttHost = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+     # mqttPort
+    validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+    if (param == 'mqttPort') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.mqttPort = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.mqttPort })
+
+    # mqttUsername
+    if (param == 'mqttUsername') and isinstance(value, str):
+        oppleoSystemConfig.mqttUsername = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # mqttPassword
+    if (param == 'mqttPassword') and isinstance(value, str):
+        oppleoSystemConfig.mqttPassword = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
     # webChargeOnDashboard
     if (param == 'webChargeOnDashboard'):
         oppleoConfig.webChargeOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
@@ -3036,12 +3087,11 @@ def sendTestNotification(msgType:str=None):
 
     message = request.form.get('message', default=None, type=str)
     if msgType is None or message is None:
-        abort(404)
-
-
-
-    sendSuccess = PushMessagePushover.availableSounds(apiKey=oppleoSystemConfig.pushoverApiKey)
-
+        return jsonify({ 
+            'status'    : HTTP_CODE_404_NOT_FOUND,
+            'type'      : msgType if msgType is not None else '', 
+            'message'   : message if message is not None else '' 
+            })            
 
     if msgType.lower() == 'prowl':
         sendSuccess = PushMessageProwl.sendMessage(
@@ -3088,4 +3138,44 @@ def sendTestNotification(msgType:str=None):
             'message'       : message
             })            
 
-    abort(404)
+    return jsonify({ 
+        'status'    : HTTP_CODE_404_NOT_FOUND,
+        'type'      : msgType if msgType is not None else '', 
+        'message'   : message if message is not None else '' 
+        })            
+           
+
+
+
+# Always returns json
+@flaskRoutes.route("/pushover/<path:apiKey>/sounds", methods=["GET"])
+@flaskRoutes.route("/pushover/<path:apiKey>/sounds/", methods=["GET"])
+@authenticated_resource
+def pushoverSounds(apiKey:str=None):
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/pushover/{}/sounds/'.format(apiKey))
+
+    soundList = PushMessagePushover.availableSounds(apiKey=apiKey)
+    return jsonify({ 
+        'status'        : HTTP_CODE_200_OK if soundList is not None else HTTP_CODE_404_NOT_FOUND,
+        'apiKey'        : apiKey if apiKey is not None else '-', 
+        'sounds'        : soundList if soundList is not None else {} 
+        })            
+
+
+# Always returns json
+@flaskRoutes.route("/pushover/<path:userKey>/<path:apiKey>/devices", methods=["GET"])
+@flaskRoutes.route("/pushover/<path:userKey>/<path:apiKey>/devices/", methods=["GET"])
+@authenticated_resource
+def pushoverDevices(userKey:str=None, apiKey:str=None):
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/pushover/{}/{}/devices/'.format(userKey, apiKey))
+
+    deviceList = PushMessagePushover.deviceList(userKey=userKey, apiKey=apiKey)
+
+    return jsonify({ 
+        'status'        : HTTP_CODE_200_OK if deviceList is not None else HTTP_CODE_404_NOT_FOUND,
+        'userKey'       : userKey if userKey is not None else '-', 
+        'apiKey'        : apiKey if apiKey is not None else '-', 
+        'devices'       : deviceList if deviceList is not None else {} 
+        })            
