@@ -202,11 +202,12 @@ class VehicleChargeStatusMonitorThread(object):
                                 )
                 else: 
                     # len(oppleoConfig.connectedClients) == 0
-                    self.__logger.debug('monitor() no connectedClients to report chargeState to or display not enabled. Skip and go directly to sleep.')
+                    self.__logger.debug('monitor() no connectedClients to report chargeState to or vehicle status display not enabled. Skip and go directly to sleep.')
 
-                    self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_410_GONE,
-                                                   msg='No clients connected'
-                                                  )
+                    if len(oppleoConfig.connectedClients) == 0 and oppleoConfig.vehicleDataOnDashboard:
+                        self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_410_GONE,
+                                                       msg='Not monitoring vehicles when no clients are connected'
+                                                    )
 
             # Sleep for quite a while, and yield for other threads
             time.sleep(self.__sleepInterval)
@@ -249,7 +250,7 @@ class VehicleChargeStatusMonitorThread(object):
         OutboundEvent.triggerEvent(
             event       = 'vehicle_status_update', 
             id          = oppleoConfig.chargerName,
-            data        = { 'request' : 'wakeupVehicle',
+            data        = { 'request' : 'clearWakeupVehicle',
                             'result'  : resultCode,
                             'msg'     : msg
             },
