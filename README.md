@@ -358,7 +358,7 @@ Oppleo is not a nicely packaged resource. Basically you'll pull the developer co
 * Edit the oppleo.ini file to reflect your local installation. The oppleo.example.ini file has comments to help. Note that the local copied oppleo.ini file is completely overwritten when settings are changed through Oppleos webfront, so remarks etc. will be lost. Make changes using any text editor like `vi` or `nano` when Oppleo is not running.
   * All elements are in the [Oppleo] section. All `True` and `False` are Python, thus capitalizine the first letter is required.
   * `log_file` is the log file location. Default `/tmp/Oppleo.log`
-  * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. No need to manually chnage this.
+  * `signature` is a random generated signature to identify this application when logging or sending messages through Prowl. No need to manually change this.
   * `database_url` is `postgresql://<dbuser>:<dbpassword>@<ipaddress>:5432/<dbname>` where `<dbuser>`, `<dbpassword>`, and `<dbname>` are the values used when installing postgres. `<ipaddress>` can be `localhost` when both postgres and oppleo are installed on the same raspberry pi.  
   * `sqlalchemy_track_modifications` should be `False`
   * `debug` should be `False`. Enabling this shows any uncatched exceptions and errors in the web front. Useful for development or debugging only.
