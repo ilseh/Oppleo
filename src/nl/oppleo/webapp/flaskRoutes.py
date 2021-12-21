@@ -312,6 +312,14 @@ def login2(username:str=None):
     user.authenticated = True
     user.save()
 
+    OutboundEvent.emitMQTTEvent( event='login',
+                                 data={
+                                    "user" : user.username,
+                                 },
+                                 id=oppleoConfig.chargerName,
+                                 namespace='/webclient'
+                                )
+
     login_next = None
     if 'login_next' in session:
         login_next = session['login_next']
@@ -337,6 +345,14 @@ def logout():
     user.authenticated = False
     user.save()
     logout_user()
+    OutboundEvent.emitMQTTEvent( event='logout',
+                                 data={
+                                    "user" : user.username,
+                                 },
+                                 id=oppleoConfig.chargerName,
+                                 namespace='/webclient'
+                                )
+
     return redirect(url_for('flaskRoutes.home'))
 
 

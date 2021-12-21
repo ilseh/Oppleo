@@ -1,9 +1,10 @@
 Version 1.3.2           2021-12-20
 
 Added
-- Basic MQTT support
+- Basic MQTT support. 
+- Added login/logout and websocket connect/disconnect events to MQTT.
 - Pushover cross platform push messages
-- monthly energy consumption API call
+- Monthly energy consumption API call
 
 Fixed
 - Improved developer branch update check

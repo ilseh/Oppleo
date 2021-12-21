@@ -164,7 +164,15 @@ try:
                         oppleoConfig.connectedClients \
                         )
                     )
-
+        OutboundEvent.emitMQTTEvent( event='connect',
+                                     data={
+                                        "clientId"          : request.sid,
+                                        'auth'              : True if (current_user.is_authenticated) else False,
+                                        "clientsConnected"  : len(oppleoConfig.connectedClients)
+                                     },
+                                     id=oppleoConfig.chargerName,
+                                     namespace='/websocket'
+                                    )
         OutboundEvent.triggerEvent(
                 event='update', 
                 id=oppleoConfig.chargerName,
@@ -177,7 +185,6 @@ try:
                 public=False,
                 room=request.sid
             )
-
 
 
     @appSocketIO.on("disconnect", namespace="/")
@@ -194,6 +201,16 @@ try:
                         res
                         )
                     )
+        OutboundEvent.emitMQTTEvent( event='disconnect',
+                                     data={
+                                        "clientId"          : request.sid,
+                                        "clientsConnected"  : len(oppleoConfig.connectedClients)
+                                     },
+                                     id=oppleoConfig.chargerName,
+                                     namespace='/websocket'
+                                    )
+
+
 
     # 404 Not Found - The server can not find requested resource.
     @app.errorhandler(404)
