@@ -94,5 +94,5 @@ virtualenv-clone==0.5.7
 virtualenvwrapper==4.8.4
 Werkzeug==2.0.2
 wrapt==1.13.3
-WTForms==3.0.0
+WTForms==2.2.1
 zipp==3.6.0
