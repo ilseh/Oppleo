@@ -675,33 +675,9 @@
                     console.log(result)
                     switch(parseInt(result.status)) {
                     case 200:
-                        if (result.softwareReleaseUpdateAvailable) {
-                            // New release available
-                            $('<tr id="softwateUpdateAvailableVersionRow">' +
-                                '<td class="text-dark"> Update beschikbaar:</td>' +
-                                '<td class="text-warning">' +
-                                '   <button' +
-                                '       type="button" ' +
-                                '       id="updateSoftwateButton" ' +
-                                '       class="btn btn-outline-warning btn-sm waves-effect waves-light"' +
-                                '       > ' +
-                                '       <i class="fas fa-gift"></i> Update naar ' + result.availableReleaseSoftwareVersion + 
-                                '   </button>' +
-                                '</td>' +
-                                '</tr>')
-                                .insertAfter("tr#softwateUpdateCurrentVersionRow")
-                            $('tr#softwateUpdateCheckRow').hide()
-                            $('button#updateSoftwateButton').on('click', () => {
-                                window.location = "{{ url_for('flaskRoutes.software_update') }}"
-                            })
-                            if ( $("tr#noSoftwateUpdateAvailableRow").length != 0 ) {
-                                $("tr#noSoftwateUpdateAvailableRow").remove()
-                            }
-                            $('a#updateSoftwareMenuItem').parent().show()
-                            $('a#checkSoftwareStatusMenuItem').parent().hide()
-                            autoHideNotify('warning', 'top-left', 'Update beschikbaar!', 'Software ' + result.availableReleaseSoftwareVersion + '(' + result.availableReleaseSoftwareDate + ') beschikbaar!', 10000)
-                        } else if ( result.activeBranch != "master" && result.softwareBuildUpdateAvailable ) {
-                            // No release update available, but new build available
+                        // Master update might be available, but when on a branch keep this as update truth
+                        if ( result.activeBranch != "master" && result.softwareBuildUpdateAvailable ) {
+                            // New build available
                             let buildVersion = result.branches.filter(branch => branch.branch == result.activeBranch)[0].version
                             $('<tr id="softwateUpdateAvailableVersionRow">' +
                                 '<td class="text-dark"> Update beschikbaar:</td>' +
@@ -727,13 +703,45 @@
                             $('a#checkSoftwareStatusMenuItem').parent().hide()
                             autoHideNotify('warning', 'top-left', 'Build beschikbaar!', 'Software branch ' + result.activeBranch + ' heeft een update voor v' + buildVersion + ' met commit datum ' + result.availableBuildSoftwareDate + ' beschikbaar!', 10000)
 
+                        } else if (result.activeBranch == "master" && result.softwareReleaseUpdateAvailable) {
+                            // New release available
+                            $('<tr id="softwateUpdateAvailableVersionRow">' +
+                                '<td class="text-dark"> Update beschikbaar:</td>' +
+                                '<td class="text-warning">' +
+                                '   <button' +
+                                '       type="button" ' +
+                                '       id="updateSoftwateButton" ' +
+                                '       class="btn btn-outline-warning btn-sm waves-effect waves-light"' +
+                                '       > ' +
+                                '       <i class="fas fa-gift"></i> Update naar ' + result.availableReleaseSoftwareVersion + 
+                                '   </button>' +
+                                '</td>' +
+                                '</tr>')
+                                .insertAfter("tr#softwateUpdateCurrentVersionRow")
+                            $('tr#softwateUpdateCheckRow').hide()
+                            $('button#updateSoftwateButton').on('click', () => {
+                                window.location = "{{ url_for('flaskRoutes.software_update') }}"
+                            })
+                            if ( $("tr#noSoftwateUpdateAvailableRow").length != 0 ) {
+                                $("tr#noSoftwateUpdateAvailableRow").remove()
+                            }
+                            $('a#updateSoftwareMenuItem').parent().show()
+                            $('a#checkSoftwareStatusMenuItem').parent().hide()
+                            autoHideNotify('warning', 'top-left', 'Update beschikbaar!', 'Software ' + result.availableReleaseSoftwareVersion + '(' + result.availableReleaseSoftwareDate + ') beschikbaar!', 10000)
+
                         } else {
+                            if (result.activeBranch != "master" && result.softwareReleaseUpdateAvailable) {
+                                // No build update available, however there is a new Release update available
+                            }
+
                             // No release update nor build update available
                             if ( $("tr#noSoftwateUpdateAvailableRow").length == 0 ) {
                                 $('<tr id="noSoftwateUpdateAvailableRow">' +
                                     '<td class="text-dark"></td>' +
                                     '<td class="text-secondary">Geen update beschikbaar' +
                                         (result.activeBranch != "master" ? ' voor <span class="font-italic">' + result.activeBranch + '<span>' : '') +
+                                        '.' +
+                                        (result.activeBranch != "master" && result.softwareReleaseUpdateAvailable ? ' Release update beschikbaar, schakel terug naar Master branch om te installeren.' : '') +
                                     '</td>' +
                                 '</tr>')
                                 .insertAfter("tr#softwateUpdateCurrentVersionRow")

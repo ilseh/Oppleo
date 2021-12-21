@@ -117,19 +117,19 @@ class PushMessagePushover(object):
             )
             PushMessagePushover.__logger.debug("Result {} - {} ".format(r.status_code, r.reason))
             if r.status_code == PushMessagePushover.HTTP_200_OK:
-                PushMessagePushover.__logger.info("PushMessagePushover.availableSounds(): status code {} Ok".format(r.status_code))
+                PushMessagePushover.__logger.info("PushMessagePushover.deviceList(): status code {} Ok".format(r.status_code))
                 response_dict = json.loads(r.text)
                 resDict = {}
                 for deviceIndex, deviceName in enumerate(response_dict['devices']):
-                    resDict[deviceName] = deviceName + ' (' + response_dict['licenses'][deviceIndex] + ')'
+                    resDict[deviceName] = deviceName
                 return resDict
 
         except requests.exceptions.ConnectTimeout as ct:
-            PushMessagePushover.__logger.warn("PushMessagePushover.availableSounds(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            PushMessagePushover.__logger.warn("PushMessagePushover.deviceList(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
         except requests.ReadTimeout as rt:
-            PushMessagePushover.__logger.warn("PushMessagePushover.availableSounds(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            PushMessagePushover.__logger.warn("PushMessagePushover.deviceList(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
         except Exception as e:
-            PushMessagePushover.__logger.warn("PushMessagePushover.availableSounds(): Exception {} not Ok!".format(e))
+            PushMessagePushover.__logger.warn("PushMessagePushover.deviceList(): Exception {} not Ok!".format(e))
     
         return None
 
