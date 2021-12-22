@@ -34,10 +34,7 @@ class PushMessagePushover(object):
             'message'       : message,
             'priority'      : priority
         }
-        if title is not None:
-            data['title'] = title
-        else:
-            data['title'] = str('Oppleo' + ' ' + chargerName)
+        data['title'] = str(title if title is not None else "") + ' [' + chargerName + ']'
         if device is not None:
             data['device'] = device
         if sound is not None:
