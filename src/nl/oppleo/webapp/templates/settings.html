@@ -1619,6 +1619,10 @@
       {% endif %}
       {% endif %}
       // MQTT
+      $('input#pushoverEnabled').change(function() {
+        updateSettings( 'pushoverEnabled', $(this).prop('checked') )
+      })
+      // MQTT
       $('input#mqttOutboundEnabled').change(function() {
         updateSettings( 'mqttOutboundEnabled', $(this).prop('checked') )
       })
