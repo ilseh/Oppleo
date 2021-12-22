@@ -1,6 +1,11 @@
 Version 1.3.5           2021-12-22
 
 Fixed
+- Fixed SocketIO protocol version mismatch. Reverted 5 to 4. Upgraded JS package to 2.3.1
+
+Version 1.3.5           2021-12-22
+
+Fixed
 - Fixed enabling pushover (missing button event)
 - Added Pushover and MQTT to oppleo.example.ini 
 

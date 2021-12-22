@@ -24,7 +24,7 @@
   <script src="{{ url_for('static', filename='plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
 
   <!-- Socket IO -->
-  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.0/socket.io.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.1/socket.io.slim.js') }}"></script>
 
   <script>
     var tokenPresent = {% if rfid_model["api_access_token"] is not none %}true{% else %}false{% endif %}
