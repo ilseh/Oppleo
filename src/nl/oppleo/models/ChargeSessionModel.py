@@ -251,6 +251,7 @@ class ChargeSessionModel(Base):
                             .first()    # Call first to return an object instead of an array
         except InvalidRequestError as e:
             ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
         except Exception as e:
             # Nothing to roll back
             ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)

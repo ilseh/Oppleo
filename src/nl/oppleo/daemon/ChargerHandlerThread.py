@@ -289,8 +289,13 @@ class ChargerHandlerThread(object):
     # evse_reader_thread
     # rfid_reader_thread
     # lock threads before calling this
-    def end_charge_session(self, charge_session, detect=False):
+    def end_charge_session(self, charge_session=None, detect=False):
         global oppleoConfig
+
+        if charge_session is None:
+            # Somehow the session was already ended
+            self.logger.error(".end_charge_session() - session end requested, but no open session provided. (charge_session=None, detect={})".format(detect))
+            return
 
         charge_session.end_value = 0
 
@@ -458,6 +463,10 @@ class ChargerHandlerThread(object):
                 with self.threadLock:
                     # Lock to prevent the session to be hijacked when someone simultaneously presents the rfid card
                     charge_session = ChargeSessionModel.get_open_charge_session_for_device(self.device)
+                    if charge_session is None:
+                        # No open charge session found
+                        self.logger.warn(".handle_auto_session() - was expecting an open charge session to close...")
+
                     # Try to detect the last power consumption
                     self.end_charge_session(charge_session, True)
                     # Verify if the auto session was generated correctly. If the odometer value is equal, the session should be condensed
