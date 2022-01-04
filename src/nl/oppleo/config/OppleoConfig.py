@@ -138,7 +138,8 @@ class OppleoConfig(object, metaclass=Singleton):
     rgblcThread = None      # RGBLedControllerThread
     vcsmThread = None       # VehicleChargeStatusMonitorThread
     vuThread = None         # VehicleUtilThread (TeslaUtilThread) - background task, a.o. capture odometer
-
+    mqttshThread = None     # MqttSendHistoryThread
+    
     wsEmitQueue = None
 
     energyDevice = None

@@ -311,7 +311,7 @@ class EnergyDeviceMeasureModel(Base):
             json.dumps({
                 "energy_device_id": str(self.energy_device_id),
                 "created_at": str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")),
-                "kwh_l1": self.kwh_l1,
+                "kwh_l1": str(self.kwh_l1),
                 "kwh_l2": str(self.kwh_l2),
                 "kwh_l3": str(self.kwh_l3),
                 "a_l1": str(self.a_l1),
@@ -333,7 +333,7 @@ class EnergyDeviceMeasureModel(Base):
         return ({
                 "energy_device_id": str(self.energy_device_id),
                 "created_at": str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")),
-                "kwh_l1": self.kwh_l1,
+                "kwh_l1": str(self.kwh_l1),
                 "kwh_l2": str(self.kwh_l2),
                 "kwh_l3": str(self.kwh_l3),
                 "a_l1": str(self.a_l1),
@@ -355,7 +355,7 @@ class EnergyDeviceMeasureModel(Base):
         return ({
             "energy_device_id": str(self.energy_device_id),
             "created_at": str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")),
-            "kwh_l1": self.kwh_l1,
+            "kwh_l1": str(self.kwh_l1),
             "kwh_l2": str(self.kwh_l2),
             "kwh_l3": str(self.kwh_l3),
             "a_l1": str(self.a_l1),

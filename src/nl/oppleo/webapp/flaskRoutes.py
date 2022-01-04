@@ -25,6 +25,7 @@ from flask_socketio import SocketIO, emit
 from nl.oppleo.config.OppleoConfig import oppleoConfig
 from nl.oppleo.config.OppleoSystemConfig import oppleoSystemConfig
 from nl.oppleo.config.ChangeLog import changeLog
+from nl.oppleo.daemon.MqttSendHistoryThread import MqttSendHistoryThread
 
 from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException, 
                                              ExpiredException)
@@ -3199,3 +3200,71 @@ def pushoverDevices(userKey:str=None, apiKey:str=None):
         'apiKey'        : apiKey if apiKey is not None else '-', 
         'devices'       : deviceList if deviceList is not None else {} 
         })            
+
+
+# Always returns json
+@flaskRoutes.route("/mqtt/history", methods=["GET"])
+@flaskRoutes.route("/mqtt/history/", methods=["GET"])
+@flaskRoutes.route("/mqtt/history/<path:action>", methods=["POST"])
+@flaskRoutes.route("/mqtt/history/<path:action>/", methods=["POST"])
+@authenticated_resource
+def mqttHistory(action:str=None):
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/mqtt/history/')
+
+    if (request.method == 'GET' or not oppleoSystemConfig.mqttOutboundEnabled):
+        # Return status
+        if oppleoConfig.mqttshThread is None:
+            return jsonify({ 
+                'status'                : HTTP_CODE_200_OK,
+                'mqttOutboundEnabled'   : oppleoSystemConfig.mqttOutboundEnabled,
+                'details'               : { "running" : False }
+                })            
+        return jsonify({ 
+            'status'                : HTTP_CODE_200_OK,
+            'mqttOutboundEnabled'   : oppleoSystemConfig.mqttOutboundEnabled,
+            'details'               : oppleoConfig.mqttshThread.status
+            })            
+
+    if (action == "start"):
+        # Can only start if no job running
+        if oppleoConfig.mqttshThread is not None and oppleoConfig.mqttshThread.status['running'] == True:
+            return jsonify({ 
+                'status'    : HTTP_CODE_409_CONFLICT,
+                'message'   : "Process already running. Stop first to restart",
+                'details'   : oppleoConfig.mqttshThread.status
+                })
+        # Start the process
+        if oppleoConfig.mqttshThread is not None:
+            oppleoConfig.mqttshThread.init()
+        else:
+            oppleoConfig.mqttshThread = MqttSendHistoryThread()
+            oppleoConfig.mqttshThread.start()
+            return jsonify({ 
+                'status'    : HTTP_CODE_200_OK,
+                'message'   : "Process started"
+                })
+
+    if (action == "pauze"):
+        return jsonify({ 
+            'status'    : HTTP_CODE_501_NOT_IMPLEMENTED
+            })
+    
+    if (action == "stop"):
+        if oppleoConfig.mqttshThread is None or oppleoConfig.mqttshThread.status['running'] == False:
+            return jsonify({ 
+                'status'    : HTTP_CODE_409_CONFLICT,
+                'message'   : "Process already stopped."
+                })
+        # Stop the process
+        oppleoConfig.mqttshThread.stop()
+        return jsonify({ 
+            'status'    : HTTP_CODE_202_ACCEPTED,
+            'message'   : "Stop request accepted"
+            })
+
+    # Action not implemented
+    return jsonify({ 
+        'status'    : HTTP_CODE_501_NOT_IMPLEMENTED
+        })            
+

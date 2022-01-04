@@ -83,7 +83,8 @@ class OutboundEvent(object):
                        data=None,
                        status=None,
                        id=None,
-                       namespace='/all'):
+                       namespace='/all',
+                       waitForPublish=False):
 
         oppleoMqttClient = OppleoMqttClient()
 
@@ -98,7 +99,7 @@ class OutboundEvent(object):
             msg['status'] = status
 
         OutboundEvent.logger.debug(f'Submit msg to MQTT topic ... {msg}')
-        oppleoMqttClient.publish(topic=topic, message=json.dumps(msg))
+        oppleoMqttClient.publish(topic=topic, message=json.dumps(msg), waitForPublish=waitForPublish)
 
 
 
