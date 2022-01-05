@@ -188,6 +188,31 @@
       })
     }
 
+    function mqttHistory( action, method, successCallback=null, failCallback=null, alwaysCallback=null ) {
+      console.log(timestamp() + ' mqttHistory()')            
+      data = {
+          csrf_token  : '{{ csrf_token() }}',
+          action      : action
+        }
+      $.ajax({
+        type		    : method,
+        url			    : '/mqtt/history/'+(action!=undefined?encodeURIComponent(action)+'/':''),
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        if (successCallback != null) { successCallback(data) }
+      })
+      .fail(function(data) {
+        if (failCallback != null) { failCallback(data) }
+      })
+      .always(function() {
+        if (alwaysCallback != null) { alwaysCallback(data) }
+      })
+    }    
+
     // Load pushover sounds
     function loadPushoverSounds(apiKey, selectedSound=undefined) {
       data = {
@@ -839,6 +864,138 @@
         }
       })
     }    
+
+    function updateMqttHistoryControls(status) {
+      // Enable correct buttons
+      $('button#mqtt-send-history-start').attr('disabled', (status == 'started'))
+      $('button#mqtt-send-history-start').toggleClass('btn-outline-warning', (status != 'started'))
+      $('button#mqtt-send-history-start').toggleClass('btn-outline-secondary', (status == 'started'))
+      $('button#mqtt-send-history-pause').attr('disabled', (status != 'started'))
+      $('button#mqtt-send-history-pause').toggleClass('btn-outline-success', (status == 'started'))
+      $('button#mqtt-send-history-pause').toggleClass('btn-outline-secondary', (status != 'started'))
+      $('button#mqtt-send-history-cancel').attr('disabled', (status != 'started' && status != 'paused'))
+      $('button#mqtt-send-history-cancel').toggleClass('btn-outline-danger', (status == 'started' || status == 'paused'))
+      $('button#mqtt-send-history-cancel').toggleClass('btn-outline-secondary', (status != 'started' && status != 'paused'))
+    }
+
+    function formatTimeperiod(timeInSeconds) {
+      let fs = ''
+      // Days
+      if (timeInSeconds > (60*60*24)) {
+        let days = Math.floor( timeInSeconds / (60*60*24) )
+        fs += days + ( days > 1 ? " dagen " : " dag " )
+        timeInSeconds -= ( days * (60*60*24) )
+      }
+      // Hours
+      let hours = Math.floor( timeInSeconds / (60*60) )
+      fs += ( hours < 10 ? "0" : "" ) + hours + ":"
+      timeInSeconds -= ( hours * (60*60) )
+      // Minutes
+      let minutes = Math.floor( timeInSeconds / (60) )
+      fs += ( minutes < 10 ? "0" : "" ) + minutes + ":"
+      timeInSeconds -= ( minutes * (60) )
+      // Seconds
+      let seconds = Math.floor( timeInSeconds )
+      fs += ( seconds < 10 ? "0" : "" ) + seconds + "u"
+      return fs
+    }
+
+
+    function updateMqttHistoryStatusMessage(data) {
+      // msg.data.remaining
+      console.log(data)
+      if (data.process == 'initial') {
+        $("span#mqtt-send-history-status").html('')
+        return
+      }
+      let announcement = ''
+      switch (data.process) {
+        case 'started':
+          announcement = 'Gestart'
+          break
+        case 'paused':
+          announcement = 'Gepauzeerd'
+          break
+        case 'cancelled':
+          announcement = 'Geannuleerd'
+          break
+        default:
+          announcement = 'Onbekend'
+          break
+      }
+      announcement += " <span class=\"text-secondary ml-3\" style=\"font-size: smaller;\">[<sup><i class=\"fas fa-info-circle\"></i> "+data.notifications.toLocaleString('nl')+"</sup> "+data.processed.toLocaleString('nl')+" van "+data.total.toLocaleString('nl')+" in "+formatTimeperiod(data.processingtime)
+      if (data.hasOwnProperty('timeremaining')) {
+        announcement += ", geschatte resterende tijd "+formatTimeperiod(data.timeremaining)+"..."
+      }
+      announcement += "]</span>"
+      $("span#mqtt-send-history-status").html(announcement)
+    }
+
+    function requestMqttHistoryStatus() {
+      mqttHistory( undefined, 'GET', function(result) {
+          // Success
+          console.log(result)
+          switch (result.status) {
+            case 200:
+              // Enable buttons
+              updateMqttHistoryControls(result.details.process)
+              updateMqttHistoryStatusMessage(result.details)
+              break
+            default:
+              autoHideNotify('warning','top-left', 'Server fout', 'Kon geen MQTT Historieverzenden status opvragen.')
+              break
+          }
+        }, function(result) {
+          // Failed
+          autoHideNotify('warning','top-left', 'Server fout', 'Kon geen MQTT Historieverzenden status opvragen.')
+        }, function(result) {
+          // Always
+        }
+      )
+    }
+
+    let mqttHistoryStatusSocket = null
+    function startMqttHistoryStatusWebSocket() {
+      // start up the SocketIO connection to the server on namespace /backup
+      mqttHistoryStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/mqtt')
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+      mqttHistoryStatusSocket.io.on("reconnect", (attempt) => {
+        requestMqttHistoryStatus()
+      })
+      mqttHistoryStatusSocket.on('mqtt_send_history_init', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateMqttHistoryControls(msg.data.process)
+        updateMqttHistoryStatusMessage(msg.data)
+      })
+      mqttHistoryStatusSocket.on('mqtt_send_history_started', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateMqttHistoryControls(msg.data.process)
+        updateMqttHistoryStatusMessage(msg.data)
+      })
+      mqttHistoryStatusSocket.on('mqtt_send_history_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateMqttHistoryControls(msg.data.process)
+        updateMqttHistoryStatusMessage(msg.data)
+      })
+      mqttHistoryStatusSocket.on('mqtt_send_history_paused', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateMqttHistoryControls(msg.data.process)
+        updateMqttHistoryStatusMessage(msg.data)
+      })
+      mqttHistoryStatusSocket.on('mqtt_send_history_cancelled', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateMqttHistoryControls(msg.data.process)
+        updateMqttHistoryStatusMessage(msg.data)
+      })
+      mqttHistoryStatusSocket.on('mqtt_send_history_completed', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        updateMqttHistoryControls(msg.data.process)
+        updateMqttHistoryStatusMessage(msg.data)
+      })
+    }
+
+
+
 
     function addClickEventToLocalBackupDeleteButton() {
       // Remove existing click event handlers
@@ -1611,6 +1768,52 @@
 
         })
       })
+
+      // Start websocket
+      startMqttHistoryStatusWebSocket()
+      requestMqttHistoryStatus()
+
+      $("button[id^='mqtt-send-history-']").on('click', function(ev) {
+        // Disable buttons
+        $("button[id^='mqtt-send-history-']").attr('disabled', true)
+
+        mqttHistory( ev.currentTarget.id.replace('mqtt-send-history-', ''), 'POST', function(result) {
+          // Success
+          switch (result.status) {
+            case 200:   // Ok
+            case 202:   // Accepted
+              switch (result.action) {
+                case 'start':
+                  autoHideNotify('success','top-left', 'Succes', 'Versturen van de historie gestart.')
+                  break
+                case 'pause':
+                  autoHideNotify('success','top-left', 'Succes', 'Versturen van de historie gepauzeerd.')
+                  break
+                case 'cancel':
+                  autoHideNotify('success','top-left', 'Succes', 'Versturen van de historie geannuleerd.')
+                  break
+                default:
+                  autoHideNotify('warning','top-left', 'Onbekend antwoord', "Onbekende actie voor vet versturen van de historie ("+result.action+")")
+                  break
+              }
+              break
+            case 409:   // Conflict
+              break
+            case 501:   // Not implemented
+            default:
+              autoHideNotify('error','top-left', 'Fout opgetreden', 'Er is een fout opgetreden in de communicatie met de server.')
+              break
+          }
+        }, function(result) {
+          // Failed
+          autoHideNotify('warning','top-left', 'Ophalen status mislukt', 'Oppleo gaf geen antwoord op de statusvraag voor het versturen van de historie.')
+        }, function(result) {
+          // Always
+        })
+
+      })
+      
+
       // After init, load pushover sounds with current token
       {% if oppleosystemconfig.pushoverApiKey is not none %}
       loadPushoverSounds( "{{ oppleosystemconfig.pushoverApiKey }}", "{{ oppleosystemconfig.pushoverSound }}" )
@@ -2706,6 +2909,25 @@
                                 </form>
                               </td>
                             </tr>
+                            <tr>
+                              <td class="text-dark">
+                                Verstuur archief:
+                                <span style="cursor: help;"
+                                      class="text-warning"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="<em class='text-warning font-weight-bold'>Waarschuwing</em><br>Deze functie speelt een replay van alle {{ diag['measurements'] }} in de database aanwezige metingen. De berichten worden verzonden naar het topic <i>oppleo/{{ oppleoconfig.chargerName }}/usage/status_update</i>. Een inschatting van de doorlooptijd wordt zichtbaar na het starten."
+                                  ><i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                              </td>
+                              <td class="text-primary">
+                                <button type="button" class="btn btn-xs btn-outline-warning" id="mqtt-send-history-start" disabled> <i class="fas fa-play"></i>  Replay </button>
+                                <button type="button" class="btn btn-xs btn-outline-success ml-1" id="mqtt-send-history-pause" disabled> <i class="fas fa-pause"></i>  Pauze</button>
+                                <button type="button" class="btn btn-xs btn-outline-danger ml-1" id="mqtt-send-history-cancel" disabled> <i class="fas fa-stop"></i>  Annuleer</button>
+                                <span class="ml-3 align-bottom" id="mqtt-send-history-status"></span>
+                              </td>
+                            </tr>                            
                             <tr>
                               <td class="text-dark">Host (naam of IP):</td >
                               <td class="text-primary">

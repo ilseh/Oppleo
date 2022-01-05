@@ -54,6 +54,9 @@ from nl.oppleo.utils.BackupUtil import BackupUtil
 
 from nl.oppleo.utils.TokenMediator import tokenMediator
 
+from nl.oppleo.daemon.MqttSendHistoryThread import Status as mhtsStatus
+
+
 # https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 HTTP_CODE_200_OK                    = 200
 HTTP_CODE_202_ACCEPTED              = 202  # Accepted, processing pending
@@ -955,6 +958,9 @@ def settings(active=1):
     diag['modbusConfigOptions'] = modbusConfigOptions
 
     diag['lastSoftwareUpdate'] = GitUtil.lastBranchGitDateStr()
+    edmm = EnergyDeviceMeasureModel()
+    edmm.energy_device_id = oppleoConfig.energyDevice
+    diag['measurements'] = edmm.get_count()
 
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
@@ -3212,14 +3218,11 @@ def mqttHistory(action:str=None):
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/mqtt/history/')
 
+    if oppleoConfig.mqttshThread is None:
+        oppleoConfig.mqttshThread = MqttSendHistoryThread()
+
     if (request.method == 'GET' or not oppleoSystemConfig.mqttOutboundEnabled):
         # Return status
-        if oppleoConfig.mqttshThread is None:
-            return jsonify({ 
-                'status'                : HTTP_CODE_200_OK,
-                'mqttOutboundEnabled'   : oppleoSystemConfig.mqttOutboundEnabled,
-                'details'               : { "running" : False }
-                })            
         return jsonify({ 
             'status'                : HTTP_CODE_200_OK,
             'mqttOutboundEnabled'   : oppleoSystemConfig.mqttOutboundEnabled,
@@ -3227,44 +3230,37 @@ def mqttHistory(action:str=None):
             })            
 
     if (action == "start"):
-        # Can only start if no job running
-        if oppleoConfig.mqttshThread is not None and oppleoConfig.mqttshThread.status['running'] == True:
-            return jsonify({ 
-                'status'    : HTTP_CODE_409_CONFLICT,
-                'message'   : "Process already running. Stop first to restart",
-                'details'   : oppleoConfig.mqttshThread.status
-                })
         # Start the process
-        if oppleoConfig.mqttshThread is not None:
-            oppleoConfig.mqttshThread.init()
-        else:
-            oppleoConfig.mqttshThread = MqttSendHistoryThread()
-            oppleoConfig.mqttshThread.start()
-            return jsonify({ 
-                'status'    : HTTP_CODE_200_OK,
-                'message'   : "Process started"
-                })
-
-    if (action == "pauze"):
+        result = oppleoConfig.mqttshThread.start()
         return jsonify({ 
-            'status'    : HTTP_CODE_501_NOT_IMPLEMENTED
+            'status'    : HTTP_CODE_200_OK if result["success"] else HTTP_CODE_409_CONFLICT,
+            'action'    : action,
+            'message'   : result["message"],
+            'details'   : oppleoConfig.mqttshThread.status
+            })
+
+    if (action == "pause"):
+        result = oppleoConfig.mqttshThread.pause()
+        return jsonify({ 
+            'status'    : HTTP_CODE_202_ACCEPTED if result["success"] else HTTP_CODE_409_CONFLICT,
+            'action'    : action,
+            'message'   : result["message"],
+            'details'   : oppleoConfig.mqttshThread.status           
             })
     
-    if (action == "stop"):
-        if oppleoConfig.mqttshThread is None or oppleoConfig.mqttshThread.status['running'] == False:
-            return jsonify({ 
-                'status'    : HTTP_CODE_409_CONFLICT,
-                'message'   : "Process already stopped."
-                })
-        # Stop the process
-        oppleoConfig.mqttshThread.stop()
+    if (action == "cancel"):
+        # Started or Paused , cancel the process
+        result = oppleoConfig.mqttshThread.cancel()
         return jsonify({ 
-            'status'    : HTTP_CODE_202_ACCEPTED,
-            'message'   : "Stop request accepted"
+            'status'    : HTTP_CODE_202_ACCEPTED if result["success"] else HTTP_CODE_409_CONFLICT,
+            'action'    : action,
+            'message'   : result["message"],
+            'details'   : oppleoConfig.mqttshThread.status           
             })
 
     # Action not implemented
     return jsonify({ 
-        'status'    : HTTP_CODE_501_NOT_IMPLEMENTED
+        'status'    : HTTP_CODE_400_BAD_REQUEST,
+        'action'    : action
         })            
 

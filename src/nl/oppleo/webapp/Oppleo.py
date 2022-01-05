@@ -187,6 +187,7 @@ try:
             )
 
 
+
     @appSocketIO.on("disconnect", namespace="/")
     @config_dashboard_access_restriction
     def disconnect():
