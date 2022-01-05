@@ -11,8 +11,7 @@ from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 oppleoConfig = OppleoConfig()
 
-DEFAULT_DELAY_BETWEEN_EVENTS = 0.01
-DEFAULT_DELAY_BETWEEN_PAGES = 0.1
+DEFAULT_DELAY_BETWEEN_EVENTS = 0.05
 DEFAULT_PAGE_SIZE = 20
 DEFAULT_TIME_BETWEEN_NOTIFICATIONS = 5 # number of seconds passed
 
@@ -39,8 +38,7 @@ class MqttSendHistoryThread(object):
     __pause_event = None
     __cancel_event = None
     __page_size = DEFAULT_PAGE_SIZE
-    __delay_between_pages = DEFAULT_DELAY_BETWEEN_PAGES
-    __delai_between_events = DEFAULT_DELAY_BETWEEN_EVENTS
+    __delay_between_events = DEFAULT_DELAY_BETWEEN_EVENTS
     __time_between_notifications = DEFAULT_TIME_BETWEEN_NOTIFICATIONS
     __status = Status.INITIAL
     __processingTime = 0
@@ -49,13 +47,12 @@ class MqttSendHistoryThread(object):
     __notifications = 0
 
 
-    def __init__(self, page_size=DEFAULT_PAGE_SIZE, delay_between_pages=DEFAULT_DELAY_BETWEEN_PAGES, delay_between_events=DEFAULT_DELAY_BETWEEN_EVENTS, time_between_notifications=DEFAULT_TIME_BETWEEN_NOTIFICATIONS):
+    def __init__(self, page_size=DEFAULT_PAGE_SIZE, delay_between_events=DEFAULT_DELAY_BETWEEN_EVENTS, time_between_notifications=DEFAULT_TIME_BETWEEN_NOTIFICATIONS):
         self.__logger = logging.getLogger('nl.oppleo.daemon.MqttSendHistoryThread')
         self.__thread = None
         self.__status = Status.INITIAL
         self.__threadLock = threading.Lock()        
         self.__page_size = page_size
-        self.__delay_between_pages = delay_between_pages
         self.__delay_between_events = delay_between_events
         self.__time_between_notifications = time_between_notifications
         self.__pause_event = threading.Event()
@@ -226,7 +223,6 @@ class MqttSendHistoryThread(object):
                     )
 
             offset += pageResult.count()
-            time.sleep(self.__delay_between_pages)
 
         self.__status = Status.COMPLETED if self.__processed == self.__total else Status.CANCELLED
         OutboundEvent.triggerEvent(
