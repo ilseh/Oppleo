@@ -45,6 +45,7 @@ class MqttSendHistoryThread(object):
     __processed = 0
     __total = 0
     __notifications = 0
+    __current_tps = 0
 
 
     def __init__(self, page_size=DEFAULT_PAGE_SIZE, delay_between_events=DEFAULT_DELAY_BETWEEN_EVENTS, time_between_notifications=DEFAULT_TIME_BETWEEN_NOTIFICATIONS):
@@ -118,8 +119,10 @@ class MqttSendHistoryThread(object):
                              "notifications"    : self.__notifications,
                              "remaining"        : ( self.__total - self.__processed ),
                              "processingtime"   : float(round(self.__processingTime, 3)),
+                             "tps"              : int(self.__processed / self.__processingTime),
+                             "currentTps"       : self.__current_tps if (self.__status in [ Status.STARTED ] else 0,
                              "timeestimation"   : float(round((( self.__processingTime / self.__processed ) * self.__total ), 3)),
-                             "timeremaining"    : float(round((( self.__processingTime / self.__processed ) * ( self.__total - self.__processed )), 3)),
+                             "timeremaining"    : float(round((( self.__processingTime / self.__processed ) * ( self.__total - self.__processed )), 3))
                     }
                 else:
                     return { "process"          : StatusStr[self.__status],
@@ -128,13 +131,18 @@ class MqttSendHistoryThread(object):
                              "notifications"    : self.__notifications,
                              "remaining"        : ( self.__total - self.__processed ),
                              "processingtime"   : float(round(self.__processingTime, 3)),
+                             "tps"              : 0,
+                             "currentTps"       : 0
+
                     }
             if self.__status in [ Status.COMPLETED, Status.CANCELLED ]:
                 return { "process"          : StatusStr[self.__status],
                          "total"            : self.__total,
                          "processed"        : self.__processed,
                          "notifications"    : self.__notifications,
-                         "processingtime"   : float(round(self.__processingTime, 3))
+                         "processingtime"   : float(round(self.__processingTime, 3)),
+                         "tps"              : int(self.__processed / self.__processingTime),
+                         "currentTps"       : 0
                 }
 
  
@@ -149,6 +157,7 @@ class MqttSendHistoryThread(object):
         self.__logger.debug('mqttSendHistoryLoop()...')
 
         self.__processingTime = 0
+        self.__current_tps = 0
         time_start = time.time()
 
         edmm = EnergyDeviceMeasureModel()
@@ -199,9 +208,12 @@ class MqttSendHistoryThread(object):
             intermediate_timestamp = time.time()
             self.__processingTime += (intermediate_timestamp - time_start)
             time_start = intermediate_timestamp
+            self.__current_tps = int(len(pageResult) / (intermediate_timestamp - time_start))
+
 
             if self.__pause_event.is_set():
                 self.__status = Status.PAUSED
+                self.__current_tps = 0
                 OutboundEvent.triggerEvent(
                     event='mqtt_send_history_paused',
                     id=oppleoConfig.chargerName,
