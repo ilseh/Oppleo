@@ -905,30 +905,79 @@
       // msg.data.remaining
       console.log(data)
       if (data.process == 'initial') {
-        $("span#mqtt-send-history-status").html('')
+        $("span#mqtt-send-history-progress.info").attr('data-original-title', '')
+        $("span#mqtt-send-history-progress-info").fadeOut(2500)
+        $("span#mqtt-send-history-progress").attr('data-original-title', '')
+        $("span#mqtt-send-history-progress").moveUp(2500)
         return
       }
-      let announcement = ''
+      let progressTooltip = ""
+      progress = (Math.floor((data.processed/data.total)*100))
       switch (data.process) {
         case 'started':
-          announcement = 'Gestart'
+          progressTooltip = "<span class='text-primary'>Actief [" + progress + "%]</span><br>"
           break
         case 'paused':
-          announcement = 'Gepauzeerd'
+          progressTooltip = "<span class='text-primary'>Gepauzeerd [" + progress + "%]</span><br>"
           break
         case 'cancelled':
-          announcement = 'Geannuleerd'
+          progressTooltip = "<span class='text-primary'>Geannuleerd [" + progress + "%]</span><br>"
+          break
+        case 'completed':
+          progressTooltip = "<span class='text-primary'>Afgerond</span><br>"
           break
         default:
-          announcement = 'Onbekend'
+          progressTooltip = "<span class='text-primary'>Onbekend</span><br>"
           break
       }
-      announcement += " <span class=\"text-secondary ml-3\" style=\"font-size: smaller;\">[<sup><i class=\"fas fa-info-circle\"></i> "+data.notifications.toLocaleString('nl')+"</sup> "+data.processed.toLocaleString('nl')+" van "+data.total.toLocaleString('nl')+" in "+formatTimeperiod(data.processingtime)
-      if (data.hasOwnProperty('timeremaining')) {
-        announcement += ", geschatte resterende tijd "+formatTimeperiod(data.timeremaining)+"..."
+
+      // percentage met nog
+      // onmouse over details
+
+      progressTooltip += "Totaal: "+data.total.toLocaleString('nl')+"<br>"
+      progressTooltip += "Verwerkt: "+data.processed.toLocaleString('nl')+"<br>"
+      progressTooltip += "Duur: "+formatTimeperiod(data.processingtime)+"<br>"
+      progressTooltip += "Notificaties: "+data.notifications.toLocaleString('nl')+"<br>"
+      if (data.hasOwnProperty('tps') && data.hasOwnProperty('currentTps')) {
+        if (data.process == 'started') {
+          progressTooltip += "Snelheid: "+data.currentTps+"/s<br>"
+        }
+        if (data.process != 'initial') {
+          progressTooltip += "Gemiddeld: "+data.tps+"/s<br>"
+        }
       }
-      announcement += "]</span>"
-      $("span#mqtt-send-history-status").html(announcement)
+      if (data.hasOwnProperty('timeremaining')) {
+        progressTooltip += "Resterend (geschat): "+formatTimeperiod(data.timeremaining)
+      }
+
+      $("span#mqtt-send-history-progress-info").attr('data-original-title', progressTooltip)
+      if ($("span#mqtt-send-history-progress-info:hover").length != 0) {
+        // Mouse over, force replace tooltip
+        $("span#mqtt-send-history-progress-info").tooltip("dispose").tooltip('show')
+      }
+      if (data.process != 'initial') {
+        $("span#mqtt-send-history-progress-info").fadeIn(2500)
+      } else {
+        $("span#mqtt-send-history-progress-info").fadeOut(2500)
+      }
+      
+      $("span#mqtt-send-history-progress").attr('data-original-title', progress+"%")
+      if ($("span#mqtt-send-history-progress:hover").length != 0) {
+        // Mouse over, force replace tooltip
+        $("span#mqtt-send-history-progress").tooltip("dispose").tooltip('show')
+      }
+      if (['initial', 'cancelled', 'completed'].includes(data.process)) {
+        $("span#mqtt-send-history-progress").slideUp(2500)
+      }
+      if (['started', 'paused'].includes(data.process)) {
+        $("span#mqtt-send-history-progress").slideDown()
+      }
+
+      $('div#mqtt-send-history-progress-bar').css( 'width', progress+"%")
+      $('div#mqtt-send-history-progress-bar').toggleClass( 'progress-bar-animated', (data.process == 'started') )
+      $('div#mqtt-send-history-progress-bar').toggleClass( 'bg-success', (data.process == 'started') )
+      $('div#mqtt-send-history-progress-bar').toggleClass( 'bg-secondary', (data.process != 'started') )
+
     }
 
     function requestMqttHistoryStatus() {
@@ -2925,7 +2974,14 @@
                                 <button type="button" class="btn btn-xs btn-outline-warning" id="mqtt-send-history-start" disabled> <i class="fas fa-play"></i>  Replay </button>
                                 <button type="button" class="btn btn-xs btn-outline-success ml-1" id="mqtt-send-history-pause" disabled> <i class="fas fa-pause"></i>  Pauze</button>
                                 <button type="button" class="btn btn-xs btn-outline-danger ml-1" id="mqtt-send-history-cancel" disabled> <i class="fas fa-stop"></i>  Annuleer</button>
-                                <span class="ml-3 align-bottom" id="mqtt-send-history-status"></span>
+                                <span class="text-secondary" id="mqtt-send-history-progress-info" style="position: relative; top: -5px; float: right; font-size: 1.7em; height: 1em; cursor: help; display: none;" data-toggle="tooltip" data-placement="bottom" data-html="true" title="">
+                                  <i class="fas fa-info-circle" style="top: 0px;"></i>
+                                </span>
+                                <span id="mqtt-send-history-progress" data-toggle="tooltip" data-placement="bottom" data-html="true" title="" style="height: 5px; cursor: help; display: none;">
+                                  <div class="progress mt-2" id="mqtt-send-history-progress-div" style="height: 5px; margin-bottom: 2px;">
+                                    <div class="progress-bar progress-bar-striped bg-success" id="mqtt-send-history-progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                  </div>
+                                </span>
                               </td>
                             </tr>                            
                             <tr>

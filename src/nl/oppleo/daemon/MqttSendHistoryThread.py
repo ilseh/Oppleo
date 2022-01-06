@@ -12,7 +12,7 @@ from nl.oppleo.utils.OutboundEvent import OutboundEvent
 oppleoConfig = OppleoConfig()
 
 DEFAULT_DELAY_BETWEEN_EVENTS = 0.05
-DEFAULT_PAGE_SIZE = 20
+DEFAULT_PAGE_SIZE = 1000
 DEFAULT_TIME_BETWEEN_NOTIFICATIONS = 5 # number of seconds passed
 
 """
@@ -46,6 +46,7 @@ class MqttSendHistoryThread(object):
     __total = 0
     __notifications = 0
     __current_tps = 0
+    __send_batch = False
 
 
     def __init__(self, page_size=DEFAULT_PAGE_SIZE, delay_between_events=DEFAULT_DELAY_BETWEEN_EVENTS, time_between_notifications=DEFAULT_TIME_BETWEEN_NOTIFICATIONS):
@@ -151,6 +152,15 @@ class MqttSendHistoryThread(object):
         with self.__threadLock:
             return self.__status
 
+    @property
+    def batch(self) -> bool:
+        with self.__threadLock:
+            return self.__send_batch
+
+    @batch.setter
+    def batch(self, enable:bool=False):
+        with self.__threadLock:
+            self.__send_batch = enable
 
     def __mqttSendHistoryLoop(self):
         global oppleoConfig
@@ -184,15 +194,41 @@ class MqttSendHistoryThread(object):
                                        orderColumn      = getattr(EnergyDeviceMeasureModel, 'created_at'),
                                        orderDir         = 'desc'
                                     )
-            for entryResult in pageResult:
-                # Send MQTT event
+            if not self.__send_batch:
+                for entryResult in pageResult:
+                    # Send MQTT event singular and directly
+                    OutboundEvent.emitMQTTEvent( event='status_update',
+                                                 data=entryResult.to_str(),
+                                                 status=None,
+                                                 id=None,
+                                                 namespace='/usage')
+                    time.sleep(self.__delay_between_events)
+                    self.__processed += 1
+
+                    if (time.time() - lastUpdate) > self.__time_between_notifications:
+                        OutboundEvent.triggerEvent(
+                            event='mqtt_send_history_update',
+                            id=oppleoConfig.chargerName,
+                            data=self.status,
+                            namespace='/mqtt',
+                            public=False
+                        )
+                        self.__notifications += 1
+                        lastUpdate = time.time()
+            else:
+                batch = []
+                for entryResult in pageResult:
+                    # Build batch
+                    batch.append(entryResult.to_str())
+                # Send MQTT event as batch (Array)
                 OutboundEvent.emitMQTTEvent( event='status_update',
-                                             data=entryResult.to_str(),
+                                             data=batch,
                                              status=None,
                                              id=None,
                                              namespace='/usage')
+
                 time.sleep(self.__delay_between_events)
-                self.__processed += 1
+                self.__processed += pageResult.count()
 
                 if (time.time() - lastUpdate) > self.__time_between_notifications:
                     OutboundEvent.triggerEvent(
@@ -209,7 +245,6 @@ class MqttSendHistoryThread(object):
             self.__processingTime += (intermediate_timestamp - time_start)
             self.__current_tps = int(pageResult.count() / (intermediate_timestamp - time_start))
             time_start = intermediate_timestamp
-
 
             if self.__pause_event.is_set():
                 self.__status = Status.PAUSED

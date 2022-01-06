@@ -3231,6 +3231,7 @@ def mqttHistory(action:str=None):
 
     if (action == "start"):
         # Start the process
+        oppleoConfig.mqttshThread.batch = True
         result = oppleoConfig.mqttshThread.start()
         return jsonify({ 
             'status'    : HTTP_CODE_200_OK if result["success"] else HTTP_CODE_409_CONFLICT,
