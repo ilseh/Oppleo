@@ -120,7 +120,7 @@ class MqttSendHistoryThread(object):
                              "remaining"        : ( self.__total - self.__processed ),
                              "processingtime"   : float(round(self.__processingTime, 3)),
                              "tps"              : int(self.__processed / self.__processingTime),
-                             "currentTps"       : self.__current_tps if (self.__status in [ Status.STARTED ] else 0,
+                             "currentTps"       : self.__current_tps if (self.__status in [ Status.STARTED ]) else 0,
                              "timeestimation"   : float(round((( self.__processingTime / self.__processed ) * self.__total ), 3)),
                              "timeremaining"    : float(round((( self.__processingTime / self.__processed ) * ( self.__total - self.__processed )), 3))
                     }
