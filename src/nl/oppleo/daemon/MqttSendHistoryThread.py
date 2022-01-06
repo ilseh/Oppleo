@@ -207,8 +207,8 @@ class MqttSendHistoryThread(object):
 
             intermediate_timestamp = time.time()
             self.__processingTime += (intermediate_timestamp - time_start)
-            time_start = intermediate_timestamp
             self.__current_tps = int(pageResult.count() / (intermediate_timestamp - time_start))
+            time_start = intermediate_timestamp
 
 
             if self.__pause_event.is_set():
