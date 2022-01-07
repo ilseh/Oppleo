@@ -961,6 +961,7 @@ def settings(active=1):
     edmm = EnergyDeviceMeasureModel()
     edmm.energy_device_id = oppleoConfig.energyDevice
     diag['measurements'] = edmm.get_count()
+    diag['measurements_str'] = '{:,}'.format(edmm.get_count()).replace(',', '.')
 
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 

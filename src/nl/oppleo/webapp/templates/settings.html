@@ -908,7 +908,7 @@
         $("span#mqtt-send-history-progress.info").attr('data-original-title', '')
         $("span#mqtt-send-history-progress-info").fadeOut(2500)
         $("span#mqtt-send-history-progress").attr('data-original-title', '')
-        $("span#mqtt-send-history-progress").moveUp(2500)
+        $("span#mqtt-send-history-progress").slideUp(2500)
         return
       }
       let progressTooltip = ""
@@ -931,13 +931,16 @@
           break
       }
 
-      // percentage met nog
-      // onmouse over details
-
       progressTooltip += "Totaal: "+data.total.toLocaleString('nl')+"<br>"
       progressTooltip += "Verwerkt: "+data.processed.toLocaleString('nl')+"<br>"
       progressTooltip += "Duur: "+formatTimeperiod(data.processingtime)+"<br>"
-      progressTooltip += "Notificaties: "+data.notifications.toLocaleString('nl')+"<br>"
+      if (data.settings.batchProcessing) {
+        progressTooltip += "Batch omvang: "+data.settings.batchSize.toLocaleString('nl')+"<br>"
+      }
+      progressTooltip += "MQTT berichten: "+data.mqttEvents.toLocaleString('nl')+"<br>"
+      progressTooltip += "MQTT delay: "+Math.floor(data.settings.delayBetweenMqttMessages*1000)+"ms<br>"
+      progressTooltip += "Status updates: "+data.frontEndUpdates.toLocaleString('nl')+"<br>"
+      progressTooltip += "Update interval: "+data.settings.timeBetweenFrontEndUpdates.toLocaleString('nl')+"s<br>"
       if (data.hasOwnProperty('tps') && data.hasOwnProperty('currentTps')) {
         if (data.process == 'started') {
           progressTooltip += "Snelheid: "+data.currentTps+"/s<br>"
@@ -972,12 +975,10 @@
       if (['started', 'paused'].includes(data.process)) {
         $("span#mqtt-send-history-progress").slideDown()
       }
-
       $('div#mqtt-send-history-progress-bar').css( 'width', progress+"%")
       $('div#mqtt-send-history-progress-bar').toggleClass( 'progress-bar-animated', (data.process == 'started') )
       $('div#mqtt-send-history-progress-bar').toggleClass( 'bg-success', (data.process == 'started') )
       $('div#mqtt-send-history-progress-bar').toggleClass( 'bg-secondary', (data.process != 'started') )
-
     }
 
     function requestMqttHistoryStatus() {
@@ -2966,7 +2967,7 @@
                                       data-toggle="tooltip" 
                                       data-placement="bottom" 
                                       data-html="true" 
-                                      title="<em class='text-warning font-weight-bold'>Waarschuwing</em><br>Deze functie speelt een replay van alle {{ diag['measurements'] }} in de database aanwezige metingen. De berichten worden verzonden naar het topic <i>oppleo/{{ oppleoconfig.chargerName }}/usage/status_update</i>. Een inschatting van de doorlooptijd wordt zichtbaar na het starten."
+                                      title="<em class='text-warning font-weight-bold'>Waarschuwing</em><br>In batches worden alle {{ diag['measurements_str'] }} in de database aanwezige metingen opnieuw verstuurd. De berichten worden verzonden naar het topic <i>oppleo/{{ oppleoconfig.chargerName }}/usage/status_update</i>. Een inschatting van de doorlooptijd wordt zichtbaar na het starten."
                                   ><i class="fas fa-exclamation-triangle"></i>
                                 </span>
                               </td>

@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 from enum import IntEnum
+import random
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 
@@ -11,9 +12,9 @@ from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 oppleoConfig = OppleoConfig()
 
-DEFAULT_DELAY_BETWEEN_EVENTS = 0.05
-DEFAULT_PAGE_SIZE = 1000
-DEFAULT_TIME_BETWEEN_NOTIFICATIONS = 5 # number of seconds passed
+DEFAULT_DELAY_BETWEEN_MQTT_EVENTS = 0.05
+DEFAULT_PAGE_SIZE = 950
+DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES = 5 # number of seconds passed
 
 """
     initial -> started (running) -> completed (totals, time)
@@ -38,25 +39,26 @@ class MqttSendHistoryThread(object):
     __pause_event = None
     __cancel_event = None
     __page_size = DEFAULT_PAGE_SIZE
-    __delay_between_events = DEFAULT_DELAY_BETWEEN_EVENTS
-    __time_between_notifications = DEFAULT_TIME_BETWEEN_NOTIFICATIONS
+    __delay_between_mqtt_events = DEFAULT_DELAY_BETWEEN_MQTT_EVENTS
+    __time_between_front_end_updates = DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES
     __status = Status.INITIAL
     __processingTime = 0
     __processed = 0
     __total = 0
-    __notifications = 0
+    __front_end_updates = 0
+    __mqtt_events = 0
     __current_tps = 0
     __send_batch = False
 
 
-    def __init__(self, page_size=DEFAULT_PAGE_SIZE, delay_between_events=DEFAULT_DELAY_BETWEEN_EVENTS, time_between_notifications=DEFAULT_TIME_BETWEEN_NOTIFICATIONS):
+    def __init__(self, page_size=DEFAULT_PAGE_SIZE, delay_between_mqtt_events=DEFAULT_DELAY_BETWEEN_MQTT_EVENTS, time_between_front_end_updates=DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES):
         self.__logger = logging.getLogger('nl.oppleo.daemon.MqttSendHistoryThread')
         self.__thread = None
         self.__status = Status.INITIAL
         self.__threadLock = threading.Lock()        
-        self.__page_size = page_size
-        self.__delay_between_events = delay_between_events
-        self.__time_between_notifications = time_between_notifications
+        self.__page_size = page_size + random.randrange(101)
+        self.__delay_between_mqtt_events = delay_between_mqtt_events
+        self.__time_between_front_end_updates = time_between_front_end_updates
         self.__pause_event = threading.Event()
         self.__cancel_event = threading.Event()
 
@@ -73,6 +75,7 @@ class MqttSendHistoryThread(object):
 
                 self.__logger.debug('start_background_task() - monitorEnergyDeviceLoop')
                 self.__processed = 0
+                self.__mqtt_events = 0
                 self.__total = 0
                 #   appSocketIO.start_background_task launches a background_task
                 #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
@@ -106,18 +109,35 @@ class MqttSendHistoryThread(object):
             self.__cancel_event.set()
             return { 'success': True, 'message': 'Cancel requested' }
 
+    def __settings(self):
+        if self.__send_batch:
+            return { "batchProcessing"             : self.__send_batch,
+                     "batchSize"                   : self.__page_size,
+                     "timeBetweenFrontEndUpdates"  : self.__time_between_front_end_updates,
+                     "delayBetweenMqttMessages"    : self.__delay_between_mqtt_events
+            }
+        return { "batchProcessing"              : self.__send_batch,
+                 "timeBetweenFrontEndUpdates"   : self.__time_between_front_end_updates,
+                 "delayBetweenMqttMessages"     : self.__delay_between_mqtt_events
+        }
+        
 
     @property
     def status(self):
         #with self.__threadLock:
             if self.__status in [ Status.INITIAL ]:
-                return { "process"          : StatusStr[self.__status] }
+                return { "process"          : StatusStr[self.__status],
+                         "settings"         : self.__settings()
+                       }
             if self.__status in [ Status.STARTED, Status.PAUSED ]:
                 if self.__processed > 0:
                     return { "process"          : StatusStr[self.__status],
+                             "settings"         : self.__settings(),
                              "total"            : self.__total,
                              "processed"        : self.__processed,
-                             "notifications"    : self.__notifications,
+                             "mqttMessages"     : self.__mqtt_events,
+                             "frontEndUpdates"  : self.__front_end_updates,
+                             "mqttEvents"       : self.__mqtt_events,
                              "remaining"        : ( self.__total - self.__processed ),
                              "processingtime"   : float(round(self.__processingTime, 3)),
                              "tps"              : int(self.__processed / self.__processingTime),
@@ -127,9 +147,11 @@ class MqttSendHistoryThread(object):
                     }
                 else:
                     return { "process"          : StatusStr[self.__status],
+                             "settings"         : self.__settings(),
                              "total"            : self.__total,
                              "processed"        : self.__processed,
-                             "notifications"    : self.__notifications,
+                             "mqttEvents"       : self.__mqtt_events,
+                             "frontEndUpdates"  : self.__front_end_updates,
                              "remaining"        : ( self.__total - self.__processed ),
                              "processingtime"   : float(round(self.__processingTime, 3)),
                              "tps"              : 0,
@@ -138,9 +160,11 @@ class MqttSendHistoryThread(object):
                     }
             if self.__status in [ Status.COMPLETED, Status.CANCELLED ]:
                 return { "process"          : StatusStr[self.__status],
+                         "settings"         : self.__settings(),
                          "total"            : self.__total,
                          "processed"        : self.__processed,
-                         "notifications"    : self.__notifications,
+                         "mqttEvents"       : self.__mqtt_events,
+                         "frontEndUpdates"  : self.__front_end_updates,
                          "processingtime"   : float(round(self.__processingTime, 3)),
                          "tps"              : int(self.__processed / self.__processingTime),
                          "currentTps"       : 0
@@ -202,10 +226,11 @@ class MqttSendHistoryThread(object):
                                                  status=None,
                                                  id=None,
                                                  namespace='/usage')
-                    time.sleep(self.__delay_between_events)
                     self.__processed += 1
+                    self.__mqtt_events += 1
+                    time.sleep(self.__delay_between_mqtt_events)
 
-                    if (time.time() - lastUpdate) > self.__time_between_notifications:
+                    if (time.time() - lastUpdate) > self.__time_between_front_end_updates:
                         OutboundEvent.triggerEvent(
                             event='mqtt_send_history_update',
                             id=oppleoConfig.chargerName,
@@ -213,7 +238,7 @@ class MqttSendHistoryThread(object):
                             namespace='/mqtt',
                             public=False
                         )
-                        self.__notifications += 1
+                        self.__front_end_updates += 1
                         lastUpdate = time.time()
             else:
                 batch = []
@@ -226,11 +251,11 @@ class MqttSendHistoryThread(object):
                                              status=None,
                                              id=None,
                                              namespace='/usage')
-
-                time.sleep(self.__delay_between_events)
                 self.__processed += pageResult.count()
+                self.__mqtt_events += 1
+                time.sleep(self.__delay_between_mqtt_events)
 
-                if (time.time() - lastUpdate) > self.__time_between_notifications:
+                if (time.time() - lastUpdate) > self.__time_between_front_end_updates:
                     OutboundEvent.triggerEvent(
                         event='mqtt_send_history_update',
                         id=oppleoConfig.chargerName,
@@ -238,7 +263,7 @@ class MqttSendHistoryThread(object):
                         namespace='/mqtt',
                         public=False
                     )
-                    self.__notifications += 1
+                    self.__front_end_updates += 1
                     lastUpdate = time.time()
 
             intermediate_timestamp = time.time()
@@ -258,7 +283,7 @@ class MqttSendHistoryThread(object):
                 )
                 while self.__pause_event.is_set() and not self.__cancel_event.is_set():
                     time_start = time.time()
-                    time.sleep(self.__delay_between_events)
+                    time.sleep(self.__delay_between_mqtt_events)
                 if not self.__cancel_event.is_set():
                     self.__status = Status.STARTED
                     OutboundEvent.triggerEvent(
@@ -271,9 +296,10 @@ class MqttSendHistoryThread(object):
 
             offset += pageResult.count()
 
-        self.__status = Status.COMPLETED if self.__processed == self.__total else Status.CANCELLED
+        self.__status = Status.COMPLETED if not self.__cancel_event.is_set() else Status.CANCELLED
+        self.__processingTime += (time.time() - time_start)
         OutboundEvent.triggerEvent(
-            event='mqtt_send_history_completed' if self.__processed == self.__total else 'mqtt_send_history_cancelled', 
+            event='mqtt_send_history_completed' if self.__status == Status.COMPLETED else 'mqtt_send_history_cancelled', 
             id=oppleoConfig.chargerName,
             data=self.status,
             namespace='/mqtt',
@@ -281,8 +307,4 @@ class MqttSendHistoryThread(object):
         )
 
         self.__logger.debug(f'Terminating thread')
-
-        self.__processingTime += (time.time() - time_start)
-        self.__status = Status.COMPLETED if self.__processed == self.__total else Status.CANCELLED
         self.__thread = None
-
