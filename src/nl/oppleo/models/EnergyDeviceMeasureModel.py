@@ -155,6 +155,29 @@ class EnergyDeviceMeasureModel(Base):
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return edmm
 
+
+    """
+        Includes all device ids
+        Brute force, no sorting or filtering
+        https://docs.sqlalchemy.org/en/14/_modules/examples/performance/large_resultsets.html
+    """
+    def get_all_as_stream(self, callbackFn, batch_size:int=1000):
+
+        db_session = DbSession()
+        try:
+            for rows in db_session.query(EnergyDeviceMeasureModel).yield_per(batch_size):
+                if not callbackFn(rows):
+                    # Don't continue the loop
+                    break
+        except InvalidRequestError as e:
+            self.__cleanupDbSession(db_session, self.__class__.__name__)
+        except Exception as e:
+            # Nothing to roll back
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
+
+
+
     def paginate(self, energy_device_id, offset:int=0, limit:int=0, orderColumn:Column=None, orderDir:str=None):
         db_session = DbSession()
         edmm = None

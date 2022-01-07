@@ -186,6 +186,103 @@ class MqttSendHistoryThread(object):
         with self.__threadLock:
             self.__send_batch = enable
 
+
+    def __sendMqttEventIfTime(self):
+        if len(self.__batch) > self.__page_size:
+            pass
+
+    # Runs on each entry
+    def __mqttResultSetHandler(self, resultSet=None) -> bool:
+        # Build batch
+        for entryResult in resultSet:
+            self.__batch.append(entryResult.to_str())
+        # Time to send it out. Send MQTT event as batch (Array)
+        OutboundEvent.emitMQTTEvent( event='status_update',
+                                        data=self.__batch,
+                                        status=None,
+                                        id=None,
+                                        namespace='/usage')
+        # Now assign an new array. Don't empty with .clear() as the emitting function could still be working on the old one.
+        self.__batch =[]
+
+        self.__processed += resultSet.count()
+        self.__mqtt_events += 1
+        time.sleep(self.__delay_between_mqtt_events)
+
+        if self.__pause_event.is_set():
+            # pause
+            self.__status = Status.PAUSED
+            self.__current_tps = 0
+            OutboundEvent.triggerEvent(
+                event='mqtt_send_history_paused',
+                id=oppleoConfig.chargerName,
+                data=self.status,
+                namespace='/mqtt',
+                public=False
+            )
+            while self.__pause_event.is_set() and not self.__cancel_event.is_set():
+                self.__time_start = time.time()
+                time.sleep(self.__delay_between_mqtt_events)
+            if not self.__cancel_event.is_set():
+                self.__status = Status.STARTED
+                OutboundEvent.triggerEvent(
+                    event='mqtt_send_history_started',
+                    id=oppleoConfig.chargerName,
+                    data=self.status,
+                    namespace='/mqtt',
+                    public=False
+                )
+        if self.__cancel_event.is_set():
+            # End it here
+            return False
+
+
+    # The main loop (2)
+    def __mqttSendHistoryLoop2(self):
+        self.__logger.debug('mqttSendHistoryLoop()...')
+
+        self.__processingTime = 0
+        self.__current_tps = 0
+        self.__time_start = time.time()
+
+        edmm = EnergyDeviceMeasureModel()
+        edmm.energy_device_id = oppleoConfig.energyDevice
+
+        self.__total = edmm.get_count()
+
+        OutboundEvent.triggerEvent(
+                    event='mqtt_send_history_started', 
+                    id=oppleoConfig.chargerName,
+                    data=self.status,
+                    namespace='/mqtt',
+                    public=False
+                )
+
+        self.__lastUpdate = self.__time_start
+
+        self.__batch = []
+        edmm = EnergyDeviceMeasureModel()
+
+        # Run them all
+        edmm.get_all_as_stream(self.__mqttResultSetHandler, self.__page_size)
+
+        # Finished or cancelled
+        self.__status = Status.COMPLETED if not self.__cancel_event.is_set() else Status.CANCELLED
+        self.__processingTime += (time.time() - self.__time_start)
+        OutboundEvent.triggerEvent(
+            event='mqtt_send_history_completed' if self.__status == Status.COMPLETED else 'mqtt_send_history_cancelled', 
+            id=oppleoConfig.chargerName,
+            data=self.status,
+            namespace='/mqtt',
+            public=False
+        )
+
+        self.__logger.debug(f'Terminating thread')
+        self.__thread = None
+
+
+
+
     def __mqttSendHistoryLoop(self):
         global oppleoConfig
         self.__logger.debug('mqttSendHistoryLoop()...')
