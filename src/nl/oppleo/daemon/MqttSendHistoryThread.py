@@ -16,6 +16,11 @@ DEFAULT_DELAY_BETWEEN_MQTT_EVENTS = 0.05
 DEFAULT_PAGE_SIZE = 950
 DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES = 5 # number of seconds passed
 
+class MqttSendHistoryThreadMode(IntEnum):
+    MODE_ONE = 1    # Only batch, uses sqlalchemy ORM pagination
+    MODE_TWO = 2    # Only batch, uses sqlalchemy core fetchmany
+
+
 """
     initial -> started (running) -> completed (totals, time)
                                     -> paused (not running, totals, time) -> (re)started running -> completed
@@ -31,6 +36,7 @@ class Status(IntEnum):
     CANCELLED = 4
 
 StatusStr = [ 'initial', 'started', 'paused', 'completed', 'cancelled' ]
+
 
 class MqttSendHistoryThread(object):
     __logger = None
@@ -48,10 +54,14 @@ class MqttSendHistoryThread(object):
     __front_end_updates = 0
     __mqtt_events = 0
     __current_tps = 0
-    __send_batch = False
+    __mode = MqttSendHistoryThreadMode.MODE_TWO
 
 
-    def __init__(self, page_size=DEFAULT_PAGE_SIZE, delay_between_mqtt_events=DEFAULT_DELAY_BETWEEN_MQTT_EVENTS, time_between_front_end_updates=DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES):
+    def __init__(self, 
+                 page_size=DEFAULT_PAGE_SIZE, 
+                 delay_between_mqtt_events=DEFAULT_DELAY_BETWEEN_MQTT_EVENTS, 
+                 time_between_front_end_updates=DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES,
+                 mode=MqttSendHistoryThreadMode.MODE_TWO):
         self.__logger = logging.getLogger('nl.oppleo.daemon.MqttSendHistoryThread')
         self.__thread = None
         self.__status = Status.INITIAL
@@ -59,6 +69,7 @@ class MqttSendHistoryThread(object):
         self.__page_size = page_size + random.randrange(101)
         self.__delay_between_mqtt_events = delay_between_mqtt_events
         self.__time_between_front_end_updates = time_between_front_end_updates
+        self.__mode = mode
         self.__pause_event = threading.Event()
         self.__cancel_event = threading.Event()
 
@@ -80,8 +91,12 @@ class MqttSendHistoryThread(object):
                 #   appSocketIO.start_background_task launches a background_task
                 #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
                 #   Therefore use standard threads
-                self.__thread = threading.Thread(target=self.__mqttSendHistoryLoop, name='mqttSendHistoryThread')
+                if self.__mode == MqttSendHistoryThreadMode.MODE_ONE:
+                    self.__thread = threading.Thread(target=self.__mqttSendHistoryLoopMode1, name='mqttSendHistoryThread')
+                else:
+                    self.__thread = threading.Thread(target=self.__mqttSendHistoryLoopMode2, name='mqttSendHistoryThread')
                 self.__status = Status.STARTED
+
                 self.__thread.start()
                 return { 'success': True, 'message': 'Proces started' }
             if (self.__status in [ Status.PAUSED ]):
@@ -110,16 +125,11 @@ class MqttSendHistoryThread(object):
             return { 'success': True, 'message': 'Cancel requested' }
 
     def __settings(self):
-        if self.__send_batch:
-            return { "batchProcessing"             : self.__send_batch,
-                     "batchSize"                   : self.__page_size,
-                     "timeBetweenFrontEndUpdates"  : self.__time_between_front_end_updates,
-                     "delayBetweenMqttMessages"    : self.__delay_between_mqtt_events
-            }
-        return { "batchProcessing"              : self.__send_batch,
-                 "timeBetweenFrontEndUpdates"   : self.__time_between_front_end_updates,
-                 "delayBetweenMqttMessages"     : self.__delay_between_mqtt_events
-        }
+        return { "batchProcessing"             : True,
+                 "batchSize"                   : self.__page_size,
+                 "timeBetweenFrontEndUpdates"  : self.__time_between_front_end_updates,
+                 "delayBetweenMqttMessages"    : self.__delay_between_mqtt_events
+                }
         
 
     @property
@@ -177,15 +187,14 @@ class MqttSendHistoryThread(object):
             return self.__status
 
     @property
-    def batch(self) -> bool:
+    def mode(self):
         with self.__threadLock:
-            return self.__send_batch
+            return self.__mode
 
-    @batch.setter
-    def batch(self, enable:bool=False):
+    @mode.setter
+    def mode(self, mode:int=MqttSendHistoryThreadMode.MODE_TWO):
         with self.__threadLock:
-            self.__send_batch = enable
-
+            self.__mode = mode
 
     def __sendMqttEventIfTime(self):
         if len(self.__batch) > self.__page_size:
@@ -195,7 +204,7 @@ class MqttSendHistoryThread(object):
     def __mqttResultSetHandler(self, resultSet=None) -> bool:
         # Build batch
         for entryResult in resultSet:
-            self.__batch.append(entryResult.to_str())
+            self.__batch.append(EnergyDeviceMeasureModel.sto_str(entryResult))
         # Time to send it out. Send MQTT event as batch (Array)
         OutboundEvent.emitMQTTEvent( event='status_update',
                                         data=self.__batch,
@@ -203,10 +212,27 @@ class MqttSendHistoryThread(object):
                                         id=None,
                                         namespace='/usage')
         # Now assign an new array. Don't empty with .clear() as the emitting function could still be working on the old one.
-        self.__batch =[]
-
-        self.__processed += resultSet.count()
+        self.__batch = []
         self.__mqtt_events += 1
+
+        self.__processed += len(resultSet)
+
+        intermediate_timestamp = time.time()
+        self.__processingTime += (intermediate_timestamp - self.__time_start)
+        self.__current_tps = int(len(resultSet) / (intermediate_timestamp - self.__time_start))
+        self.__time_start = intermediate_timestamp
+
+        if (time.time() - self.__lastUpdate) > self.__time_between_front_end_updates:
+            OutboundEvent.triggerEvent(
+                event='mqtt_send_history_update',
+                id=oppleoConfig.chargerName,
+                data=self.status,
+                namespace='/mqtt',
+                public=False
+            )
+            self.__front_end_updates += 1
+            self.__lastUpdate = time.time()
+
         time.sleep(self.__delay_between_mqtt_events)
 
         if self.__pause_event.is_set():
@@ -235,10 +261,12 @@ class MqttSendHistoryThread(object):
         if self.__cancel_event.is_set():
             # End it here
             return False
+        
+        return True
 
 
     # The main loop (2)
-    def __mqttSendHistoryLoop2(self):
+    def __mqttSendHistoryLoopMode2(self):
         self.__logger.debug('mqttSendHistoryLoop()...')
 
         self.__processingTime = 0
@@ -283,7 +311,7 @@ class MqttSendHistoryThread(object):
 
 
 
-    def __mqttSendHistoryLoop(self):
+    def __mqttSendHistoryLoopMode1(self):
         global oppleoConfig
         self.__logger.debug('mqttSendHistoryLoop()...')
 
@@ -315,58 +343,35 @@ class MqttSendHistoryThread(object):
                                        orderColumn      = getattr(EnergyDeviceMeasureModel, 'created_at'),
                                        orderDir         = 'desc'
                                     )
-            if not self.__send_batch:
-                for entryResult in pageResult:
-                    # Send MQTT event singular and directly
-                    OutboundEvent.emitMQTTEvent( event='status_update',
-                                                 data=entryResult.to_str(),
-                                                 status=None,
-                                                 id=None,
-                                                 namespace='/usage')
-                    self.__processed += 1
-                    self.__mqtt_events += 1
-                    time.sleep(self.__delay_between_mqtt_events)
-
-                    if (time.time() - lastUpdate) > self.__time_between_front_end_updates:
-                        OutboundEvent.triggerEvent(
-                            event='mqtt_send_history_update',
-                            id=oppleoConfig.chargerName,
-                            data=self.status,
-                            namespace='/mqtt',
-                            public=False
-                        )
-                        self.__front_end_updates += 1
-                        lastUpdate = time.time()
-            else:
-                batch = []
-                for entryResult in pageResult:
-                    # Build batch
-                    batch.append(entryResult.to_str())
-                # Send MQTT event as batch (Array)
-                OutboundEvent.emitMQTTEvent( event='status_update',
-                                             data=batch,
-                                             status=None,
-                                             id=None,
-                                             namespace='/usage')
-                self.__processed += pageResult.count()
-                self.__mqtt_events += 1
-                time.sleep(self.__delay_between_mqtt_events)
-
-                if (time.time() - lastUpdate) > self.__time_between_front_end_updates:
-                    OutboundEvent.triggerEvent(
-                        event='mqtt_send_history_update',
-                        id=oppleoConfig.chargerName,
-                        data=self.status,
-                        namespace='/mqtt',
-                        public=False
-                    )
-                    self.__front_end_updates += 1
-                    lastUpdate = time.time()
+            batch = []
+            for entryResult in pageResult:
+                # Build batch
+                batch.append(entryResult.to_str())
+            # Send MQTT event as batch (Array)
+            OutboundEvent.emitMQTTEvent( event='status_update',
+                                            data=batch,
+                                            status=None,
+                                            id=None,
+                                            namespace='/usage')
+            self.__processed += pageResult.count()
+            self.__mqtt_events += 1
+            time.sleep(self.__delay_between_mqtt_events)
 
             intermediate_timestamp = time.time()
             self.__processingTime += (intermediate_timestamp - time_start)
             self.__current_tps = int(pageResult.count() / (intermediate_timestamp - time_start))
             time_start = intermediate_timestamp
+
+            if (time.time() - lastUpdate) > self.__time_between_front_end_updates:
+                OutboundEvent.triggerEvent(
+                    event='mqtt_send_history_update',
+                    id=oppleoConfig.chargerName,
+                    data=self.status,
+                    namespace='/mqtt',
+                    public=False
+                )
+                self.__front_end_updates += 1
+                lastUpdate = time.time()
 
             if self.__pause_event.is_set():
                 self.__status = Status.PAUSED

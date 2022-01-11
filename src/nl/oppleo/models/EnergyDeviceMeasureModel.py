@@ -4,10 +4,13 @@ import logging
 from marshmallow import fields, Schema
 
 from sqlalchemy import orm, Column, Integer, String, DateTime, Float, asc, desc, func
+from sqlalchemy import MetaData, Table, select    # For fetchmany
 
 from sqlalchemy.exc import InvalidRequestError
 
 from nl.oppleo.models.Base import Base, DbSession
+from nl.oppleo.models.Base import engine    # For fetchmany
+
 from nl.oppleo.exceptions.Exceptions import DbException
 import json
 
@@ -163,19 +166,25 @@ class EnergyDeviceMeasureModel(Base):
     """
     def get_all_as_stream(self, callbackFn, batch_size:int=1000):
 
-        db_session = DbSession()
         try:
-            for rows in db_session.query(EnergyDeviceMeasureModel).yield_per(batch_size):
-                if not callbackFn(rows):
-                    # Don't continue the loop
-                    break
-        except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            connection = engine.connect()
+            edmmt = Table( self.__tablename__, MetaData(), autoload=True, autoload_with=engine )
+            edmmQery = select([edmmt]) 
+            ResultProxy = connection.execute(edmmQery)
+            hasMore = True
+            #               .filter(EnergyDeviceMeasureModel.energy_device_id == energy_device_id)
+            while hasMore:
+                resultBatch = ResultProxy.fetchmany(batch_size)
+                if (resultBatch == []): 
+                    hasMore = False
+                else:
+                    if not callbackFn(resultBatch):
+                        return False
+
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
-
 
 
     def paginate(self, energy_device_id, offset:int=0, limit:int=0, orderColumn:Column=None, orderDir:str=None):
@@ -372,6 +381,14 @@ class EnergyDeviceMeasureModel(Base):
                 "hz": str(self.hz)
             })
 
+    @staticmethod
+    def sto_str(obj):
+        d = {}
+        for index, fieldname in enumerate(obj._fields):
+            if fieldname == 'id':   # hide the id field
+                continue
+            d[fieldname] = obj._data[index] if fieldname != "created_at" else obj._data[index].strftime("%d/%m/%Y, %H:%M:%S")
+        return d
 
     # convert into dict:
     def to_dict(self):

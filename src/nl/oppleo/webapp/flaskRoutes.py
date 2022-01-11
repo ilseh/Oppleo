@@ -25,7 +25,7 @@ from flask_socketio import SocketIO, emit
 from nl.oppleo.config.OppleoConfig import oppleoConfig
 from nl.oppleo.config.OppleoSystemConfig import oppleoSystemConfig
 from nl.oppleo.config.ChangeLog import changeLog
-from nl.oppleo.daemon.MqttSendHistoryThread import MqttSendHistoryThread
+from nl.oppleo.daemon.MqttSendHistoryThread import MqttSendHistoryThread, MqttSendHistoryThreadMode
 
 from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException, 
                                              ExpiredException)
@@ -3232,7 +3232,8 @@ def mqttHistory(action:str=None):
 
     if (action == "start"):
         # Start the process
-        oppleoConfig.mqttshThread.batch = True
+        oppleoConfig.mqttshThread.mode = MqttSendHistoryThreadMode.MODE_TWO
+
         result = oppleoConfig.mqttshThread.start()
         return jsonify({ 
             'status'    : HTTP_CODE_200_OK if result["success"] else HTTP_CODE_409_CONFLICT,
