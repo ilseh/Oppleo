@@ -593,7 +593,7 @@
           // log data to the console so we can see
           console.log(data)
 
-          el = { name: 'None', rfid: data.token, enabled: null, created_at: '28/06/2020, 18:04:22', valid_from: null, valid_until: null, 
+          el = { name: 'None', rfid: data.token, enabled: null, created_at: '{% if now.day < 10 %}0{% endif %}{{ now.day }}/{% if now.month < 10 %}0{% endif %}{{ now.month }}/{{ now.year }}, {% if now.hour < 10 %}0{% endif %}{{ now.hour }}:{% if now.minute < 10 %}0{% endif %}{{ now.minute }}:00', valid_from: null, valid_until: null, 
                 last_used_at: null, chargeSessions: 0, vehicle_id: 'None', vehickle_name: 'None', vehicle_make: 'None', vehicle_model: 'None', 
                 vehickle_vin: 'None',  license_plate: 'None', get_odometer: 'None', api_access_token: 'None', api_created_at: 'None', 
                 api_expires_in: 'None', api_refresh_token: 'None', api_token_type: 'None' }

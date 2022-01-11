@@ -201,7 +201,7 @@
                           :
                           (months[{{ month }} -1] + ' {{ year }}')
                         ),
-            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            messageBottom: 'Oppleo laadpunt (c) {{ now.year }} oppleo.nl',
             filename: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ? 
                         ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }} - lopende maand')
                         :
@@ -232,7 +232,7 @@
                           :
                           (months[{{ month }} -1] + ' {{ year }}')
                         ),
-            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            messageBottom: 'Oppleo laadpunt (c) {{ now.year }} oppleo.nl',
             filename: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ? 
                         ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }} - lopende maand')
                         :
@@ -327,7 +327,7 @@
                           :
                           (months[{{ month }} -1] + ' {{ year }}')
                         ),
-            messageBottom: 'Oppleo laadpunt (c) 2020 oppleo.nl',
+            messageBottom: 'Oppleo laadpunt (c) {{ now.year }} oppleo.nl',
             filename: ( ({{ year }} == new Date().getFullYear() && {{ month }} == (new Date().getMonth() +1)) ? 
                         ('Oppleo laadsessierapport - ' + months[{{ month }} -1] + ' {{ year }} - lopende maand')
                         :

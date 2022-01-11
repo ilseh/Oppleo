@@ -187,6 +187,16 @@ def config_dashboard_access_restriction(function):
     return decorated
 
 
+
+"""
+    Inject {{ now.year }} in each jinja template
+    https://stackoverflow.com/questions/41231290/how-to-display-current-year-in-flask-template
+"""
+@flaskRoutes.context_processor
+def inject_now():
+    return {'now': datetime.utcnow()}
+
+
 @flaskRoutes.route('/', methods=['GET'])
 @config_dashboard_access_restriction
 def index():
