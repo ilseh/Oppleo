@@ -71,13 +71,14 @@ class TeslaAPI:
     # https://tesla-api.timdorr.com/api-basics/authentication
     # https://www.teslaapi.io/
     # https://pastebin.com/pS7Z6yyP
+    # https://github.com/adriankumpf/tesla_auth/blob/main/src/auth.rs
     # Stopped working approx 22nd feb 2020
-    TESLA_CLIENT_ID = '81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384'
-    TESLA_CLIENT_SECRET = 'c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3'
+ #   TESLA_CLIENT_ID = '81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384'
+ #   TESLA_CLIENT_SECRET = 'c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3'
 
     # https://github.com/timdorr/tesla-api/issues/79#issuecomment-419992028
-    #TESLA_CLIENT_ID = 'e4a9949fcfa04068f59abb5a658f2bac0a3428e4652315490b659d5ab3f35a9e'
-    #TESLA_CLIENT_SECRET = 'c75f14bbadc8bee3a7594412c31416f8300256d7668ea7e6e7f06727bfb9d220'
+    TESLA_CLIENT_ID = 'e4a9949fcfa04068f59abb5a658f2bac0a3428e4652315490b659d5ab3f35a9e'
+    TESLA_CLIENT_SECRET = 'c75f14bbadc8bee3a7594412c31416f8300256d7668ea7e6e7f06727bfb9d220'
 
     HTTP_200_OK = 200
     HTTP_302_FOUND = 302    # When logged in, Tesla redirects to a non-existent URL

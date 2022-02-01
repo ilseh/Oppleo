@@ -1,3 +1,9 @@
+Version 1.3.8           2022-02-01
+
+Fixed
+- Issue with Tesla OAuth 2.0 Token generation. Not solved. Support for larger tokens. Manual token entry using Auth for Tesla tokens as workaround.
+
+
 Version 1.3.7           2022-01-03
 
 Added

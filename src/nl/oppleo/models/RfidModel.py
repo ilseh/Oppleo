@@ -40,11 +40,11 @@ class RfidModel(Base):
     valid_from = Column(DateTime)
     valid_until = Column(DateTime)
 
-    api_access_token = Column(String(100))
+    api_access_token = Column(String(50000))
     api_token_type = Column(String(100))
     api_created_at = Column(String(100))
     api_expires_in = Column(String(100))
-    api_refresh_token = Column(String(100))
+    api_refresh_token = Column(String(50000))
 
     vehicle_name = Column(String(100))
     vehicle_id = Column(String(100))
