@@ -149,7 +149,7 @@ try:
     @appSocketIO.on("connect", namespace="/")
     @config_dashboard_access_restriction
     def connect():
-        global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
+        global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
         with threadLock:
             wsClientCnt += 1
             if request.sid not in oppleoConfig.connectedClients.keys():
@@ -164,15 +164,16 @@ try:
                         oppleoConfig.connectedClients \
                         )
                     )
-        OutboundEvent.emitMQTTEvent( event='connect',
-                                     data={
-                                        "clientId"          : request.sid,
-                                        'auth'              : True if (current_user.is_authenticated) else False,
-                                        "clientsConnected"  : len(oppleoConfig.connectedClients)
-                                     },
-                                     id=oppleoConfig.chargerName,
-                                     namespace='/websocket'
-                                    )
+        if oppleoSystemConfig.mqttOutboundEnabled:
+            OutboundEvent.emitMQTTEvent( event='connect',
+                                        data={
+                                            "clientId"          : request.sid,
+                                            'auth'              : True if (current_user.is_authenticated) else False,
+                                            "clientsConnected"  : len(oppleoConfig.connectedClients)
+                                        },
+                                        id=oppleoConfig.chargerName,
+                                        namespace='/websocket'
+                                        )
         OutboundEvent.triggerEvent(
                 event='update', 
                 id=oppleoConfig.chargerName,
@@ -191,7 +192,7 @@ try:
     @appSocketIO.on("disconnect", namespace="/")
     @config_dashboard_access_restriction
     def disconnect():
-        global oppleoLogger, oppleoConfig, threadLock, wsClientCnt
+        global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
         with threadLock:
             wsClientCnt -= 1
             res = oppleoConfig.connectedClients.pop(request.sid, None)
@@ -202,14 +203,15 @@ try:
                         res
                         )
                     )
-        OutboundEvent.emitMQTTEvent( event='disconnect',
-                                     data={
-                                        "clientId"          : request.sid,
-                                        "clientsConnected"  : len(oppleoConfig.connectedClients)
-                                     },
-                                     id=oppleoConfig.chargerName,
-                                     namespace='/websocket'
-                                    )
+        if oppleoSystemConfig.mqttOutboundEnabled:
+            OutboundEvent.emitMQTTEvent( event='disconnect',
+                                        data={
+                                            "clientId"          : request.sid,
+                                            "clientsConnected"  : len(oppleoConfig.connectedClients)
+                                        },
+                                        id=oppleoConfig.chargerName,
+                                        namespace='/websocket'
+                                        )
 
 
 

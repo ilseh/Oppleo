@@ -276,7 +276,7 @@ def login():
 @flaskRoutes.route("/<path:username>/login", methods=["POST"])
 @flaskRoutes.route("/<path:username>/login/", methods=["POST"])
 def login2(username:str=None):
-    global flaskRoutesLogger, oppleoConfig
+    global flaskRoutesLogger, oppleoConfig, oppleoSystemConfig
     flaskRoutesLogger.debug('/login2 {}'.format(request.method))
 
     if username is None:
@@ -326,13 +326,14 @@ def login2(username:str=None):
     user.authenticated = True
     user.save()
 
-    OutboundEvent.emitMQTTEvent( event='login',
-                                 data={
-                                    "user" : user.username,
-                                 },
-                                 id=oppleoConfig.chargerName,
-                                 namespace='/webclient'
-                                )
+    if oppleoSystemConfig.mqttOutboundEnabled:
+        OutboundEvent.emitMQTTEvent( event='login',
+                                    data={
+                                        "user" : user.username,
+                                    },
+                                    id=oppleoConfig.chargerName,
+                                    namespace='/webclient'
+                                    )
 
     login_next = None
     if 'login_next' in session:
@@ -352,20 +353,21 @@ def login2(username:str=None):
 @authenticated_resource
 #@login_required
 def logout():
-    global flaskRoutesLogger
+    global flaskRoutesLogger, oppleoSystemConfig
     flaskRoutesLogger.debug('/logout {}'.format(request.method))
     # Logout the current user
     user = current_user
     user.authenticated = False
     user.save()
     logout_user()
-    OutboundEvent.emitMQTTEvent( event='logout',
-                                 data={
-                                    "user" : user.username,
-                                 },
-                                 id=oppleoConfig.chargerName,
-                                 namespace='/webclient'
-                                )
+    if oppleoSystemConfig.mqttOutboundEnabled:
+        OutboundEvent.emitMQTTEvent( event='logout',
+                                    data={
+                                        "user" : user.username,
+                                    },
+                                    id=oppleoConfig.chargerName,
+                                    namespace='/webclient'
+                                    )
 
     return redirect(url_for('flaskRoutes.home'))
 
