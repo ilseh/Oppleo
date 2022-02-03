@@ -654,19 +654,29 @@
         updateAccount( '{{ current_user.username }}', e.target.id, $(this).prop('checked') )
       })
 
-      $('#avatarclick').on('click', function() { 
-        var input = document.createElement('input');
-        input.type = 'file';
-        input.onchange = e => { 
-          var file = e.target.files[0]
-          if (file.size > 256000) {
-            autoHideNotify('warning','top-left', 'Te groot', 'Het selecteerde bestand is te groot. Selecteer een jpg, png of gif bestand van maximaal 250kB.')
-            return 
+      $('#avatarclick').on('click', function(e) {
+        let fileElId = "AvatarFileUploadElement"
+        if ($('input#'+fileElId).length == 0) {
+          // Elemenst does not yet exist
+          var input = document.createElement('input')
+          input.setAttribute("id", fileElId)
+          input.setAttribute("style", "display: none;")
+          input.type = 'file'
+          input.onchange = e => { 
+            var file = e.target.files[0]
+            if (file.size > 256000) {
+              autoHideNotify('warning','top-left', 'Te groot', 'Het selecteerde bestand is te groot. Selecteer een jpg, png of gif bestand van maximaal 250kB.')
+              return 
+            }
+            // Upload the file
+            updateAccount( '{{ current_user.username }}', 'avatar', file )
           }
-          // Upload the file
-          updateAccount( '{{ current_user.username }}', 'avatar', file )
+          $('body').append(input)
         }
-        input.click();
+        // Trigger click works in Safari, not in Chrome (not allowed)
+        $('input#'+fileElId).trigger('click')
+        // Click used to work, now no longer allowed without used input
+        // input.click()
       })
 
       // Remove spinner
