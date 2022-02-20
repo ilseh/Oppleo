@@ -742,3 +742,9 @@ import RPi.GPIO as GPIO loads the RPi.GPIO library so we can use it
 GPIO.VERSION this returns the version number of RPi.GPIO
 [raspi.tv](https://raspi.tv/2013/rpi-gpio-basics-1-how-to-check-what-rpi-gpio-version-you-have)
 [raspi.tv](https://raspi.tv/2013/rpi-gpio-basics-2-how-to-check-what-pi-board-revision-you-have)
+
+## Specific Rsapberry packages
+
+1. mfrc522==0.0.7
+2. RPi.GPIO==0.7.0
+3. spidev==3.5
