@@ -1,4 +1,4 @@
-Version 1.4             2022-02-11
+Version 1.4.0           2022-02-20
 
 Fixed
 - Tesla authorization not working. Replaced TeslaApi with standard lib TeslaPy. Added refresh token and URL authorization. No headless autorization supported at this time.
