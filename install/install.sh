@@ -8,7 +8,7 @@ NC='\033[0m'
 CHECKMARK='\xE2\x9C\x94'
 
 # Reaspberry config
-printf "Install script for the Oppleo service - v0.7 27-10-2021 \n"
+printf "Install script for the Oppleo service - v0.8 20-02-2022 \n"
  
 printf " [i] Running install script as $(whoami) \n"
 printf " [i] Using background restart at the end. \n"
