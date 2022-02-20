@@ -291,15 +291,6 @@
         // Remove spinner?
       })
     }
-    function updateOAuthTokenStatus(d) {
-      // d is expiration date
-      return ('Tesla autorisatie verloopt ' + 
-        d.getDate() + ' ' + 
-        months[d.getMonth()] + ' ' + 
-        d.getFullYear() + ', ' +
-        d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
-      )
-    }
     // Convert 06/01/2020, 00:00:00 to 6 Januari 2020
     function formatDbDateTimeStr2Date( dS ) {
       if ( (typeof dS !== 'string' && !(dS instanceof String)) ||
@@ -410,23 +401,20 @@
                               <i class="fas fa-ban"></i> \
                         </span>'
               }
-              const token_info = data.split('|')
-              var t = updateOAuthTokenStatus(new Date((token_info[1] *1000) + (token_info[2] *1000))) 
-              return ( (data == undefined || data == "None|None|None") ? 
-                        '<span data-toggle="tooltip" \
-                              data-placement="bottom" \
-                              data-html="true" \
-                              title="<em>Geen autorisatie</em>" \
-                              > \
-                              <i class="far fa-registered"></i> \
-                        </span>' : 
-                        '<span data-toggle="tooltip" \
-                              data-placement="bottom" \
-                              data-html="true" \
-                              title="<em>' + t + '</em>" \
-                              > \
-                              <i class="fas fa-exchange-alt"></i> \
-                        </span>'
+              return( !data ? `<span data-toggle="tooltip"
+                            data-placement="bottom"
+                            data-html="true"
+                            title="<span class='text-secondary'><i class='fas fa-unlink'></i> <em>Geen autorisatie</em></span>"
+                            >
+                            <i class="fas fa-unlink"></i>
+                      </span>` : 
+                        `<span data-toggle="tooltip"
+                              data-placement="bottom"
+                              data-html="true"
+                              title="<span class='text-success'><i class='fas fa-link'></i> Geautoriseerd</span>"
+                              >
+                              <i class="text-success fas fa-link"></i>
+                        </span>`
               )
             }
           }],
@@ -466,8 +454,8 @@
         ((element.vehicle_make == undefined || element.vehicle_make == 'None') ? '-' : element.vehicle_make),
         ((element.vehicle_model == undefined || element.vehicle_model == 'None') ? '-' : element.vehicle_model),
         ((element.license_plate == undefined || element.license_plate == 'None') ? '-' : element.license_plate),
-        (element.get_odometer === "True" ? 'Ja' : 'Nee'),
-        (element.api_access_token + '|' + element.api_created_at + '|' + element.api_expires_in),
+        (element.get_odometer ? 'Ja' : 'Nee'),
+        (element.make_api_authorized),
         '<button' +
         '   type="button"' +
         '   class="btn btn-sm btn-table-row waves-effect waves-light btn-outline-secondary disabled" ' +
@@ -594,8 +582,8 @@
           console.log(data)
 
           el = { name: 'None', rfid: data.token, enabled: null, created_at: '{% if now.day < 10 %}0{% endif %}{{ now.day }}/{% if now.month < 10 %}0{% endif %}{{ now.month }}/{{ now.year }}, {% if now.hour < 10 %}0{% endif %}{{ now.hour }}:{% if now.minute < 10 %}0{% endif %}{{ now.minute }}:00', valid_from: null, valid_until: null, 
-                last_used_at: null, chargeSessions: 0, vehicle_id: 'None', vehickle_name: 'None', vehicle_make: 'None', vehicle_model: 'None', 
-                vehickle_vin: 'None',  license_plate: 'None', get_odometer: 'None', api_access_token: 'None', api_created_at: 'None', 
+                last_used_at: null, chargeSessions: 0, vehicle_name: 'None', vehicle_make: 'None', vehicle_model: 'None', 
+                vehicle_vin: 'None',  license_plate: 'None', get_odometer: 'None', api_access_token: 'None', api_created_at: 'None', 
                 api_expires_in: 'None', api_refresh_token: 'None', api_token_type: 'None' }
           addTokenToTokenTable( el )
 

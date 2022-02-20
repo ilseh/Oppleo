@@ -1125,7 +1125,7 @@
                                                      )
       modalData['trigger'] = $($('oppleo-edit-select#ccsmTrigger')[0].$select).find("option:selected").text()
       modalData['start_value'] = $("oppleo-edit-str#ccsmStartValue")[0].$input.value.replace(',', '.')
-      modalData['km'] = $('#ccsmOdometer')[0].$input.value.replace(',', '.')
+      modalData['km'] = $('#ccsmOdometer')[0].$input.value
 
       // Open session, no end_time
       if ($("#chargeSessionModalEndTimeOpenSession").hasClass('d-none')) {
@@ -2038,8 +2038,8 @@
                   value=""
                   suffix="km"
                   style="width: calc(100% - 42px);"
-                  validation="^[0-9]*[,|.]?[0-9]?$"
-                  info="Kilometerstand bij aanvang van de laadsessie, nauwkeurigheid 1 decimaal."
+                  validation="^[0-9]*$"
+                  info="Kilometerstand bij aanvang van de laadsessie, afgerond op hele kilometers."
                   unlock=true
                 />
               </td>

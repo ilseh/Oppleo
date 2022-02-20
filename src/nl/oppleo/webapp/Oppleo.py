@@ -484,6 +484,8 @@ except DbException as dbe:
 
 
 except Exception as e:
+    import traceback
+    traceback.print_exc()
     # Any exception raised - restart app
     oppleoLogger.error('Exception stopped Oppleo! Details:{}'.format(str(e)))
     from os import system

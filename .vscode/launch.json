@@ -10,6 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "python": "${command:python.interpreterPath}",
+            "python.pythonPath": "./venv/bin/python.exe",
             "console": "integratedTerminal",
             "env": {
                 "PYTHONPATH": "./src"

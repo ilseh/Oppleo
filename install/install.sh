@@ -158,7 +158,7 @@ function checkPiGPIO( ) {
   IFS=' ' # space is set as delimiter
   read -ra pigpiodSysdEntry <<< $(systemctl list-unit-files --type=service | grep pigpiod)
   if [ "${#pigpiodSysdEntry[@]}" -gt 0 ]; then
-    printf " [${GREEN}${CHECKMARK}${NC}] found pigpiod, it is "${pigpiodSysdEntry[1]}
+    printf " [${GREEN}${CHECKMARK}${NC}] found pigpiod, it is "${pigpiodSysdEntry[1]}"\n"
     if [ ${pigpiodSysdEntry[1]} !=  "enabled" ]; then
       printf " [i] enabling Pi GPIO Daemon (pigpiod)... \n"
       sudo systemctl enable pigpiod.service

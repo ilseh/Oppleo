@@ -23,6 +23,10 @@ table th {
 .info-button-style {
     cursor: help;
 }
+.info-button-style span {
+    padding-left: 14px;
+    padding-right: 15px;
+}
 .input-text-only {
     text-align: left;
     font-style: italic; 

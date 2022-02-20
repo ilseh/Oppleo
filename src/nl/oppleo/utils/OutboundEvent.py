@@ -99,7 +99,10 @@ class OutboundEvent(object):
             msg['status'] = status
 
         OutboundEvent.logger.debug(f'Submit msg to MQTT topic ... {msg}')
-        oppleoMqttClient.publish(topic=topic, message=json.dumps(msg), waitForPublish=waitForPublish)
+        try:
+            oppleoMqttClient.publish(topic=topic, message=json.dumps(msg), waitForPublish=waitForPublish)
+        except Exception as e:
+            OutboundEvent.logger.error('MQTT server enabled but not reachable! {}'.format(str(e)))
 
 
 

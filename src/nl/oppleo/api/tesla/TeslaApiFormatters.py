@@ -4,8 +4,10 @@ import re
 def toCamelcase(s):
     return re.sub(r'(?!^)_([a-zA-Z])', lambda m: m.group(1).upper(), s)
 
+def milesToKm(miles:float=0, acc:int=0):
+    return round(miles * 1.609344 * pow(10, acc)) / pow(10, acc)
 
-def formatChargeStateParam(chargeState:dict=None, param:str=None):
+def formatTeslaChargeStateParam(chargeState:dict=None, param:str=None):
     if chargeState is None or param is None:
         return chargeState
     try:
@@ -14,8 +16,6 @@ def formatChargeStateParam(chargeState:dict=None, param:str=None):
         return None
 
 
-def milesToKm(miles:float=0, acc:int=0):
-    return round(miles * 1.609344 * pow(10, acc)) / pow(10, acc)
 
 
 """
@@ -39,7 +39,7 @@ def milesToKm(miles:float=0, acc:int=0):
     time_to_full_charge         A value of 1.17 indicates 1.17 * 60min = 1u 10min = 70min [float]
     timestamp                   in millis
 """
-def formatChargeState(chargeState:dict=None) -> dict:
+def formatTeslaChargeState(chargeState:dict=None) -> dict:
     csEl = ['battery_level', 'battery_range', 'charge_energy_added', 'charge_limit_soc', 'charge_limit_soc_max', 
             'charge_miles_added_rated', 'charge_port_door_open', 'charge_port_latch', 'charge_rate', 'charger_actual_current', 'charger_phases',
             'charger_power', 'charger_voltage', 'charging_state', 'minutes_to_full_charge', 'time_to_full_charge', 
@@ -54,7 +54,7 @@ def formatChargeState(chargeState:dict=None) -> dict:
 
     csDict = {}
     for el in csEl:
-        csDict[toCamelcase(el)] = formatChargeStateParam(chargeState, el)
+        csDict[toCamelcase(el)] = formatTeslaChargeStateParam(chargeState, el)
         if el in csElMiles:
             # Convert type(csDict[toCamelcase(el)])
             csDict[toCamelcase(csElKm[csElMiles.index(el)])] = milesToKm(csDict[toCamelcase(el)], 1)
@@ -88,7 +88,7 @@ def formatChargeState(chargeState:dict=None) -> dict:
 """
 
 # https://tesla-api.timdorr.com/vehicle/optioncodes
-def battCapacityFromOptionCodes(optionCodes:str=None) -> int:
+def battCapacityFromTeslaOptionCodes(optionCodes:str=None) -> int:
     ocMap = { 'BT37': 75,
               'BT40': 40,
               'BT60': 60,
@@ -110,7 +110,7 @@ def battCapacityFromOptionCodes(optionCodes:str=None) -> int:
     return 0
 
 
-def formatVehicle(vehicle=None):
+def formatTeslaVehicle(vehicle=None):
     # Elements in vehicle
     csEl = ['id_s', 'vin', 'display_name', 'option_codes', 'timestamp', 'state']
 
@@ -119,10 +119,10 @@ def formatVehicle(vehicle=None):
 
     csDict = {}
     for el in csEl:
-        csDict[toCamelcase(el)] = formatChargeStateParam(vehicle, el)
+        csDict[toCamelcase(el)] = formatTeslaChargeStateParam(vehicle, el)
 
     if 'option_codes' in vehicle and vehicle['option_codes'] is not None:
-        bc = battCapacityFromOptionCodes(vehicle['option_codes'])
+        bc = battCapacityFromTeslaOptionCodes(vehicle['option_codes'])
         if bc > 0:
             csDict['batteryCapacity'] = bc
 

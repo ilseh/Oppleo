@@ -77,76 +77,32 @@ class AccesslogModel(Base):
             raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
 
-    def hasValidToken(self):
-        self.__logger.debug("hasValidToken()")
-        if (self.api_access_token is None):
-            self.__logger.debug("Token is None")
-            return False
-        date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
-        today = date.today()
-        if (date > today):
-            self.__logger.debug("Token is still valid")
-            return True
-        self.__logger.debug("Token has expired")
-        self.cleanupOldOAuthToken()
-        return False
-
-
     @staticmethod
     def get_all():
         db_session = DbSession()
-        rfidm = None
+        alm = None
         try:
-            rfidm = db_session.query(RfidModel) \
-                              .all()
+            alm = db_session.query(AccesslogModel) \
+                                   .all()
         except InvalidRequestError as e:
-            RfidModel.__cleanupDbSession(db_session, RfidModel.__class__.__name__)
+            AccesslogModel.__cleanupDbSession(db_session, AccesslogModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            RfidModel.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
-            raise DbException("Could not query from {} table in database".format(RfidModel.__tablename__ ))
-        return rfidm
-
-    @staticmethod
-    def get_one(rfid):
-        db_session = DbSession()
-        rfidm = None
-        try:
-            rfidm = db_session.query(RfidModel) \
-                              .filter(RfidModel.rfid == str(rfid)) \
-                              .first()
-        except InvalidRequestError as e:
-            RfidModel.__cleanupDbSession(db_session, RfidModel.__class__.__name__)
-        except Exception as e:
-            # Nothing to roll back
-            RfidModel.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
-            raise DbException("Could not query from {} table in database".format(RfidModel.__tablename__ ))
-        return rfidm
+            AccesslogModel.__logger.error("Could not query from {} table in database".format(AccesslogModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(AccesslogModel.__tablename__ ))
+        return alm
 
     def __repr(self):
-        return '<id {}>'.format(self.rfid)
+        return '<id {}>'.format(self.id)
 
     def to_str(self):
         return ({
-                "rfid": str(self.rfid),
-                "enabled": self.enabled,
-                "created_at": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None),
-                "last_used_at": (str(self.last_used_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.last_used_at is not None else None),
-                "name": str(self.name),
-                "vehicle_make": str(self.vehicle_make),
-                "vehicle_model": str(self.vehicle_model),
-                "get_odometer": str(self.get_odometer),
-                "license_plate": str(self.license_plate),
-                "valid_from": (str(self.valid_from.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_from is not None else None),
-                "valid_until": (str(self.valid_until.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_until is not None else None),
-                "api_access_token": str(self.api_access_token),
-                "api_token_type": str(self.api_token_type),
-                "api_created_at": str(self.api_created_at),
-                "api_expires_in": str(self.api_expires_in),
-                "api_refresh_token": str(self.api_refresh_token),
-                "vehicle_name": str(self.vehicle_name),
-                "vehicle_id": str(self.vehicle_id),
-                "vehicle_vin": str(self.vehicle_vin)
+                "id": str(self.id),
+                "IPv4": self.IPv4,
+                "last_seen": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None),
+                "login": str(self.login),
+                "visits": str(self.visits),
+                "days": str(self.days)
             })
 
     """
@@ -165,27 +121,14 @@ class AccesslogModel(Base):
             logger.debug("Exception trying to cleanup database session from {}".format(cn), exc_info=True)
 
 
-class RfidSchema(Schema):
+class AccesslogSchema(Schema):
     """
-    Rfid Schema
+    Accesslog Schema
     """
-    rfid = fields.Str(required=True)
-    enabled = fields.Bool(dump_only=True)
-    created_at = fields.DateTime(dump_only=True)
-    last_used_at = fields.DateTime(dump_only=True)
-    name = fields.Str(required=True)
-    vehicle_make = fields.Str(required=True)
-    vehicle_model = fields.Str(required=True)
-    get_odometer = fields.Bool(dump_only=True)
-    license_plate = fields.Str(required=True)
-    valid_from = fields.DateTime(dump_only=True)
-    valid_until = fields.DateTime(dump_only=True)
-    api_access_token = fields.Str(required=True)
-    api_token_type = fields.Str(required=True)
-    api_created_at = fields.Str(required=True)
-    api_expires_in = fields.Str(required=True)
-    api_refresh_token = fields.Str(required=True)
-    vehicle_name = fields.Str(required=True)
-    vehicle_id = fields.Str(required=True)
-    vehicle_vin = fields.Str(required=True)
+    id = fields.Str(required=True)
+    IPv4 = fields.Str(required=True)
+    last_seen = fields.DateTime(dump_only=True)
+    login = fields.Bool(dump_only=True)
+    visits = fields.Str(required=True)
+    days = fields.Str(required=True)
 

@@ -140,6 +140,12 @@
 
             // Have jQuery behave reverse() like Array
             jQuery.fn.reverse = [].reverse
+            var mailformat = /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
+            function validEmail (value) {
+                return (value.trim().match(mailformat)?true:false)
+            }
+
+
             // parses date string in the format dd/mm/yyyy, hh:mm:ss    01/04/2020, 13:58:44
             function parseDate(dateStr) {
                 try {
@@ -788,16 +794,16 @@
                 getSystemStatus()
                 $('.info-button-style').hover(
                     function() { // mouseenter
-                    $(this).find('span').removeClass('bg-secondary')
-                    $(this).find('span').addClass('bg-success')
-                    $(this).find('span').removeClass('text-muted')
-                    $(this).find('span').addClass('text-light')
+                        $(this).find('span').removeClass('bg-secondary')
+                        $(this).find('span').addClass('bg-success')
+                        $(this).find('span').removeClass('text-muted')
+                        $(this).find('span').addClass('text-light')
                     },
                     function(){  // mouseleave
-                    $(this).find('span').removeClass('bg-success')
-                    $(this).find('span').addClass('bg-secondary') 
-                    $(this).find('span').removeClass('text-light')
-                    $(this).find('span').addClass('text-muted')
+                        $(this).find('span').removeClass('bg-success')
+                        $(this).find('span').addClass('bg-secondary') 
+                        $(this).find('span').removeClass('text-light')
+                        $(this).find('span').addClass('text-muted')
                     }
                 )
                 $('#updateSoftwareMenuItem').parent().hide()
@@ -821,6 +827,30 @@
                 $("#notModFilUnread, #notModFilRead, #notModFilSuccess, #notModFilWarning, #notModFilDanger, #notModMarkAllRead, #notModDeleteAll").on('click', (e) => {
                     window[e.currentTarget.id+'ClickHandler']($(e.currentTarget))
                     drawModalNotificationList()
+                })
+
+                confirmModal = $('#confirmModal').modal({
+                    backdrop: 'static',
+                    keyboard: false,
+                    show: false
+                })
+                $('button#confirmModalLabelCloseButton').on('click', function(el) {
+                    confirmModal.modal('hide')
+                    if (confirmModal.confirmCallback != undefined) {
+                    confirmModal.cancelCallback()
+                    }
+                })
+                $('button#confirmModalCancelButton').on('click', function(el) {
+                    confirmModal.modal('hide')
+                    if (confirmModal.cancelCallback != undefined) {
+                    confirmModal.cancelCallback()
+                    }
+                })
+                $('button#confirmModalOkButton').on('click', function(el) {
+                    confirmModal.modal('hide')
+                    if (confirmModal.confirmCallback != undefined) {
+                    confirmModal.confirmCallback()
+                    }
                 })
 
             })
@@ -1242,6 +1272,25 @@
             font-style: italic;
             pointer-events: none;
         }
+        #confirmModalStyle {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            max-width: 450px;
+        }
+        .modal-confirm {
+            justify-content: center;
+        }
+        table.modal-confirm-table, table.modal-confirm-table th, table.modal-confirm-table td {
+            border: 0px !important;
+            border-bottom: 0px solid #434f5c !important;
+            border-bottom: 0px solid #e9ecef !important;
+        }
+        .confirm-modal-body {
+            min-height: unset;
+        }
         </style>
     {% endblock %}
     
@@ -1628,3 +1677,39 @@
 
  </body>
 </html>
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog" id="confirmModalStyle">
+      <div class="modal-content">
+        <div class="modal-header bg-primary">
+          <h3 class="modal-title" id="confirmModalLabel">Confirm Modal Label</h3>
+          <button type="button" class="close-x" data-dismiss="modal" aria-label="Close" id="confirmModalLabelCloseButton">
+            <span aria-hidden="true"><i class="fas fa-times"></i></span>
+          </button>
+        </div>
+        <div class="modal-body confirm-modal-body" style="text-align: left;">
+  
+          <div class="col-lg-12">
+  
+            <table id="confirmModalTable" class="table modal-confirm-table" cellpadding="0" cellspacing="0">
+  
+              <tr>
+                <td colspan="2" class="pl-4 pt-3 pb-3" style="text-align: left;" id="confirmModalText">
+                  Confirm modal text
+                </td>
+              </tr>
+  
+            </table>
+  
+          </div>
+        </div>
+  
+        <div class="modal-footer modal-confirm">
+          <button type="button" class="btn btn-secondary" id="confirmModalCancelButton"> Cancel</button>
+          <button type="button" class="btn btn-primary" id="confirmModalOkButton"> Confirm</button>
+        </div>
+  
+      </div>
+    </div>
+  </div>

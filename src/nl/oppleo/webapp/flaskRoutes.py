@@ -1,3 +1,5 @@
+from crypt import methods
+from operator import indexOf
 import os
 import threading
 from datetime import datetime, time
@@ -18,6 +20,7 @@ import re
 from urllib.parse import urlparse, unquote
 import io
 import uuid
+import validators
 
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_socketio import SocketIO, emit
@@ -41,7 +44,7 @@ from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
-from nl.oppleo.api.TeslaApi import TeslaAPI
+from nl.oppleo.api.VehicleApi import VehicleApi
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.services.Evse import Evse
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
@@ -1318,7 +1321,7 @@ def charge_session(id:int=None):
         return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'JSON decode error' })
 
     fieldValidation = { 'start_value'       : "^[0-9]*[,|.]?[0-9]?$",
-                        'km'                : "^[0-9]*[,|.]?[0-9]?$",
+                        'km'                : "^[0-9]*$",
                         'end_value'         : "^[0-9]*[,|.]?[0-9]?$",
                         'energy_device_id'  : "^[0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-]+$",
                         'tariff'            : "^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$" 
@@ -1349,8 +1352,8 @@ def charge_session(id:int=None):
               ) or
               ( fieldName in ['km'] and 
                 getattr(chargeSession, fieldName) != jsonD[fieldName] and 
-                isinstance(jsonD[fieldName], (str, int, float)) and 
-                ( getattr(chargeSession, fieldName) == None or jsonD[fieldName] == '' or float(getattr(chargeSession, fieldName)) != float(jsonD[fieldName]) )
+                isinstance(jsonD[fieldName], (str, int)) and 
+                ( getattr(chargeSession, fieldName) == None or jsonD[fieldName] == '' or int(getattr(chargeSession, fieldName)) != int(jsonD[fieldName]) )
               ) or
               ( fieldName not in ['start_time', 'end_time', 'start_value', 'end_value', 'tariff', 'km'] and 
                 getattr(chargeSession, fieldName) != jsonD[fieldName] and 
@@ -1364,13 +1367,22 @@ def charge_session(id:int=None):
                     setattr(chargeSession, fieldName, chargeSession.date_str_to_datetime(jsonD[fieldName]))
                 except ValueError as ve:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
-            elif fieldName in ['start_value', 'end_value', 'tariff', 'km']:
+            elif fieldName in ['start_value', 'end_value', 'tariff']:
                 if fieldName in fieldValidation and not re.match(fieldValidation[fieldName], jsonD[fieldName]):
                     # Not valid
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
                 # float
                 try:
                     setattr(chargeSession, fieldName, float(jsonD[fieldName]) if jsonD[fieldName] != '' else None)
+                except ValueError as ve:
+                    return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field type error ({})'.format(fieldName) })
+            elif fieldName in ['km']:
+                if fieldName in fieldValidation and not re.match(fieldValidation[fieldName], jsonD[fieldName]):
+                    # Not valid
+                    return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field format error ({})'.format(fieldName) })
+                # float
+                try:
+                    setattr(chargeSession, fieldName, int(jsonD[fieldName]) if jsonD[fieldName] != '' else None)
                 except ValueError as ve:
                     return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Field type error ({})'.format(fieldName) })
             elif fieldName in ['trigger']:
@@ -1522,7 +1534,9 @@ def rfid_tokens(token=None):
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
             )
-        rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
+
+        # TODO Add vehicle api token information
+
         rfid_change_form = RfidChangeForm()
         flaskRoutesLogger.debug('CSRF Token: {}'.format(rfid_change_form.csrf_token.current_token) )
         if (request.method == 'DELETE'):
@@ -1530,61 +1544,62 @@ def rfid_tokens(token=None):
             abort(405)
 
         if (request.method == 'POST'):
-            # Update for specific token
-            if rfid_change_form.validate_on_submit():
-                # rfid - given
-                rfid_model.enabled = rfid_change_form.enabled.data
-                # created_at - updated by the system
-                # last_used_at - updated by the system
-                rfid_model.name = rfid_change_form.name.data
-                rfid_model.vehicle_make = rfid_change_form.vehicle_make.data
-                rfid_model.vehicle_model = rfid_change_form.vehicle_model.data
-                # only accept odometer if token and id
-                rfid_model.get_odometer = (rfid_change_form.get_odometer.data and 
-                                           rfid_model.hasValidToken() and 
-                                           rfid_change_form.vehicle_id.data is not None and
-                                           len(rfid_change_form.vehicle_id.data) > 0)
-                rfid_model.license_plate = rfid_change_form.license_plate.data
-                rfid_model.valid_from = rfid_change_form.valid_from.data
-                rfid_model.valid_until = rfid_change_form.valid_until.data
-                # api_access_token - updated via ajax
-                # api_token_type - updated via ajax
-                # api_created_at - updated via ajax
-                # api_expires_in - updated via ajax
-                # api_refresh_token - updated via ajax
-                rfid_model.vehicle_name = None if rfid_change_form.vehicle_name.data is None or \
-                                                  len(rfid_change_form.vehicle_name.data) == 0 \
-                                               else rfid_change_form.vehicle_name.data
-                rfid_model.vehicle_id = None if rfid_change_form.vehicle_id.data is None or \
-                                                len(rfid_change_form.vehicle_id.data) == 0 \
-                                             else rfid_change_form.vehicle_id.data
-                rfid_model.vehicle_vin = None if rfid_change_form.vehicle_vin.data is None or \
-                                                 len(rfid_change_form.vehicle_vin.data) == 0 \
-                                              else rfid_change_form.vehicle_vin.data
-                rfid_model.save()
-                # Return to the rfid tokens page
-                return redirect(url_for('flaskRoutes.rfid_tokens', req_format='html', token=None))
-            # What went wrong? message!
-            return render_template("token.html",
-                    rfid_model=rfid_model,
-                    form=rfid_change_form,
-                    oppleoconfig=oppleoConfig,
-                    errorlist=rfid_change_form.translateErrors(RfidChangeForm.DUTCH),
-                    changelog=changeLog
-                )        
+            # Not allowed
+            abort(405)
+ 
+
+        vehicle_list = []
+        vApi = VehicleApi(rfid_model=rfid_model)
+        account_linked=vApi.isAuthorized()
+        if vApi.isAuthorized():
+            vehicle_list=vApi.getVehicleList()
         return render_template("token.html",
                     rfid_model=rfid_model,
+                    account_linked=account_linked,
+                    vehicle_list=map(json.dumps, vehicle_list),
                     form=rfid_change_form,
                     oppleoconfig=oppleoConfig,
                     changelog=changeLog
-                )       
-    # JSON 
-    if (request.method == 'DELETE'):
-        if (token == None):
-            # Not found
-            abort(HTTP_CODE_404_NOT_FOUND)
+                )
+
+
+    if (token is None and request.method != 'GET'):
+        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'reason' : 'No token id (RFID)' })
+
+    rfid_model = None
+    if (token is not None):
         # Specific token
         rfid_model = RfidModel().get_one(token)
+        if (rfid_model is None):
+            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'reason' : 'Token id (RFID) not found' })
+
+    # JSON 
+    if (request.method == 'GET'):
+        # Check if token exist, if not rfid is None
+        if (rfid_model is None):
+            rfid_list = []
+            rfid_models = RfidModel().get_all()
+            for rfid_model in rfid_models:
+
+                # TODO Clean expired vehicle api tokens
+
+                entry = rfid_model.to_str()
+                # Add wether token has charge sessions
+                entry['chargeSessions'] = ChargeSessionModel.get_charge_session_count_for_rfid(rfid_model.rfid)
+                entry['get_odometer'] = True if rfid_model.get_odometer else False
+                vApi = VehicleApi(rfid_model=rfid_model)
+                entry['make_api_authorized'] = vApi.isAuthorized()
+                rfid_list.append(entry)
+            return jsonify(rfid_list)
+        # Specific token
+
+        # TODO Clean expired vehicle api tokens
+
+        return jsonify(rfid_model.to_str())
+
+
+    # JSON 
+    if (request.method == 'DELETE'):
         # Only allow deletion if token has no charge sessions
         charge_sessions_for_rfid = ChargeSessionModel.get_charge_session_count_for_rfid(rfid_model.rfid)
         if charge_sessions_for_rfid > 0:
@@ -1598,38 +1613,90 @@ def rfid_tokens(token=None):
         # 204 leads to no data in the response
         return json.dumps({'success': True, 'token': token, 'status': HTTP_CODE_200_OK}), HTTP_CODE_200_OK, {'ContentType':'application/json'} 
 
-    # JSON 
-    if (request.method == 'GET'):
-        # Check if token exist, if not rfid is None
-        if (token == None):
-            rfid_list = []
-            rfid_models = RfidModel().get_all()
-            for rfid_model in rfid_models:
-                rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
-                entry = rfid_model.to_str()
-                # Add wether token has charge sessions
-                entry['chargeSessions'] = ChargeSessionModel.get_charge_session_count_for_rfid(rfid_model.rfid)
-                rfid_list.append(entry)
-            return jsonify(rfid_list)
-        # Specific token
-        rfid_model = RfidModel().get_one(token)    
-        if (rfid_model == None):
-            return jsonify({})
-        rfid_model.cleanupOldOAuthToken()    # Remove any expired OAuth token info
-        return jsonify(rfid_model.to_str())
+
+    if (request.method == 'POST'):
+        # Update for specific token
+
+        result = { 'rfid' : token }
+        # rfid - in url
+        if request.json['rfid'] is None or not isinstance(request.json['rfid'], str) or request.json['rfid'] != token:
+            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'reason' : 'Token id (RFID) does not match' })
+
+        if 'name' in request.json and request.json['name'] is not None and isinstance(request.json['name'], str):
+            rfid_model.name = request.json['name']
+            result['name'] = rfid_model.name
+
+        if 'enabled' in request.json and request.json['enabled'] is not None and isinstance(request.json['enabled'], bool):
+            rfid_model.enabled = request.json['enabled']
+            result['enabled'] = rfid_model.enabled
+
+        if 'valid_from' in request.json and request.json['valid_from'] is not None and isinstance(request.json['valid_from'], str):
+            try:
+                if len(request.json['valid_from']) > 0:
+                    rfid_model.valid_from = datetime.strptime(request.json['valid_from'], '%d %B %Y')
+                    result['valid_from'] = rfid_model.valid_from.strftime('%d %B %Y')
+                else:
+                    rfid_model.valid_from = None
+                    result['valid_from'] = None
+            except Exception as e:
+                pass
+        if 'valid_until' in request.json and request.json['valid_until'] is not None and isinstance(request.json['valid_until'], str):
+            try:
+                if len(request.json['valid_until']) > 0:
+                    rfid_model.valid_until = datetime.strptime(request.json['valid_until'], '%d %B %Y')
+                    result['valid_until'] = rfid_model.valid_until.strftime('%d %B %Y')
+                else:
+                    rfid_model.valid_until = None
+                    result['valid_until'] = None
+            except Exception as e:
+                pass
+
+        if 'vehicle_make' in request.json and request.json['vehicle_make'] is not None and isinstance(request.json['vehicle_make'], str):
+            rfid_model.vehicle_make = request.json['vehicle_make']
+            result['vehicle_make'] = rfid_model.vehicle_make
+
+        if 'vehicle_model' in request.json and request.json['vehicle_model'] is not None and isinstance(request.json['vehicle_model'], str):
+            rfid_model.vehicle_model = request.json['vehicle_model']
+            result['vehicle_model'] = rfid_model.vehicle_model
+        if 'license_plate' in request.json and request.json['license_plate'] is not None and isinstance(request.json['license_plate'], str):
+            rfid_model.license_plate = request.json['license_plate']
+            result['license_plate'] = rfid_model.license_plate
+        if 'vehicle_vin' in request.json and request.json['vehicle_vin'] is not None and isinstance(request.json['vehicle_vin'], str):
+            rfid_model.vehicle_vin = request.json['vehicle_vin']
+            result['vehicle_vin'] = rfid_model.vehicle_vin
+        if 'vehicle_name' in request.json and request.json['vehicle_name'] is not None and isinstance(request.json['vehicle_name'], str):
+            rfid_model.vehicle_name = request.json['vehicle_name']
+            result['vehicle_name'] = rfid_model.vehicle_name
+
+        if 'get_odometer' in request.json and request.json['get_odometer'] is not None and isinstance(request.json['get_odometer'], bool):
+            rfid_model.get_odometer = request.json['get_odometer']
+            result['get_odometer'] = rfid_model.get_odometer
+
+        rfid_model.save()
+
+        return jsonify({
+            'status' : HTTP_CODE_200_OK, 
+            'result' : result
+            })
 
     # Not allowed
     abort(405)
 
 
+"""
+    Currently this method is not working.
+    Tesla is only implemented vehicle api, and it doesnot support OAuth2 token generation from username/password
+    without head (browser)
+    TODO: debug when working
+"""
 # Always returns json
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth", methods=["POST"])
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/GenerateOAuth/", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/GenerateOAuth", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/GenerateOAuth/", methods=["POST"])
 @authenticated_resource  # CSRF Token is valid
-def TeslaApi_GenerateOAuth(token=None):
+def VehicleApi_GenerateOAuth(token=None):
     global flaskRoutesLogger
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth {}'.format(token, request.method))
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/GenerateOAuth method: {} token: {}'.format(token, request.method, token))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/GenerateOAuth {}'.format(token, request.method))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/GenerateOAuth method: {} token: {}'.format(token, request.method, token))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -1638,36 +1705,52 @@ def TeslaApi_GenerateOAuth(token=None):
             'reason': 'No known RFID token'
             })
 
+    """
+        TODO
+        ! This is not working at the time
+    """
+
     # Update for specific token
-    tesla_api = TeslaAPI()
-    if tesla_api.authenticate_v3(
-        email=request.form['oauth_email'], 
-        password=request.form['oauth_password']):
+    vApi = VehicleApi()
+    rfid_model.api_account=request.form['oauth_email']
+    vApi.authorizeByUsernamePassword(rfid_model=rfid_model, user=request.form['oauth_email'], password=request.form['oauth_password'])
+
+    if vApi.isAuthorized():
         # Obtained token
-        UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(tesla_api, rfid_model)
         rfid_model.save()
         return jsonify({
             'status': HTTP_CODE_200_OK, 
-            'token_type': rfid_model.api_token_type, 
-            'created_at': rfid_model.api_created_at, 
-            'expires_in': rfid_model.api_expires_in,
-            'vehicles' : tesla_api.getVehicleNameIdList()
+            'vehicles' : vApi.getVehicleList()
             })
     else:
         # Nope, no token
+        rfid_model.api_account=None
+        rfid_model.vehicle_name=None
         return jsonify({
             'status': HTTP_CODE_401_UNAUTHORIZED,  
             'reason': 'Not authorized'
             })
 
+"""
+    TODO
+    Current implementation has Tesla make only
+    Current tesla api does not support refreshing token
+"""
 # Always returns json
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth", methods=["POST"])
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RefreshOAuth/", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/RefreshOAuth", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/RefreshOAuth/", methods=["POST"])
 @authenticated_resource
-def TeslaApi_RefreshOAuth(token=None):
+def VehicleApi_RefreshOAuth(token=None):
     global flaskRoutesLogger
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth {}'.format(token, request.method))
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RefreshOAuth method: {} token: {}'.format(token, request.method, token))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/RefreshOAuth {}'.format(token, request.method))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/RefreshOAuth method: {} token: {}'.format(token, request.method, token))
+
+    return jsonify({
+        'status': HTTP_CODE_404_NOT_FOUND, 
+        'reason': 'Not supported'
+        })
+
+
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -1676,9 +1759,8 @@ def TeslaApi_RefreshOAuth(token=None):
             'reason': 'No known RFID token'
             })
     # Update for specific token
-    tesla_api = TeslaAPI()
-    UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model, tesla_api)
-    if not tesla_api.refreshToken():
+    vApi = VehicleApi()
+    if not vApi.refreshToken():
         return jsonify({
             'status': HTTP_CODE_500_INTERNAL_SERVER_ERROR,
             'reason': 'Refresh failed'
@@ -1689,20 +1771,133 @@ def TeslaApi_RefreshOAuth(token=None):
 
     return jsonify({
         'status': HTTP_CODE_200_OK, 
-        'token_type': rfid_model.api_token_type, 
-        'created_at': rfid_model.api_created_at, 
-        'expires_in': rfid_model.api_expires_in,
-        'vehicles' : tesla_api.getVehicleNameIdList()
+        'vehicles' : vApi.getVehicleList()
         })
 
+
+"""
+    Specific TeslaPy implementation to generate the login URL
+"""
 # Always returns json
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth", methods=["POST"])
-@flaskRoutes.route("/rfid_tokens/<path:token>/TeslaAPI/RevokeOAuth/", methods=["POST"])
+@flaskRoutes.route("/VehicleApi/AuthURL", methods=["GET"])
+@flaskRoutes.route("/VehicleApi/AuthURL/", methods=["GET"])
 @authenticated_resource
-def TeslaApi_RevokeOAuth(token=None):
+def VehicleApi_OAuthURL(token=None):
     global flaskRoutesLogger
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth {}'.format(token, request.method))
-    flaskRoutesLogger.debug('/rfid_tokens/{}/TeslaAPI/RevokeOAuth method: {} token: {}'.format(token, request.method, token))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/OAuthURL {}'.format(token, request.method))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/OAuthURL method: {} token: {}'.format(token, request.method, token))
+
+    account = request.args.get('account', default=None, type=str)
+    vehicle_make = request.args.get('vehicle_make', default=None, type=str)
+    logout = request.args.get('logout', default=None, type=str)
+    if account is None:
+        return jsonify({
+            'status': HTTP_CODE_500_INTERNAL_SERVER_ERROR,
+            'reason': 'Missing account parameter'
+            })
+
+    vApi = VehicleApi(account)
+    return jsonify({
+        'status': HTTP_CODE_200_OK, 
+        'direction' : 'login' if logout is None else 'logout',
+        'url': vApi.getAuthorizationUrl(account=account, vehicle_make=vehicle_make) if logout is None else vApi.logout(account=account, vehicle_make=vehicle_make)
+        })
+
+
+"""
+    {
+        "vehicle_make"  : "Tesla",             # make identifying the api
+        "account"       : "me@world.com",      # email address connected to the vehicle manufacturer account
+        "token"         : "123"                 # The refresh token, or the URL after the browser login (Tesla)
+    }
+"""
+# Always returns json
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/ValidateTokenOrUrl", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/ValidateTokenOrUrl/", methods=["POST"])
+@authenticated_resource  # CSRF Token is valid
+def ValidateTokenOrUrl(token=None):
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/ValidateTokenOrUrl {}'.format(token, request.method))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/ValidateTokenOrUrl method: {} token: {}'.format(token, request.method, token))
+
+    jsonRequested = ('CONTENT_TYPE' in request.environ and 
+                     request.environ['CONTENT_TYPE'].lower() == 'application/json')
+
+    rfid_model = RfidModel().get_one(token)
+    if ((token == None) or (rfid_model == None)):
+        # Nope, no token
+        return jsonify({
+            'status': HTTP_CODE_404_NOT_FOUND, 
+            'reason': 'No known RFID token'
+            })
+
+    if request.json['account'] is None or request.json['token'] is None:
+        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'session': -1 if id is None else id, 'reason' : 'Missing parameter (account or token)' })
+
+    # Update for specific token
+    vApi = VehicleApi(rfid_model=rfid_model)
+    authorized = False
+    if validators.url(request.json['token']):
+        # URL
+        authorized = vApi.authorizeByUrl(vehicle_make=request.json['vehicle_make'], account=request.json['account'], url=request.json['token'])
+    else:
+        # refresh token
+        authorized = vApi.authorizeByRefreshToken(vehicle_make=request.json['vehicle_make'], account=request.json['account'], refresh_token=request.json['token'])
+    if authorized:
+        # Obtained token
+        rfid_model.api_account=request.json['account']
+        rfid_model.save()
+        return jsonify({
+            'status': HTTP_CODE_200_OK, 
+            'vehicles' : vApi.getVehicleList()
+            })
+    else:
+        # Nope, no token
+        rfid_model.api_account=None
+        return jsonify({
+            'status': HTTP_CODE_401_UNAUTHORIZED,  
+            'reason': 'Not authorized'
+            })
+
+
+
+# Always returns json
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/Unlink", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/Unlink/", methods=["POST"])
+@authenticated_resource  # CSRF Token is valid
+def UnlinkVehicleApi(token=None):
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/Unlink {}'.format(token, request.method))
+    rfid_model = RfidModel().get_one(token)
+    if ((token == None) or (rfid_model == None)):
+        # Nope, no token
+        return jsonify({
+            'status': HTTP_CODE_404_NOT_FOUND, 
+            'reason': 'No known RFID token'
+            })
+
+    # Update for specific token
+    vApi = VehicleApi(rfid_model=rfid_model)
+    vApi.logout()
+    vehicle_make = rfid_model.vehicle_make
+    account = rfid_model.api_account
+    rfid_model.cleanupVehicleInfo()
+    return jsonify({
+            'status'        : HTTP_CODE_200_OK, 
+            'action'        : 'unlinkVehicleApi',
+            'vehicle_make'  : vehicle_make,
+            'account'       : account
+            })
+
+
+# Always returns json
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/RevokeOAuth", methods=["POST"])
+@flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/RevokeOAuth/", methods=["POST"])
+@authenticated_resource
+def VehicleApi_RevokeOAuth(token=None):
+    global flaskRoutesLogger
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/RevokeOAuth {}'.format(token, request.method))
+    flaskRoutesLogger.debug('/rfid_tokens/{}/VehicleApi/RevokeOAuth method: {} token: {}'.format(token, request.method, token))
     rfid_model = RfidModel().get_one(token)
     if ((token == None) or (rfid_model == None)):
         # Nope, no token
@@ -1711,15 +1906,12 @@ def TeslaApi_RevokeOAuth(token=None):
             'reason': 'No known RFID token'
             })
     # Update for specific token
-    tesla_api = TeslaAPI()
-    UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model, tesla_api)
-    if not tesla_api.revokeToken():
-        return jsonify({
-            'status': HTTP_CODE_500_INTERNAL_SERVER_ERROR,
-            'reason': 'Revoke failed'
-            })
-    # Revoke succeeded, remove token
-    UpdateOdometerTeslaUtil.clean_token_rfid_model(rfid_model)
+    vApi = VehicleApi(rfid_model=rfid_model)
+    vApi.logout()
+
+    rfid_model.api_account = None
+    rfid_model.get_odometer = None
+    rfid_model.vehicle_name = None
     rfid_model.vehicle_vin = None
     rfid_model.save()
 

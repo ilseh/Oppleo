@@ -5,12 +5,10 @@ import re
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
-from nl.oppleo.api.TeslaApi import TeslaAPI
-from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
-from nl.oppleo.utils.TeslaApiFormatters import formatChargeState, formatVehicle
+from nl.oppleo.api.VehicleApi import VehicleApi
 from nl.oppleo.models.RfidModel import RfidModel
 
-from nl.oppleo.utils.TokenMediator import tokenMediator
+#from nl.oppleo.utils.TokenMediator import tokenMediator
 
 HTTP_CODE_200_OK                    = 200
 HTTP_CODE_202_ACCEPTED              = 202  # Accepted, processing pending
@@ -73,8 +71,7 @@ class VehicleChargeStatusMonitorThread(object):
         This Thread is started when a session is opened (EVSE Enabled), 
         so in this Thread there is no check for an active charge session!
         The RFID Tag is set prior to starting the Thread
-        - Creates TeslaAPI 
-        - If there is a token, load Token from RFID Tag
+        - Creates VehicleApi 
         - If the number of Online clients present in list(oppleoConfig.connectedClients) 
             - Get charge state
         - Interval 60 sec (ophalen info kost ~10 sec met TeslaAPI)
@@ -85,7 +82,6 @@ class VehicleChargeStatusMonitorThread(object):
         
         self.__logger.debug('monitor()')
 
-        teslaApi = TeslaAPI()
 
         if self.__rfidTag is None:
             self.__logger.error('monitor() Cannot run Thread for RFID None!')
@@ -107,99 +103,54 @@ class VehicleChargeStatusMonitorThread(object):
                     self.__logger.debug("monitor() connected clients ({})".format(len(oppleoConfig.connectedClients)))
                     # See if something changes (could be added or retracted)
 
-                    if rfidData is None or rfidData.api_access_token is None:
+                    if rfidData is None:
                         # No token? Try once more
                         rfidData = RfidModel.get_one(self.__rfidTag)
-                        if rfidData is None or rfidData.api_access_token is None:
+                        if rfidData is None:
                             # Still no token, next While iteration
                             self.__logger.debug("monitor() no token, continue to next While iteration")
                             continue
 
-                    # Token, checkout
-                    tKey = tokenMediator.checkout(token=rfidData.api_access_token, ref='VehicleStatusMonitorThread: '+rfidData.rfid, wait=True)
-                    self.__logger.debug("monitor() tokenMediator.checkout returned key {}".format(tKey))
-
-                    if tKey is None:
-                        # Checkout failed? Token must not be valid anymore
-                        if not tokenMediator.validate(token=rfidData.api_access_token):
-                            self.__logger.debug("monitor() token not valid, continue to next While iteration")
-                            # Make sure we reload the RFID tag data next loop
-                            rfidData = None
-                            with self.__threadLock:
-                                self.__requestChargeStatusNow = False
-                            continue
-
-                    UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfidData, teslaApi)
-
-                    if not teslaApi.hasValidToken():
-                        # Not valid, invalidate and continue
-                        tokenMediator.invalidate(token=rfidData.api_access_token, key=tKey, ref='VehicleStatusMonitorThread: '+rfidData.rfid,)
-                        # Make sure we reload the RFID tag data next loop
-                        rfidData = None
-                        if self.__requestVehicleWakeupNow:
-                            self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_424_FAILED_DEPENDENCY, msg='No valid token')
+                    vApi = VehicleApi(rfid_model=rfidData)
+                    if not vApi.isAuthorized():
+                        # no token, next While iteration
+                        self.__logger.debug("monitor() VehicleApi not authorized, continue to next While iteration")
                         continue
 
-                    self.__logger.debug("monitor() valid token")
-
-                    # Refresh if required
-                    if teslaApi.refreshTokenIfRequired():
-                        # Invalidate the old token
-                        tokenMediator.invalidate(token=rfidData.api_access_token, key=tKey, ref='VehicleStatusMonitorThread: '+rfidData.rfid)
-                        UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(teslaApi, rfidData)
-                        # Checkout the new token
-                        tKey = tokenMediator.checkout(token=rfidData.api_access_token, ref='VehicleStatusMonitorThread: '+rfidData.rfid, wait=True)
-                        rfidData.save()
-
-                    self.__logger.debug("monitor() [1] tKey={}".format(tKey))
-
                     # Force update, for now do not wakeup
-                    # TODO - add wakeup as parameter
-                    chargeState = teslaApi.getChargeStateWithId(id=rfidData.vehicle_id, 
-                                                                update=True, 
-                                                                wakeUpWhenSleeping=oppleoConfig.wakeupVehicleOnDataRequest or 
-                                                                                   self.__requestVehicleWakeupNow
-                                                               )
-
+                    chargeState = vApi.getChargeState(wake_up=oppleoConfig.wakeupVehicleOnDataRequest or 
+                                                              self.__requestVehicleWakeupNow
+                                                     )
                     if self.__requestVehicleWakeupNow:
                         self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_200_OK if chargeState is not None else HTTP_CODE_424_FAILED_DEPENDENCY,
                                                        msg='Vehicle awake' if chargeState is not None else 'Could not wakeup vehicle'
                                                       )
 
-                    self.__logger.debug("monitor() [2] tKey={}".format(tKey))
+                    # Did the token still work?
+                    if chargeState is None:
+                        # Nah, report
+                        self.__logger.warn('Could not obtain charge state.')
+                        # Skip to next cycle
+                        continue
+                    self.__logger.debug("monitor() chargeState (not None)")
 
-                    # Release the token
-                    tokenMediator.release(token=rfidData.api_access_token, key=tKey)
-
-                    if chargeState is not None and oppleoConfig.vehicleDataOnDashboard:
-                        self.__logger.debug("monitor() chargeState (not None)")
+                    if oppleoConfig.vehicleDataOnDashboard:
                         # Send change notification
                         OutboundEvent.triggerEvent(
                             event           = 'vehicle_charge_status_update', 
                             id              = oppleoConfig.chargerName,
-                            data            = { 'chargeState'            : formatChargeState(chargeState),
-                                                'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(rfidData.vehicle_id)),
+                            data            = { 'chargeState'            : chargeState,
+                                                'vehicle'                : vApi.getVehicle(),
                                                 'vehicleMonitorInterval' : self.__vehicleMonitorInterval
                             },
                             namespace       = '/charge_session',
                             public          = False
                             )
                         # len(oppleoConfig.connectedClients) == 0
-                    else:
-                        self.__logger.debug('monitor() - could not get charge state (None)')
-                        if teslaApi.vehicleWithIdIsAsleep(id=rfidData.vehicle_id):
-                            # Send change notification - vehicle asleep
-                            OutboundEvent.triggerEvent(
-                                event       = 'vehicle_charge_status_update', 
-                                id          = oppleoConfig.chargerName,
-                                data        = { 'chargeState'            : formatChargeState(chargeState),
-                                                                           # No need to update vehicle information, done when requesting charge state
-                                                'vehicle'                : formatVehicle(teslaApi.getVehicleWithId(id=rfidData.vehicle_id, update=False)),
-                                                'vehicleMonitorInterval' : self.__vehicleMonitorInterval
-                                },
-                                namespace   = '/charge_session',
-                                public      = False
-                                )
+                    """
+                        TODO: verify if ok when vehicle is asleep?
+                    """
+
                 else: 
                     # len(oppleoConfig.connectedClients) == 0
                     self.__logger.debug('monitor() no connectedClients to report chargeState to or vehicle status display not enabled. Skip and go directly to sleep.')

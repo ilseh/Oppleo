@@ -58,8 +58,10 @@ class PushMessage(object):
                 msg['priority'] = priority
 
             PushMessage.logger.debug(f'Submit msg {msg} to MQTT topic {topic} ...')
-            oppleoMqttClient.publish(topic=topic, message=msg)
-
+            try:
+                oppleoMqttClient.publish(topic=topic, message=msg)
+            except Exception as e:
+                PushMessage.logger.error('MQTT server enabled but not reachable! {}'.format(str(e)))
 
 
 

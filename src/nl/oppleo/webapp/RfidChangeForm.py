@@ -32,7 +32,6 @@ class RfidChangeForm(FlaskForm):
     oauth_password = StringField('password', validators=[Optional()])
 
     vehicle_name = StringField('Naam')
-    vehicle_id = StringField('ID')
     vehicle_vin = StringField('VIN')
 
     submit = SubmitField('Sign In')

@@ -1,4 +1,5 @@
 from datetime import datetime
+import imp
 import logging
 import json
 
@@ -33,22 +34,18 @@ class RfidModel(Base):
     created_at = Column(DateTime)
     last_used_at = Column(DateTime)
     name = Column(String(100))
-    vehicle_make = Column(String(100))
-    vehicle_model = Column(String(100))
-    get_odometer = Column(Boolean)
-    license_plate = Column(String(20))
     valid_from = Column(DateTime)
     valid_until = Column(DateTime)
 
-    api_access_token = Column(String(50000))
-    api_token_type = Column(String(100))
-    api_created_at = Column(String(100))
-    api_expires_in = Column(String(100))
-    api_refresh_token = Column(String(50000))
-
+    vehicle_make = Column(String(100))
+    vehicle_model = Column(String(100))
+    license_plate = Column(String(20))
     vehicle_name = Column(String(100))
-    vehicle_id = Column(String(100))
     vehicle_vin = Column(String(100))
+
+    api_account = Column(String(256))
+    get_odometer = Column(Boolean)
+
 
     def __init__(self):
         self.__logger = logging.getLogger('nl.oppleo.models.RfidModel')
@@ -69,21 +66,21 @@ class RfidModel(Base):
         self.modified_at = data.get('last_used_at', datetime.now())
 
 
-    def cleanupOldOAuthToken(self):
-        #self.__logger.debug("cleanupOldOAuthToken()")
-        if (self.api_access_token is None):
-            self.__logger.debug("Token is None")
-            return
-        date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
-        today = date.today()
-        if (date < today):
-            self.__logger.debug("Token is expired. Deleting.")
-            self.api_access_token = None
-            self.api_created_at = None
-            self.api_expires_in = None
-            self.api_token_type = None
-            self.api_refresh_token = None
-            self.save()
+    """
+        Call when vehicle api connection is broken
+    """
+    def cleanupVehicleInfo(self):
+        self.__logger.debug("cleanupVehicleInfo()")
+        self.api_account = None
+        self.get_odometer = None
+        """
+            Keep
+            - make
+            - model
+            - vin
+            - license plate
+        """
+        self.save()
 
 
     def save(self):
@@ -126,16 +123,16 @@ class RfidModel(Base):
 
     def hasValidToken(self):
         self.__logger.debug("hasValidToken()")
-        if (self.api_access_token is None):
-            self.__logger.debug("Token is None")
-            return False
-        date = datetime.fromtimestamp(int(self.api_created_at) + int(self.api_expires_in)) # / 1e3
-        today = date.today()
-        if (date > today):
-            self.__logger.debug("Token is still valid")
+        from nl.oppleo.api.VehicleApi import VehicleApi
+        try:
+            vApi = VehicleApi(rfid_model=self)
+        except Exception as e:
+            # TODO: capture unauthorized 
+            pass
+        if vApi.isAuthorized():
             return True
-        self.__logger.debug("Token has expired")
-        self.cleanupOldOAuthToken()
+        # Not (no longer) authorized
+        self.cleanupVehicleInfo()
         return False
 
 
@@ -178,23 +175,36 @@ class RfidModel(Base):
         return ({
                 "rfid": str(self.rfid),
                 "enabled": self.enabled,
-                "created_at": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None),
-                "last_used_at": (str(self.last_used_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.last_used_at is not None else None),
-                "name": str(self.name),
-                "vehicle_make": str(self.vehicle_make),
-                "vehicle_model": str(self.vehicle_model),
+                "created_at": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else ''),
+                "last_used_at": (str(self.last_used_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.last_used_at is not None else ''),
+                "name": '' if self.name is None else str(self.name),
+                "vehicle_make": '' if self.vehicle_make is None else str(self.vehicle_make),
+                "vehicle_model": '' if self.vehicle_model is None else str(self.vehicle_model),
                 "get_odometer": str(self.get_odometer),
-                "license_plate": str(self.license_plate),
+                "license_plate": '' if self.license_plate is None else str(self.license_plate),
                 "valid_from": (str(self.valid_from.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_from is not None else None),
                 "valid_until": (str(self.valid_until.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_until is not None else None),
-                "api_access_token": str(self.api_access_token),
-                "api_token_type": str(self.api_token_type),
-                "api_created_at": str(self.api_created_at),
-                "api_expires_in": str(self.api_expires_in),
-                "api_refresh_token": str(self.api_refresh_token),
-                "vehicle_name": str(self.vehicle_name),
-                "vehicle_id": str(self.vehicle_id),
-                "vehicle_vin": str(self.vehicle_vin)
+                "api_account": '' if self.api_account is None else str(self.api_account),
+                "vehicle_name": '' if self.vehicle_name is None else str(self.vehicle_name),
+                "vehicle_vin": '' if self.vehicle_vin is None else str(self.vehicle_vin)
+            })
+
+    def to_dict(self):
+        return ({
+                "rfid": self.rfid,
+                "enabled": self.enabled,
+                "created_at": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else ''),
+                "last_used_at": (str(self.last_used_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.last_used_at is not None else None),
+                "name": '' if self.name is None else str(self.name),
+                "vehicle_make": '' if self.vehicle_make is None else str(self.vehicle_make),
+                "vehicle_model": '' if self.vehicle_model is None else str(self.vehicle_model),
+                "get_odometer": self.get_odometer,
+                "license_plate": '' if self.license_plate is None else str(self.license_plate),
+                "valid_from": (str(self.valid_from.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_from is not None else None),
+                "valid_until": (str(self.valid_until.strftime("%d/%m/%Y, %H:%M:%S")) if self.valid_until is not None else None),
+                "api_account": '' if self.api_account is None else str(self.api_account),
+                "vehicle_name": '' if self.vehicle_name is None else str(self.vehicle_name),
+                "vehicle_vin": '' if self.vehicle_vin is None else str(self.vehicle_vin)
             })
 
     """
@@ -228,12 +238,7 @@ class RfidSchema(Schema):
     license_plate = fields.Str(required=True)
     valid_from = fields.DateTime(dump_only=True)
     valid_until = fields.DateTime(dump_only=True)
-    api_access_token = fields.Str(required=True)
-    api_token_type = fields.Str(required=True)
-    api_created_at = fields.Str(required=True)
-    api_expires_in = fields.Str(required=True)
-    api_refresh_token = fields.Str(required=True)
+    api_account = fields.Str(required=True)
     vehicle_name = fields.Str(required=True)
-    vehicle_id = fields.Str(required=True)
     vehicle_vin = fields.Str(required=True)
 

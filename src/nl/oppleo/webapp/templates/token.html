@@ -26,8 +26,89 @@
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/2.3.1/socket.io.slim.js') }}"></script>
 
+  <style>
+    .form-control {
+      color: #ffffff !important;
+    }
+    .form-control:disabled, .form-control[readonly] {
+      color: #98a6ad !important;
+      font-style: italic;
+    }
+    .btn-dark-disabled {
+      color: #98a6ad !important;
+      border: 0.1px #4c5a67 solid;
+      font-style: italic;
+      cursor: not-allowed !important;
+    }
+    .input-group-text {
+      color: #98a6ad !important;
+      background-color: #36404a;
+      font-style: italic;
+    }
+    .text-light {
+      color: #ffffff !important;
+      font-style: normal;
+    }
+    .field-error {
+      border: 1px solid red !important;
+      color: red !important;
+    }
+  </style>
+
   <script>
-    var tokenPresent = {% if rfid_model["api_access_token"] is not none %}true{% else %}false{% endif %}
+
+    implementedVehicleMakeApiList = ['Tesla']
+    fieldNames = ['vehicle_make', 'vehicle_model', 'license_plate', 'vehicle_vin', 'vehicle_name']
+    fieldOverrideLinked = {
+      "Tesla": {
+        readonly: {
+          // Is this field with linked account readonly?
+          vehicle: false,
+          vehicle_make: true,
+          vehicle_model: false,
+          license_plate: false,
+          vehicle_vin: true,
+          vehicle_name: true,
+          get_odometer: false
+        },
+        reset: {
+          // Reset value when read-only?
+          vehicle: false,
+          vehicle_make: false,
+          vehicle_model: false,
+          license_plate: false,
+          vehicle_vin: false,
+          vehicle_name: false,
+          get_odometer: true
+        }
+      }
+    }
+    fieldOverrideUnlinked = {
+      readonly: {
+        // Is this field without linked account readonly?
+        vehicle: true,
+        vehicle_make: false,
+        vehicle_model: false,
+        license_plate: false,
+        vehicle_vin: false,
+        vehicle_name: false,
+        get_odometer: true
+      },
+      reset: {
+        // Reset value when read-only?
+        vehicle: false,
+        vehicle_make: false,
+        vehicle_model: false,
+        license_plate: false,
+        vehicle_vin: false,
+        vehicle_name: false,
+        get_odometer: true
+      }
+    }
+    savedMake = "{{ rfid_model.vehicle_make }}"
+    accountLinked = {% if account_linked %}true{% else %}false{% endif %}
+    vehicleList = [ {% for vehicle in vehicle_list %}{{ vehicle|safe }}{% endfor %} ]
+
     function timestamp() {
       d = new Date();
       return (d.getFullYear() + "-" + 
@@ -39,224 +120,6 @@
              (d.getMilliseconds()<100?'0':'') + (d.getMilliseconds()<10?'0':'') + d.getMilliseconds()
       )
     }
-    const GENERATE = 1
-    const REFRESH = 2
-    const REVOKE = 3
-    var vehicleList = []
-    function getRefreshOrRevokeOAuthToken(cnf = GENERATE) {
-      console.log(timestamp() + ' getRefreshOrRevokeOAuthToken('+cnf+')')
-      // Start spinner
-      $('.spinner').show()
-      var url
-      var data
-      switch(cnf) {
-        case GENERATE:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/GenerateOAuth/'
-          data = {
-            csrf_token    : '{{ csrf_token() }}',
-            oauth_email   : $('input#oauth_email').val(), 
-            oauth_password: $('input#oauth_password').val() 
-          }
-          break
-        case REFRESH:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RefreshOAuth/'
-          data = {
-            csrf_token    : '{{ csrf_token() }}' 
-          }
-          break
-        case REVOKE:
-          url = '/rfid_tokens/{{ rfid_model["rfid"] }}/TeslaAPI/RevokeOAuth/'
-          data = {
-            csrf_token    : '{{ csrf_token() }}' 
-          }
-          break
-      }
-      $.ajax({
-        type		    : 'POST',
-        url			    : url,
-        dataType	  : 'json',
-        encode		  : true,
-        headers     : { 'ignore-login-next': 'true' },
-        data        : data
-/*        data      : {
-          csrf_token    : '{{ csrf_token() }}',
-          oauth_email   : $('input#oauth_email').val(), 
-          oauth_password: $('input#oauth_password').val() 
-        }
-*/
-      }) // using the done promise callback
-      .done(function(res) {
-        // log data to the console so we can see
-        console.log(res)
-        switch(res.status) {
-          case 200: // Ok
-            autoHideNotify('success', 'top-left', 'OAuth Token', 'OAuth Token wijziging succesvol uitgevoerd.')
-            // Example: OAuth token verloopt 20 February 2020, 16:55u
-            updateOAuthTokenStatus(new Date((res.created_at *1000) + (res.expires_in *1000))) // Seconds to milliseconds
-            // Add vehicle list
-            $('select#vehicle').find('option').remove().end()
-            var selectedVehicleName = $('input#vehicle_name').val()
-            var selectedVehicleVin = $('input#vehicle_vin').val()
-            var selectedVehicleInList = false
-            var selectedVehicleIndexInList = -1
-            vehicleList.length = 0
-            $.each(res.vehicles, function( index, vehicle ) {
-              $('select#vehicle').append(
-                  '<option value="' + vehicle.id + '">' + 
-                  vehicle.name + ' (VIN: ' + vehicle.vin + ')' +
-                  '</option>'
-                )
-              vehicleList.push({
-                'name': vehicle.name,
-                'id': vehicle.id,
-                'vin': vehicle.vin
-              })
-              selectedVehicleInList = selectedVehicleInList || ((vehicle.name == selectedVehicleName) && (vehicle.vin == selectedVehicleVin))
-              selectedVehicleIndexInList = ((vehicle.name == selectedVehicleName) && (vehicle.vin == selectedVehicleVin)) ? index : selectedVehicleIndexInList
-            })
-            if (!selectedVehicleInList){
-              // New values
-              $('input#vehicle_name').val(vehicleList.length > 0 ? vehicleList[0].name : '')
-              $('input#vehicle_id').val(vehicleList.length > 0 ? vehicleList[0].id : '')
-              $('input#vehicle_vin').val(vehicleList.length > 0 ? vehicleList[0].vin : '')
-            }
-            tokenPresent = (vehicleList.length != 0)
-            if (vehicleList.length == 0) {
-              $('select#vehicle').append(
-                  '<option value="None">Geen voertuigen...</option>'
-                )
-            }
-            // Select the vehicle, or the first if any
-            $('select#vehicle').prop("selectedIndex", 
-              selectedVehicleIndexInList == -1 ? 0 : selectedVehicleIndexInList
-            )
-            showHideCredentials()
-            setResetVehicleToken()
-            break
-          case 401:
-            // Not Authorized - Tesla email/pw not correct
-            autoHideNotify('warning', 'top-left', 'Autorisatie fout', 'Geen OAuth Token gegenereerd.')
-            $('span#error-msg-title').html('Autorisatie fout.')
-            $('h5#error-msg-sub').html('Tesla e-mail of wachtwoord niet correct.')
-            $('tr#error-msg-row').show().delay(5000).queue(function(n) {
-              $(this).fadeOut(); n();
-            })
-            break
-          case 404:
-            // RFID Token not found
-            autoHideNotify('error', 'top-left', '404', 'RFID token onbekend.')
-            $('span#error-msg-title').html('Fout...')
-            $('h5#error-msg-sub').html('RFID token niet bekend.')
-            $('tr#error-msg-row').show().delay(5000).queue(function(n) {
-              $(this).fadeOut(); n();
-            })
-            break
-          default:
-            // ???
-            autoHideNotify('error', 'top-left', 'Onbekende fout', 'Er is een onverwachte fout opgetreden.');
-            $('span#error-msg-title').html('Fout [' + res.status + ']')
-            $('h5#error-msg-sub').html('Onbekende fout opgetreden.')
-            $('tr#error-msg-row').show().delay(5000).queue(function(n) {
-              $(this).fadeOut(); n();
-            })
-        }
-      })
-      .fail(function(res) {
-        console.log(res)
-        $('h5#error-msg-sub').html('')
-        switch(res.status) {
-          case 400:
-            autoHideNotify('error', 'top-left', 'CSRF token ongeldig', 'CSRF token verlopen. Herlaad deze pagina en probeer het opnieuw.');
-            if (res.responseText.toLowerCase().includes('the csrf token is invalid')) {
-              $('span#error-msg-title').html('Het CSRF Token is niet geldig.')
-              $('h5#error-msg-sub').html('Ververs de pagina en probeer opnieuw.')
-            } else {
-              $('span#error-msg-title').html('400 - BAD REQUEST')
-            }
-            break
-          case 500:
-            autoHideNotify('error', 'top-left', '500', 'Internal Server Error');
-            $('span#error-msg-title').html('Internal Server Error [500]')
-            break
-          default:
-            $('span#error-msg-title').html('Failed. HTTP code [' + res.status + ']')
-            break
-        }
-        $('tr#error-msg-row').show().delay(5000).queue(function(n) {
-          $(this).fadeOut(); n();
-        })
-        /* HTTP STATUS 400 - BAD REQUEST due to CSRF token failure, responseText:
-          <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">↵
-            <title>400 Bad Request</title>↵
-            <h1>Bad Request</h1>↵
-            <p>The CSRF token is invalid.</p>↵
-        */
-      })
-      .always(function() {
-        // Remove spinner
-        $('.spinner').hide()
-      })
-    }
-
-    function showHideCredentials() {
-      if ($('input[name="get_odometer"]').prop('checked') &&
-          !tokenPresent) {
-        if (showHideCredentials.hiddenOAuthEmail != undefined) {
-          $('input#oauth_email').val(showHideCredentials.hiddenOAuthEmail)
-        }
-        $('tr#oauth_email_row').show()
-        if (showHideCredentials.hiddenOAuthPassword != undefined) {
-          $('input#oauth_password').val(showHideCredentials.hiddenOAuthPassword)
-        }
-        $('tr#oauth_password_row').show()
-        $('tr#token_button_row').fadeIn(600)
-      } else {
-        // Clean them when hidden to prevent validation errors
-        showHideCredentials.hiddenOAuthEmail = $('input#oauth_email').val()
-        $('input#oauth_email').val("")
-        $('tr#oauth_email_row').hide()
-        showHideCredentials.hiddenOAuthPassword = $('input#oauth_password').val()
-        $('input#oauth_password').val("")
-        $('tr#oauth_password_row').hide()
-        $('tr#token_button_row').hide()        
-      }
-    }
-
-    function setResetGetOdometer() {
-      if ($('input[name="vehicle_make"]').val().toLowerCase() == "tesla") {
-        $('input[name=get_odometer]').prop('disabled', false)
-        $('input[name=get_odometer]').attr('data-onstyle', "text-primary")
-        $('span#odo_1').hide(100)
-        $('span#odo_2').hide(50)
-      } else {
-        $('input#get_odometer').bootstrapToggle('off')
-        $('input#get_odometer').prop('checked', false).change()
-        $('input[name=get_odometer]').prop('disabled', true)
-        $('input[name=get_odometer]').attr('data-onstyle', "text-secondary")
-        $('span#odo_1').show(100)
-        $('span#odo_2').show(50)
-      }
-    }
-
-    // TODO: hide when there is a valid token
-    function setResetVehicleToken() {
-      if ($('input#get_odometer').prop('checked')) {
-        // Show, only if a token exists
-        if (tokenPresent) {
-          $('tr#vehicles_row').show()
-          $('tr#oauth_token_row').show()
-        } else {
-          // No active token, get one first
-          $('tr#vehicles_row').hide()
-          $('tr#oauth_token_row').hide()
-        }
-      } else {
-        // Hide when get odo disabled anyway
-        $('tr#vehicles_row').hide()
-        $('tr#oauth_token_row').hide()
-      }
-
-    }
 
     function updateOAuthTokenStatus(d) {
       // d is expiration date
@@ -267,6 +130,377 @@
         d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + 'u'
       )
     }
+
+    function showVehicleApiAuthorization( data ) {
+      // Reset fields
+      $('input#account_id').val('')
+      $('input#account_id').removeClass('field-error')
+      $('input#vehicle_autorization').val('').trigger('change')
+      $('button#show-link-account-closeaction').prop('disabled', true)
+      showVehicleApiAuthorizationModal.modal('show')
+
+    }
+
+    // AAAAAAAAAAAA
+
+    function submitRfidTokenUpdate( close=true, data=undefined, successCallback=undefined ) {
+      console.log(timestamp() + ' submitRfidTokenUpdate')
+      // Start spinner
+      $('.spinner').show()
+
+      if (data == undefined ) {
+        // Translate Dutch->English prior to submitting
+        valid_from = $('input[name="valid_from"]').val()
+        valid_until = $('input[name="valid_until"]').val()
+        Object.entries(months).forEach(entry => {
+          const [key, value] = entry
+          valid_from = valid_from.replace(value, months_en[key])
+          valid_until = valid_until.replace(value, months_en[key])
+        })
+
+        data = {
+          // Pasnummer
+          rfid          : '{{ rfid_model["rfid"] }}',
+          // Name
+          name          : $('input#name').val(),
+          enabled       : $('input#enabled').prop('checked'),
+          valid_from    : valid_from,
+          valid_until   : valid_until,
+
+          vehicle_make  : $('input#vehicle_make').val(),
+
+          vehicle_model : $('input#vehicle_model').val(),
+          license_plate : $('input#license_plate').val(),
+          vehicle_vin   : $('input#vehicle_vin').val(),
+          vehicle_name  : $('input#vehicle_name').val(),
+    
+          get_odometer  : $('input#get_odometer').prop('checked')
+        }
+      }
+
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/rfid_tokens/{{ rfid_model["rfid"] }}/',
+        dataType	  : 'json',
+        encode		  : true,
+        contentType : 'application/json',
+        headers     : { 
+          'ignore-login-next' : 'true',
+          'X-CSRF-Token'      : '{{ csrf_token() }}'
+        },
+        data        : JSON.stringify(data)
+      }) // using the done promise callback
+      .done(function(res) {
+        switch (res.status) {
+          case 200:
+            savedMake = res.result.vehicle_make
+            if (close) {
+              // TODO: forward to tokens overview, or stay here (when only changing make!)
+              window.location.href = '/rfid_tokens/'
+            } else {
+              autoHideNotify('success','top-left', 'Wijzigign opgeslagen', 'De wijzigingen zijn opgeslagen.')
+              if (successCallback != null) { successCallback(res) }
+            }
+            break
+          default:
+            autoHideNotify('warning','top-left', 'Wijzigen mislukt', 'Het wijzigen van dit token is niet gelukt.')
+            break
+        }
+      })
+      .fail(function(res) {
+        console.log(res)
+        autoHideNotify('warning','top-left', 'Wijzigen mislukt', 'Het wijzigen van dit token is niet gelukt.')
+      })
+      .always(function() {
+        // Only stop spinner if we stay on the page
+        if (!close) { $('.spinner').hide() }
+      })
+    }
+
+    function obtainVehicleAuthorizationUrl( account="me@world.com", make="Unknown", successCallback=null, failCallback=null, alwaysCallback=null, logout=false ) {
+      console.log(timestamp() + ' obtainVehicleAuthorizationUrl')
+      // Start spinner
+      $('.spinner').show()
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/VehicleApi/AuthURL/?account=' + account + '&vehicle_make=' + $('input#vehicle_make').val() + (logout? '&logout=true' : ''),
+        dataType	  : 'json',
+        encode		  : true,
+        contentType : 'application/json',
+        headers     : { 
+          'ignore-login-next' : 'true',
+          'X-CSRF-Token'      : '{{ csrf_token() }}'
+        },
+        data        : JSON.stringify({ 'account' : account })
+      }) // using the done promise callback
+      .done(function(res) {
+        if (successCallback != null) { successCallback(res) }
+      })
+      .fail(function(res) {
+        if (failCallback != null) { failCallback(res) }
+      })
+      .always(function() {
+        if (alwaysCallback != null) { alwaysCallback() }
+      })
+    }
+
+    function unlinkVehicleAccount() {
+      console.log(timestamp() + ' unlinkVehicleAccount')
+      // Start spinner
+      $('.spinner').show()
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/rfid_tokens/'+{{ rfid_model['rfid'] }}+'/VehicleApi/Unlink/',
+        dataType	  : 'json',
+        encode		  : true,
+        headers     : { 'ignore-login-next': 'true' },
+        data        : {
+          csrf_token    : '{{ csrf_token() }}'
+        }
+
+      }) // using the done promise callback
+      .done(function(res) {
+        accountLinked = false
+        vehicleList = []
+        drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
+        buildVehicleList(vehicleList, accountLinked)
+
+        applyFieldBlocking( $('input#vehicle_make').val(), accountLinked )
+
+      })
+      .fail(function(res) {
+        autoHideNotify('warning','top-left', 'Ontkoppelen mislukt', 'Het ontkoppelen van het voertuigaccount is niet gelukt..')
+      })
+      .always(function() {
+        // Start spinner
+        $('.spinner').hide()
+      })
+    }
+
+
+    // Vehicles is a list
+    function buildVehicleList(vehicles, readonly=true, selectedId=undefined) {
+      // Add vehicle list to vehicle select box
+      if (vehicles.length == 0) {
+        $('select#vehicle').empty()
+        $('select#vehicle').append('<option value="-" style="font-style: italic;">Geen voertuigen... </option>')
+        return
+      }
+      let selectedVehicle = $(vehicles).filter(function() {
+        return $(this).attr('vin') == selectedId
+      })
+      $('select#vehicle').empty()
+      $('select#vehicle').append('<option value="" style="font-style: italic;">Selecteer voertuig...</option>')
+      vehicles.forEach((vehicle) => {
+        $('select#vehicle').append('<option value="'+vehicle.vin+'" style="font-style: italic;">'+vehicle.display_name+' (VIN: '+vehicle.vin+')</option>')
+      })
+      // Select the id if present
+      if (selectedVehicle.length > 0) {
+        $('select#vehicle').val(selectedId)
+        $('input#vehicle_vin').val(selectedVehicle[0].vin)
+        $('input#vehicle_name').val(selectedVehicle[0].display_name)
+      } else {
+        if (selectedId == undefined) {
+          $('input#vehicle_vin').val('').trigger('change')
+        } else {
+          $('input#vehicle_vin').val(selectedId)
+        }
+      }
+    }
+
+    function drawAccountLinkButton(linked, linkingAvailable, make=undefined, allowd=false) {
+      if (!implementedVehicleMakeApiList.includes(make)) make = undefined
+      $('button#add_remove_vehicle_api_authorization').off('click')
+      if (linked) {
+        // Change account link button
+        $('button#add_remove_vehicle_api_authorization').html('<i class="fa fa-unlink"></i> Ontkoppel'+(make==undefined?'voertuig':' '+make)+' account')
+        $('button#add_remove_vehicle_api_authorization').on('click', function() {      
+          unlinkVehicleAccount()
+        })
+      } else if (linkingAvailable) {
+        // Change account link button
+        $('button#add_remove_vehicle_api_authorization').html('<i class="fa fa-link"></i> Koppel '+(make==undefined?'voertuig':' '+make)+' account')
+        if (allowd) {
+          $('button#add_remove_vehicle_api_authorization').on('click', function() {      
+            showVehicleApiAuthorization()
+          })
+        } else {
+          $('button#add_remove_vehicle_api_authorization').on('click', function() {      
+            // TODO: Popup save action Yes/No
+            $('#confirmModalLabel').html( 'Merk opslaan?' )
+            $('#confirmModalText').html( 'Sla het voertuig-merk op om het account te kunnen koppelen.<br/>Het merk nu opslaan voor deze pas?' )
+            $('#confirmModalOkButton').html( 'Ja' )
+            $('#confirmModalCancelButton').html( 'Nee' )
+
+            confirmModal.cancelCallback = function() {
+              // Do nothing
+            }
+            confirmModal.confirmCallback = function() {
+              submitRfidTokenUpdate( false, { 
+                rfid          : '{{ rfid_model["rfid"] }}',
+                vehicle_make  : $('input#vehicle_make').val(),
+              })
+            }                                  
+            confirmModal.confirmCallback = function() {
+              submitRfidTokenUpdate( false, { 
+                rfid          : '{{ rfid_model["rfid"] }}',
+                vehicle_make  : $('input#vehicle_make').val(),
+              },
+              // Success callback
+              function(result) {
+                // log data to the console so we can see
+                console.log(result)
+                // Change account link button
+                drawAccountLinkButton(false, true, make, true)
+                showVehicleApiAuthorization()
+              })
+            }
+
+
+
+            confirmModal.modal('show')
+          })
+        }
+      } else {
+        // No linking available
+        $('button#add_remove_vehicle_api_authorization').html('<i class="fa fa-link"></i> <i>Koppel'+(make==undefined?'':' '+make)+' account</i>')
+      }
+      $('button#add_remove_vehicle_api_authorization').toggleClass('btn-success', !linked && linkingAvailable)
+      $('button#add_remove_vehicle_api_authorization').toggleClass('btn-warning', linked)
+      $('button#add_remove_vehicle_api_authorization').toggleClass('btn-secondary', !linked && !linkingAvailable)
+      $('button#add_remove_vehicle_api_authorization').attr('disabled', !linkingAvailable)
+    }
+
+    // Make the required fields read-only
+    function applyFieldBlocking(make=undefined, isLinked=false) {
+      // Make fields readonly if account linked
+      if (!isLinked) {
+        for (const field in fieldOverrideUnlinked.readonly) {
+
+          // Reset values?
+          if (fieldOverrideUnlinked.reset[field]) {
+            // Type of field
+            switch ($('#'+field).attr('type')) {
+              case 'text':
+                $('#'+field).val('').trigger('change')
+                $('#'+field).prop("disabled", fieldOverrideUnlinked.readonly[field])
+                break
+              case 'checkbox':
+                $('#'+field).bootstrapToggle('destroy')
+                $('#'+field).attr('data-onstyle', 'dark-disabled')
+                $('#'+field).attr('data-offstyle', 'dark-disabled')
+                $('#'+field).attr("disabled", fieldOverrideUnlinked.readonly[field])
+                $('#'+field).bootstrapToggle()
+                $('#'+field).bootstrapToggle('off')
+                $('#'+field).prop('checked', false).change()
+                break
+              default:
+                $('#'+field).prop("disabled", fieldOverrideUnlinked.readonly[field])
+                break
+            }
+          } else {
+            $('#'+field).prop("disabled", fieldOverrideUnlinked.readonly[field])
+          }
+          // Show / hide info box and trash button
+          $('#'+field+'_info').toggle(fieldOverrideUnlinked.readonly[field]) 
+          $('#'+field+'_trash').toggle(!fieldOverrideUnlinked.readonly[field])
+        }
+      }
+
+      // Make fields readonly if account linked
+      if (isLinked && fieldOverrideLinked.hasOwnProperty(make)) {
+        for (const field in fieldOverrideLinked[make].readonly) {
+          // Type of field
+          switch ($('#'+field).attr('type')) {
+            case 'checkbox':
+              $('#'+field).bootstrapToggle('destroy')
+              $('#'+field).attr('data-onstyle', 'primary')
+              $('#'+field).attr('data-offstyle', 'dark')
+              $('#'+field).attr("disabled", fieldOverrideLinked[make].readonly[field])
+              $('#'+field).bootstrapToggle()
+              break
+            default:
+              $('#'+field).attr('disabled', fieldOverrideLinked[make].readonly[field])
+              // Do nothing
+              break
+          }
+          // Show / hide info box and trash button
+          $('#'+field+'_info').toggle(fieldOverrideLinked[make].readonly[field]) 
+          $('#'+field+'_trash').toggle(!fieldOverrideLinked[make].readonly[field])
+        }
+      }
+    }
+
+
+    function openExternalLoginPage() {
+      if (!validEmail($('input#account_id').val())) {
+        autoHideNotify('warning','top-left', 'Geen geldig emailadres', 'Vul eerst een geldig emailadres in.')
+        return
+      }
+      obtainVehicleAuthorizationUrl(  ( $('input#account_id').val().trim().length > 0 ? $('input#account_id').val().trim() : "me@world.com"), 
+        $('input#vehicle_make').val(), 
+        function(result) {
+          // successCallback
+          // log data to the console so we can see
+          console.log(result)
+          switch(result.status) {
+            case 200: // Ok
+              let newWindow = window.open(result.url, '_blank')
+              if (newWindow != null) {
+                // Focus it
+                newWindow.focus()
+              } else {
+                // Popup blocker
+                autoHideNotify('error', 'top-left', 'Geblokkeerd', 'De login pagina kon niet worden geopend, waarschijnlijk is er een popup-blokker actief.', 60000)
+              }
+              break;
+            default:
+              // ???
+              autoHideNotify('error', 'top-left', 'Onbekende fout', 'Er is een onverwachte fout opgetreden.')
+          }                                          
+        }, function(result) {
+          // failCallback
+          autoHideNotify('error','top-left', 'Niet beschikbaar', 'Deze functie is momenteel niet beschikbaar.')
+        }, function(result) {
+          // alwaysCallback
+          // Remove spinner
+          $('.spinner').hide()
+        }
+      )
+    }
+    function copyExternalLoginPage() {
+      if (!validEmail($('input#account_id').val())) {
+        autoHideNotify('warning','top-left', 'Geen geldig emailadres', 'Vul eerst een geldig emailadres in.')
+        return
+      }
+      obtainVehicleAuthorizationUrl(  ( $('input#account_id').val().trim().length > 0 ? $('input#account_id').val().trim() : "me@world.com"), 
+        $('input#vehicle_make').val(), 
+        function(result) {
+          // successCallback
+          // log data to the console so we can see
+          console.log(result)
+          switch(result.status) {
+            case 200: // Ok
+              // Copy the url to the clipboard
+              navigator.clipboard.writeText(result.url)
+              // Popup blocker
+              autoHideNotify('success', 'top-left', 'Gekopieerd', 'De login url is gekoppieerd.')
+              break;
+            default:
+              // ???
+              autoHideNotify('error', 'top-left', 'Onbekende fout', 'Er is een onverwachte fout opgetreden.')
+          }                                          
+        }, function(result) {
+          // failCallback
+          autoHideNotify('error','top-left', 'Niet beschikbaar', 'Deze functie is momenteel niet beschikbaar.')
+        }, function(result) {
+          // alwaysCallback
+          // Remove spinner
+          $('.spinner').hide()
+        }
+      )
+    }
+
 
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
@@ -310,36 +544,31 @@
       $('button[data-toggle="tooltip"]').on('click', function () {
         $(this).tooltip('hide')
       })
+    
       $('input#get_odometer').bootstrapToggle()
+
       $('input#enabled').bootstrapToggle()
       $('input#enabled').change(function() {
         // Nothing. Changes are submitted as whole form
       })
+
+      drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
+      buildVehicleList(vehicleList, accountLinked, {% if rfid_model['vehicle_vin'] is not none %}'{{ rfid_model.vehicle_vin }}'{% else %}undefined{% endif %})
+
+      applyFieldBlocking( $('input#vehicle_make').val(), accountLinked )
+      // 
+      $('select#vehicle').attr('readonly', !accountLinked)
+
       $('input[name="vehicle_make"]').on("change paste keyup", function() {
-        setResetGetOdometer()
+        drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
       })
-      $('input[name="get_odometer"]').on("change paste keyup", function() {
-        showHideCredentials()
-        setResetVehicleToken()
-      })
-      $('button#generate_token').on('click', function() {
-        getRefreshOrRevokeOAuthToken(GENERATE)
-      })
-      $('button#refresh_token').on('click', function() {
-        getRefreshOrRevokeOAuthToken(REFRESH)
-      })
-      $('button#revoke_token').on('click', function() {
-        getRefreshOrRevokeOAuthToken(REVOKE)
-      })
+
       $('select#vehicle').on('change', function() {
-        $('input#vehicle_name').val()
-        $('input#vehicle_id').val()
-        $('input#vehicle_vin').val()
+        $('input#vehicle_name').val('').trigger('change')
+        $('input#vehicle_vin').val('').trigger('change')
         $.each( vehicleList, function( index, vehicleInList ) {
-          if ($(this).val() == 
-              (vehicleInList.name + ' (VIN: ' + vehicleInList.vin + ')')) {
-            $('input#vehicle_name').val(vehicleInList.name)
-            $('input#vehicle_id').val(vehicleInList.id)
+          if ($('select#vehicle').val() == vehicleInList.vin) {
+            $('input#vehicle_name').val(vehicleInList.display_name)
             $('input#vehicle_vin').val(vehicleInList.vin)
           }
         })
@@ -361,19 +590,86 @@
           valid_until = valid_until.replace(value, months_en[key])
         })
         $('input[name="valid_until"]').val(valid_until)
-
-        // Make sure no hidden fields are filled 
-        showHideCredentials()
-
       })
 
-      showHideCredentials()
-      setResetGetOdometer()
-      setResetVehicleToken()
+      // TODO
+      {% if false %}
       {% if rfid_model['api_created_at'] is not none and rfid_model['api_expires_in'] is not none %}
       updateOAuthTokenStatus(new Date(({{ rfid_model['api_created_at'] }} *1000) + ({{ rfid_model['api_expires_in'] }} *1000))) // Seconds to milliseconds
       {% endif %}
+      {% endif %}
 
+      showVehicleApiAuthorizationModal = $('#showVehicleApiAuthorizationModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+
+      $('input#account_id').on( 'keyup keypress paste input change', (el) => {
+	      vEmail =validEmail(el.currentTarget.value)
+        $('input#account_id').toggleClass('field-error', !vEmail)
+        $('button#show-link-account-closeaction').prop('disabled', ($('input#vehicle_autorization').val().trim().length == 0 || !vEmail))
+      })
+
+      $('input#vehicle_autorization').on( 'keyup keypress paste input change', (el) => {
+        $('button#show-link-account-closeaction').prop('disabled', (el.currentTarget.value.trim().length == 0 || !validEmail($('input#account_id').val())))
+      })
+
+      $('button#show-link-account-cancelaction').on('click', function(el) {
+        showVehicleApiAuthorizationModal.modal('hide')
+      })
+      
+      $('button#show-link-account-closeaction').on('click', function(el) {
+        // Link account
+        console.log(timestamp() + ' link account')
+        // Start spinner
+        $('.spinner').show()
+        let data = {
+            vehicle_make  : $('input#vehicle_make').val().trim(),
+            account       : $('input#account_id').val().trim(),
+            token         : $('input#vehicle_autorization').val().trim()
+        }
+        $.ajax({
+          type		    : 'POST',
+          url			    : '/rfid_tokens/'+{{ rfid_model["rfid"] }}+'/VehicleApi/ValidateTokenOrUrl/',
+          dataType	  : 'json',
+          encode		  : true,
+          contentType : 'application/json',
+          headers     : { 
+            'ignore-login-next' : 'true',
+            'X-CSRF-Token'      : '{{ csrf_token() }}'
+          },
+          data        : JSON.stringify( data )
+        }) // using the done promise callback
+        .done(function(res) {
+          switch (res.status) {
+            case 200:
+              autoHideNotify('success','top-left', 'Account gelinkt', 'Account sucesvol gelinkt.')
+              // Change account link button
+              accountLinked = true
+              vehicleList = res.vehicles
+              drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
+              buildVehicleList(vehicleList, accountLinked, $('input#vehicle_vin').val())
+
+              applyFieldBlocking( $('input#vehicle_make').val(), accountLinked )
+
+              showVehicleApiAuthorizationModal.modal('hide')
+              break
+            default:
+              autoHideNotify('error','top-left', 'Niet gelinkt', 'Autorisatie niet geaccepteerd.')
+          }
+        })
+        .fail(function(res) {
+          // fail
+          autoHideNotify('error','top-left', 'Niet beschikbaar', 'Deze functie is momenteel niet beschikbaar.')
+        })
+        .always(function() {
+          // Remove spinner
+          $('.spinner').hide()
+        })
+      })
+
+      // Remove spinner
       $('.spinner').hide()
     })
 
@@ -395,8 +691,7 @@
     </div>
     <!-- end page title end breadcrumb -->
 
-    <form id="rfid-change-form" class="form-horizontal m-t-20" method="POST" action="/rfid_tokens/{{ rfid_model['rfid'] }}/" autocomplete="on">
-        {{ form.csrf_token }}
+    <form id="rfid-change-form" class="form-horizontal m-t-20" method="POST" action="" autocomplete="on">
 
     <div class="row">
       <div class="col-12">
@@ -439,7 +734,9 @@
             </tr>
             <tr>
               <th><h5>Pasnummer</h5></th>
-              <td class="text-primary" style="vertical-align: middle; text-align: left;"><h4 style="padding-left: 10px;">{{ rfid_model['rfid'] }}</h4></td>
+              <td class="text-primary" style="vertical-align: middle; text-align: left;">
+                <h4 style="padding-left: 10px;">{{ rfid_model['rfid'] }}</h4>
+              </td>
             </tr>
             <tr>
               <th><h5>Naam</h5></th>
@@ -536,7 +833,7 @@
                   <input type="text" class="form-control" name="valid_from" 
                          value="{% if rfid_model['valid_from'] is not none %}{{ rfid_model['valid_from'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
                   <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
-                          onclick="$('input[name=valid_from]').val(''); return false;"
+                          onclick="$('input[name=valid_from]').val('').trigger('change'); return false;"
                           data-toggle="tooltip" 
                           data-placement="bottom" 
                           data-html="true" 
@@ -553,7 +850,7 @@
                          value="{% if rfid_model['valid_until'] is not none %}{{ rfid_model['valid_until'].strftime(' %d %B %Y').replace(' 0', ' ').strip() }}{% endif %}"/>
                   <div class="input-group-append">
                     <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
-                            onclick="$('input[name=valid_until]').val(''); return false;"
+                            onclick="$('input[name=valid_until]').val('').trigger('change'); return false;"
                             data-toggle="tooltip" 
                             data-placement="bottom" 
                             data-html="true" 
@@ -566,37 +863,207 @@
               </td>
             </tr>
             <tr>
-              <th><h5>Merk</h5></th>
-              <td>
-                <input class="form-control" id="vehicle_make" name="vehicle_make" type="text" placeholder="Merk" list="car_makes"
-                         value="{% if rfid_model['vehicle_make'] is not none %}{{ rfid_model['vehicle_make'] }}{% endif %}">
-                <datalist id="car_makes">
-                  <option>Audi</option>
-                  <option>BMW</option>
-                  <option>Mercedes</option>
-                  <option>Peugeot</option>
-                  <option>Tesla</option>
-                </datalist>          
-              </td>
+              <th colspan="2"></th>
             </tr>
             <tr>
+              <th><h5>Merk</h5></th>
+              <td>
+                <div class="input-group">
+                  <datalist id="car_makes">
+                    <option value="Audi">
+                    <option value="BMW">
+                    <option value="Mercedes">
+                    <option value="Mitsubishi">
+                    <option value="Peugeot">
+                    <option value="Tesla">
+                    <option value="Toyota">
+                    <option value="Volkswagen">
+                  </datalist>
+                  <input class="form-control" id="vehicle_make" name="vehicle_make" list="car_makes" type="text" placeholder="Merk"
+                         value="{% if rfid_model['vehicle_make'] is not none %}{{ rfid_model['vehicle_make'] }}{% endif %}">
+
+                  <div class="input-group-append info-button-style"
+                       id="vehicle_make_info"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Ontkoppel eerst het voertuigaccount."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+
+                  <span class="input-group-append">
+                    <button 
+                      id="add_remove_vehicle_api_authorization"
+                      type="button" 
+                      class="btn btn-sm waves-effect waves-light btn-success float-right mt-0" 
+                      data-toggle="tooltip" 
+                      data-placement="bottom" 
+                      data-html="true" 
+                      title="Link de interface van de voertuigfabrikant aan Oppleo om voertuiginformatie zoals de kilometerstand automatisch toe te voegen."
+                      >
+                      <i class="fa fa-link"></i>
+                      Link Tesla Account
+                    </button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+
+            <tr id="vehicles_row">
               <th><h5>Model</h5></th>
               <td>
-                <input class="form-control" id="vehicle_model" name="vehicle_model" type="text" placeholder="Model" list="car_models"
+                <div class="input-group">
+                  <input class="form-control" id="vehicle_model" name="vehicle_model" type="text" placeholder="Model" list="car_models"
                          value="{% if rfid_model['vehicle_model'] is not none %}{{ rfid_model['vehicle_model'] }}{% endif %}">
-                <datalist id="car_models">
-                  <option>Model S</option>
-                  <option>Model X</option>
-                  <option>Model 3</option>
-                  <option>i3</option>
-                </datalist>          
+                  <datalist id="car_models">
+                    <option>Model S</option>
+                    <option>Model X</option>
+                    <option>Model 3</option>
+                    <option>i3</option>
+                  </datalist>          
+                  <div class="input-group-append" id="vehicle_model_trash">
+                    <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                            onclick="$('input#vehicle_model').val('').trigger('change'); return false;"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Verwijder modelnaam"
+                            >
+                      <i class="far fa-trash-alt"></i>
+                    </button>    
+                  </div>
+                  <div class="input-group-append info-button-style"
+                       id="vehicle_model_info"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Het model wordt uit de Tesla api opgehaald."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>                
+                <div>
               </td>
             </tr>
             <tr>
               <th><h5>Kenteken</h5></th>
               <td>
-                <input class="form-control" id="license_plate" name="license_plate" type="text" placeholder="Kenteken" 
-                       value="{% if rfid_model['license_plate'] is not none %}{{ rfid_model['license_plate'] }}{% endif %}">
+                <div class="input-group">
+                  <input class="form-control" id="license_plate" name="license_plate" type="text" placeholder="Kenteken" 
+                        value="{% if rfid_model['license_plate'] is not none %}{{ rfid_model['license_plate'] }}{% endif %}">
+                  <div class="input-group-append" id="license_plate_trash">
+                    <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                            onclick="$('input#license_plate').val('').trigger('change'); return false;"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Verwijder kenteken"
+                            >
+                      <i class="far fa-trash-alt"></i>
+                    </button>    
+                  </div>
+                  <div class="input-group-append info-button-style"
+                       id="license_plate_info"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Het kenteken wordt uit de Tesla api opgehaald."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <th><h5>VIN</h5></th>
+              <td>
+                <div class="input-group">
+                  <input class="form-control" id="vehicle_vin" name="vehicle_vin" type="text" autocomplete="off" placeholder="Vehicle identification Number (VIN)" 
+                    value="{% if rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_vin'] }}{% endif %}">
+                  <div class="input-group-append" id="vehicle_vin_trash">
+                    <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                            onclick="$('input#vehicle_vin').val('').trigger('change'); return false;"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Verwijder Vehicle Identification Number (VIN)"
+                            >
+                      <i class="far fa-trash-alt"></i>
+                    </button>    
+                  </div>
+                  <div class="input-group-append info-button-style"
+                       id="vehicle_vin_info"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Het Vehicle Identification Number (VIN) wordt uit het gekoppelde account opgehaald."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <th><h5>Naam</h5></th>
+              <td>
+                <div class="input-group">
+                  <input class="form-control" id="vehicle_name" name="vehicle_name" type="text" autocomplete="off" placeholder="Voertuig naam" 
+                    value="{% if rfid_model['vehicle_name'] is not none %}{{ rfid_model['vehicle_name'] }}{% endif %}">
+                  <div class="input-group-append" id="vehicle_name_trash">
+                    <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                            onclick="$('input#vehicle_name').val('').trigger('change'); return false;"
+                            data-toggle="tooltip" 
+                            data-placement="bottom" 
+                            data-html="true" 
+                            title="Verwijder voertuig naam"
+                            >
+                      <i class="far fa-trash-alt"></i>
+                    </button>    
+                  </div>
+                  <div class="input-group-append info-button-style"
+                       id="vehicle_name_info"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="De naam wordt uit het gekoppelde account opgehaald."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <tr id="vehicles_row">
+              <th><h5>Voertuig</h5></th>
+              <td>
+                <div class="input-group">
+                  <select class="form-control" id="vehicle" name="vehicle">
+                    <option value="-" style="font-style: italic;">{% if rfid_model['vehicle_name'] is not none and rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_name'] }} (VIN: {{ rfid_model['vehicle_vin'] }}){% else %}Geen voertuigen... (klik refresh){% endif %}</option>
+                  </select>
+                  <div class="input-group-append info-button-style"
+                       id="vehicle_info"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Voertuigen uit het gekoppelde account"
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>                
+                <div>
               </td>
             </tr>
             <tr>
@@ -618,153 +1085,24 @@
                       data-width="100"
                     />
                   </span>
-                  <div class="input-group-append">
-                    <span id="odo_1" class="input-group-text bg-dark b-0 pl-4 text-light border-primary">
+                  <div class="input-group-append" id="get_odometer_info">
+                    <span id="odo_1" class="input-group-text b-0 pl-4 text-light border-primary">
                       <i class="mdi mdi-alert-outline"></i>
                     </span>
-                    <span id="odo_2" class="input-group-text bg-dark b-0 pl-0 text-light border-primary">
-                      Alleen beschikbaar voor Tesla
+                    <span id="odo_2" class="input-group-text b-0 pl-0 text-light border-primary">
+                      Alleen beschikbaar bij een geschikt gekoppeld account
                     </span>
                   </div>
                 </div>
               </td>
             </tr>
-            <tr id="oauth_email_row">
-              <th><h5>E-mail</h5></th>
-              <td>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
-                      <i class="mdi mdi-account"></i>
-                    </span>
-                  </div>
-                  <input class="form-control" id="oauth_email" name="oauth_email" type="text" autocomplete="off" placeholder="E-mail" value="">
-                </div>
-              </td>
-            </tr>
-            <tr id="oauth_password_row">
-              <th><h5>Wachtwoord</h5></th>
-              <td>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
-                      <i class="mdi mdi-radar"></i>
-                    </span>
-                  </div>
-                  <input class="form-control" id="oauth_password" name="oauth_password" type="password" autocomplete="off" placeholder="Password" value="">
 
-                  <span class="input-group-append">
-                    <button 
-                        id="show_oauth_password"
-                        type="button" 
-                        class="btn waves-effect waves-light btn-outline-primary" 
-                        data-toggle="tooltip" 
-                        data-placement="bottom" 
-                        data-html="true" 
-                        title="<em>Klik om de tekst zichtbaar te maken</em>"
-                        >
-                        <i class="far fa-eye"></i>
-                    </button>
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr id="token_button_row">
-              <td>
-              </td>
-              <td>
-                <div class="text-center">
-                  <div class="btn-group">
-                    <button 
-                          id="generate_token"
-                          type="button" 
-                          class="btn waves-effect waves-light btn-primary" 
-                          data-toggle="tooltip" 
-                          data-placement="bottom" 
-                          data-html="true" 
-                          title="<em>Genereer een Tesla toegangs-token</em>"
-                          >
-                          <i class="fas fa-user-cog"></i>
-                          Genereer Tesla token
-                      </button>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr id="vehicles_row">
-              <th><h5>Voertuig</h5></th>
-              <td>
-                <div class="input-group">
-                  <input type="hidden" id="vehicle_name" name="vehicle_name" value="{% if rfid_model['vehicle_name'] is not none %}{{ rfid_model['vehicle_name'] }}{% endif %}" />
-                  <input type="hidden" id="vehicle_id" name="vehicle_id" value="{% if rfid_model['vehicle_id'] is not none %}{{ rfid_model['vehicle_id'] }}{% endif %}" />
-                  <input type="hidden" id="vehicle_vin" name="vehicle_vin" value="{% if rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_vin'] }}{% endif %}" />
-                  <select class="form-control" id="vehicle" name="vehicle">
-                    <option value="-" style="font-style: italic;">{% if rfid_model['vehicle_name'] is not none and rfid_model['vehicle_vin'] is not none %}{{ rfid_model['vehicle_name'] }} (VIN: {{ rfid_model['vehicle_vin'] }}){% else %}Geen voertuigen... (klik refresh){% endif %}</option>
-                  </select>
-
-                  <div class="input-group-append info-button-style" 
-                       data-toggle="tooltip" 
-                       data-placement="bottom" 
-                       data-html="true" 
-                       title="Vernieuw de autorisatie of trek de autorisatie in en maak een nieuwe autorisatie aan om de actuele voertuiglijst op te halen."
-                       >
-                    <span class="input-group-text border-secondary bg-secondary text-muted">
-                      <i class="fas fa-info-circle"></i>
-                    </span>
-                  </div>                  
-              </td>
-            </tr>
-            <tr id="oauth_token_row">
-              <th><h5 style="background-color: #36404a !important;"><i class="fas fa-key"></i> OAuth token</h5></th>
-              <td>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text bg-dark b-0 text-secondary border-dark">
-                      <i class="fas fa-key"></i>
-                    </span>
-                  </div>
-                  <input type="text" class="form-control border-dark" disabled id="oauth_token_status">
-                  <div class="input-group-append info-button-style"
-                       data-toggle="tooltip" 
-                       data-placement="bottom" 
-                       data-html="true" 
-                       title="De autorisatie wordt bij gebruik regelmatig verlengt. De autorisatie verloopt automatisch als de pas 45 dagen niet is gebruikt."
-                    >
-                    <span class="input-group-text bg-secondary text-muted border-secondary">
-                      <i class="fas fa-info-circle"></i>
-                    </span>
-                  </div>
-                  <div class="input-group-append">
-                    <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
-                            id="revoke_token"
-                            type="button" 
-                            data-toggle="tooltip" 
-                            data-placement="bottom" 
-                            data-html="true" 
-                            title="<em>Klik om de het autorisatie in te trekken</em>"
-                            >
-                      <i class="far fa-trash-alt"></i>
-                    </button>                    
-                    <button class="pl-3 pr-3 btn btn-primary text-white"
-                            id="refresh_token"
-                            type="button" 
-                            data-toggle="tooltip" 
-                            data-placement="bottom" 
-                            data-html="true" 
-                            title="<em>Klik om de het token te refreshen</em>"
-                            >
-                      <i class="fas fa-redo-alt"></i>
-                    </button>                    
-                  </div>
-                </div>
-              </td>
-            </tr>
           </table>
 
           <div class="form-group text-right m-t-20">
             <div class="col-xs-12">
               <button class="btn btn-secondary btn-custom w-md waves-effect waves-light" type="button" onclick="window.location.href='/rfid_tokens/'">Annuleren</button>
-              <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="submit">Wijzigen</button>
+              <button class="btn btn-primary btn-custom w-md waves-effect waves-light" type="button" onClick="submitRfidTokenUpdate()">Wijzigen</button>
             </div>
           </div>
 
@@ -775,4 +1113,139 @@
 
   </div>
 </div>
+
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="showVehicleApiAuthorizationModal" tabindex="-1" role="dialog" aria-labelledby="showVehicleApiAuthorizationModalLabel" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary">
+        <h3 class="modal-title" id="showVehicleApiAuthorizationModalLabel">Koppel <img src="{{ url_for('static', filename='images/logo/tesla.png') }}" style="max-width: 40px; max-height: 22px;"> Tesla Account <span id="showVehicleApiAuthorizationdTitle"></span></h3>
+        <button type="button" class="close-x" data-dismiss="modal" aria-label="Close" id="showVehicleApiAuthorizationModalCloseButton">
+          <span aria-hidden="true"><i class="fas fa-times"></i></span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="col-lg-12">
+
+          <table id="apiAuthorizationTable" class="table table-bordered" cellpadding="0" cellspacing="0">
+
+            <tr style="text-align: center;">
+              <td colspan="2" class="pb-3">
+                <img src="{{ url_for('static', filename='images/logo/tesla.png') }}" style="max-width: 100px; max-height: 50px;">
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="2" class="pl-4 pt-3 pb-3" style="text-align: left;">
+                Doordat Tesla beperkingen heeft ingesteld kan op dit moment alleen een accountkoppeling worden geautoriseerd door het opgeven van het 
+                <span class="text-success">emailadres</span> van het Tesla gebruikers account en 
+                een <span class="text-success text-decoration-underline font-italic">refresh token</span>.
+              </td>
+            </tr>
+
+            <tr>
+              <th style="width: 20%;"><h5>Tesla e-mail</h5></th>
+              <td>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
+                      <i class="mdi mdi-account"></i>
+                    </span>
+                  </div>
+                  <input class="form-control" id="account_id" name="account_id" type="text" autocomplete="off" placeholder="E-mail" value="">
+                  <div class="input-group-append info-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Dit is het emailadres waarmee wordt ingelogd op het Tesla account."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                  <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                          onclick="$('input#account_id').val('').trigger('change'); return false;"
+                          data-toggle="tooltip" 
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="<em>Verwijder email invoer</em>"
+                          >
+                    <i class="far fa-trash-alt"></i>
+                  </button>    
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <th><h5><em>Autorisatie</em></h5></th>
+              <td>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
+                      <i class="fas fa-key"></i>
+                    </span>
+                  </div>
+                  <input class="form-control" id="vehicle_autorization" name="vehicle_autorization" type="text" autocomplete="off" placeholder="Refresh Token of URL" value="">
+                  <div class="input-group-append info-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Kopieer het <em>refresh token</em> of de gehele URL in het autorisatie veld.<br/>
+                              <small class='pl-4'><i class='mdi mdi-alert-outline'></i> <i>Na succesvol inloggen wordt er een 'Page not found' pagina getoond. Het inloggen is dan wel succesvol.</i></small>."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                  <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                          onclick="$('input#vehicle_autorization').val('').trigger('change'); return false;"
+                          data-toggle="tooltip" 
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="<em>Verwijder autorisatie invoer</em>"
+                          >
+                    <i class="far fa-trash-alt"></i>
+                  </button>    
+                </div>
+              </td>
+            </tr>
+
+
+            <tr>
+              <td colspan="2" class="pl-4 pt-3 pb-3" style="text-align: left;">
+                <span class="text-light">
+                  Opties:
+                </span>
+                <br/>
+                <span class="text-light">
+                      <i class="fas fa-info-circle"></i>
+                </span> 
+                Maak een <span class="text-success text-decoration-underline font-italic">refresh token</span> met <a href="https://apps.apple.com/us/app/id1552058613" target="_new">Auth for Tesla <i class="fas fa-external-link-alt"></i></a> voor iOS of MacOS, of <a href="https://play.google.com/store/apps/details?id=net.leveugle.teslatokens" target="_new">Tesla Tokens <i class="fas fa-external-link-alt"></i></a> voor Android.
+                <br/>
+                <span class="text-light">
+                      <i class="fas fa-info-circle"></i>
+                </span> 
+                Login via de <a href="#" onClick="openExternalLoginPage(); return false;">Tesla inlog pagina <i class="fas fa-external-link-alt"></i></span></a> <a href="#" onClick="copyExternalLoginPage()"><i class="fas fa-copy"></i></a> en voer het <span class="text-success text-decoration-underline font-italic">refresh token</span> uit de URL of de hele URL in.<br/>
+                <small class="pl-4"><i class="mdi mdi-alert-outline"></i> <i>Na succesvol inloggen wordt er een "Page not found" pagina getoond. Het inloggen is dan wel succesvol.</i></small>
+
+                Helper
+              </td>
+            </tr>
+
+          </table>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="show-link-account-cancelaction"> Annuleren</button>
+        <button type="button" class="btn btn-primary" id="show-link-account-closeaction"> Koppel account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 {% endblock %}

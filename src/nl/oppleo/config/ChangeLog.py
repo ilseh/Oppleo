@@ -22,8 +22,8 @@ class Version():
             return
         keys = version.split('.')
         self.major = int(keys[0])
-        self.minor = int(keys[1]) if len(keys) > 0 else 0
-        self.build = int(keys[2]) if len(keys) > 1 else 0
+        self.minor = int(keys[1]) if len(keys) > 1 else 0
+        self.build = int(keys[2]) if len(keys) > 2 else 0
 
     def isNewer(self, version=None):
         if version is None:
