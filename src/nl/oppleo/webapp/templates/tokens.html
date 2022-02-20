@@ -306,7 +306,8 @@
     function formatDbDateTimeStr2DateTime( dS ) {
       if ( (typeof dS !== 'string' && !(dS instanceof String)) ||
           dS === null ||
-          dS === undefined
+          dS === undefined ||
+          dS.split(', ').length < 2
          ) 
          return '-'
       dsp1 = dS.split(', ')
