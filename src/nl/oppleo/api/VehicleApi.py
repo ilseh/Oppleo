@@ -163,7 +163,7 @@ class VehicleApi:
         if rfid_model.vehicle_make == "Tesla":
             # Establish account
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
-            return tpw.isAwake()
+            return tpw.isAwake(vin=rfid_model.vehicle_vin)
 
         self.__logger.warn("isAwake() - Cannot get vehicle wake state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return False
@@ -179,9 +179,13 @@ class VehicleApi:
         if rfid_model.vehicle_make == "Tesla":
             # Establish account
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
-            if not wake_up and not tpw.isAwake():
-                return formatTeslaVehicle(tpw.getVehicle())
-            return tpw.getVehicleData(max_retries=max_retries, wake_up=wake_up)
+            if not wake_up and not tpw.isAwake(vin=rfid_model.vehicle_vin):
+                return formatTeslaVehicle(
+                                tpw.getVehicle(vin=rfid_model.vehicle_vin)
+                            )
+            return formatTeslaVehicle(
+                            tpw.getVehicleData(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up)
+                        )
 
         self.__logger.warn("getVehicleData() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return {}
@@ -203,7 +207,7 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
             return tpw.getOdometer(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up)
 
-        self.__logger.warn("getVehicleData() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warn("getOdometer() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return -1
 
 
@@ -211,7 +215,7 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("getOdometer() - Cannot get vehicle charge state for rfid_model.")
+            self.__logger.warn("getChargeState() - Cannot get vehicle charge state for rfid_model.")
             return {}
 
         if rfid_model.vehicle_make == "Tesla":
@@ -221,7 +225,7 @@ class VehicleApi:
                             tpw.getChargeState(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up)
                         )   
 
-        self.__logger.warn("getVehicleData() - Cannot get vehicle charge state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warn("getChargeState() - Cannot get vehicle charge state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return {}
 
 

@@ -132,8 +132,9 @@ class PeakHoursMonitorThread(object):
                             evse.switch_on()
                     if evse.isOffPeak:
                         with self.threadLock:
-                            # Off peak now, reset the one session peak authorization
-                            oppleoConfig.allowPeakOnePeriod = False
+                            # Off peak now, reset the one session peak authorization (only if true to prevent db writes)
+                            if oppleoConfig.allowPeakOnePeriod:
+                                oppleoConfig.allowPeakOnePeriod = False
 
                     changeEvseStatusCheckLastRun = time.time() *1000.0
                     pass

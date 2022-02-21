@@ -140,7 +140,7 @@ class VehicleChargeStatusMonitorThread(object):
                             event           = 'vehicle_charge_status_update', 
                             id              = oppleoConfig.chargerName,
                             data            = { 'chargeState'            : chargeState,
-                                                'vehicle'                : vApi.getVehicle(),
+                                                'vehicle'                : vApi.getVehicleData(),
                                                 'vehicleMonitorInterval' : self.__vehicleMonitorInterval
                             },
                             namespace       = '/charge_session',

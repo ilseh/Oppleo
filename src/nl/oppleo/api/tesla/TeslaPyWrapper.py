@@ -194,8 +194,13 @@ class TeslaPyWrapper:
         Does not wake up vehicle
     """
     def isAwake(self, email:str=None, vin:str=None) -> bool:
+        if email is None:
+            email = self.__email
+        if email is None:
+            self.__logger.warn("isAwake() - Cannot find vehicle - no email.")
+            return False
 
-        vehicle = self.getTeslaVehicle(email, vin)
+        vehicle = self.getVehicle(email, vin)
         return vehicle is not None and vehicle['state'] != 'asleep'
 
 
