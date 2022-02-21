@@ -13,7 +13,6 @@ from time import sleep
 # data write requests must specify an even number of registers. Attempts to read/write an odd number of registers prompt
 # the SDM630Modbus smart meter to return a Modbus Protocol exception message. However, for compatibility with some SCADA systems, 
 # SDM630Modbus Smart meter will response to any single input or holding register read with an instrument type specific value.
-
 instrument = minimalmodbus.Instrument('/dev/ttyUSB0', 1)  # port name, slave address (in decimal)
 #instrument = minimalmodbus.Instrument('/dev/ttyUSB1', 1)  # port name, slave address (in decimal)
 

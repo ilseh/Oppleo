@@ -48,8 +48,8 @@ class EnergyModbusReader:
 
         try:
             self.instrument = Instrument(port=energy_device_data.port_name,
-                                                       slaveaddress=energy_device_data.slave_address
-                                                      )
+                                         slaveaddress=energy_device_data.slave_address
+                                    )
         except Exception as e:
             self.logger.error("initInstrument() failed: {}".format(str(e)))
             raise
