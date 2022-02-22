@@ -1,6 +1,7 @@
 from email.policy import default
 import logging
 import teslapy
+from requests.exceptions import ReadTimeout
 from oauthlib.oauth2.rfc6749.errors import UnauthorizedClientError, MissingCodeError
 from nl.oppleo.config.OppleoSystemConfig import oppleoSystemConfig
 
@@ -183,7 +184,15 @@ class TeslaPyWrapper:
             self.__logger.warn("getVehicle() - Email {} not authorizd".format(email))
             return None
 
-        vehicle_list = teslaPy.vehicle_list()
+        try:
+            vehicle_list = teslaPy.vehicle_list()
+        except ReadTimeout:
+            self.__logger.info("getVehicle() - timeout")
+            return None
+        except Exception as e: 
+            self.__logger.warn("getVehicle() - error {}".format(e))
+            return None
+
         for vehicle_from_list in vehicle_list:
             if vehicle_from_list['vin'] == vin:
                 return vehicle_from_list
@@ -242,14 +251,11 @@ class TeslaPyWrapper:
                 vehicle.sync_wake_up()
             try:
                 vehicle_data = vehicle.get_vehicle_data()
+            except ReadTimeout:
+                self.__logger.info("getVehicleData() - timeout {}".format(tries))
             except Exception as e: 
-                # Timeout?
-                if e.response.status_code == 408:
-                    self.__logger.info("getVehicleData() - timeout {}".format(tries))
-                if e.response.status_code != 408:
-                    # Something else, forget it
-                    self.__logger.warn("getVehicleData() - error {}".format(e))
-                    tries = max_retries
+                self.__logger.warn("getVehicleData() - error {}".format(e))
+                tries = max_retries
             tries += 1
 
         if vehicle_data is None:

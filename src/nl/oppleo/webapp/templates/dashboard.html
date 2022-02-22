@@ -87,6 +87,13 @@
     position: relative;
     margin-left: 2px;   
   }
+  .vehicle-img {
+      position: absolute;
+      right: 130px;
+      top: -85px;
+      max-width: 260px;
+      max-height: 180px;
+    }
   </style>
 
   <script>
@@ -509,7 +516,8 @@
                                     currentBatteryRange,
                                     chargeStart,
                                     chargePortDoorOpen,
-                                    timestampMillis
+                                    timestampMillis,
+                                    vehicleImg
                                    ) {
 
       // First, remove any existing progress bar
@@ -565,6 +573,13 @@
           $(this).css('cursor', 'default')
         }
       )
+      if (vehicleImg) {
+        let urlPrefix = '{{ url_for("static", filename="images/vehicles/") }}'
+        $('span#vehicleImg').append('<img class="vehicle-img" src="'+urlPrefix+vehicleImg+'">')
+        $('span#vehicleImg').show()
+      } else {
+        $('span#vehicleImg').hide()
+      }
       // Slide down if not visible yet
       showVehicleChargeState()
     }
@@ -882,6 +897,7 @@
         batteryRange = (msg.data.chargeState?.idealBatteryRange / chargeCurrent) * progressMax  // km
         chargeStart = chargeCurrent - ((chargeKmAdded / idealBatteryRange) *100)  // %     32.2/420 *100% = 7,65% (90-7,65=82,3%)
         chargingState = msg.data.chargeState?.chargingState                             // Charging=Blue, Stopped=Danger, Complete=Green, Disconnected=Gray]
+        vehicleImg = msg.data.vehicle?.vehicle_img
         drawVehicleChargeState(msg.data.vehicle.displayName,
                                 progressMin,
                                 progressMax,
@@ -895,7 +911,8 @@
                                 msg.data.chargeState?.idealBatteryRange,
                                 chargeStart,
                                 chargePortDoorOpen,
-                                msg.data.chargeState.timestamp
+                                msg.data.chargeState.timestamp,
+                                vehicleImg
                               )
 
 // XXXXX
@@ -1159,6 +1176,7 @@
         <div class="col-12">
           <div class="card-box">
             <h4 class="header-title ml-2" id="vehicleChargeStateHeader"></h4>
+            <span id="vehicleImg" style="display: none;"></span>
             <div class="row justify-content-around">
               <div class="col-12 cos-xs-12 col-auto m-t-xs-40">
                 <div class="progress progress-md m-b-20" id="vehicleChargeStateProgress">

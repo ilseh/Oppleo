@@ -8,7 +8,7 @@ def milesToKm(miles:float=0, acc:int=0):
     return round(miles * 1.609344 * pow(10, acc)) / pow(10, acc)
 
 def formatTeslaChargeStateParam(chargeState:dict=None, param:str=None):
-    if chargeState is None or param is None:
+    if chargeState is None or param is None or param not in chargeState:
         return chargeState
     try:
         return chargeState[param]
@@ -55,7 +55,7 @@ def formatTeslaChargeState(chargeState:dict=None) -> dict:
     csDict = {}
     for el in csEl:
         csDict[toCamelcase(el)] = formatTeslaChargeStateParam(chargeState, el)
-        if el in csElMiles:
+        if el in csElMiles and isinstance(csDict[toCamelcase(el)], float):
             # Convert type(csDict[toCamelcase(el)])
             csDict[toCamelcase(csElKm[csElMiles.index(el)])] = milesToKm(csDict[toCamelcase(el)], 1)
             if el != csElKm[csElMiles.index(el)]:

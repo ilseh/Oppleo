@@ -1,7 +1,7 @@
 import threading
 import logging
 import time
-import re
+import os
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
@@ -136,11 +136,18 @@ class VehicleChargeStatusMonitorThread(object):
 
                     if oppleoConfig.vehicleDataOnDashboard:
                         # Send change notification
+                        vehicleData = vApi.getVehicleData()
+
+                        vFilename = rfidData.getVehicleFilename()
+                        vFilePath = os.path.join(oppleoConfig.app.config['VEHICLE_FOLDER'], vFilename)
+                        if os.path.exists(vFilePath):
+                            vehicleData['vehicle_img'] = vFilename
+
                         OutboundEvent.triggerEvent(
                             event           = 'vehicle_charge_status_update', 
                             id              = oppleoConfig.chargerName,
                             data            = { 'chargeState'            : chargeState,
-                                                'vehicle'                : vApi.getVehicleData(),
+                                                'vehicle'                : vehicleData,
                                                 'vehicleMonitorInterval' : self.__vehicleMonitorInterval
                             },
                             namespace       = '/charge_session',
