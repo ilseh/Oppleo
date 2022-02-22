@@ -1,7 +1,6 @@
 from datetime import datetime
-import imp
 import logging
-import json
+import hashlib
 
 from marshmallow import fields, Schema
 
@@ -72,7 +71,7 @@ class RfidModel(Base):
     def cleanupVehicleInfo(self):
         self.__logger.debug("cleanupVehicleInfo()")
         self.api_account = None
-        self.get_odometer = None
+        self.get_odometer = False
         """
             Keep
             - make
@@ -134,6 +133,25 @@ class RfidModel(Base):
         # Not (no longer) authorized
         self.cleanupVehicleInfo()
         return False
+
+
+    def getVehicleFilename(self, rfid:str=None, account:str=None, vin:str=None):
+        if rfid is None:
+            rfid = self.rfid
+        if rfid is None:
+            return 'unknown.png'
+
+        if account is None:
+            account = self.api_account
+        if account is None:
+            return 'unknown.png'
+
+        if vin is None:
+            vin = self.vehicle_vin
+        if vin is None:
+            return 'unknown.png'
+
+        return hashlib.md5( bytes( rfid + account + vin, 'utf-8') ).hexdigest() + '.png'
 
 
     @staticmethod

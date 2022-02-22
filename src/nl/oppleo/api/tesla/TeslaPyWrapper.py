@@ -1,6 +1,8 @@
+from email.policy import default
 import logging
 import teslapy
 from oauthlib.oauth2.rfc6749.errors import UnauthorizedClientError, MissingCodeError
+from nl.oppleo.config.OppleoSystemConfig import oppleoSystemConfig
 
 from nl.oppleo.models.KeyValueStoreModel import KeyValueStoreModel
 
@@ -296,6 +298,31 @@ class TeslaPyWrapper:
             return {}
 
         return vehicle_data.get('charge_state', {})
+
+
+    """
+        Does not wake up vehicle
+        Returns a PNG formatted composed vehicle image. Valid views are:
+            STUD_3QTR, STUD_SEAT, STUD_SIDE, STUD_REAR and STUD_WHEEL
+
+        https://static-assets.tesla.com/configurator/compositor/?model=m3&options=PMNG,W38B,IN3PW&bkba_opt=1&view=STUD_3QTR&size=1468
+        https://static-assets.tesla.com/v1/compositor/?model=m3&options=PMNG,W38B,IN3PW&view=STUD_3QTR&size=360
+    """
+    def composeImage(self, email:str=None, vin:str=None, max_retries:int=3, view:str='STUD_3QTR'):
+        global oppleoSystemConfig
+
+        if email is None:
+            email = self.__email
+        if email is None:
+            self.__logger.warn("getVehicleList() - Cannot get vehicle list for email {}.".format(email))
+            return None
+
+        vehicle = self.getVehicle(email=email, vin=vin, max_retries=max_retries)
+        if vehicle is None:
+            return None
+            
+        optionCodes = oppleoSystemConfig.getVehicleOptions(make='Tesla', vin=vin, default=vehicle['option_codes'])
+        return vehicle.compose_image(view=view, options=optionCodes)
 
 
     """

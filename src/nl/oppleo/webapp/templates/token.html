@@ -53,6 +53,21 @@
       border: 1px solid red !important;
       color: red !important;
     }
+    .rfid-rfid {
+      vertical-align: middle;
+      text-align: left;
+    }
+    .rfid-rfid h4 {
+      margin-left: 10px;
+      display: inline; 
+    }
+    .vehicle-img {
+      position: absolute;
+      right: 32px;
+      top: -55px;
+      max-width: 260px;
+      max-height: 180px;
+    }
   </style>
 
   <script>
@@ -140,8 +155,6 @@
       showVehicleApiAuthorizationModal.modal('show')
 
     }
-
-    // AAAAAAAAAAAA
 
     function submitRfidTokenUpdate( close=true, data=undefined, successCallback=undefined ) {
       console.log(timestamp() + ' submitRfidTokenUpdate')
@@ -266,6 +279,9 @@
         buildVehicleList(vehicleList, accountLinked)
 
         applyFieldBlocking( $('input#vehicle_make').val(), accountLinked )
+        // Clear vehicle image
+        $('span#vehicleImg').hide(500)
+
 
       })
       .fail(function(res) {
@@ -280,6 +296,8 @@
 
     // Vehicles is a list
     function buildVehicleList(vehicles, readonly=true, selectedId=undefined) {
+      // Apply vehicle image
+      $('span#vehicleImg').hide(500)
       // Add vehicle list to vehicle select box
       if (vehicles.length == 0) {
         $('select#vehicle').empty()
@@ -299,6 +317,12 @@
         $('select#vehicle').val(selectedId)
         $('input#vehicle_vin').val(selectedVehicle[0].vin)
         $('input#vehicle_name').val(selectedVehicle[0].display_name)
+
+        if (selectedVehicle[0].hasOwnProperty('vehicle_img')) {
+          let urlPrefix = '{{ url_for("static", filename="images/vehicles/") }}'
+          $('span#vehicleImg').html('<img class="vehicle-img" src="'+urlPrefix+selectedVehicle[0].vehicle_img+'">')
+          $('span#vehicleImg').show(500)
+        }
       } else {
         if (selectedId == undefined) {
           $('input#vehicle_vin').val('').trigger('change')
@@ -355,9 +379,6 @@
                 showVehicleApiAuthorization()
               })
             }
-
-
-
             confirmModal.modal('show')
           })
         }
@@ -553,6 +574,7 @@
       })
 
       drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
+      $('span#vehicleImg').hide()
       buildVehicleList(vehicleList, accountLinked, {% if rfid_model['vehicle_vin'] is not none %}'{{ rfid_model.vehicle_vin }}'{% else %}undefined{% endif %})
 
       applyFieldBlocking( $('input#vehicle_make').val(), accountLinked )
@@ -566,10 +588,18 @@
       $('select#vehicle').on('change', function() {
         $('input#vehicle_name').val('').trigger('change')
         $('input#vehicle_vin').val('').trigger('change')
+        // Apply vehicle image
+        $('span#vehicleImg').hide(500)
         $.each( vehicleList, function( index, vehicleInList ) {
           if ($('select#vehicle').val() == vehicleInList.vin) {
             $('input#vehicle_name').val(vehicleInList.display_name)
             $('input#vehicle_vin').val(vehicleInList.vin)
+            // Apply vehicle image
+            if (vehicleInList.hasOwnProperty('vehicle_img')) {
+              let urlPrefix = '{{ url_for("static", filename="images/vehicles/") }}'
+              $('span#vehicleImg').html('<img class="vehicle-img" src="'+urlPrefix+vehicleInList.vehicle_img+'">')
+              $('span#vehicleImg').show(500)
+            }
           }
         })
       })
@@ -591,13 +621,6 @@
         })
         $('input[name="valid_until"]').val(valid_until)
       })
-
-      // TODO
-      {% if false %}
-      {% if rfid_model['api_created_at'] is not none and rfid_model['api_expires_in'] is not none %}
-      updateOAuthTokenStatus(new Date(({{ rfid_model['api_created_at'] }} *1000) + ({{ rfid_model['api_expires_in'] }} *1000))) // Seconds to milliseconds
-      {% endif %}
-      {% endif %}
 
       showVehicleApiAuthorizationModal = $('#showVehicleApiAuthorizationModal').modal({
         backdrop: 'static',
@@ -734,8 +757,9 @@
             </tr>
             <tr>
               <th><h5>Pasnummer</h5></th>
-              <td class="text-primary" style="vertical-align: middle; text-align: left;">
-                <h4 style="padding-left: 10px;">{{ rfid_model['rfid'] }}</h4>
+              <td class="text-primary rfid-rfid">
+                <h4>{{ rfid_model['rfid'] }}</h4>
+                <span id="vehicleImg"></span>
               </td>
             </tr>
             <tr>

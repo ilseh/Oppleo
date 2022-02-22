@@ -1553,6 +1553,11 @@ def rfid_tokens(token=None):
         account_linked=vApi.isAuthorized()
         if vApi.isAuthorized():
             vehicle_list=vApi.getVehicleList()
+            for vehicle in vehicle_list:
+                vFilename = rfid_model.getVehicleFilename()
+                vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
+                if os.path.exists(vFilePath):
+                    vehicle['vehicle_img'] = vFilename
         return render_template("token.html",
                     rfid_model=rfid_model,
                     account_linked=account_linked,
@@ -1589,13 +1594,30 @@ def rfid_tokens(token=None):
                 entry['get_odometer'] = True if rfid_model.get_odometer else False
                 vApi = VehicleApi(rfid_model=rfid_model)
                 entry['make_api_authorized'] = vApi.isAuthorized()
+
+                vFilename = rfid_model.getVehicleFilename()
+                vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
+                if os.path.exists(vFilePath):
+                    entry['vehicle_img'] = vFilename
+
                 rfid_list.append(entry)
             return jsonify(rfid_list)
         # Specific token
 
         # TODO Clean expired vehicle api tokens
 
-        return jsonify(rfid_model.to_str())
+        entry = rfid_model.to_str()
+        # Add wether token has charge sessions
+        entry['chargeSessions'] = ChargeSessionModel.get_charge_session_count_for_rfid(rfid_model.rfid)
+        vApi = VehicleApi(rfid_model=rfid_model)
+        entry['make_api_authorized'] = vApi.isAuthorized()
+
+        vFilename = rfid_model.getVehicleFilename()
+        vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
+        if os.path.exists(vFilePath):
+            entry['vehicle_img'] = vFilename
+
+        return jsonify(entry)
 
 
     # JSON 
@@ -1847,9 +1869,29 @@ def ValidateTokenOrUrl(token=None):
         # Obtained token
         rfid_model.api_account=request.json['account']
         rfid_model.save()
+
+        """
+            Create a vehicle img if available
+        """
+        vehicleList = vApi.getVehicleList()
+        for vehicle in vehicleList:
+            vImg = vApi.composeImage(vin=vehicle['vin'])
+            if vImg is not None:
+                # Determine unique and non-existing filename
+
+                vFilename = rfid_model.getVehicleFilename()
+                vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
+                # Save the vehicle img to it. Open file in binary write mode
+                vFile = open(vFilePath, "wb")
+                # Write bytes to file
+                vFile.write(vImg)
+                # Close file
+                vFile.close()
+                vehicle['vehicle_img'] = vFilename
+
         return jsonify({
             'status': HTTP_CODE_200_OK, 
-            'vehicles' : vApi.getVehicleList()
+            'vehicles' : vehicleList
             })
     else:
         # Nope, no token
@@ -1879,9 +1921,16 @@ def UnlinkVehicleApi(token=None):
     # Update for specific token
     vApi = VehicleApi(rfid_model=rfid_model)
     vApi.logout()
+
+    vFilename = rfid_model.getVehicleFilename()
+    vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
+    if os.path.exists(vFilePath):
+        os.remove(vFilePath)
+
     vehicle_make = rfid_model.vehicle_make
     account = rfid_model.api_account
     rfid_model.cleanupVehicleInfo()
+
     return jsonify({
             'status'        : HTTP_CODE_200_OK, 
             'action'        : 'unlinkVehicleApi',
@@ -1908,6 +1957,11 @@ def VehicleApi_RevokeOAuth(token=None):
     # Update for specific token
     vApi = VehicleApi(rfid_model=rfid_model)
     vApi.logout()
+
+    vFilename = rfid_model.getVehicleFilename()
+    vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
+    if os.path.exists(vFilePath):
+        os.remove(vFilePath)
 
     rfid_model.api_account = None
     rfid_model.get_odometer = None

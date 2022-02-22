@@ -230,6 +230,44 @@ class VehicleApi:
 
 
     """
+        Returns a PNG formatted composed vehicle image. Valid views are:
+          STUD_3QTR, STUD_SEAT, STUD_SIDE, STUD_REAR and STUD_WHEEL
+    """
+    def composeImage(self, rfid_model:RfidModel=None, account:str=None, vehicle_make:str=None, vin:str=None, view:str='STUD_3QTR'):
+        if rfid_model is None:
+            rfid_model = self.__rfid_model
+        if rfid_model is None or rfid_model.api_account is None:
+            self.__logger.warn("composeImage() - Cannot compose vehicle image for rfid_model.")
+            return None
+
+        if account is None:
+            account = rfid_model.api_account if rfid_model is not None else ( self.__rfid_model.api_account if self.__rfid_model is not None else None )
+        if account is None:
+            self.__logger.warn("composeImage() - Cannot compose vehicle image - no account.")
+            return None
+
+        if vin is None:
+            vin = rfid_model.vehicle_vin if rfid_model is not None else ( self.__rfid_model.vehicle_vin if self.__rfid_model is not None else None )
+        if vin is None:
+            self.__logger.warn("composeImage() - Cannot compose vehicle image - vin.")
+            return None
+
+        if vehicle_make is None:
+            vehicle_make = rfid_model.vehicle_make if rfid_model is not None else ( self.__rfid_model.vehicle_make if self.__rfid_model is not None else None )
+        if vehicle_make is None:
+            self.__logger.warn("composeImage() - Cannot compose vehicle image - no vehicle make.")
+            return None
+
+        if vehicle_make == "Tesla":
+            # Establish account
+            tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
+            return tpw.composeImage(vin=vin, view=view)
+
+        self.__logger.warn("composeImage() - Cannot logout for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        return None
+
+
+    """
         Logout clears the token
     """
     def logout(self, rfid_model:RfidModel=None, account:str=None, vehicle_make:str=None):

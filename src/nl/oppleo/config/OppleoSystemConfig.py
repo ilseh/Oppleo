@@ -2,6 +2,7 @@
 from configparser import ConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
 import os
+import json
 
 from base64 import b64encode
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -91,6 +92,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_MQTT_USERNAME = 'mqtt_username'
     __INI_MQTT_PASSWORD = 'mqtt_password'
 
+    __INI_VEHICLE_OPTIONS_OVERRULING = 'vehicle_options_overruling'
+
     """
         Variables stored in the INI file 
     """
@@ -144,6 +147,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __MQTT_PORT = 1883
     __MQTT_USERNAME = None
     __MQTT_PASSWORD = None
+
+    __VEHICLE_OPTIONS_OVERRULING = json.loads('{}')
 
     __dbAvailable = False
 
@@ -261,6 +266,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__MQTT_USERNAME = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_USERNAME, default=self.__MQTT_USERNAME, log=log)
         self.__MQTT_PASSWORD = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_PASSWORD, default=self.__MQTT_PASSWORD, log=log)
 
+        self.__VEHICLE_OPTIONS_OVERRULING = self.__getJsonOption__(section=self.__INI_MAIN, option=self.__INI_VEHICLE_OPTIONS_OVERRULING, default=self.__VEHICLE_OPTIONS_OVERRULING, log=log)
+
         self.load_completed = True
         
         lt = 'System configuration loaded'
@@ -344,6 +351,9 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             if self.__MQTT_PASSWORD is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_PASSWORD] = self.__MQTT_PASSWORD
 
+            if self.__VEHICLE_OPTIONS_OVERRULING is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_VEHICLE_OPTIONS_OVERRULING] = json.dumps(self.__VEHICLE_OPTIONS_OVERRULING)
+
             # Write actial file
             with open(self.__getConfigFile__(), 'w') as configfile:
                 self.__ini_settings.write(configfile)
@@ -386,6 +396,23 @@ class OppleoSystemConfig(object, metaclass=Singleton):
                 self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
             return default
         return self.__ini_settings.get(section, option)
+
+    def __getJsonOption__(self, section, option, default='', log:list=None):
+        if not self.__ini_settings.has_option(section, option):
+            if log is not None:
+                log.append({ 'type': 'error', 'entry': 'Ini file ERROR: No ' + option + ' in ' + section })
+            if self.__logger is not None:
+                self.__logger.error('Ini file ERROR: No ' + option + ' in ' + section)
+            return default
+
+        try:
+            return json.loads( self.__ini_settings.get(section, option) )
+        except Exception as e:
+            if log is not None:
+                log.append({ 'type': 'error', 'entry': 'Ini file ERROR: Option ' + option + ' in ' + section + ' not valid json' })
+            if self.__logger is not None:
+                self.__logger.error('Ini file ERROR: Option ' + option + ' in ' + section + ' not valid json')
+            return default
 
     def __configSectionMap__(self, section):
         dict1 = {}
@@ -758,13 +785,6 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__writeConfig__()
 
 
-
-
-
-
-
-
-
     """
         pushoverEnabled -> __PUSHOVER_ENABLED
     """
@@ -959,6 +979,21 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         if level == logging.FATAL:
             return 'fatal'
         return 'warning'
+
+
+    def getVehicleOptions(self, make:str=None, vin:str=None, default:str='') -> str:
+        if make is None or vin is None:
+            return default
+
+        try:
+            makeOptions = self.__VEHICLE_OPTIONS_OVERRULING[make]
+            for option in makeOptions:
+                if option['vin'] == vin:
+                    return option['options']
+        except Exception as e:
+            # No key
+            pass
+        return default
 
 
 oppleoSystemConfig = OppleoSystemConfig()

@@ -1,0 +1,53 @@
+
+
+
+{"topic":"oppleo/laadpaal_noord/charge_session/charge_session_ended","payload":{"data":{"id":"1662","energy_device_id":"laadpaal_noord","start_time":"12/01/2022, 11:16:38","rfid":"584190412223","start_value":"7225.7","end_value":"7225.7","tariff":"0.41","total_energy":"0.0","total_price":"0.0","km":"None","end_time":"12/01/2022, 11:22:06","trigger":"WEB"},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"c76998fa.18e578"}
+
+{"topic":"oppleo/laadpaal_noord/evse_status/evse_disabled","payload":{"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"4ec314b3.15c3bc"}
+
+{"topic":"oppleo/laadpaal_noord/websocket/disconnect","payload":{"data":{"clientId":"9dbaaa4862594ffda334dd1bd526469b","clientsConnected":0},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"747595dc.22b9ec"}
+
+{"topic":"oppleo/laadpaal_noord/websocket/connect","payload":{"data":{"clientId":"0effe43be987456cb5e8966a93b8734c","auth":true,"clientsConnected":1},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"6ab5e38d.8d729c"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/odomoter_update_started","payload":{"data":{"status":true,"chargeSessionId":1663},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"8e80db66.cf73f8"}
+
+{"topic":"oppleo/laadpaal_noord/websocket/disconnect","payload":{"data":{"clientId":"3177cbe95a9b49a0b2e7a8d610220c02","clientsConnected":0},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"5db0eb5c.a97ad4"}
+
+{"topic":"oppleo/laadpaal_noord/websocket/connect","payload":{"data":{"clientId":"2f5800311af1420abef5fa89cd501b76","auth":true,"clientsConnected":1},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"73b3fad7.c63344"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/charge_session_ended","payload":{"data":{"id":"1663","energy_device_id":"laadpaal_noord","start_time":"12/01/2022, 11:23:35","rfid":"584190412223","start_value":"7225.7","end_value":"7225.7","tariff":"0.41","total_energy":"0.0","total_price":"0.0","km":"None","end_time":"12/01/2022, 11:26:08","trigger":"WEB"},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"925276fa.971e98"}
+
+{"topic":"oppleo/laadpaal_noord/evse_status/evse_disabled","payload":{"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"aa860aed.9efd88"}
+
+{"topic":"oppleo/laadpaal_noord/websocket/disconnect","payload":{"data":{"clientId":"2f5800311af1420abef5fa89cd501b76","clientsConnected":0},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"ac4eb6e5.b3b898"}
+
+{"topic":"oppleo/laadpaal_noord/websocket/connect","payload":{"data":{"clientId":"e04b56cd67c04b3ea79c02ab2bb25bf2","auth":true,"clientsConnected":1},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"ed42c9ad.ece788"}
+
+
+{"topic":"oppleo/laadpaal_noord/charge_session/charge_session_started","payload":{"data":{"id":"1664","energy_device_id":"laadpaal_noord","start_time":"12/01/2022, 11:26:58","rfid":"584190412223","start_value":"7225.7","end_value":"7225.7","tariff":"0.41","total_energy":"0","total_price":"0","km":"None","end_time":null,"trigger":"WEB"},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"1f8c0305.dbeeed"}
+
+
+{"topic":"oppleo/laadpaal_noord/charge_session/odomoter_update_started","payload":{"data":{"status":true,"chargeSessionId":1664},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"605a89ad.5f4228"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/odomoter_update_ended","payload":{"data":{"status":false,"chargeSessionId":1664,"code":491,"reason":"API Access Token in use"},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"cc4749f9.048cc8"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/odomoter_update_ended","payload":{"data":{"status":false,"chargeSessionId":1665,"code":491,"reason":"API Access Token in use"},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"ba65c81f.336ff8"}
+
+
+{"topic":"oppleo/laadpaal_noord/evse_status/evse_enabled","payload":{"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"2b10a224.1de1fe"}
+
+{"topic":"oppleo/laadpaal_noord/usage/status_update","payload":{"data":{"energy_device_id":"laadpaal_noord","created_at":"12/01/2022, 11:29:48","kwh_l1":"2432.6","kwh_l2":"2393.6","kwh_l3":"2399.4","a_l1":"0.0","a_l2":"0.0","a_l3":"0.0","p_l1":"0.0","p_l2":"0.0","p_l3":"0.0","v_l1":"237.0","v_l2":"239.6","v_l3":"239.2","kw_total":"7225.7","hz":"50.0"}},"qos":0,"retain":false,"_msgid":"690adeae.3a961"}
+
+
+{"topic":"oppleo/laadpaal_noord/evse_status/evse_disabled","payload":{"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"2142c64d.7042ea"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/off_peak_status_update","payload":{"data":{"isOffPeak":false,"offPeakEnabled":true,"peakAllowOnePeriod":false},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"ca3589dd.4ec418"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/charge_session_data_update","payload":{"data":{"id":"1665","energy_device_id":"laadpaal_noord","start_time":"12/01/2022, 11:29:37","rfid":"584190412223","start_value":"7225.7","end_value":"7225.7","tariff":"0.41","total_energy":"0.0","total_price":"0.0","km":"None","end_time":null,"trigger":"AUTO"},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"bb40fc6f.17ddc"}
+
+{"topic":"oppleo/laadpaal_noord/usage/status_update","payload":{"data":{"energy_device_id":"laadpaal_noord","created_at":"12/01/2022, 11:29:44","kwh_l1":"2432.6","kwh_l2":"2393.6","kwh_l3":"2399.4","a_l1":"0.6","a_l2":"0.3","a_l3":"0.3","p_l1":"138.5","p_l2":"0.0","p_l3":"0.0","v_l1":"237.0","v_l2":"239.7","v_l3":"239.3","kw_total":"7225.7","hz":"50.0"}},"qos":0,"retain":false,"_msgid":"febb6404.17c3b8"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/charge_session_data_update","payload":{"data":{"id":"1665","energy_device_id":"laadpaal_noord","start_time":"12/01/2022, 11:29:37","rfid":"584190412223","start_value":"7225.7","end_value":"7225.7","tariff":"0.41","total_energy":"0.0","total_price":"0.0","km":"None","end_time":null,"trigger":"AUTO"},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"a210a3c.d9ed26"}
+
+{"topic":"oppleo/laadpaal_noord/charge_session/charge_session_deleted","payload":{"data":{"deleteId":1664},"id":"laadpaal_noord"},"qos":0,"retain":false,"_msgid":"c531d24e.93312"}
+

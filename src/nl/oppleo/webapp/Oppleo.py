@@ -57,6 +57,7 @@ try:
 
     # File upload, used for user image
     app.config['AVATAR_FOLDER'] = oppleoConfig.oppleoRootDirectory + 'src/nl/oppleo/webapp/static/images/avatars/'
+    app.config['VEHICLE_FOLDER'] = oppleoConfig.oppleoRootDirectory + 'src/nl/oppleo/webapp/static/images/vehicles/'
     app.config['MAX_CONTENT_PATH'] = 256 * 1024  # 256kB
 
 
