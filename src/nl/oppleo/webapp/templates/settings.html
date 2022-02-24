@@ -2220,6 +2220,75 @@
                             </tr>
                             <tr>
                               <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Auto-session</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Ingeschakeld:</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if oppleoconfig.autoSessionEnabled %}checked{% endif %}
+                                  name="autoSessionEnabled"
+                                  id="autoSessionEnabled"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Minutes:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="autoSessionMinutes"
+                                suffix=" min" 
+                                value="{{ oppleoconfig.autoSessionMinutes }}"
+                                validation="^([1-9]+)$"
+                                info="Tesla Model 3 settings are 0.1kWh in 90 minutes"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Energy:</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="autoSessionEnergy"
+                                suffix="kWh" 
+                                value="{{ oppleoconfig.autoSessionEnergy }}"
+                                validation="^[0-9]*[.]*[0-9]+$"
+                                info="Tesla Model 3 settings are 0.1kWh in 90 minutes"
+                                />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Condense sessies:</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if oppleoconfig.autoSessionCondenseSameOdometer %}checked{% endif %}
+                                  name="autoSessionCondenseSameOdometer"
+                                  id="autoSessionCondenseSameOdometer"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
                                 <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Voertuiginformatie</h4>
                               </th>
                             </tr>
@@ -3376,74 +3445,6 @@
                                 value="{{ oppleoconfig.pulseLedMax }}"
                                 validation="^([1-9][0-9]?|100)$"
                                 info="98%"
-                                />
-                              </td>
-                            </tr>
-                            <tr>
-                              <th colspan="2">&nbsp;</th>
-                            </tr>
-                            <tr>
-                              <th colspan="2" style="line-height: 40px;">
-                                <h4 class="m-t-0 header-title"><i class="fas fa-tasks"></i> Auto-session</h4>
-                              </th>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Ingeschakeld:</td>
-                              <td class="text-primary">
-                                <input type="checkbox" 
-                                  {% if oppleoconfig.autoSessionEnabled %}checked{% endif %}
-                                  name="autoSessionEnabled"
-                                  id="autoSessionEnabled"
-                                  data-toggle="toggle"
-                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
-                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
-                                  data-onstyle="primary"
-                                  data-offstyle="dark"
-                                  data-size="sm"
-                                  data-height="30"
-                                  data-width="70"
-                                />
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Minutes:</td>
-                              <td class="text-primary">
-                                <oppleo-edit-str 
-                                id="autoSessionMinutes"
-                                suffix=" min" 
-                                value="{{ oppleoconfig.autoSessionMinutes }}"
-                                validation="^([1-9]+)$"
-                                info="Tesla Model 3 settings are 0.1kWh in 90 minutes"
-                                />
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Energy:</td>
-                              <td class="text-primary">
-                                <oppleo-edit-str 
-                                id="autoSessionEnergy"
-                                suffix="kWh" 
-                                value="{{ oppleoconfig.autoSessionEnergy }}"
-                                validation="^[0-9]*[.]*[0-9]+$"
-                                info="Tesla Model 3 settings are 0.1kWh in 90 minutes"
-                                />
-                              </td>
-                            </tr>
-                            <tr>
-                              <td class="text-dark">Condense sessies:</td>
-                              <td class="text-primary">
-                                <input type="checkbox" 
-                                  {% if oppleoconfig.autoSessionCondenseSameOdometer %}checked{% endif %}
-                                  name="autoSessionCondenseSameOdometer"
-                                  id="autoSessionCondenseSameOdometer"
-                                  data-toggle="toggle"
-                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
-                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
-                                  data-onstyle="primary"
-                                  data-offstyle="dark"
-                                  data-size="sm"
-                                  data-height="30"
-                                  data-width="70"
                                 />
                               </td>
                             </tr>

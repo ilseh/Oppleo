@@ -89,11 +89,24 @@
   }
   .vehicle-img {
       position: absolute;
-      right: 130px;
+    }
+  @media (min-width: 400px) {
+    .vehicle-img {
       top: -85px;
+      right: 130px;
       max-width: 260px;
       max-height: 180px;
     }
+  }
+  /* iPhone reports 375 screen width, in portrait or landscape */
+  @media (max-width: 399px) {
+    .vehicle-img {
+      top: -25px;
+      right: 70px;
+      max-width: 140px;
+      max-height: 90px;
+    }
+  }
   </style>
 
   <script>

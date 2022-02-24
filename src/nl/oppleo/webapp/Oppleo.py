@@ -363,7 +363,6 @@ except DbException as dbe:
 
         from flask import Flask, render_template, jsonify, redirect, request, url_for, session, current_app
         from werkzeug.serving import run_simple
-        from nl.oppleo.services.PushMessageProwl import PushMessageProwl
         import os
         from flask_wtf.csrf import CSRFProtect
 
@@ -462,6 +461,7 @@ except DbException as dbe:
 
         # Oppleo Limp mode Prowl apiKey and no ChargerName
         if oppleoSystemConfig.prowlEnabled:
+            from nl.oppleo.services.PushMessageProwl import PushMessageProwl
             PushMessageProwl.sendMessage(
                 title="Limp mode", 
                 message="Database exception caused limp mode at {}. [signature: {}]"
@@ -471,6 +471,24 @@ except DbException as dbe:
                     ),
                 priority=PushMessageProwl.priorityHigh,
                 apiKey=oppleoSystemConfig.prowlApiKey,
+                chargerName='Unknown'
+                )
+
+        # Oppleo Limp mode Prowl apiKey and no ChargerName
+        if oppleoSystemConfig.pushoverEnabled:
+            from nl.oppleo.services.PushMessagePushover import PushMessagePushover
+            PushMessagePushover.sendMessage(
+                title="Limp mode", 
+                message="Database exception caused limp mode at {}. [signature: {}]"
+                    .format(
+                        datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                        oppleoSystemConfig.SIGNATURE
+                    ),
+                priority=PushMessagePushover.priorityHigh,
+                apiKey=oppleoSystemConfig.pushoverApiKey,
+                userKey=oppleoSystemConfig.pushoverUserKey,
+                device=oppleoSystemConfig.pushoverDevice,
+                sound=oppleoSystemConfig.pushoverSound,
                 chargerName='Unknown'
                 )
 
@@ -507,16 +525,37 @@ except Exception as e:
         oppleoLogger.error('Cannot recover Oppleo...')
 
     # Hardcoded Oppleo Limp mode Prowl apiKey and no ChargerName
-    PushMessageProwl.sendMessage(
-        title="Crashed" if restartFailed else "Restarting", 
-        message="An exception caused a restart at {}. (signature: {} Exception details: {}{})"
-            .format(
-                datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
-                oppleoSystemConfig.SIGNATURE,
-                str(e),
-                '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
-            ),
-        priority=PushMessageProwl.priorityHigh,
-        apiKey='325da9b81240111bec9770c9b8bb97dd60373077',   
-        chargerName='Unknown' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else oppleoConfig.chargerName
-        )
+    if oppleoSystemConfig.prowlEnabled:
+        from nl.oppleo.services.PushMessageProwl import PushMessageProwl
+        PushMessageProwl.sendMessage(
+            title="Crashed" if restartFailed else "Restarting", 
+            message="An exception caused a restart at {}. (signature: {} Exception details: {}{})"
+                .format(
+                    datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                    oppleoSystemConfig.SIGNATURE,
+                    str(e),
+                    '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
+                ),
+            priority=PushMessageProwl.priorityHigh,
+            apiKey=oppleoSystemConfig.prowlApiKey,
+            chargerName='Unknown' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else oppleoConfig.chargerName
+            )
+
+    if oppleoSystemConfig.pushoverEnabled:
+        from nl.oppleo.services.PushMessagePushover import PushMessagePushover
+        PushMessagePushover.sendMessage(
+            title="Crashed" if restartFailed else "Restarting", 
+            message="An exception caused a restart at {}. (signature: {} Exception details: {}{})"
+                .format(
+                    datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                    oppleoSystemConfig.SIGNATURE,
+                    str(e),
+                    '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
+                ),
+            priority=PushMessagePushover.priorityHigh,
+            apiKey=oppleoSystemConfig.pushoverApiKey,
+            userKey=oppleoSystemConfig.pushoverUserKey,
+            device=oppleoSystemConfig.pushoverDevice,
+            sound=oppleoSystemConfig.pushoverSound,
+            chargerName='Unknown'
+            )

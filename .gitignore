@@ -34,6 +34,7 @@ backup/*.zip
 db/liquibase.properties
 src/nl/oppleo/webapp/static/images/users
 src/nl/oppleo/webapp/static/images/avatars/*
+src/nl/oppleo/webapp/static/images/vehicles/*
 !src/nl/oppleo/webapp/static/images/avatars/unknown.png
 Minton-v6.1
 src/nl/oppleo/api/test/mycar.ini
