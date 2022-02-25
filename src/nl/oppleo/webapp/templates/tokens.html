@@ -384,9 +384,32 @@
             })
           },
           "columnDefs": [{
-            "targets": [1, 10, 12],
+            "targets": [1, 12],
             "sorting": false,
             "orderable": false
+          }, {
+            "targets": [10],
+            "sorting": false,
+            "orderable": false,
+            "render": function (data, type, row) {
+              if (row[10].toLowerCase() != 'ja') {
+                return `<span data-toggle="tooltip"
+                              data-placement="bottom"
+                              data-html="true"
+                              title="<span class='text-secondary'><i class='fa-lg fas fa-times'></i> <em>Geen kilometerstand ophalen</em></span>"
+                              >
+                              <i class="fa-lg fas fa-times"></i>
+                        </span>`
+              } else {
+                return `<span data-toggle="tooltip"
+                              data-placement="bottom"
+                              data-html="true"
+                              title="<span class='text-success'><i class='fa-lg fas fa-check'></i> Haal kilometerstand op</span>"
+                              >
+                              <i class="text-white fa-lg font-bold fas fa-check"></i>
+                        </span>`
+              }
+            }
           }, {
             "targets": [11],
             "sorting": false,
@@ -396,10 +419,10 @@
                 return '<span data-toggle="tooltip" \
                               data-placement="bottom" \
                               data-html="true" \
-                              title="<em>Niet beschikbaar</em>" \
-                              stype="cursor: not-allowed;" \
+                              title="<em>Niet beschikbaar voor dit merk</em>" \
+                              style="cursor: not-allowed;" \
                               > \
-                              <i class="fas fa-ban"></i> \
+                              <i class="fa-lg fas fa-ban"></i> \
                         </span>'
               }
               return( !data ? `<span data-toggle="tooltip"
@@ -407,14 +430,14 @@
                             data-html="true"
                             title="<span class='text-secondary'><i class='fas fa-unlink'></i> <em>Geen autorisatie</em></span>"
                             >
-                            <i class="fas fa-unlink"></i>
+                            <i class="fa-lg fas fa-unlink"></i>
                       </span>` : 
                         `<span data-toggle="tooltip"
                               data-placement="bottom"
                               data-html="true"
                               title="<span class='text-success'><i class='fas fa-link'></i> Geautoriseerd</span>"
                               >
-                              <i class="text-success fas fa-link"></i>
+                              <i class="text-white fa-lg fas fa-link"></i>
                         </span>`
               )
             }
@@ -584,8 +607,7 @@
 
           el = { name: 'None', rfid: data.token, enabled: null, created_at: '{% if now.day < 10 %}0{% endif %}{{ now.day }}/{% if now.month < 10 %}0{% endif %}{{ now.month }}/{{ now.year }}, {% if now.hour < 10 %}0{% endif %}{{ now.hour }}:{% if now.minute < 10 %}0{% endif %}{{ now.minute }}:00', valid_from: null, valid_until: null, 
                 last_used_at: null, chargeSessions: 0, vehicle_name: 'None', vehicle_make: 'None', vehicle_model: 'None', 
-                vehicle_vin: 'None',  license_plate: 'None', get_odometer: 'None', api_access_token: 'None', api_created_at: 'None', 
-                api_expires_in: 'None', api_refresh_token: 'None', api_token_type: 'None' }
+                vehicle_vin: 'None',  license_plate: 'None', get_odometer: false, api_account: 'None' }
           addTokenToTokenTable( el )
 
           $('button[id^="edit_'+data.token+'"]').click(function() {

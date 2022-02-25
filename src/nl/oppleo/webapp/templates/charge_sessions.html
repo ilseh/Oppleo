@@ -790,12 +790,13 @@
               } else {
                 // Default - type = 'display' - on screen or other exports
                 // Valid token (existing and not expired), and odometer capture enabled
-                let validToken = (rfidTokens != undefined && row[1] in rfidTokens &&
-                                  new Date((parseInt(rfidTokens[row[1]].api_created_at) + parseInt(rfidTokens[row[1]].api_expires_in)) * 1000) > new Date() &&
-                                  rfidTokens[row[1]].get_odometer === "True"
+                let canGetOdometer =  (rfidTokens != undefined && row[1] in rfidTokens &&
+                                  rfidTokens[row[1]].make_api_authorized &&
+                                  rfidTokens[row[1]].get_odometer
                                  )
+
                 return ( data == undefined || data === "None" ? 
-                        ( validToken && row[6] == "-" && !isEditMode() ? 
+                        ( canGetOdometer && row[6] == "-" && !isEditMode() ? 
                           // First row
                           '- <button' +
                           '   type="button"' +
