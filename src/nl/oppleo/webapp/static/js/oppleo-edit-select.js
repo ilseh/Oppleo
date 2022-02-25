@@ -50,7 +50,9 @@ class OppleoEditSelect extends HTMLElement {
       <link rel="stylesheet" type="text/css" href="/static/plugins/fontawesome/5.13.3/css/all.min.css">
       <link rel="stylesheet" type="text/css" href="/static/css/oppleo-edit-select.css">
       <style>
-
+      .input-group-text-disabled {
+        color: #6c757d !important;
+      }
       </style>
 
       <div class="input-group">
@@ -387,6 +389,20 @@ class OppleoEditSelect extends HTMLElement {
     this.drawValidationBorder()  
 
   }
-
+  isEditable() {
+    return (this.$cancelButton.style.display != "none")
+  }
+  cancel() {
+    if (this.isEditable()) {
+      this.$cancelButton.click()
+    }
+  }
+  disable(disable=true) {
+    // Mouse enter/leave  this.$info
+    this.$select.disabled = disable
+    this.$cancelButton.disabled = disable
+    this.$editApplyButton.disabled = disable
+    $(this.$text).find('span').toggleClass('input-group-text-disabled', disable)
+  }
 }
 window.customElements.define('oppleo-edit-select', OppleoEditSelect)

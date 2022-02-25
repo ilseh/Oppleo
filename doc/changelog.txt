@@ -2,6 +2,7 @@ Version 1.4.0           2022-02-20
 
 Added
 - Vehicle image on dashboard and token screens for Tesla. Ini file option to overrule option codes.
+- Modbus parameters configurable in settings.
 
 Fixed
 - Tesla authorization not working. Replaced TeslaApi with standard lib TeslaPy. Added refresh token and URL authorization. No headless autorization supported at this time.

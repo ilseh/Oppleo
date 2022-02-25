@@ -49,10 +49,13 @@ oppleo_edit_str_template.innerHTML = `
     color: #3bafda !important;
     background-color: rgba(0,0,0,.05) !important;
   }
+  .form-control-disabled, .form-control-disabled[readonly] {
+    color: #6c757d !important;
+  }
   .input-group {
     position: relative;
     display: flex;
-    flex-wrap: wrap; // For form validation feedback
+    flex-wrap: wrap; /* For form validation feedback */
     align-items: stretch;
     width: 100%;
   }
@@ -427,6 +430,21 @@ class OppleoEditStr extends HTMLElement {
   }
   render() {
     this.$info.setAttribute('data-original-title', this.info)
+  }
+  isEditable() {
+    return (this.$cancelButton.style.display != "none")
+  }
+  cancel() {
+    if (this.isEditable()) {
+      this.$cancelButton.click()
+    }
+  }
+  disable(disable=true) {
+     // Mouse enter/leave  this.$info
+     this.$input.disabled = disable
+     this.$cancelButton.disabled = disable
+     this.$editApplyButton.disabled = disable
+     $(this.$input).toggleClass('form-control-disabled', disable)
   }
 }
 window.customElements.define('oppleo-edit-str', OppleoEditStr)

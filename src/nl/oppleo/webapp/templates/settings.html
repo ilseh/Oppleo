@@ -289,6 +289,8 @@
       console.log(timestamp() + ' updateSettings()')            
       // Show spinner
       $('.spinner').show()
+      if (value === true) value = 'true'
+      if (value === false) value = 'false'     
       data = {
             csrf_token    : '{{ csrf_token() }}',
             param         : param,
@@ -1132,6 +1134,44 @@
       })
     }
 
+    function activatekWhMeterSettings$(enabled=false) {
+      // Cancel editing
+      $('oppleo-edit-str#port_name')[0].cancel()
+      $('oppleo-edit-str#slave_address')[0].cancel()
+      $('oppleo-edit-select#mode')[0].cancel()
+      $('oppleo-edit-select#baudrate')[0].cancel()
+      $('oppleo-edit-select#bytesize')[0].cancel()
+      $('oppleo-edit-select#stopbits')[0].cancel()
+      $('oppleo-edit-select#parity')[0].cancel()
+      $('oppleo-edit-str#serial_timeout')[0].cancel()
+      $('oppleo-edit-select#modbusConfig')[0].cancel()
+      $('oppleo-edit-str#modbusInterval')[0].cancel()
+      // Disable
+      $('oppleo-edit-str#port_name')[0].disable(enabled)
+      $('oppleo-edit-str#slave_address')[0].disable(enabled)
+      $('oppleo-edit-select#mode')[0].disable(enabled)
+      $('oppleo-edit-select#baudrate')[0].disable(enabled)
+      $('oppleo-edit-select#bytesize')[0].disable(enabled)
+      $('oppleo-edit-select#stopbits')[0].disable(enabled)
+      $('oppleo-edit-select#parity')[0].disable(enabled)
+      $('oppleo-edit-str#serial_timeout')[0].disable(enabled)
+      $('oppleo-edit-select#modbusConfig')[0].disable(enabled)
+      $('oppleo-edit-str#modbusInterval')[0].disable(enabled)
+
+      $('input#debug').bootstrapToggle('destroy')
+      $('input#debug').attr('data-onstyle', (enabled?"secondary":"primary"))
+      $('input#debug').attr("disabled",enabled)
+      $('input#debug').bootstrapToggle()
+      $('input#close_port_after_each_call').bootstrapToggle('destroy')
+      $('input#close_port_after_each_call').attr('data-onstyle', (enabled?"secondary":"primary"))
+      $('input#close_port_after_each_call').attr("disabled",enabled)
+      $('input#close_port_after_each_call').bootstrapToggle()
+
+      $('span#energyDeviceEnabledInfo').toggleClass('text-secondary', !enabled)
+      $('span#energyDeviceEnabledInfo').toggleClass('text-warning', enabled)
+      $('span#energyDeviceEnabledInfo').toggleClass('font-italic', !enabled)
+    }
+
     jQuery(document).ready(function() {
       console.log(timestamp() + " file load completed!")
       $('pre#diag_json').html( 
@@ -1190,7 +1230,17 @@
       })
       $('input#energyDeviceEnabled').bootstrapToggle()
       $('input#energyDeviceEnabled').change(function() {
+        // Only allow changes if this is disabled
+        activatekWhMeterSettings$( $(this).prop('checked') )
         updateSettings( 'energyDeviceEnabled', $(this).prop('checked') )
+      })
+      // Default
+      activatekWhMeterSettings$( {% if energydevicemodel.device_enabled %}true{% else %}false{% endif %} )
+      $('input#debug').change(function() {
+        updateSettings( 'debug', $(this).prop('checked') )
+      })
+      $('input#close_port_after_each_call').change(function() {
+        updateSettings( 'close_port_after_each_call', $(this).prop('checked') )
       })
 
       $('input#oppleoLedEnabled').change(function() {
@@ -1439,9 +1489,6 @@
           $('#backupOffsiteCount').html(result.osBackupList.length + ' backups')
           $('button#backup-offsite-showinfo').prop('disabled', false)
           $('button#backup-offsite-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens vernieuwen')
-
-
-
         }, function(result) {
           switch(result.status) {
             case 404:
@@ -1454,7 +1501,6 @@
           $('button#backup-offsite-showinfo').prop('disabled', false)
           $('button#backup-offsite-showinfo').html(' <i class="fas fa-angle-right"></i> Gegevens ophalen')
         } )
-
       })
 
       $('button#smbBackupValidatePassword').on('click', function(e) {
@@ -2521,8 +2567,6 @@
                     </div>
                   </div>
 
-
-
                   <div class="tab-pane{% if active==2 %} active{% endif %}" id="v-kwhmeter">
                     <div class="col-lg-9">
                       <div class="card-box">
@@ -2545,11 +2589,33 @@
                                   data-height="30"
                                   data-width="70"
                                 />
+                                <span id="energyDeviceEnabledInfo" class="pl-2 text-secondary">Deactiveer om te wijzigen</span>
                               </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Device interface:</td>
-                              <td class="text-primary">Modbus</td>
+                              <td class="text-primary">Modbus
+                                <button class="btn btn-xs btn-outline-info waves-effect ml-2 pl-1 pr-1" 
+                                  style="cursor: pointer;"
+                                  data-toggle="tooltip"
+                                  data-placement="right" 
+                                  data-html="true" 
+                                  title="Meer informatie over seriele verbindingen."
+                                  onclick="parent.open('https://pyserial.readthedocs.io/en/latest/pyserial_api.html#constants')"
+                                  >
+                                  <i class="fa fa-info-circle"></i>
+                                </button>
+                                <button class="btn btn-xs btn-outline-info waves-effect pl-1 pr-1" 
+                                  style="cursor: pointer;"
+                                  data-toggle="tooltip"
+                                  data-placement="right" 
+                                  data-html="true" 
+                                  title="Meer informatie over modbus mode."
+                                  onclick="parent.open('https://www.virtual-serial-port.org/articles/modbus-rtu-guide/')"
+                                  >
+                                  <i class="fa fa-info-circle"></i>
+                                </button>
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Port name:</td>
@@ -2577,7 +2643,16 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Mode:</td>
-                              <td class="text-primary">{{ energydevicemodel.mode }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                  id="mode"
+                                  options='[ { "text": "Remote Terminal Unit (RTU)", "id": "rtu"{% if energydevicemodel.mode == 'rtu' %}, "selected": "true" {% endif %} },
+                                             { "text": "ASCII", "id": "ascii"{% if energydevicemodel.mode == 'ascii' %}, "selected": "true" {% endif %} }
+                                           ]'
+                                  placeholder="Maak een keuze..."
+                                  info="Modbus mode rtu of ascii."
+                                />                               
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Snelheid:</td>
@@ -2599,27 +2674,93 @@
                             </tr>
                             <tr>
                               <td class="text-dark">Byte size:</td >
-                              <td class="text-primary">{{ energydevicemodel.bytesize }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                  id="bytesize"
+                                  options='[ { "text": "5", "id": "5"{% if energydevicemodel.bytesize == 5 %}, "selected": "true" {% endif %} }, 
+                                             { "text": "6", "id": "6"{% if energydevicemodel.bytesize == 6 %}, "selected": "true" {% endif %} }, 
+                                             { "text": "7", "id": "7"{% if energydevicemodel.bytesize == 7 %}, "selected": "true" {% endif %} },
+                                             { "text": "8", "id": "8"{% if energydevicemodel.bytesize == 8 %}, "selected": "true" {% endif %} }
+                                           ]'
+                                  placeholder="Maak een keuze..."
+                                  info="Afhankelijk van het apparaat. <a href='https://pyserial.readthedocs.io/en/latest/pyserial_api.html#constants' target='_new'>Info</a>"
+                                />                               
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Stop bits:</td >
-                              <td class="text-primary">{{ energydevicemodel.stopbits }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                  id="stopbits"
+                                  options='[ { "text": "1", "id": "1"{% if energydevicemodel.stopbits == 1 %}, "selected": "true" {% endif %} },
+                                             { "text": "2", "id": "2"{% if energydevicemodel.stopbits == 2 %}, "selected": "true" {% endif %} }
+                                           ]'
+                                  placeholder="Maak een keuze..."
+                                  info="Afhankelijk van het apparaat. <a href='https://pyserial.readthedocs.io/en/latest/pyserial_api.html#constants' target='_new'>Info</a>"
+                                />                               
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Parity:</td >
-                              <td class="text-primary">{{ energydevicemodel.parity }}</td>
+                              <td class="text-primary">
+                                <oppleo-edit-select 
+                                  id="parity"
+                                  options='[ { "text": "None", "id": "N"{% if energydevicemodel.parity == 'N' %}, "selected": "true" {% endif %} }, 
+                                             { "text": "Even", "id": "E"{% if energydevicemodel.parity == 'E' %}, "selected": "true" {% endif %} }, 
+                                             { "text": "Odd", "id": "O"{% if energydevicemodel.parity == 'O' %}, "selected": "true" {% endif %} },
+                                             { "text": "Mark", "id": "M"{% if energydevicemodel.parity == 'M' %}, "selected": "true" {% endif %} },
+                                             { "text": "Space", "id": "S"{% if energydevicemodel.parity == 'S' %}, "selected": "true" {% endif %} }
+                                           ]'
+                                  placeholder="Maak een keuze..."
+                                  info="Afhankelijk van het apparaat. <a href='https://pyserial.readthedocs.io/en/latest/pyserial_api.html#constants' target='_new'>Info</a>"
+                                />                               
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Timeout:</td>
-                              <td class="text-primary">{{ energydevicemodel.serial_timeout }}sec</td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="serial_timeout"
+                                  suffix=" seconden" 
+                                  value="{{ energydevicemodel.serial_timeout }}"
+                                  validation="^(?!0+(?:\.0+)?$)(?:9|9.0|9.00|9.000|[0-9]{1}(?:\.[0-9]{1,3})?)$"
+                                  info="Modbus timeout. 0-9.999s"
+                                />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Debug:</td>
-                              <td class="text-primary">{{ energydevicemodel.debug }}</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if energydevicemodel.debug %}checked{% endif %}
+                                  id="debug"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                  />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Close port after each call:</td>
-                              <td class="text-primary">{{ energydevicemodel.close_port_after_each_call }}</td>
+                              <td class="text-primary">
+                                <input type="checkbox" 
+                                  {% if energydevicemodel.close_port_after_each_call %}checked{% endif %}
+                                  id="close_port_after_each_call"
+                                  data-toggle="toggle"
+                                  data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                  data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                  data-onstyle="primary"
+                                  data-offstyle="dark"
+                                  data-size="sm"
+                                  data-height="30"
+                                  data-width="70"
+                                  />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Modbus register configuration:</td>
@@ -2644,7 +2785,7 @@
                                 />
                                 </td>
                             </tr>
-
+                            
                             {% endif %}
                           </tbody>
                         </table>
@@ -2706,7 +2847,7 @@
                                   suffix=" seconden" 
                                   value="{{ oppleosystemconfig.httpTimeout }}"
                                   validation="^[1-9][0-9]{0,2}$"
-                                  info="Timeout voor outbound HTTP connecties naar de Prowl en Tesla API's."
+                                  info="Timeout voor outbound HTTP connecties naar de Prowl, Pushover en Tesla API's."
                                 />
                               </td>
                             </tr>

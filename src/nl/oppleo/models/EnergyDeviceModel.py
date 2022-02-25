@@ -3,7 +3,7 @@ from marshmallow import fields, Schema
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
-from sqlalchemy import orm, func, Column, String, Integer, Boolean, desc
+from sqlalchemy import orm, func, Column, String, Integer, Boolean, Float, desc
 from sqlalchemy.exc import InvalidRequestError
 
 
@@ -22,7 +22,7 @@ class EnergyDeviceModel(Base):
     bytesize = Column(Integer)
     parity = Column(String(1))
     stopbits = Column(Integer)
-    serial_timeout = Column(Integer)
+    serial_timeout = Column(Float)
     debug = Column(Boolean)
     mode = Column(String(10))
     close_port_after_each_call = Column(Boolean)
@@ -123,7 +123,7 @@ class EnergyDeviceSchema(Schema):
     bytesize = fields.Int(dump_only=True)
     parity = fields.Str(dump_only=True)
     stopbits = fields.Int(dump_only=True)
-    serial_timeout = fields.Int(dump_only=True)
+    serial_timeout = fields.Float(dump_only=True)
     debug = fields.Bool(dump_only=True)
     mode = fields.Str(dump_only=True)
     close_port_after_each_call = fields.Bool(dump_only=True)

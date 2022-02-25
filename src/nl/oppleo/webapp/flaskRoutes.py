@@ -1992,36 +1992,6 @@ def update_settings(param=None, value=None):
         if value != request.form.get('value'):
             value = request.form.get('value')
 
-    # The USB port for the modbus interface
-    if param == 'port_name':
-        edm = EnergyDeviceModel.get()
-        if value != edm.port_name:
-            edm.port_name = value
-            edm.save()
-            oppleoConfig.restartRequired = True
-            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
-
-    # The kWhh meter modbus register parameters
-    if param == 'modbusConfig':
-        edm = EnergyDeviceModel.get()
-        if value != edm.modbus_config:
-            edm.modbus_config = value
-            edm.save()
-            oppleoConfig.restartRequired = True
-            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.modbus_config })
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
-
-    # Enable/ disable the modbus interface
-    if param == 'energyDeviceEnabled':
-        edm = EnergyDeviceModel.get()
-        edm.device_enabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        edm.save()
-        if oppleoConfig.energyDevice is not None:
-            oppleoConfig.energyDevice.enable( edm.device_enabled )
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
-
-
     if (param == 'offpeakEnabled'):
         oppleoConfig.offpeakEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         ophm = OffPeakHoursModel()
@@ -2189,7 +2159,7 @@ def update_settings(param=None, value=None):
 
     # autoSessionEnergy
     if (param == 'autoSessionEnergy') and (isinstance(value, float) or RepresentsFloat(value)):
-        oppleoConfig.autoSessionEnergy = int(value)
+        oppleoConfig.autoSessionEnergy = float(value)
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
     # logFile
@@ -2249,12 +2219,31 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.onDbFailureShowCurrentUrl = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
-    # baudrate
-    if (param == 'baudrate') and int(value) in [2400, 4800, 9600, 19200, 38400, 57600, 115200]:
-        energyDeviceModel = EnergyDeviceModel.get()
-        energyDeviceModel.baudrate = value
-        energyDeviceModel.save()
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+
+
+
+
+
+
+    # Enable/ disable the modbus interface
+    if param == 'energyDeviceEnabled':
+        edm = EnergyDeviceModel.get()
+        edm.device_enabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        edm.save()
+        if oppleoConfig.energyDevice is not None:
+            oppleoConfig.energyDevice.enable( edm.device_enabled )
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
+
+    # The USB port for the modbus interface
+    if param == 'port_name':
+        edm = EnergyDeviceModel.get()
+        if value != edm.port_name:
+            edm.port_name = value
+            edm.save()
+            oppleoConfig.restartRequired = True
+            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.port_name })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' })
 
     # slave_address
     validation="^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$"
@@ -2263,113 +2252,82 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'reason': 'No valid integer value' })
+            return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'reason': 'No valid integer value' }), HTTP_CODE_400_BAD_REQUEST
         energyDeviceModel = EnergyDeviceModel.get()
         energyDeviceModel.slave_address = value
         energyDeviceModel.save()
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.slave_address })
 
-    # prowlEnabled
-    if (param == 'prowlEnabled'):
-        oppleoSystemConfig.prowlEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.prowlEnabled })
+    # modbus mode
+    from minimalmodbus import MODE_ASCII, MODE_RTU
+    if (param == 'mode') and isinstance(value, str) and value.lower() in [MODE_ASCII, MODE_RTU]:
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.mode = value.lower()
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.mode }), HTTP_CODE_200_OK
 
-    # prowlApiKey
-    if (param == 'prowlApiKey') and isinstance(value, str):
-        oppleoSystemConfig.prowlApiKey = value if len(value) > 0 else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+    # baudrate
+    if (param == 'baudrate') and int(value) in [2400, 4800, 9600, 19200, 38400, 57600, 115200]:
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.baudrate = value
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.baudrate }), HTTP_CODE_200_OK
 
-    # pushoverEnabled
-    if (param == 'pushoverEnabled'):
-        oppleoSystemConfig.pushoverEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.pushoverEnabled })
+    # modbus bytesize
+    from serial import FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS
+    if (param == 'bytesize') and int(value) in [FIVEBITS, SIXBITS, SEVENBITS, EIGHTBITS]:
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.bytesize = int(value)
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.bytesize }), HTTP_CODE_200_OK
 
-    # pushoverApiKey
-    if (param == 'pushoverApiKey') and isinstance(value, str):
-        oppleoSystemConfig.pushoverApiKey = value if len(value) > 0 else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+    # modbus stopbits
+    from serial import STOPBITS_ONE, STOPBITS_TWO
+    if (param == 'stopbits') and int(value) in [STOPBITS_ONE, STOPBITS_TWO]:
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.stopbits = int(value)
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.stopbits }), HTTP_CODE_200_OK
 
-    # pushoverUserKey
-    if (param == 'pushoverUserKey') and isinstance(value, str):
-        oppleoSystemConfig.pushoverUserKey = value if len(value) > 0 else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+    # modbus parity
+    from serial import PARITY_NONE, PARITY_EVEN, PARITY_ODD, PARITY_MARK, PARITY_SPACE
+    if (param == 'parity') and isinstance(value, str) and value.upper() in [PARITY_NONE, PARITY_EVEN, PARITY_ODD, PARITY_MARK, PARITY_SPACE]:
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.parity = value.upper()
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.parity }), HTTP_CODE_200_OK
 
-    # pushoverDevice
-    if (param == 'pushoverDevice') and isinstance(value, str):
-        oppleoSystemConfig.pushoverDevice = value if len(value) > 0 and value != '*' else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+    # modbus serial_timeout 0-9.999
+    validation="^(?!0+(?:\.0+)?$)(?:9|9.0|9.00|9.000|[0-9]{1}(?:\.[0-9]{1,3})?)$"
+    if (param == 'serial_timeout') and isinstance(value, str) and re.match(validation, value):
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.serial_timeout = float(value)
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.serial_timeout }), HTTP_CODE_200_OK
 
-    # pushoverSound
-    if (param == 'pushoverSound') and isinstance(value, str):
-        oppleoSystemConfig.pushoverSound = value if len(value) > 0 else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+    # Modbus debug
+    if param == 'debug':
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.debug = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.debug }), HTTP_CODE_200_OK
 
-    # mqttOutboundEnabled
-    if (param == 'mqttOutboundEnabled'):
-        oppleoSystemConfig.mqttOutboundEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        oppleoMqttClient = OppleoMqttClient()
-        if oppleoMqttClient.is_connected() and not oppleoSystemConfig.mqttOutboundEnabled:
-            oppleoMqttClient.disconnect()
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.mqttOutboundEnabled })
+    # Modbus close_port_after_each_call
+    if param == 'close_port_after_each_call':
+        energyDeviceModel = EnergyDeviceModel.get()
+        energyDeviceModel.close_port_after_each_call = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        energyDeviceModel.save()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.close_port_after_each_call }), HTTP_CODE_200_OK
 
-    # mqttHost
-    validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
-    if (param == 'mqttHost') and isinstance(value, str) and re.match(validation, value):
-        oppleoSystemConfig.mqttHost = value if len(value) > 0 else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
-
-     # mqttPort
-    validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
-    if (param == 'mqttPort') and isinstance(value, str) and re.match(validation, value):
-        oppleoSystemConfig.mqttPort = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.mqttPort })
-
-    # mqttUsername
-    if (param == 'mqttUsername') and isinstance(value, str):
-        oppleoSystemConfig.mqttUsername = value if len(value) > 0 else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
-
-    # mqttPassword
-    if (param == 'mqttPassword') and isinstance(value, str):
-        oppleoSystemConfig.mqttPassword = value if len(value) > 0 else None
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
-
-    # webChargeOnDashboard
-    if (param == 'webChargeOnDashboard'):
-        oppleoConfig.webChargeOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.webChargeOnDashboard })
-
-    # authWebCharge
-    if (param == 'authWebCharge'):
-        oppleoConfig.authWebCharge = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.authWebCharge })
-
-    # restrictDashboardAccess
-    if (param == 'restrictDashboardAccess'):
-        oppleoConfig.restrictDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.restrictDashboardAccess })
-
-    # restrictMenu
-    if (param == 'restrictMenu'):
-        oppleoConfig.restrictMenu = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.restrictMenu })
-
-    # allowLocalDashboardAccess
-    if (param == 'allowLocalDashboardAccess'):
-        oppleoConfig.allowLocalDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.allowLocalDashboardAccess })
-
-    # routerIPAddress
-    validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
-    if (param == 'routerIPAddress') and isinstance(value, str) and re.match(validation, value):
-        oppleoConfig.routerIPAddress = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
-
-    # receiptPrefix
-    validation="^[A-Za-z0-9.-]{0,20}$"
-    if (param == 'receiptPrefix') and isinstance(value, str) and re.match(validation, value):
-        oppleoConfig.receiptPrefix = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+    # The kWh meter modbus register parameters
+    if param == 'modbusConfig':
+        edm = EnergyDeviceModel.get()
+        if value != edm.modbus_config:
+            edm.modbus_config = value
+            edm.save()
+            oppleoConfig.restartRequired = True
+            return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': edm.modbus_config }), HTTP_CODE_200_OK
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'reason': 'No change.' }), HTTP_CODE_200_OK
 
     # modbusInterval
     validation="^([1-9]|[1-5][0-9]|60)$"
@@ -2378,21 +2336,129 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' })
+            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' }), HTTP_CODE_404_NOT_FOUND
         oppleoConfig.modbusInterval = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+
+
+
+
+
+
+    # prowlEnabled
+    if (param == 'prowlEnabled'):
+        oppleoSystemConfig.prowlEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.prowlEnabled }), HTTP_CODE_200_OK
+
+    # prowlApiKey
+    if (param == 'prowlApiKey') and isinstance(value, str):
+        oppleoSystemConfig.prowlApiKey = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # pushoverEnabled
+    if (param == 'pushoverEnabled'):
+        oppleoSystemConfig.pushoverEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.pushoverEnabled }), HTTP_CODE_200_OK
+
+    # pushoverApiKey
+    if (param == 'pushoverApiKey') and isinstance(value, str):
+        oppleoSystemConfig.pushoverApiKey = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # pushoverUserKey
+    if (param == 'pushoverUserKey') and isinstance(value, str):
+        oppleoSystemConfig.pushoverUserKey = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # pushoverDevice
+    if (param == 'pushoverDevice') and isinstance(value, str):
+        oppleoSystemConfig.pushoverDevice = value if len(value) > 0 and value != '*' else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # pushoverSound
+    if (param == 'pushoverSound') and isinstance(value, str):
+        oppleoSystemConfig.pushoverSound = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # mqttOutboundEnabled
+    if (param == 'mqttOutboundEnabled'):
+        oppleoSystemConfig.mqttOutboundEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        oppleoMqttClient = OppleoMqttClient()
+        if oppleoMqttClient.is_connected() and not oppleoSystemConfig.mqttOutboundEnabled:
+            oppleoMqttClient.disconnect()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.mqttOutboundEnabled }), HTTP_CODE_200_OK
+
+    # mqttHost
+    validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
+    if (param == 'mqttHost') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.mqttHost = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+     # mqttPort
+    validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+    if (param == 'mqttPort') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.mqttPort = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.mqttPort }), HTTP_CODE_200_OK
+
+    # mqttUsername
+    if (param == 'mqttUsername') and isinstance(value, str):
+        oppleoSystemConfig.mqttUsername = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # mqttPassword
+    if (param == 'mqttPassword') and isinstance(value, str):
+        oppleoSystemConfig.mqttPassword = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # webChargeOnDashboard
+    if (param == 'webChargeOnDashboard'):
+        oppleoConfig.webChargeOnDashboard = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.webChargeOnDashboard }), HTTP_CODE_200_OK
+
+    # authWebCharge
+    if (param == 'authWebCharge'):
+        oppleoConfig.authWebCharge = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.authWebCharge }), HTTP_CODE_200_OK
+
+    # restrictDashboardAccess
+    if (param == 'restrictDashboardAccess'):
+        oppleoConfig.restrictDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.restrictDashboardAccess }), HTTP_CODE_200_OK
+
+    # restrictMenu
+    if (param == 'restrictMenu'):
+        oppleoConfig.restrictMenu = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.restrictMenu }), HTTP_CODE_200_OK
+
+    # allowLocalDashboardAccess
+    if (param == 'allowLocalDashboardAccess'):
+        oppleoConfig.allowLocalDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.allowLocalDashboardAccess }), HTTP_CODE_200_OK
+
+    # routerIPAddress
+    validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
+    if (param == 'routerIPAddress') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.routerIPAddress = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # receiptPrefix
+    validation="^[A-Za-z0-9.-]{0,20}$"
+    if (param == 'receiptPrefix') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.receiptPrefix = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # httpPort
     validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
     if (param == 'httpPort') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.httpPort = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpPort })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpPort }), HTTP_CODE_200_OK
 
     # httpTimeout 0-999
     validation="^[1-9][0-9]{0,2}$"
     if (param == 'httpTimeout') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.httpTimeout = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpTimeout })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.httpTimeout }), HTTP_CODE_200_OK
 
     # backupEnabled
     if (param == 'backupEnabled'):
@@ -2407,13 +2473,13 @@ def update_settings(param=None, value=None):
             BackupUtil().stopBackupMonitorThread()
         backupUtil.lock.release()
 
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.backupEnabled })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.backupEnabled }), HTTP_CODE_200_OK
 
     # backupInterval
     if ((param == 'backupInterval') and isinstance(value, str) and 
         (value == oppleoConfig.BACKUP_INTERVAL_WEEKDAY or value == oppleoConfig.BACKUP_INTERVAL_CALDAY) ):
         oppleoConfig.backupInterval = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # backupIntervalWeekday
     if (param == 'backupIntervalWeekday'):
@@ -2421,10 +2487,10 @@ def update_settings(param=None, value=None):
             lst = json.loads(value)
             if len(lst) == 7 and all(isinstance(x, bool) for x in lst):
                 oppleoConfig.backupIntervalWeekday = json.dumps(lst)
-                return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+                return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
         except Exception as e:
             pass
-        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value }), HTTP_CODE_400_BAD_REQUEST
 
     # backupIntervalWeekday
     if (param == 'backupIntervalCalday'):
@@ -2435,16 +2501,16 @@ def update_settings(param=None, value=None):
                 lst.pop(0)
             if len(lst) == 31 and all(isinstance(x, bool) for x in lst):
                 oppleoConfig.backupIntervalCalday = json.dumps(lst)
-                return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+                return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
         except Exception as e:
             pass
-        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_400_BAD_REQUEST, 'param': param, 'value': value }), HTTP_CODE_400_BAD_REQUEST
 
     # backupTimeOfDay
     validation='^([01]\d|2[0-3]):?([0-5]\d)$'
     if (param == 'backupTimeOfDay') and isinstance(value, str) and re.match(validation, value):
         oppleoConfig.backupTimeOfDay = time(hour=int(value[0:2]), minute=int(value[3:5]), second=0, microsecond=0)
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # backupLocalHistory
     validation="^(0?[1-9]|[1-9][0-9])$"
@@ -2453,9 +2519,9 @@ def update_settings(param=None, value=None):
             value = int(value)
         except ValueError as e:
             # Conditions not met
-            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' })
+            return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'No valid integer value' }), HTTP_CODE_404_NOT_FOUND
         oppleoConfig.backupLocalHistory = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # osBackupEnabled
     if (param == 'osBackupEnabled'):
@@ -2464,12 +2530,12 @@ def update_settings(param=None, value=None):
         if enableOsBackup and not BackupUtil().validOffsiteBackup():
             return jsonify({ 'status': HTTP_CODE_405_METHOD_NOT_ALLOWED, 'param': param, 'value': oppleoConfig.osBackupEnabled })
         oppleoConfig.osBackupEnabled = enableOsBackup
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.osBackupEnabled })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.osBackupEnabled }), HTTP_CODE_200_OK
 
     # osBackupType
     if (param == 'osBackupType') and isinstance(value, str) and value.lower() in ['smb']:
         oppleoConfig.osBackupType = value
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # osBackupHistory
     validation="^(0?[1-9]|[1-9][0-9])$"
@@ -2553,7 +2619,7 @@ def update_settings(param=None, value=None):
 
 
     # No parameter found or conditions not met
-    return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'Not found' })
+    return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'Not found' }), HTTP_CODE_404_NOT_FOUND
 
 
 
