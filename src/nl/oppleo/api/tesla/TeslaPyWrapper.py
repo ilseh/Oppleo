@@ -248,7 +248,11 @@ class TeslaPyWrapper:
         while vehicle_data is None and tries <= max_retries:
             # Vehicle asleep?
             if vehicle['state'] == 'asleep':
-                vehicle.sync_wake_up()
+                try:
+                    vehicle.sync_wake_up()
+                except teslapy.VehicleError as ve:
+                    self.__logger.warn("getVehicleData() - VehicleError - Vehicle did not wake up within timeout {}".format(ve))
+                    return vehicle
             try:
                 vehicle_data = vehicle.get_vehicle_data()
             except ReadTimeout:
@@ -304,11 +308,11 @@ class TeslaPyWrapper:
         vehicle_data = self.getVehicleData(email=email, vin=vin, max_retries=max_retries, wake_up=wake_up)
 
         if vehicle_data is None:
-            self.__logger.warn("getChargeState() - could not retrieve charge state for {}".format(vin))
+            self.__logger.warn("getChargeState() - could not retrieve vehicle data containing charge state for {}".format(vin))
             return None
 
         if 'charge_state' in vehicle_data:
-            self.__logger.warn("getChargeState() - could not retrieve charge state for {}".format(vin))
+            self.__logger.warn("getChargeState() - no charge state in retrieved vehicle data for {}".format(vin))
             return vehicle_data['charge_state']
 
         # Could not obtain it
