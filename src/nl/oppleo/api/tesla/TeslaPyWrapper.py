@@ -221,7 +221,7 @@ class TeslaPyWrapper:
             email = self.__email
         if email is None:
             self.__logger.warn("getVehicleData() - Cannot get vehicle data for email {}.".format(email))
-            return
+            return None
 
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)
         if not teslaPy.authorized:
@@ -260,7 +260,7 @@ class TeslaPyWrapper:
 
         if vehicle_data is None:
             self.__logger.warn("getVehicleData() - could not retrieve vehicle data for {}".format(vin))
-            return None
+            return vehicle
 
         return vehicle_data
 
