@@ -241,7 +241,7 @@ class TeslaPyWrapper:
         # Are we waking up?
         if vehicle['state'] == 'asleep' and not wake_up:
             self.__logger.info("getVehicleData() - vehicle sleeping and requested to not wake up. No vehicle data obtained")
-            return None
+            return vehicle
 
         vehicle_data = None
         tries = 1
@@ -269,7 +269,7 @@ class TeslaPyWrapper:
         Grab specific information from the vehicle data, in this case the odometer value
     """
 
-    def getOdometer(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=True) -> int:
+    def getOdometer(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=True, odoInKm:bool=True) -> int:
         if email is None:
             email = self.__email
         if email is None:
@@ -284,6 +284,8 @@ class TeslaPyWrapper:
             return -1
 
         odometerInMiles = vehicle_data.get('vehicle_state', {}).get('odometer', None)
+        if not odoInKm:
+            return odometerInMiles
         odometerInKm = round(float(odometerInMiles) * 1.609344) if odometerInMiles is not None else None
         self.__logger.debug("getOdometer() - odometer: {}M or {}km".format(odometerInMiles, odometerInKm))
 

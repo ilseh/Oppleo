@@ -1,7 +1,8 @@
 from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.api.VehicleApi import VehicleApi
+from nl.oppleo.api.tesla.TeslaApiFormatters import formatTeslaVehicle, formatTeslaChargeState
 
-token = "123456789"
+token = "856853722117"
 
 if __name__ == "__main__":
 
@@ -19,10 +20,11 @@ if __name__ == "__main__":
 
     vd = vApi.getVehicleData()
     print ("vd: {}".format(vd))
+    print ("formatTeslaVehicle(vd): {}".format(formatTeslaVehicle(vd)))
 
     cs = vApi.getChargeState()
     print ("cs: {}".format(cs))
-
+    print ("formatTeslaChargeState(cs): {}".format(formatTeslaChargeState(cs)))
 
 
 print ("Done")
