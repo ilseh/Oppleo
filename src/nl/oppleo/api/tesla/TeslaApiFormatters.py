@@ -40,6 +40,10 @@ def formatTeslaChargeStateParam(chargeState:dict=None, param:str=None):
     timestamp                   in millis
 """
 def formatTeslaChargeState(chargeState:dict=None) -> dict:
+
+    if chargeState is None:
+        return None
+
     csEl = ['battery_level', 'battery_range', 'charge_energy_added', 'charge_limit_soc', 'charge_limit_soc_max', 
             'charge_miles_added_rated', 'charge_port_door_open', 'charge_port_latch', 'charge_rate', 'charger_actual_current', 'charger_phases',
             'charger_power', 'charger_voltage', 'charging_state', 'minutes_to_full_charge', 'time_to_full_charge', 

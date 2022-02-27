@@ -289,21 +289,28 @@ class TeslaPyWrapper:
 
         return odometerInKm
 
-
+    """
+        Only if vehicle is awake. If not awake AND not wakeup --> return None!
+    """
     def getChargeState(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=False) -> dict:
         if email is None:
             email = self.__email
         if email is None:
             self.__logger.warn("getChargeState() - Cannot get vehicle data for email {}.".format(email))
-            return {}
+            return None
 
         vehicle_data = self.getVehicleData(email=email, vin=vin, max_retries=max_retries, wake_up=wake_up)
 
         if vehicle_data is None:
             self.__logger.warn("getChargeState() - could not retrieve charge state for {}".format(vin))
-            return {}
+            return None
 
-        return vehicle_data.get('charge_state', {})
+        if 'charge_state' in vehicle_data:
+            self.__logger.warn("getChargeState() - could not retrieve charge state for {}".format(vin))
+            return vehicle_data['charge_state']
+
+        # Could not obtain it
+        return None
 
 
     """

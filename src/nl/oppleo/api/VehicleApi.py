@@ -216,7 +216,7 @@ class VehicleApi:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
             self.__logger.warn("getChargeState() - Cannot get vehicle charge state for rfid_model.")
-            return {}
+            return None
 
         if rfid_model.vehicle_make == "Tesla":
             # Establish account
@@ -226,7 +226,7 @@ class VehicleApi:
                         )   
 
         self.__logger.warn("getChargeState() - Cannot get vehicle charge state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
-        return {}
+        return None
 
 
     """
