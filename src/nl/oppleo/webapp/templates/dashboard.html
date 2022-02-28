@@ -893,6 +893,11 @@
           hideVehicleChargeState()
           return
         }
+        if (msg.data.chargeState == null) {
+          updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
+          hideVehicleChargeState()
+          return
+        }
         // Vehicle online, information available. If charge door is open, we assume it is connected
         // TODO: add GPS validation. Now assume charging here
         chargePortDoorOpen = msg.data.chargeState?.chargePortDoorOpen                   // true | false
