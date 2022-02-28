@@ -217,6 +217,11 @@ class TeslaPyWrapper:
 
 
     def getVehicleData(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=False):
+
+        # TODO - temp
+        self.__logger.error("getVehicleData() !!!!! wake_up: {}".format(wake_up))
+
+
         if email is None:
             email = self.__email
         if email is None:
@@ -299,6 +304,11 @@ class TeslaPyWrapper:
         Only if vehicle is awake. If not awake AND not wakeup --> return None!
     """
     def getChargeState(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=False) -> dict:
+
+        # TODO - temp
+        self.__logger.error("getChargeState() !!!!! wake_up: {}".format(wake_up))
+
+
         if email is None:
             email = self.__email
         if email is None:

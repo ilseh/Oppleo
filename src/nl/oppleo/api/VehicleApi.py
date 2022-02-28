@@ -212,6 +212,11 @@ class VehicleApi:
 
 
     def getChargeState(self, rfid_model:RfidModel=None, max_retries:int=3, wake_up:bool=False) -> dict:
+
+        # TODO - temp
+        self.__logger.error("getChargeState() !!!!! wake_up: {}".format(wake_up))
+
+
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:

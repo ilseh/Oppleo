@@ -118,24 +118,16 @@ class VehicleChargeStatusMonitorThread(object):
                         continue
 
                     # Force update, for now do not wakeup
-                    chargeState = vApi.getChargeState(wake_up=oppleoConfig.wakeupVehicleOnDataRequest or 
-                                                              self.__requestVehicleWakeupNow
-                                                     )
+                    chargeState = vApi.getChargeState(wake_up=( oppleoConfig.wakeupVehicleOnDataRequest or self.__requestVehicleWakeupNow ))
+
+                    # Reset any wakeup request now
                     if self.__requestVehicleWakeupNow:
                         self.clearVehicleWakeupRequest(resultCode=HTTP_CODE_200_OK if chargeState is not None else HTTP_CODE_424_FAILED_DEPENDENCY,
                                                        msg='Vehicle awake' if chargeState is not None else 'Could not wakeup vehicle'
                                                       )
 
-                    # Did the token still work?
-                    if chargeState is None:
-                        # Nah, report
-                        self.__logger.warn('Could not obtain charge state.')
-                        # Skip to next cycle
-                        continue
-                    self.__logger.debug("monitor() chargeState (not None)")
-
                     if oppleoConfig.vehicleDataOnDashboard:
-                        # Send change notification
+                        # Send  notification
                         vehicleData = vApi.getVehicleData()
 
                         vFilename = rfidData.getVehicleFilename()

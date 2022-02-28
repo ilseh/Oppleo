@@ -869,6 +869,10 @@
                 break
             }
             break
+          case 'clearWakeupVehicle':
+            // Valid message
+            console.log('clearWakeupVehicle vehicle_status_update received: ' + JSON.stringify(msg))
+            break
           default:
             console.error('Unknown vehicle_status_update received: ' + JSON.stringify(msg))
             updateVehicleConnectedIdicator(VEHICLE_STATE_UNKNOWN)
