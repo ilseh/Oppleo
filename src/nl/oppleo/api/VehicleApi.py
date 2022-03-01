@@ -195,20 +195,20 @@ class VehicleApi:
         Grab specific information from the vehicle data, in this case the odometer value
     """
 
-    def getOdometer(self, rfid_model:RfidModel=None, max_retries:int=3, wake_up:bool=True) -> int:
+    def getOdometer(self, rfid_model:RfidModel=None, max_retries:int=3, wake_up:bool=True, odoInKm:bool=True) -> int:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
             self.__logger.warn("getOdometer() - Cannot get odometer for rfid_model.")
-            return -1
+            return None
 
         if rfid_model.vehicle_make == "Tesla":
             # Establish account
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
-            return tpw.getOdometer(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up)
+            return tpw.getOdometer(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up, odoInKm=odoInKm)
 
         self.__logger.warn("getOdometer() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
-        return -1
+        return None
 
 
     def getChargeState(self, rfid_model:RfidModel=None, max_retries:int=3, wake_up:bool=False) -> dict:

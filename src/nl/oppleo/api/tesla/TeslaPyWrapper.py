@@ -283,22 +283,20 @@ class TeslaPyWrapper:
             email = self.__email
         if email is None:
             self.__logger.warn("getOdometer() - Cannot get vehicle data for email {}.".format(email))
-            return -1
+            return None
 
         # Wakeup required for odometer value
         vehicle_data = self.getVehicleData(email=email, vin=vin, max_retries=max_retries, wake_up=wake_up)
 
         if vehicle_data is None:
             self.__logger.warn("getOdometer() - could not retrieve odometer value for {}".format(vin))
-            return -1
+            return None
 
         odometerInMiles = vehicle_data.get('vehicle_state', {}).get('odometer', None)
-        if not odoInKm:
-            return odometerInMiles
         odometerInKm = round(float(odometerInMiles) * 1.609344) if odometerInMiles is not None else None
         self.__logger.debug("getOdometer() - odometer: {}M or {}km".format(odometerInMiles, odometerInKm))
 
-        return odometerInKm
+        return odometerInKm if odoInKm else odometerInMiles
 
     """
         Only if vehicle is awake. If not awake AND not wakeup --> return None!

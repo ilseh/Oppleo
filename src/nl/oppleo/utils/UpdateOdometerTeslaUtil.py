@@ -93,87 +93,22 @@ class UpdateOdometerTeslaUtil:
             self.__logger.debug("update_odometer() - Rfid {} not found.".format(charge_session.rfid))
             self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 483, 'reason': 'No rfid token' })
             return
-        """
-            Not using access token
-            TODO remove
-        """
-        """
-        if rfid_model.api_access_token is None:
-            self.__logger.debug("update_odometer() - API Access token for Rfid {} not found.".format(charge_session.rfid))
-            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 484, 'reason': 'No API Access Token' })
-            return
-        """
 
-        """
-            Removed token mediator
-        """
-        """
-        # Token, checkout
-        tKey = tokenMediator.checkout(token=rfid_model.api_access_token, ref='UpdateOdometerTeslaUtil: '+rfid_model.rfid, wait=True)
-        if tKey is None:
-            # Checkout failed? Token must not be valid anymore
-            if not tokenMediator.validate(token=rfid_model.api_access_token):
-                self.__logger.debug("update_odometer() token not valid, done here for now")
-            else:
-                self.__logger.warn("update_odometer() checkout failed, not sure what went wrong")
-            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 491, 'reason': 'API Access Token in use' })
-            return
-
-
-        UpdateOdometerTeslaUtil.copy_token_from_rfid_model_to_api(rfid_model=rfid_model, tesla_api=t_api)
-
-        """
-
-        """
-        # Refresh if required
-        if t_api.refreshTokenIfRequired():
-            # Invalidate the old token
-            tokenMediator.invalidate(token=rfid_model.api_access_token, key=tKey, ref='UpdateOdometerTeslaUtil: '+rfid_model.rfid)
-            UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(t_api, rfid_model)
-            # Checkout the new token
-            tKey = tokenMediator.checkout(token=rfid_model.api_access_token, ref='UpdateOdometerTeslaUtil: '+rfid_model.rfid, wait=True)
-            rfid_model.save()
-
-        # Still invalid?
-        if not t_api.hasValidToken():
-            self.__logger.debug("update_odometer() - Token has expired.")
-            # Not valid, invalidate and return
-            tokenMediator.invalidate(token=rfid_model.api_access_token, key=tKey, ref='UpdateOdometerTeslaUtil: '+rfid_model.rfid)
-            # Notify through push messages if configured
-            PushMessage.sendMessage(
-                "Tesla token expired", 
-                "The Tesla OAuth token for rfid {} ({}) has expired."
-                .format(
-                    rfid_model.name,
-                    rfid_model.rfid
-                    )
-                )
-            self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': False, 'chargeSessionId': self.charge_session_id, 'code': 485, 'reason': 'API Access Token not valid' })
-            return
-
-        """
         vApi = VehicleApi(rfid_model=rfid_model)
-        
-        odometer = vApi.getOdometer()
-
-         # get the odometer (always wakes up)
-#        odometer = t_api.getOdometerWithVin(vin=rfid_model.vehicle_vin)
+        odometer = vApi.getOdometer(odoInKm=True)
 
         # Did the token still work?
-        if odometer is None and not vApi.isAuthorized():
+        if not vApi.isAuthorized():
             # Nah, report
             self.__logger.warn('Token not authorizing. Removing authorization (token)')
             vApi.logout()
-#            tokenMediator.invalidate(token=rfid_model.api_access_token, key=tKey, ref='UpdateOdometerTeslaUtil: '+rfid_model.rfid)
-            rfid_model.api_account = None
-            rfid_model.get_odometer = False
-            rfid_model.vehicle_vin = None
-            rfid_model.vehicle_name = None
+
+            rfid_model.cleanupVehicleInfo()
             
             # Inform through push messages if configured
             PushMessage.sendMessage(
                 "Tesla token invalid", 
-                "Encountered 401 Unauthorized when updating odometer for charge session {}." + \
+                "Unauthorized when updating odometer for charge session {}." + \
                     " Removing token from rfid tag {} ({})."
                 .format(
                     self.__charge_session_id,
@@ -181,14 +116,6 @@ class UpdateOdometerTeslaUtil:
                     rfid_model.rfid
                     )
                 )
-
-        """
-            Removed token mediator
-        """
-        """
-        # Release the token
-        tokenMediator.release(token=rfid_model.api_access_token, key=tKey)
-        """
 
         if odometer is None:
             self.__logger.debug("Odometer not retrieved for {} with rfid {} ({}) on charge session {} ".format(
