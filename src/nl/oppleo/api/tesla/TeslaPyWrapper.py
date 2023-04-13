@@ -303,10 +303,6 @@ class TeslaPyWrapper:
     """
     def getChargeState(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=False) -> dict:
 
-        # TODO - temp
-        self.__logger.error("getChargeState() !!!!! wake_up: {}".format(wake_up))
-
-
         if email is None:
             email = self.__email
         if email is None:
@@ -316,7 +312,10 @@ class TeslaPyWrapper:
         vehicle_data = self.getVehicleData(email=email, vin=vin, max_retries=max_retries, wake_up=wake_up)
 
         if vehicle_data is None:
-            self.__logger.warn("getChargeState() - could not retrieve vehicle data containing charge state for {}".format(vin))
+            if (wake_up):
+                self.__logger.warn("getChargeState() - could not retrieve vehicle data containing charge state for {} (not waking up in time)".format(vin))
+            else:
+                self.__logger.info("getChargeState() - could not retrieve vehicle data containing charge state for {} (wakeup {})".format(vin, wake_up))
             return None
 
         if 'charge_state' in vehicle_data:
