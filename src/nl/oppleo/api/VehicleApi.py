@@ -205,7 +205,7 @@ class VehicleApi:
         if rfid_model.vehicle_make == "Tesla":
             # Establish account
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
-            return tpw.getOdometer(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up, odoInKm=odoInKm)
+            return tpw.getOdometer(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up )
 
         self.__logger.warn("getOdometer() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return None
