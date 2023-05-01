@@ -7,12 +7,12 @@ bcrypt==3.2.0
 beautifulsoup4==4.10.0
 bidict==0.21.4
 blinker==1.4
-certifi==2021.10.8
+certifi==2022.12.7
 cffi==1.15.0
 chardet==4.0.0
 charset-normalizer==2.0.9
 click==8.0.3
-cryptography==3.1.1
+cryptography==40.0.2
 decorator==5.1.1
 distlib==0.3.4
 dnspython==2.1.0
@@ -31,6 +31,7 @@ Flask-SocketIO==4.2.1
 Flask-SQLAlchemy==2.5.1
 Flask-User==1.0.2.2
 Flask-WTF==1.0.0
+gevent==22.10.2
 greenlet==1.1.2
 idna==3.3
 importlib-metadata==4.10.0
@@ -41,8 +42,8 @@ itsdangerous==2.0.1
 Jinja2==3.0.3
 lazy-object-proxy==1.7.1
 lockfile==0.12.2
-Mako==1.1.6
-MarkupSafe==2.0.1
+Mako==1.2.4
+MarkupSafe==2.1.2
 marshmallow==3.14.1
 mccabe==0.6.1
 minimalmodbus==2.0.1
@@ -54,9 +55,9 @@ paho-mqtt==1.6.1
 passlib==1.7.4
 pbr==5.8.0
 pid==3.0.4
-Pillow==9.0.1
+Pillow==9.5.0
 platformdirs==2.4.0
-protobuf==3.19.1
+protobuf==4.22.3
 psutil==5.8.0
 psycopg2==2.9.2
 psycopg2-binary==2.9.2
@@ -64,7 +65,7 @@ py-cpuinfo==8.0.0
 pyasn1==0.4.8
 pycparser==2.21
 pycryptodome==3.12.0
-PyJWT==2.3.0
+PyJWT==2.6.0
 pylint==2.12.2
 pyserial==3.5
 pysmb==1.2.7
@@ -104,6 +105,8 @@ Werkzeug==2.0.2
 wrapt==1.13.3
 WTForms==2.2.1
 zipp==3.6.0
+zope.event==4.6
+zope.interface==6.0
 mfrc522==0.0.7
 RPi.GPIO==0.7.0
 spidev==3.5
