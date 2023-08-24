@@ -1,0 +1,11 @@
+-- Added later. Clean install showed no Users table exists. Creating one here.
+CREATE TABLE [IF NOT EXISTS] users (
+   username varchar NOT NULL,
+   password varchar,
+   authenticated BOOLEAN DEFAULT 'f'
+);
+
+-- NOTE: use the createuser.py utility in src directory to create an admin user.
+--          python3 createuser.py
+--       alternatively use cmd below to create admin user with password admin
+INSERT INTO users VALUES ('admin', 'pbkdf2:sha256:260000$XU6Oya4sFygvmTMg$c997b03bd810cbdb5521c2494b5e4f76bcd6d4db6eff996f5fd4c0ce7d1a127c');

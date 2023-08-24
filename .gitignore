@@ -39,3 +39,4 @@ src/nl/oppleo/webapp/static/images/vehicles/*
 !src/nl/oppleo/webapp/static/images/vehicles/unknown.png
 Minton-v6.1
 src/nl/oppleo/api/test/mycar.ini
+log/

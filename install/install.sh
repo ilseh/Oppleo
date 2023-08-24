@@ -373,8 +373,20 @@ function gitUpdate( ) {
 function updateDatabase( ) {
   printf " [i] updateDatabase - Start \n"
 
-  printf " [i] get liquibase location... \n"
-  lbpath=$(cat ~/.bashrc | grep liquibase | cut -d':' -f2)
+  # Bash or Zsh?
+  printf " [i] check shell type... \n"
+  if [[ -f ~/.bashrc ]]; then
+    printf " [${GREEN}${CHECKMARK}${NC}] Bash \n"
+    printf " [i] get liquibase location from Bash... \n"
+    lbpath=$(cat ~/.bashrc | grep liquibase | cut -d':' -f2)
+  elif [[ -f ~/.zshrc ]]; then
+    printf " [${GREEN}${CHECKMARK}${NC}] Zsh \n"
+    printf " [i] get liquibase location from Zsh... \n"
+    lbpath=$(cat ~/.zshrc | grep liquibase | cut -d':' -f2)
+  else
+    printf " [${RED}x${NC}] ${RED}Non-compatible shell used. Cannot determine liquibase location!${NC} (exitcode -8) \n"
+    return -8
+  fi
   printf " [i] liquibase at $lbpath \n"
 
   printf " [i] Release liquibase locks... \n"
