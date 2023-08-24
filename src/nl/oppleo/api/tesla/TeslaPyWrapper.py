@@ -348,7 +348,11 @@ class TeslaPyWrapper:
             return None
             
         optionCodes = oppleoSystemConfig.getVehicleOptions(make='Tesla', vin=vin, default=vehicle['option_codes'])
-        return vehicle.compose_image(view=view, options=optionCodes)
+        try:
+            return vehicle.compose_image(view=view, options=optionCodes)
+        except Exception as e:
+            self.__logger.error("composeImage() - Cannot get vehicle image from URL.")
+            return None
 
 
     """
