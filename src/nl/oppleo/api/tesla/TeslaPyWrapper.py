@@ -100,7 +100,7 @@ class TeslaPyWrapper:
         # Set the refresh token
         try:
             teslaPy.refresh_token(refresh_token=refresh_token)
-        except (UnauthorizedClientError, MissingCodeError, Exception) as e:
+        except (UnauthorizedClientError, MissingCodeError, ValueError, Exception) as e:
             # Invalid refresh token
             return False
         return True
@@ -350,8 +350,11 @@ class TeslaPyWrapper:
         optionCodes = oppleoSystemConfig.getVehicleOptions(make='Tesla', vin=vin, default=vehicle['option_codes'])
         try:
             return vehicle.compose_image(view=view, options=optionCodes)
+        except ValueError as e:
+            self.__logger.warn("composeImage() - Cannot get vehicle image from URL. {}".format(e))
+            return None
         except Exception as e:
-            self.__logger.error("composeImage() - Cannot get vehicle image from URL.")
+            self.__logger.warn("composeImage() - Cannot get vehicle image from URL.")
             return None
 
 
