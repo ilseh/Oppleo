@@ -351,7 +351,10 @@
               case 'offPeakDeleteEntry':
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Daluren zon/feestdag verwijderd [' + data.value + '].')
                 break
-              case 'chargerName':
+              case 'chargerID':
+                autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt ID gewijzigd in ' + data.value + '.')
+                break
+              case 'chargerNameText':
                 autoHideNotify('success', 'top-left', 'Gewijzigd', 'Laadpunt naam gewijzigd in ' + data.value + '.')
                 break
               case 'factorWhkm':
@@ -775,7 +778,7 @@
       // this is a callback that triggers when the "my response" event is emitted by the server.
       backupStatusSocket.on('backup_started', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+        if (msg.id == '{{ oppleoconfig.chargerID }}') {
           $('button#backup-create').prop('disabled', true)
           $('button#backup-create').html(' <i class="fas fa-spinner fa-spin"></i> Backup actief...')
           $('#backupNowStatusText').html('<span class="text-success">Backup gestart op ' + msg.data.started + '</span>')
@@ -783,7 +786,7 @@
       })
       backupStatusSocket.on('backup_completed', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+        if (msg.id == '{{ oppleoconfig.chargerID }}') {
           // '%Y-%m-%d %H:%M.%S' -> 2011-10-10T14:48:00
           let ts = new Date(msg.data.started.substring(0, 10)+'T'+msg.data.started.replace(/\./g,':').substring(11, 19))
           let tc = new Date(msg.data.completed.substring(0, 10)+'T'+msg.data.completed.replace(/\./g,':').substring(11, 19))
@@ -825,14 +828,14 @@
       })
       backupStatusSocket.on('backup_failed', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+        if (msg.id == '{{ oppleoconfig.chargerID }}') {
           $('#backupNowStatusText').html('<span class="text-danger">Backup mislukt! (' + msg.data.reason + ')</span>')
         }
       })
 
       backupStatusSocket.on('local_backup_purged', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+        if (msg.id == '{{ oppleoconfig.chargerID }}') {
           msg.data.forEach( (dbEl, i) => {                    // iterate over deleted backup
             let rows = $('tbody#backupLocalList tr')
             rows.each( (i, vbEl) => {                       // check each row
@@ -849,7 +852,7 @@
       })
       backupStatusSocket.on('os_backup_purged', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
-        if (msg.id == '{{ oppleoconfig.chargerName }}') {
+        if (msg.id == '{{ oppleoconfig.chargerID }}') {
           msg.data.forEach( (dbEl, i) => {                    // iterate over deleted backup
             let rows = $('tbody#backupOffsiteList tr')
             rows.each( (i, vbEl) => {                       // check each row
@@ -1992,10 +1995,21 @@
                               <td class="text-dark">Naam laadpunt:</td>
                               <td class="text-primary" style="width: 75%;">
                                 <oppleo-edit-str 
-                                  id="chargerName"
-                                  value="{{ oppleoconfig.chargerName }}"
-                                  validation="^([0-9]|[a-z]|[A-Z]|[!@#$%\^&*._\-])+$"
-                                  info="Om openstaande laadsessies te voorkomen kan de naam van het laadpunt alleen worden gewijzigd wanneer de laadsessie is afgesloten."
+                                  id="chargerNameText"
+                                  value="{{ oppleoconfig.chargerNameText }}"
+                                  validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}',:;|&quot; ])+$"
+                                  info="De naam van het laadpunt. Letters, cijfers, spaties en de meeste speciale tekens zijn toegestaan."
+                                  />
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Laadpunt ID:</td>
+                              <td class="text-primary" style="width: 75%;">
+                                <oppleo-edit-str 
+                                  id="chargerID"
+                                  value="{{ oppleoconfig.chargerID }}"
+                                  validation="^([0-9]|[a-z]|[A-Z]|[_])+$"
+                                  info="Om openstaande laadsessies te voorkomen kan het ID van het laadpunt alleen worden gewijzigd wanneer de laadsessie is afgesloten. Alleen cijfers, letters en underscore toegestaan."
                                   />
                               </td>
                             </tr>
@@ -3141,7 +3155,7 @@
                                         data-toggle="tooltip" 
                                         data-placement="bottom" 
                                         data-html="true" 
-                                        title="Berichten worden verzonden naar topic met prefix <em class='text-warning font-weight-bold'>oppleo/{{ oppleoconfig.chargerName }}/</em> zonder retain en QoS waarde 0. Oppleo support alleen tcp verbinding, MQTT versie 3.1.1 (poha default)."
+                                        title="Berichten worden verzonden naar topic met prefix <em class='text-warning font-weight-bold'>oppleo/{{ oppleoconfig.chargerID }}/</em> zonder retain en QoS waarde 0. Oppleo support alleen tcp verbinding, MQTT versie 3.1.1 (poha default)."
                                         >
                                     <i class="fas fa-info-circle"></i>
                                   </span>
@@ -3177,7 +3191,7 @@
                                       data-toggle="tooltip" 
                                       data-placement="bottom" 
                                       data-html="true" 
-                                      title="<em class='text-warning font-weight-bold'>Waarschuwing</em><br>In batches worden alle {{ diag['measurements_str'] }} in de database aanwezige metingen opnieuw verstuurd. De berichten worden verzonden naar het topic <i>oppleo/{{ oppleoconfig.chargerName }}/usage/status_update</i>. Een inschatting van de doorlooptijd wordt zichtbaar na het starten."
+                                      title="<em class='text-warning font-weight-bold'>Waarschuwing</em><br>In batches worden alle {{ diag['measurements_str'] }} in de database aanwezige metingen opnieuw verstuurd. De berichten worden verzonden naar het topic <i>oppleo/{{ oppleoconfig.chargerID }}/usage/status_update</i>. Een inschatting van de doorlooptijd wordt zichtbaar na het starten."
                                   ><i class="fas fa-exclamation-triangle"></i>
                                 </span>
                               </td>

@@ -164,6 +164,44 @@
              Object.values(uniqueList).join('')
     }
 
+    let cargerData = {}
+    function getChargerConfig() {
+      console.log(timestamp() + ' getChargerConfig()')
+            
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/charger_config/',
+        contentType : "application/json",
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        $.each(data, function(i,val) {
+          cargerData[val.charger_id] = val
+        })
+        // Force redraw
+        if (dt != undefined) {
+          dt.rows().invalidate().draw()
+        }
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+        // Redraw filter select
+        console.log("select#filterReport > option ", $("select#filterReport > option"))
+        $("select#filterReport > option").each(function() {
+          if (this.value in cargerData && isData(cargerData[this.value].charger_name)) {
+            this.text = cargerData[this.value].charger_name
+          }
+        })
+      })
+      .fail(function() {
+        autoHideNotify('error','top-left', 'Probleem fout', 'Charger data niet beschikbaar.')
+      })
+      .always(function() {
+      })
+    }
+
     // month is 1-based
     function getChargeReport( year, month ) {
       console.log(timestamp() + ' getChargeReport( '+year+', '+month+')')
@@ -392,6 +430,37 @@
             })
           },
           "columnDefs": [{
+            "targets": [1],
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain' || type.display == 'Print')) {
+                // Excel export, skip the markup
+                return ( data == undefined || data === "None" ? "" : 
+                        (data in cargerData && isData(cargerData[data].charger_name) ? cargerData[data].charger_name : data)  
+                        )
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                tooltipText = "Laadpunt ref: <i><b>" + data + "</i></b>" // The charger ID
+                returnStr = (data in cargerData && isData(cargerData[data].charger_name) ? 
+                              '<span data-toggle="tooltip" \
+                                     data-placement="bottom" \
+                                     data-html="true" \
+                                     stype="cursor: default;" \
+                                     title="<em>' +  tooltipText + '</em>" \
+                                     >' : 
+                              '<span>'
+                    )
+                return (data == undefined || data === "None" ? 
+                        returnStr + '<i class="fas fa-ban"></i>' + 
+                                  '</span>' 
+                        : 
+                        returnStr + (data in cargerData && isData(cargerData[data].charger_name) ? cargerData[data].charger_name : data) + 
+                                  '</span>'
+                       )
+              }
+            }
+          }, {
             // RFID tag [3]
             "targets": 2,
             "render": function (data, type, row) {
@@ -652,6 +721,7 @@
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       getChargeReport( {{ year }}, {{ month }} )
+      getChargerConfig()
       let now = new Date()
       if ({{ year }} == now.getFullYear() && {{ month }} == (now.getMonth() +1)) {   // month 1-based, getMonth 0-based
         // Month not closed yet

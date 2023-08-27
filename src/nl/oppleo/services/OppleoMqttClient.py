@@ -22,7 +22,7 @@ class OppleoMqttClient(object, metaclass=Singleton):
     def __init__(self) -> None:
         super().__init__()
         # Set Connecting Client ID
-        self.mqttClient = mqtt_client.Client(client_id='Oppleo_'+oppleoSystemConfig.chargerName, 
+        self.mqttClient = mqtt_client.Client(client_id='Oppleo_'+oppleoSystemConfig.chargerID, 
                                              clean_session=True,
                                              protocol=MQTTv311,
                                              transport="tcp",

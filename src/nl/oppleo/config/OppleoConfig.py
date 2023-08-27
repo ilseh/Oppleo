@@ -8,6 +8,7 @@ from json import JSONDecodeError
 
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
+from  nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.IPv4 import IPv4
 
@@ -154,22 +155,44 @@ class OppleoConfig(object, metaclass=Singleton):
         self.___logger.debug('Initializing Oppleo...')
         self.__chargerConfigModel = ChargerConfigModel.get_config()
 
-
     """
-        chargerName --> charger_name
+        chargerID --> charger_id
     """
     @property
-    def chargerName(self):
-        return self.__chargerConfigModel.charger_name
+    def chargerID(self):
+        return self.__chargerConfigModel.charger_id
 
-    @chargerName.setter
-    def chargerName(self, value):
-        self.__chargerConfigModel.setAndSave('charger_name', value)
-        energyDeviceModel = EnergyDeviceModel.get()
-        energyDeviceModel.energy_device_id = value
-        energyDeviceModel.save()
+    @chargerID.setter
+    def chargerID(self, value):
+        oldChargerId = self.chargerID
+
+        # First create new energy device config (duplicate old)
+        energyDeviceModel = EnergyDeviceModel.get(energy_device_id=oldChargerId)
+        newEnergyDeviceModel = energyDeviceModel.duplicate(newEnergyDeviceId=value)
+
+        # Migrate all charge sessions to the new ID
+        ChargeSessionModel.migrateEnergyDevice(fromEnergyDeviceId=oldChargerId, toEnergyDeviceId=value)
+
+        # Update config
+        self.__chargerConfigModel.setAndSave('charger_id', value)
+
+        # Delete the old energyDeviceModel
+        oldEnergyDeviceModel = EnergyDeviceModel.get(energy_device_id=oldChargerId)
+        oldEnergyDeviceModel.delete()
+
+        # Indicate restart required
         self.restartRequired = True
 
+    """
+        chargerNameText --> charger_name_text
+    """
+    @property
+    def chargerNameText(self):
+        return self.__chargerConfigModel.charger_name_text
+
+    @chargerNameText.setter
+    def chargerNameText(self, value):
+        self.__chargerConfigModel.setAndSave('charger_name_text', value)
 
     """
         chargerTariff --> charger_tariff
@@ -464,7 +487,7 @@ class OppleoConfig(object, metaclass=Singleton):
                 # Announce
                 OutboundEvent.triggerEvent(
                         event='update', 
-                        id=self.chargerName,
+                        id=self.chargerID,
                         data={
                             "restartRequired"           : self.__restartRequired,
                             'softwareUpdateInProgress'  : self.__softwareUpdateInProgress,
@@ -496,7 +519,7 @@ class OppleoConfig(object, metaclass=Singleton):
                 # Announce
                 OutboundEvent.triggerEvent(
                         event='update', 
-                        id=self.chargerName,
+                        id=self.chargerID,
                         data={
                             "restartRequired"           : self.__restartRequired,
                             'softwareUpdateInProgress'  : self.__softwareUpdateInProgress,

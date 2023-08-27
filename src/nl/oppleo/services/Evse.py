@@ -143,7 +143,7 @@ class Evse(object, metaclass=Singleton):
             self.evse.switch_on()
             OutboundEvent.triggerEvent(
                 event='evse_enabled', 
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 namespace='/evse_status',
                 public=True
             )
@@ -157,7 +157,7 @@ class Evse(object, metaclass=Singleton):
         self.evse.switch_off()
         OutboundEvent.triggerEvent(
             event='evse_disabled', 
-            id=oppleoConfig.chargerName,
+            id=oppleoConfig.chargerID,
             namespace='/evse_status',
             public=True
         )

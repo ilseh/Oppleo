@@ -5,7 +5,7 @@ from nl.oppleo.exceptions.Exceptions import DbException
 
 from sqlalchemy import orm, func, Column, String, Integer, Boolean, Float, desc
 from sqlalchemy.exc import InvalidRequestError
-
+from sqlalchemy.orm.session import make_transient
 
 class EnergyDeviceModel(Base):
     """
@@ -51,20 +51,7 @@ class EnergyDeviceModel(Base):
             self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
-
-    # no delete, only update
     """
-    def delete(self):
-        db_session = DbSession()
-        try:
-            db_session.delete(self)
-            db_session.commit()
-        except Exception as e:
-            db_session.rollback()
-            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
-
-    """
-
     @staticmethod
     def get():
         db_session = DbSession()
@@ -80,6 +67,76 @@ class EnergyDeviceModel(Base):
             EnergyDeviceModel.logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
             raise DbException("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)))
         return edm
+    """
+        
+    # Can only delete not-used
+    def delete(self):
+        db_session = DbSession()
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+
+
+    """
+    @staticmethod
+    def get():
+        db_session = DbSession()
+        edm = None
+        try:
+            edm =  db_session.query(EnergyDeviceModel) \
+                             .order_by(desc(EnergyDeviceModel.energy_device_id)) \
+                             .first()
+        except InvalidRequestError as e:
+            EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
+        except Exception as e:
+            # Nothing to roll back
+            EnergyDeviceModel.logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
+            raise DbException("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)))
+        return edm
+    """
+
+    @staticmethod
+    def get(energy_device_id:str=None):
+        db_session = DbSession()
+        edm = None
+        try:
+            if energy_device_id is None:
+                edm =  db_session.query(EnergyDeviceModel) \
+                                .order_by(desc(EnergyDeviceModel.energy_device_id)) \
+                                .first()
+            else:
+                edm =  db_session.query(EnergyDeviceModel) \
+                                .filter(EnergyDeviceModel.energy_device_id == energy_device_id)    \
+                                .order_by(desc(EnergyDeviceModel.energy_device_id)) \
+                                .first()
+        except InvalidRequestError as e:
+            EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
+        except Exception as e:
+            # Nothing to roll back
+            EnergyDeviceModel.logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
+            raise DbException("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)))
+        return edm
+
+    def duplicate(self, newEnergyDeviceId:str=None):
+        db_session = DbSession()
+        try:
+            # expunge the object from session
+            db_session.expunge(self)
+            # http://docs.sqlalchemy.org/en/rel_1_1/orm/session_api.html#sqlalchemy.orm.session.make_transient
+            make_transient(self)  
+            self.energy_device_id = newEnergyDeviceId
+            db_session.add(self)
+            db_session.commit()
+        except InvalidRequestError as e:
+            EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
+        except Exception as e:
+            # Nothing to roll back
+            EnergyDeviceModel.logger.error("Could not duplicate energy device {} to {} in table {} in database ({})".format(self.energy_device_id, newEnergyDeviceId, self.__tablename__, str(e)), exc_info=True)
+            raise DbException("Could not duplicate energy device {} to {} in table {} in database ({})".format(self.energy_device_id, newEnergyDeviceId, self.__tablename__, str(e)))
+        return self
 
     def __repr(self):
         return '<id {}>'.format(self.id)

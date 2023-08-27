@@ -31,7 +31,7 @@ class PushMessage(object):
                     message=message, 
                     priority=PushMessage.__mapPriorityToProwl(priority), 
                     apiKey=oppleoSystemConfig.prowlApiKey, 
-                    chargerName=oppleoConfig.chargerName
+                    chargerName=oppleoConfig.chargerNameText
                     )
 
         if oppleoSystemConfig.pushoverEnabled:
@@ -43,12 +43,12 @@ class PushMessage(object):
                     userKey=oppleoSystemConfig.pushoverUserKey,
                     device=oppleoSystemConfig.pushoverDevice,
                     sound=oppleoSystemConfig.pushoverSound,
-                    chargerName=oppleoConfig.chargerName
+                    chargerName=oppleoConfig.chargerNameText
                     )
 
         if oppleoSystemConfig.mqttOutboundEnabled:
             oppleoMqttClient = OppleoMqttClient()
-            topic = 'oppleo/' + oppleoSystemConfig.chargerName + '/notification'
+            topic = 'oppleo/' + oppleoSystemConfig.chargerID + '/notification'
             msg = {}
             if title is not None:
                 msg['title'] = title

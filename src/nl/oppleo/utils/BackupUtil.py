@@ -178,7 +178,7 @@ class BackupUtil(object, metaclass=Singleton):
             self.logger.debug('createBackup() - backup already active. Additional backup aborted.')
             OutboundEvent.triggerEvent(
                     event='backup_request_ignored', 
-                    id=self.oppleoConfig.chargerName,
+                    id=self.oppleoConfig.chargerID,
                     data={"reason" : 'Backup in progress' },
                     namespace='/backup',
                     public=False
@@ -194,7 +194,7 @@ class BackupUtil(object, metaclass=Singleton):
             # Announce
             OutboundEvent.triggerEvent(
                     event='backup_started', 
-                    id=self.oppleoConfig.chargerName,
+                    id=self.oppleoConfig.chargerID,
                     data=wsData,
                     namespace='/backup',
                     public=False
@@ -246,7 +246,7 @@ class BackupUtil(object, metaclass=Singleton):
 
             OutboundEvent.triggerEvent(
                         event=wsEvent, 
-                        id=self.oppleoConfig.chargerName,
+                        id=self.oppleoConfig.chargerID,
                         data=wsData,
                         namespace='/backup',
                         public=False
@@ -436,7 +436,7 @@ class BackupUtil(object, metaclass=Singleton):
             -j   junk (don't record) directory names
     """
     def __zipBackupFile__(self, now:datetime, backup_dir:str, tmp_dir:str, files:list):
-        zipFilename = 'backup_' + now.strftime('%Y-%m-%d_%H.%M.%S') + '_' + self.oppleoConfig.chargerName + '.zip'
+        zipFilename = 'backup_' + now.strftime('%Y-%m-%d_%H.%M.%S') + '_' + self.oppleoConfig.chargerID + '.zip'
         filePlusPath = os.path.join(backup_dir, zipFilename)
         try:
             self.logger.debug('__zipBackupFile__() zip -j ' + filePlusPath + ' ' + ' '.join(map((tmp_dir+'{0}').format, files)))
@@ -544,7 +544,7 @@ class BackupUtil(object, metaclass=Singleton):
             directory = self.oppleoConfig.localBackupDirectory
         files = []
         for filename in os.listdir(directory):
-            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+r'\.zip$', filename):
+            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerID+r'\.zip$', filename):
                 filesize = None
                 try: 
                     filesize = os.path.getsize(os.path.join(directory, filename))
@@ -577,7 +577,7 @@ class BackupUtil(object, metaclass=Singleton):
 
         OutboundEvent.triggerEvent(
                 event='local_backup_purged',
-                id=self.oppleoConfig.chargerName,
+                id=self.oppleoConfig.chargerID,
                 data=localBackups['files'][0:(-1*n)],
                 namespace='/backup',
                 public=False
@@ -703,7 +703,7 @@ class BackupUtil(object, metaclass=Singleton):
                    }
         files = []
         for smbf in smbfilelist:
-            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerName+r'\.zip$', smbf.filename):
+            if re.match('^backup_[0-9-_.]{19}_'+self.oppleoConfig.chargerID+r'\.zip$', smbf.filename):
                 files.append({ 'filename'   : smbf.filename,
                                'filesize'   : smbf.file_size,
                                'timestamp'  : smbf.filename[7:26].replace('_', ' ')
@@ -868,7 +868,7 @@ class BackupUtil(object, metaclass=Singleton):
         # Send message to front end
         OutboundEvent.triggerEvent(
                 event='os_backup_purged',
-                id=self.oppleoConfig.chargerName,
+                id=self.oppleoConfig.chargerID,
                 data=smbBackups['files'][0:(-1*n)],
                 namespace='/backup',
                 public=False

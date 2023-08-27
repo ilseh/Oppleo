@@ -586,6 +586,44 @@
       return (getInt(x) < getInt(y) ? -1 : 1)
     }
 
+    let cargerData = {}
+    function getChargerConfig() {
+      console.log(timestamp() + ' getChargerConfig()')
+            
+      $.ajax({
+        type		    : 'GET',
+        url			    : '/charger_config/',
+        contentType : "application/json",
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        $.each(data, function(i,val) {
+          cargerData[val.charger_id] = val
+        })
+        // Force redraw
+        if (dt != undefined) {
+          dt.rows().invalidate().draw()
+        }
+        $('[data-toggle=tooltip]').tooltip({ boundary: 'window' })
+        // Redraw filter select
+        console.log("select#filterReport > option ", $("select#filterReport > option"))
+        $("select#filterReport > option").each(function() {
+          if (this.value in cargerData && isData(cargerData[this.value].charger_name)) {
+            this.text = cargerData[this.value].charger_name
+          }
+        })
+      })
+      .fail(function() {
+        autoHideNotify('error','top-left', 'Probleem fout', 'Charger data niet beschikbaar.')
+      })
+      .always(function() {
+      })
+    }
+
     function getChargeSessions() {
       console.log(timestamp() + ' getChargeSessions()')
             
@@ -842,6 +880,43 @@
                         '<span style="text-align: right;">' + (Math.round(data * 10) /10) + 'kWh</span>'
               }
             }
+          }, {
+            "targets": [8],
+            "render": function (data, type, row) {
+              // Render for screen: type = 'display'
+              // Render for Excel export: type = { display: 'Plain'}
+              if (type.hasOwnProperty('display') && (type.display == 'Plain' || type.display == 'Print')) {
+                // Excel export, skip the markup
+                return ( data == undefined || data === "None" ? "" : 
+                        (data in cargerData && isData(cargerData[data].charger_name) ? cargerData[data].charger_name : data)  
+                        )
+              } else {
+                // Default - type = 'display' - on screen or other exports
+                if (isEditMode()) {
+                  return '<span>' + (data in cargerData && isData(cargerData[data].charger_name) ? cargerData[data].charger_name : data) + '</span>'
+                }
+                tooltipText = "Laadpunt ref: <i><b>" + data + "</i></b>" // The charger ID
+                returnStr = (data in cargerData && isData(cargerData[data].charger_name) ? 
+                              '<span data-toggle="tooltip" \
+                                     data-placement="bottom" \
+                                     data-html="true" \
+                                     stype="cursor: default;" \
+                                     onMouseOver="javascript:mouseOverTableRowButton(false);" \
+                                     onMouseOut="javascript:mouseOverTableRowButton(true);" \
+                                     title="<em>' +  tooltipText + '</em>" \
+                                     >' : 
+                              '<span>'
+                    )
+                return (data == undefined || data === "None" ? 
+                        returnStr + '<i class="fas fa-ban"></i>' + 
+                                  '</span>' 
+                        : 
+                        returnStr + (data in cargerData && isData(cargerData[data].charger_name) ? cargerData[data].charger_name : data) + 
+                                  '</span>'
+                       )
+              }
+            }
+
           }, {
             // Tariff [10] and price [12]
             "targets": [9, 11],
@@ -1729,6 +1804,7 @@
       startWebSocket()
       getChargeSessions()
       getRfidTokens()
+      getChargerConfig()
       // Admin?
       $('div#showEnableSessionEdit').toggleClass("d-none", false)
 
@@ -2138,7 +2214,7 @@
                       data-toggle="tooltip" 
                       data-placement="bottom" 
                       data-html="true" 
-                      title="Deze laadsessie is gelinkt aan dit laadpunt. Wijzig de naam van dit laadpunt in de instellingen om de naam van het laadpunt van deze laadsessie te wijzigen."
+                      title="Deze laadsessie is gelinkt aan dit laadpunt. Wijzig het ID van dit laadpunt in de instellingen om de naam van het laadpunt van deze laadsessie te wijzigen."
                       >
                       <i class="fas fa-info-circle"></i>
                     </span>

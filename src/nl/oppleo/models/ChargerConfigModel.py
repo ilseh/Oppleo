@@ -28,7 +28,8 @@ class ChargerConfigModel(Base):
     logger = logging.getLogger('nl.oppleo.models.ChargerConfigModel')
     __tablename__ = 'charger_config'
 
-    charger_name = Column(String(100), primary_key=True)
+    charger_id = Column(String(100), primary_key=True)
+    charger_name_text = Column(String(100))
     charger_tariff = Column(Float)        # €/kWh
     modified_at = Column(DateTime)        # Last config update
 
@@ -191,13 +192,33 @@ class ChargerConfigModel(Base):
         return ccm
 
 
+    @staticmethod
+    def get_all_configs():
+        db_session = DbSession()
+        # Prevent expiration after the session is closed or object is made transient or disconnected
+        db_session.expire_on_commit = False
+        ccm = None
+        try:
+            # Should be only one, return last modified
+            ccm = db_session.query(ChargerConfigModel) \
+                            .order_by(desc(ChargerConfigModel.modified_at))
+        except InvalidRequestError as e:
+            ChargerConfigModel.__cleanupDbSession(db_session, ChargerConfigModel.__class__)
+        except Exception as e:
+            # Nothing to roll back
+            ChargerConfigModel.logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ))
+        return ccm
+
+
     def __repr(self):
         return self.to_str()
 
 
     def to_str(self):
         return ({
-                "charger_name": str(self.charger_name),
+                "charger_id": str(self.charger_id),
+                "charger_name_text": str(self.charger_name_text),
                 "charger_tariff": self.charger_tariff,
                 "modified_at": (str(self.modified_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.modified_at is not None else None)
             }
@@ -224,7 +245,8 @@ class ChargerConfigSchema(Schema):
     """
     ChargerConfigModel Schema
     """
-    charger_name = fields.Str(required=True)
+    charger_id = fields.Str(required=True)
+    charger_name_text = fields.Str(dump_only=True)
     charger_tariff = fields.Float(dump_only=True)
     modified_at = fields.DateTime(dump_only=True)
 

@@ -21,7 +21,7 @@ try:
     from nl.oppleo.webapp.WebSocketQueueReaderBackgroundTask import WebSocketQueueReaderBackgroundTask
     from nl.oppleo.config.OppleoConfig import OppleoConfig
     oppleoConfig = OppleoConfig()
-    oppleoSystemConfig.chargerName = oppleoConfig.chargerName
+    oppleoSystemConfig.chargerID = oppleoConfig.chargerID
 
     from nl.oppleo.services.PushMessage import PushMessage
 
@@ -172,12 +172,12 @@ try:
                                             'auth'              : True if (current_user.is_authenticated) else False,
                                             "clientsConnected"  : len(oppleoConfig.connectedClients)
                                         },
-                                        id=oppleoConfig.chargerName,
+                                        id=oppleoConfig.chargerID,
                                         namespace='/websocket'
                                         )
         OutboundEvent.triggerEvent(
                 event='update', 
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data={
                     "restartRequired"   : (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
                     "upSince"           : oppleoConfig.upSinceDatetimeStr,
@@ -210,7 +210,7 @@ try:
                                             "clientId"          : request.sid,
                                             "clientsConnected"  : len(oppleoConfig.connectedClients)
                                         },
-                                        id=oppleoConfig.chargerName,
+                                        id=oppleoConfig.chargerID,
                                         namespace='/websocket'
                                         )
 
@@ -253,7 +253,7 @@ try:
         chThread = None
         try:
             chThread = ChargerHandlerThread(
-                        device=oppleoConfig.chargerName,
+                        device=oppleoConfig.chargerID,
                         buzzer=Buzzer(), 
                         evse=Evse(),
                         evse_reader=EvseReader(), 
@@ -318,7 +318,7 @@ try:
 
         OutboundEvent.triggerEvent(
                 event='update', 
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data={
                     "restartRequired": (oppleoConfig.restartRequired or oppleoSystemConfig.restartRequired),
                     "upSince": oppleoConfig.upSinceDatetimeStr,
@@ -332,7 +332,7 @@ try:
             "Starting", 
             "Starting Oppleo {} at {}."
             .format(
-                oppleoConfig.chargerName,
+                oppleoConfig.chargerID,
                 datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
                 )
             )
@@ -348,7 +348,7 @@ try:
             "Terminating", 
             "Terminating Oppleo {} at {}."
             .format(
-                oppleoConfig.chargerName,
+                oppleoConfig.chargerID,
                 datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
                 )
             )
@@ -459,7 +459,7 @@ except DbException as dbe:
                         errormsg="Het MAGIC wachtwoord is onjuist"
                         )
 
-        # Oppleo Limp mode Prowl apiKey and no ChargerName
+        # Oppleo Limp mode Prowl apiKey and no chargerID
         if oppleoSystemConfig.prowlEnabled:
             from nl.oppleo.services.PushMessageProwl import PushMessageProwl
             PushMessageProwl.sendMessage(
@@ -474,7 +474,7 @@ except DbException as dbe:
                 chargerName='Unknown'
                 )
 
-        # Oppleo Limp mode Prowl apiKey and no ChargerName
+        # Oppleo Limp mode Prowl apiKey and no chargerID
         if oppleoSystemConfig.pushoverEnabled:
             from nl.oppleo.services.PushMessagePushover import PushMessagePushover
             PushMessagePushover.sendMessage(
@@ -524,7 +524,7 @@ except Exception as e:
     else:
         oppleoLogger.error('Cannot recover Oppleo...')
 
-    # Hardcoded Oppleo Limp mode Prowl apiKey and no ChargerName
+    # Hardcoded Oppleo Limp mode Prowl apiKey and no chargerID
     if oppleoSystemConfig.prowlEnabled:
         from nl.oppleo.services.PushMessageProwl import PushMessageProwl
         PushMessageProwl.sendMessage(
@@ -534,11 +534,11 @@ except Exception as e:
                     datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                     oppleoSystemConfig.SIGNATURE,
                     str(e),
-                    '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
+                    '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerNameText, str) else ' chargerName: {}'.format(oppleoConfig.chargerNameText)
                 ),
             priority=PushMessageProwl.priorityHigh,
             apiKey=oppleoSystemConfig.prowlApiKey,
-            chargerName='Unknown' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else oppleoConfig.chargerName
+            chargerName='Unknown' if oppleoConfig is None or not isinstance(oppleoConfig.chargerNameText, str) else oppleoConfig.chargerNameText
             )
 
     if oppleoSystemConfig.pushoverEnabled:
@@ -550,7 +550,7 @@ except Exception as e:
                     datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                     oppleoSystemConfig.SIGNATURE,
                     str(e),
-                    '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerName, str) else ' chargerName: {}'.format(oppleoConfig.chargerName)
+                    '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerNameText, str) else ' chargerName: {}'.format(oppleoConfig.chargerNameText)
                 ),
             priority=PushMessagePushover.priorityHigh,
             apiKey=oppleoSystemConfig.pushoverApiKey,

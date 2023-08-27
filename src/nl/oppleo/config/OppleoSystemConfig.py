@@ -163,7 +163,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     
     # Copied from oppleoConfig
     wsEmitQueue = None
-    chargerName = None
+    chargerID = None
 
     def __init__(self):
         iniFileNotFound = False
@@ -688,13 +688,13 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     def restartRequired(self, value):
         try: 
             self.__restartRequired = bool(value)
-            if (bool(value) and self.wsEmitQueue is not None and self.chargerName is not None):
+            if (bool(value) and self.wsEmitQueue is not None and self.chargerID is not None):
                 # Import here to prevent instantiation when OppleoSystemConfig is instantiated
                 from nl.oppleo.utils.OutboundEvent import OutboundEvent 
                 # Announce
                 OutboundEvent.triggerEvent(
                         event='update', 
-                        id=self.chargerName,
+                        id=self.chargerID,
                         data={
                             "restartRequired"   : self.__restartRequired
 #                            "restartRequired"   : self.__restartRequired,

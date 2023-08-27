@@ -523,7 +523,7 @@
                 // this is a callback that triggers when the "my response" event is emitted by the server.
                 systemStatusSocket.on('update', function(msg) {
                     console.log('Received: ' + JSON.stringify(msg))
-                    if (msg.id == '{{ oppleoconfig.chargerName }}') {
+                    if (msg.id == '{{ oppleoconfig.chargerID }}') {
                         if (msg.data.restartRequired) {
                             // Red
                             $('#topnav .topbar-main').css('background-color', '#ef5350')
@@ -535,7 +535,7 @@
                         } else {
                             // Blue
                             $('#topnav .topbar-main').css('background-color', '#3bafda')
-                            $('span.logo-large').html('<i class="fas fa-charging-station"></i> {{ oppleoconfig.chargerName }}')
+                            $('span.logo-large').html('<i class="fas fa-charging-station"></i> {{ oppleoconfig.chargerID }}')
                         }
                         if (msg.data.softwareUpdateInProgress && !softwareUpdateInProgress) {
                         // Changed to update in progress
@@ -1309,7 +1309,7 @@
                 <div class="logo">
                     <a href="{{ url_for('flaskRoutes.index') }}" class="logo">
                         <span class="logo-small"><i class="fas fa-charging-station"></i> </span>
-                        <span class="logo-large"><i class="fas fa-charging-station"></i> {{ oppleoconfig.chargerName }}</span>
+                        <span class="logo-large"><i class="fas fa-charging-station"></i> {{ oppleoconfig.chargerNameText }}</span>
                     </a>
                 </div>
 

@@ -137,7 +137,7 @@ class VehicleChargeStatusMonitorThread(object):
 
                         OutboundEvent.triggerEvent(
                             event           = 'vehicle_charge_status_update', 
-                            id              = oppleoConfig.chargerName,
+                            id              = oppleoConfig.chargerID,
                             data            = { 'chargeState'            : chargeState,
                                                 'vehicle'                : vehicleData,
                                                 'vehicleMonitorInterval' : self.__vehicleMonitorInterval
@@ -180,7 +180,7 @@ class VehicleChargeStatusMonitorThread(object):
         # Send wakeup request notification
         OutboundEvent.triggerEvent(
             event       = 'vehicle_status_update', 
-            id          = oppleoConfig.chargerName,
+            id          = oppleoConfig.chargerID,
             data        = { 'request' : 'wakeupVehicle',
                             'result'  : HTTP_CODE_202_ACCEPTED,
                             'msg'     : 'Waking up vehicle'
@@ -196,7 +196,7 @@ class VehicleChargeStatusMonitorThread(object):
         # Send wakeup result notification
         OutboundEvent.triggerEvent(
             event       = 'vehicle_status_update', 
-            id          = oppleoConfig.chargerName,
+            id          = oppleoConfig.chargerID,
             data        = { 'request' : 'clearWakeupVehicle',
                             'result'  : resultCode,
                             'msg'     : msg

@@ -225,7 +225,7 @@ class MqttSendHistoryThread(object):
         if (time.time() - self.__lastUpdate) > self.__time_between_front_end_updates:
             OutboundEvent.triggerEvent(
                 event='mqtt_send_history_update',
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data=self.status,
                 namespace='/mqtt',
                 public=False
@@ -241,7 +241,7 @@ class MqttSendHistoryThread(object):
             self.__current_tps = 0
             OutboundEvent.triggerEvent(
                 event='mqtt_send_history_paused',
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data=self.status,
                 namespace='/mqtt',
                 public=False
@@ -253,7 +253,7 @@ class MqttSendHistoryThread(object):
                 self.__status = Status.STARTED
                 OutboundEvent.triggerEvent(
                     event='mqtt_send_history_started',
-                    id=oppleoConfig.chargerName,
+                    id=oppleoConfig.chargerID,
                     data=self.status,
                     namespace='/mqtt',
                     public=False
@@ -280,7 +280,7 @@ class MqttSendHistoryThread(object):
 
         OutboundEvent.triggerEvent(
                     event='mqtt_send_history_started', 
-                    id=oppleoConfig.chargerName,
+                    id=oppleoConfig.chargerID,
                     data=self.status,
                     namespace='/mqtt',
                     public=False
@@ -299,7 +299,7 @@ class MqttSendHistoryThread(object):
         self.__processingTime += (time.time() - self.__time_start)
         OutboundEvent.triggerEvent(
             event='mqtt_send_history_completed' if self.__status == Status.COMPLETED else 'mqtt_send_history_cancelled', 
-            id=oppleoConfig.chargerName,
+            id=oppleoConfig.chargerID,
             data=self.status,
             namespace='/mqtt',
             public=False
@@ -326,7 +326,7 @@ class MqttSendHistoryThread(object):
 
         OutboundEvent.triggerEvent(
                     event='mqtt_send_history_started', 
-                    id=oppleoConfig.chargerName,
+                    id=oppleoConfig.chargerID,
                     data=self.status,
                     namespace='/mqtt',
                     public=False
@@ -337,7 +337,7 @@ class MqttSendHistoryThread(object):
         lastUpdate = time_start
 
         while not self.__cancel_event.is_set() and (pageResult is None or pageResult.count() == self.__page_size):
-            pageResult = edmm.paginate(energy_device_id = oppleoConfig.chargerName,
+            pageResult = edmm.paginate(energy_device_id = oppleoConfig.chargerID,
                                        offset           = offset, 
                                        limit            = self.__page_size, 
                                        orderColumn      = getattr(EnergyDeviceMeasureModel, 'created_at'),
@@ -365,7 +365,7 @@ class MqttSendHistoryThread(object):
             if (time.time() - lastUpdate) > self.__time_between_front_end_updates:
                 OutboundEvent.triggerEvent(
                     event='mqtt_send_history_update',
-                    id=oppleoConfig.chargerName,
+                    id=oppleoConfig.chargerID,
                     data=self.status,
                     namespace='/mqtt',
                     public=False
@@ -378,7 +378,7 @@ class MqttSendHistoryThread(object):
                 self.__current_tps = 0
                 OutboundEvent.triggerEvent(
                     event='mqtt_send_history_paused',
-                    id=oppleoConfig.chargerName,
+                    id=oppleoConfig.chargerID,
                     data=self.status,
                     namespace='/mqtt',
                     public=False
@@ -390,7 +390,7 @@ class MqttSendHistoryThread(object):
                     self.__status = Status.STARTED
                     OutboundEvent.triggerEvent(
                         event='mqtt_send_history_started',
-                        id=oppleoConfig.chargerName,
+                        id=oppleoConfig.chargerID,
                         data=self.status,
                         namespace='/mqtt',
                         public=False
@@ -402,7 +402,7 @@ class MqttSendHistoryThread(object):
         self.__processingTime += (time.time() - time_start)
         OutboundEvent.triggerEvent(
             event='mqtt_send_history_completed' if self.__status == Status.COMPLETED else 'mqtt_send_history_cancelled', 
-            id=oppleoConfig.chargerName,
+            id=oppleoConfig.chargerID,
             data=self.status,
             namespace='/mqtt',
             public=False

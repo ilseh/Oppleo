@@ -6,7 +6,7 @@ from marshmallow import fields, Schema
 from datetime import datetime
 import logging
 
-from sqlalchemy import orm, func, Column, Integer, String, Float, DateTime, desc
+from sqlalchemy import orm, func, Column, Integer, String, Float, DateTime, desc, update
 from sqlalchemy.exc import InvalidRequestError
 
 from nl.oppleo.models.Base import Base, DbSession
@@ -206,6 +206,29 @@ class ChargeSessionModel(Base):
         return latest_charge_session
 
 
+    @staticmethod
+    def migrateEnergyDevice(fromEnergyDeviceId=None, toEnergyDeviceId=None) -> ChargeSessionModel | None:
+        db_session = DbSession()
+        try:
+
+            sessionList = db_session.query(ChargeSessionModel).filter(ChargeSessionModel.energy_device_id == fromEnergyDeviceId)
+            for chargeSession in sessionList:
+                chargeSession.energy_device_id = toEnergyDeviceId
+                #chargeSession.save()
+            db_session.commit()
+
+        except InvalidRequestError as e:
+            ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
+        except Exception as e:
+            # Nothing to roll back
+            ChargeSessionModel.__logger.error("Could not migrate sessions from {} to {} in table {} in database. ({})".format(
+                    fromEnergyDeviceId, toEnergyDeviceId, ChargeSessionModel.__tablename__, str(e) 
+                ), exc_info=True)
+            
+            raise DbException("Could not migrate sessions from {} to {} in table {} in database. ({})".format(
+                    fromEnergyDeviceId, toEnergyDeviceId, ChargeSessionModel.__tablename__, str(e) 
+                ))
+        return
 
     @staticmethod
     def getOpenChargeSession(device=None) -> ChargeSessionModel | None:

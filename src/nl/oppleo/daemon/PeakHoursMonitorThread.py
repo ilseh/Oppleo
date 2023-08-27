@@ -76,7 +76,7 @@ class PeakHoursMonitorThread(object):
                         # Send change notification
                         OutboundEvent.triggerEvent(
                                 event='off_peak_status_update', 
-                                id=oppleoConfig.chargerName,
+                                id=oppleoConfig.chargerID,
                                 data={ 'isOffPeak': evse.isOffPeak,
                                         'offPeakEnabled': oppleoConfig.offpeakEnabled,
                                         'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
@@ -124,7 +124,7 @@ class PeakHoursMonitorThread(object):
                     ):
                         # Only see if charge session exists in the database if the EVSE is enabled Off Peak
                         csm = ChargeSessionModel.get_open_charge_session_for_device(
-                                                    oppleoConfig.chargerName
+                                                    oppleoConfig.chargerID
                                                     )
                         if csm is not None:
                             # Open charge session, enable the EVSE

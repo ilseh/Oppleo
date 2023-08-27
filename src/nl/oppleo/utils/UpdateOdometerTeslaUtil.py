@@ -68,7 +68,7 @@ class UpdateOdometerTeslaUtil:
             return
         OutboundEvent.triggerEvent(
                 event=event,
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data=data,
                 namespace='/charge_session',
                 public=public

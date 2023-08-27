@@ -274,7 +274,7 @@ class ChargerHandlerThread(object):
         self.logger.debug('.start_charge_session() Send msg charge_session_started event ...{}'.format(charge_session.to_str))
         OutboundEvent.triggerEvent(
                     event='charge_session_started', 
-                    id=oppleoConfig.chargerName,
+                    id=oppleoConfig.chargerID,
                     data=charge_session.to_str(),
                     namespace='/charge_session',
                     public=False
@@ -323,7 +323,7 @@ class ChargerHandlerThread(object):
         self.logger.debug('.end_charge_session() - Send msg charge_session_ended ...'.format(charge_session.to_str))
         OutboundEvent.triggerEvent(
                 event='charge_session_ended', 
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data=charge_session.to_str(),
                 namespace='/charge_session',
                 public=False
@@ -400,7 +400,7 @@ class ChargerHandlerThread(object):
                 OutboundEvent.triggerEvent(
                         event='charge_session_status_update', 
                         status=evse_state, 
-                        id=oppleoConfig.chargerName, 
+                        id=oppleoConfig.chargerID, 
                         namespace='/charge_session',
                         public=True
                     )
@@ -418,7 +418,7 @@ class ChargerHandlerThread(object):
                         event='charge_session_status_update', 
                         # INACTIVE IS ALSO CONNECTED
                         status=EvseState.EVSE_STATE_CONNECTED, 
-                        id=oppleoConfig.chargerName, 
+                        id=oppleoConfig.chargerID, 
                         namespace='/charge_session',
                         public=True
                     )
@@ -441,7 +441,7 @@ class ChargerHandlerThread(object):
         if oppleoConfig.autoSessionEnabled: 
             edmm = EnergyDeviceMeasureModel()
             kwh_used = edmm.get_usage_since(
-                    oppleoConfig.chargerName,
+                    oppleoConfig.chargerID,
                     (datetime.today() - timedelta(minutes=oppleoConfig.autoSessionMinutes))
                     )
             if kwh_used > oppleoConfig.autoSessionEnergy:
@@ -514,7 +514,7 @@ class ChargerHandlerThread(object):
                 # Emit only to authenticated users, not public
                 OutboundEvent.triggerEvent(
                         event='charge_session_data_update', 
-                        id=oppleoConfig.chargerName,
+                        id=oppleoConfig.chargerID,
                         data=open_charge_session_for_device.to_str(), 
                         namespace='/charge_session',
                         public=False

@@ -4,7 +4,7 @@
     namespace       bijv. /evse_status
     wsEmitQueue     oppleoConfig.wsEmitQueue,
     event           bijv.  evse_enabled, update, charge_session_started, charge_session_ended, charge_session_status_update
-    id              oppleoConfig.chargerName,
+    id              oppleoConfig.chargerID,
     public          True is niet ingelogd
     data            bericht
     room            prive bericht
@@ -12,13 +12,13 @@
                       wsEmitQueue=oppleoConfig.wsEmitQueue,
                             event='charge_session_status_update', 
                             status=evse_state, 
-                            id=oppleoConfig.chargerName, 
+                            id=oppleoConfig.chargerID, 
                             namespace='/charge_session',
                             public=True
 
 
  MQTT
-    topic: oppleo/{oppleoConfig.chargerName}/namespace/event
+    topic: oppleo/{oppleoConfig.chargerID}/namespace/event
     message: data 
     - ignore public
     - status?
@@ -88,7 +88,7 @@ class OutboundEvent(object):
 
         oppleoMqttClient = OppleoMqttClient()
 
-        topic = 'oppleo/' + oppleoSystemConfig.chargerName + namespace + '/' + event
+        topic = 'oppleo/' + oppleoSystemConfig.chargerID + namespace + '/' + event
 
         msg = {}
         if data is not None:

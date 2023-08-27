@@ -3,7 +3,7 @@ from operator import indexOf
 import os
 import threading
 from datetime import datetime, time
-from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session, send_file
+from flask import Flask, Blueprint, render_template, abort, request, url_for, redirect, jsonify, session, send_file, Response
 from flask import current_app as app # Note: that the current_app proxy is only available in the context of a request.
 
 from jinja2.exceptions import TemplateNotFound
@@ -334,7 +334,7 @@ def login2(username:str=None):
                                     data={
                                         "user" : user.username,
                                     },
-                                    id=oppleoConfig.chargerName,
+                                    id=oppleoConfig.chargerID,
                                     namespace='/webclient'
                                     )
 
@@ -368,7 +368,7 @@ def logout():
                                     data={
                                         "user" : user.username,
                                     },
-                                    id=oppleoConfig.chargerName,
+                                    id=oppleoConfig.chargerID,
                                     namespace='/webclient'
                                     )
 
@@ -691,7 +691,7 @@ def delete_charge_session(id=None):
     if id is None:
         return jsonify({
             'status': HTTP_CODE_404_NOT_FOUND, 
-            'id': oppleoConfig.chargerName, 
+            'id': oppleoConfig.chargerID, 
             'reason': 'Laadsessie niet gevonden'
             })
     # For GET requests, display the authorize form. 
@@ -715,7 +715,7 @@ def delete_charge_session(id=None):
         # Send ws update
         OutboundEvent.triggerEvent(
                 event='charge_session_deleted',
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data={ 'deleteId': id },
                 namespace='/charge_session',
                 public=False
@@ -745,7 +745,7 @@ def start_charge_session(token=None):
     if token is None:
         return jsonify({
             'status': HTTP_CODE_404_NOT_FOUND, 
-            'id': oppleoConfig.chargerName, 
+            'id': oppleoConfig.chargerID, 
             'reason': 'RFID token niet gevonden'
             })
 
@@ -769,7 +769,7 @@ def start_charge_session(token=None):
         flaskRoutesLogger.debug('start_charge_session requested. authorized with authWebCharge={}.'.format(oppleoConfig.authWebCharge))
 
         with threadLock:
-            charge_session = ChargeSessionModel.get_open_charge_session_for_device(oppleoConfig.chargerName)
+            charge_session = ChargeSessionModel.get_open_charge_session_for_device(oppleoConfig.chargerID)
             if charge_session is None:
                 if oppleoConfig.chThread.rfidAuthorized(token):
                     oppleoConfig.chThread.start_charge_session(
@@ -840,7 +840,7 @@ def stop_charge_session(charge_session_id=None):
     if charge_session_id is None:
         return jsonify({
             'status': HTTP_CODE_404_NOT_FOUND, 
-            'id': oppleoConfig.chargerName, 
+            'id': oppleoConfig.chargerID, 
             'reason': 'Laadsessie niet gevonden'
             })
     # For GET requests, display the authorize form. 
@@ -1005,11 +1005,11 @@ def usage_data_tse(ts:str=None):
     flaskRoutesLogger.debug('/usage_data_tse/')
 
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = oppleoConfig.chargerName
+    device_measurement.energy_device_id = oppleoConfig.chargerID
 
     recordsTotal = device_measurement.get_count()
 
-    entry_id = device_measurement.get_count_at_timestamp(energy_device_id=oppleoConfig.chargerName, 
+    entry_id = device_measurement.get_count_at_timestamp(energy_device_id=oppleoConfig.chargerID, 
                                                             ts=device_measurement.date_str_to_datetime(ts)
                                                         )
     return {
@@ -1069,7 +1069,7 @@ def usage_data_serviceside_datatable():
                             })
 
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = oppleoConfig.chargerName
+    device_measurement.energy_device_id = oppleoConfig.chargerID
 
     recordsTotal = device_measurement.get_count()
 
@@ -1082,7 +1082,7 @@ def usage_data_serviceside_datatable():
 
     if 'searchValue' in created_at and created_at['searchValue'] != '':
         """ search for date """
-        entry_id = device_measurement.get_count_at_timestamp(energy_device_id=oppleoConfig.chargerName, 
+        entry_id = device_measurement.get_count_at_timestamp(energy_device_id=oppleoConfig.chargerID, 
                                                              ts=device_measurement.date_str_to_datetime(created_at['searchValue'])
                                                             )
         """ Default order desc, start at the entry (or -1?) """
@@ -1092,7 +1092,7 @@ def usage_data_serviceside_datatable():
             start = recordsTotal - entry_id - length
 
 
-    qr = device_measurement.paginate(energy_device_id = oppleoConfig.chargerName,
+    qr = device_measurement.paginate(energy_device_id = oppleoConfig.chargerID,
                                      offset           = start, 
                                      limit            = length, 
                                      orderColumn      = getattr(EnergyDeviceMeasureModel, columnList[orderColumn]['data']),
@@ -1127,8 +1127,8 @@ def usage_data(cnt=100):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data {} {}'.format(cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = oppleoConfig.chargerName
-    qr = device_measurement.get_last_n_saved(energy_device_id=oppleoConfig.chargerName,n=cnt)
+    device_measurement.energy_device_id = oppleoConfig.chargerID
+    qr = device_measurement.get_last_n_saved(energy_device_id=oppleoConfig.chargerID,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
@@ -1146,13 +1146,28 @@ def usage_data_since(since_timestamp, cnt=-1):
     global flaskRoutesLogger
     flaskRoutesLogger.debug('/usage_data_since {} {} {}'.format(since_timestamp, cnt, request.method))
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = oppleoConfig.chargerName
-    qr = device_measurement.get_last_n_saved_since(energy_device_id=oppleoConfig.chargerName,since_ts=since_timestamp,n=cnt)
+    device_measurement.energy_device_id = oppleoConfig.chargerID
+    qr = device_measurement.get_last_n_saved_since(energy_device_id=oppleoConfig.chargerID,since_ts=since_timestamp,n=cnt)
     qr_l = []
     for o in qr:
         qr_l.append(o.to_dict())  
 
     return jsonify(qr_l)
+
+
+@flaskRoutes.route("/charger_config/", methods=["GET"])
+# @config_dashboard_access_restriction
+@config_dashboard_access_restriction
+def charger_config():
+    global flaskRoutesLogger
+
+    charger_config = ChargerConfigModel().get_all_configs()
+    ccl = []
+    for charger in charger_config:
+        ccl.append( { 'charger_id': charger.charger_id,
+                      'charger_name': charger.charger_name_text
+                    } )
+    return jsonify( ccl ), HTTP_CODE_200_OK
 
 
 @flaskRoutes.route("/charge_session/<path:id>/usage_data", methods=["GET"])
@@ -1171,9 +1186,9 @@ def charge_session_usage_data(id=None):
             })
 
     device_measurement = EnergyDeviceMeasureModel()
-    device_measurement.energy_device_id = oppleoConfig.chargerName
+    device_measurement.energy_device_id = oppleoConfig.chargerID
 
-    qr = device_measurement.get_between(energy_device_id=oppleoConfig.chargerName, 
+    qr = device_measurement.get_between(energy_device_id=oppleoConfig.chargerID, 
                                         since_ts=chargeSession.start_time, 
                                         until_ts=chargeSession.end_time if chargeSession.end_time is not None else datetime.now()
                                         )
@@ -1200,14 +1215,14 @@ def active_charge_session():
     # Open charge session for this energy device?
     open_charge_session_for_device = \
         ChargeSessionModel.get_open_charge_session_for_device(
-                oppleoConfig.chargerName
+                oppleoConfig.chargerID
         )
     evse = Evse()
     if open_charge_session_for_device is None:
         # None, no active session
         return jsonify({
             'status'            : HTTP_CODE_404_NOT_FOUND, 
-            'id'                : oppleoConfig.chargerName, 
+            'id'                : oppleoConfig.chargerID, 
             'chargeSession'     : False,
             'evseEnabled'       : True if evse.is_enabled() else False,
             'charging'          : True if oppleoConfig.chThread is not None and oppleoConfig.chThread.is_status_charging else False,
@@ -1221,7 +1236,7 @@ def active_charge_session():
         rfid_data = RfidModel.get_one(open_charge_session_for_device.rfid)
         return jsonify({ 
             'status'            : HTTP_CODE_200_OK,
-            'id'                : oppleoConfig.chargerName, 
+            'id'                : oppleoConfig.chargerID, 
             'chargeSession'     : True if open_charge_session_for_device is not None else False,
             'evseEnabled'       : True if evse.is_enabled() else False,
             'charging'          : True if oppleoConfig.chThread.is_status_charging else False,
@@ -1237,7 +1252,7 @@ def active_charge_session():
         pass
     return jsonify({ 
         'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 
-        'id'            : oppleoConfig.chargerName, 
+        'id'            : oppleoConfig.chargerID, 
         'reason'        : 'Could not determine charge session'
         })
 
@@ -1274,12 +1289,12 @@ def charge_sessions(since_timestamp=None):
     flaskRoutesLogger.debug('/charge_sessions req_from:{} req_to:{} req_limit:{}'.format(req_from, req_to, req_limit))
 
     charge_sessions = ChargeSessionModel()
-    charge_sessions.energy_device_id = oppleoConfig.chargerName
+    charge_sessions.energy_device_id = oppleoConfig.chargerID
 
     qr = []
     try:
         qr = charge_sessions.get_max_n_sessions_between(
-            energy_device_id=oppleoConfig.chargerName, 
+            energy_device_id=oppleoConfig.chargerID, 
             from_ts=req_from, 
             to_ts=req_to,
             n=req_limit
@@ -1291,7 +1306,7 @@ def charge_sessions(since_timestamp=None):
 
     """
     qr = charge_sessions.get_last_n_sessions_since(
-        energy_device_id=oppleoConfig.chargerName,
+        energy_device_id=oppleoConfig.chargerID,
         since_ts=None,
         n=-1
         )
@@ -1415,7 +1430,7 @@ def charge_session(id:int=None):
 
     OutboundEvent.triggerEvent(
             event='charge_session_data_update', 
-            id=oppleoConfig.chargerName,
+            id=oppleoConfig.chargerID,
             data=chargeSession.to_str(), 
             namespace='/charge_session',
             public=False
@@ -1444,7 +1459,7 @@ def charge_history():
                 )
     # Return history
     charge_sessions = ChargeSessionModel()
-    charge_sessions.energy_device_id = oppleoConfig.chargerName
+    charge_sessions.energy_device_id = oppleoConfig.chargerID
 
     csh = []
     try:
@@ -1997,7 +2012,7 @@ def update_settings(param=None, value=None):
         ophm = OffPeakHoursModel()
         OutboundEvent.triggerEvent(
             event='off_peak_status_update', 
-            id=oppleoConfig.chargerName,
+            id=oppleoConfig.chargerID,
             data={ 'isOffPeak': ophm.is_off_peak_now(),
                     'offPeakEnabled': oppleoConfig.offpeakEnabled,
                     'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
@@ -2012,7 +2027,7 @@ def update_settings(param=None, value=None):
         ophm = OffPeakHoursModel()
         OutboundEvent.triggerEvent(
                 event='off_peak_status_update', 
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 data={ 'isOffPeak': ophm.is_off_peak_now(),
                         'offPeakEnabled': oppleoConfig.offpeakEnabled,
                         'peakAllowOnePeriod': oppleoConfig.allowPeakOnePeriod
@@ -2052,14 +2067,21 @@ def update_settings(param=None, value=None):
         OffPeakHoursModel.deleteId(value)
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
-    # chargerName
+    # chargerID
     # With an open charge session, there params are not allowed to change
-    if (param == 'chargerName' and
-        ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerName)):
+    if (param == 'chargerID' and
+        ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerID)):
         return jsonify({ 'status': 409, 'param': param, 'reason': 'Er is een laadsessie actief.' })
-    if (param == 'chargerName') and isinstance(value, str) and len(value) > 0:
-        oppleoConfig.chargerName = value
+
+    if (param == 'chargerID') and isinstance(value, str) and len(value) > 0:
+        oppleoConfig.chargerID = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
+
+    # chargerNameText
+    validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}',:;|&quot; ])+$"
+    if (param == 'chargerNameText') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.chargerNameText = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # factorWhkm
     if (param == 'factorWhkm') and (isinstance(value, int) or RepresentsInt(value)):
@@ -2069,7 +2091,7 @@ def update_settings(param=None, value=None):
     # chargerTariff
     # With an open charge session, there params are not allowed to change
     if (param == 'chargerTariff' and
-        ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerName)):
+        ChargeSessionModel.has_open_charge_session_for_device(oppleoConfig.chargerID)):
         return jsonify({ 'status': 409, 'param': param, 'reason': 'Er is een laadsessie actief.' })
     validation="^(?:0|[1-9][0-9]*)(?:[.][0-9]{1,2})?$"
     if (param == 'chargerTariff') and (isinstance(value, float) or RepresentsFloat(value)) and re.match(validation, value):
@@ -2603,7 +2625,7 @@ def update_settings(param=None, value=None):
             # Announce switching off
             OutboundEvent.triggerEvent(
                 event='vehicle_charge_status_stopped', 
-                id=oppleoConfig.chargerName,
+                id=oppleoConfig.chargerID,
                 namespace='/charge_session',
                 public=False
                 )
@@ -2844,7 +2866,7 @@ def getBackupInfo(cmd=None, data=None):
 
     return jsonify({ 
         'status'        : HTTP_CODE_500_INTERNAL_SERVER_ERROR, 
-        'id'            : oppleoConfig.chargerName, 
+        'id'            : oppleoConfig.chargerID, 
         'reason'        : 'Could not return information'
         })
 
@@ -2863,7 +2885,7 @@ def requestVehicleChargeStatus():
     if oppleoConfig.vcsmThread is None:
         return jsonify({ 
             'status'        : HTTP_CODE_404_NOT_FOUND, 
-            'id'            : oppleoConfig.chargerName, 
+            'id'            : oppleoConfig.chargerID, 
             'reason'        : 'No existing charge session'
             })
 
@@ -3094,7 +3116,7 @@ def enable_2FA():
                 })                
         # Password correct, generate secret and return - for now Google Authenticator only accepts 16 character secrets...
         secret_base32 = generateTotpSharedSecret()
-        uri = keyUri(type='totp', secret=secret_base32, issuer='Oppleo ' + oppleoConfig.chargerName,
+        uri = keyUri(type='totp', secret=secret_base32, issuer='Oppleo ' + oppleoConfig.chargerID,
                         accountname=current_user.username)
 
         current_user.shared_secret = encryptAES(key=password, plainData=secret_base32)
@@ -3104,7 +3126,7 @@ def enable_2FA():
             'step'    : 1,
             'code'    : DETAIL_CODE_200_OK,
             'secret'  : secret_base32,
-            'account' : 'Oppleo ' + oppleoConfig.chargerName + ' (' + current_user.username + ")",
+            'account' : 'Oppleo ' + oppleoConfig.chargerID + ' (' + current_user.username + ")",
             'type'    : 'totp',
             'url'     : uri
             })                
@@ -3371,7 +3393,7 @@ def requestOdometerUpdate():
 
     flaskRoutesLogger.debug('/request_odometer_update/')
 
-    chargeSession = ChargeSessionModel.getOpenChargeSession(device=oppleoConfig.chargerName)
+    chargeSession = ChargeSessionModel.getOpenChargeSession(device=oppleoConfig.chargerID)
     if chargeSession is None:
         return jsonify({
             'status': HTTP_CODE_400_BAD_REQUEST,
@@ -3417,8 +3439,8 @@ def monthlyUsageOverview():
     flaskRoutesLogger.debug('/monthly_usage_overview/')
 
     edmm = EnergyDeviceMeasureModel()
-    edmm.energy_device_id = oppleoConfig.chargerName
-    eme = edmm.get_end_month_energy_levels(oppleoConfig.chargerName)
+    edmm.energy_device_id = oppleoConfig.chargerID
+    eme = edmm.get_end_month_energy_levels(oppleoConfig.chargerID)
 
     return jsonify(eme)
 
@@ -3447,11 +3469,11 @@ def sendTestNotification(msgType:str=None):
 
     if msgType.lower() == 'prowl':
         sendSuccess = PushMessageProwl.sendMessage(
-            title='Oppleo ' + oppleoConfig.chargerName,
+            title='Oppleo ' + oppleoConfig.chargerNameText,
             message=message,
             priority=PushMessageProwl.priorityNormal,
             apiKey=oppleoSystemConfig.prowlApiKey,
-            chargerName=oppleoConfig.chargerName
+            chargerName=oppleoConfig.chargerNameText
             )
         return jsonify({ 
             'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
@@ -3461,14 +3483,14 @@ def sendTestNotification(msgType:str=None):
 
     if msgType.lower() == 'pushover':
         sendSuccess = PushMessagePushover.sendMessage(
-            title='Oppleo ' + oppleoConfig.chargerName, 
+            title='Oppleo ' + oppleoConfig.chargerNameText, 
             message=message,
             priority=PushMessagePushover.priorityNormal,
             apiKey=oppleoSystemConfig.pushoverApiKey,
             userKey=oppleoSystemConfig.pushoverUserKey,
             device=oppleoSystemConfig.pushoverDevice,
             sound=oppleoSystemConfig.pushoverSound,
-            chargerName=oppleoConfig.chargerName
+            chargerName=oppleoConfig.chargerNameText
             )
         return jsonify({ 
             'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
@@ -3478,9 +3500,9 @@ def sendTestNotification(msgType:str=None):
 
     if msgType.lower() == 'mqtt':
         oppleoMqttClient = OppleoMqttClient()
-        topic = 'oppleo/' + oppleoSystemConfig.chargerName + '/notification'
+        topic = 'oppleo/' + oppleoSystemConfig.chargerID + '/notification'
         msg = {}
-        msg['title'] = "Oppleo {}".format(oppleoConfig.chargerName)
+        msg['title'] = "Oppleo {}".format(oppleoConfig.chargerID)
         msg['message'] = message
         msg['priority'] = int(PushMessage.priorityNormal)
         sendSuccess = oppleoMqttClient.publish(topic=topic, message=json.dumps(msg), waitForPublish=True, timeout=1500)
