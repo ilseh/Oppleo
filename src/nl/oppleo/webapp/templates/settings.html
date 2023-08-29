@@ -7,7 +7,7 @@
   {{ super() }}
   
   <!-- Socket IO -->
-  <script src="{{ url_for('static', filename='plugins/socket.io/2.3.1/socket.io.slim.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/socket.io/4.7.2/socket.io.min.js') }}"></script>
 
   <!-- Datepicker -->
   <link rel="stylesheet" href="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css') }}">  <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js') }}"></script>
@@ -772,7 +772,10 @@
     }
 
     let backupStatusSocket = null
-    function startSystemStatusWebSocket() {
+    /*
+      TODO: startBackupStatusWebSocket NEVER gets called!
+    */
+    function startBackupStatusWebSocket() {
       // start up the SocketIO connection to the server on namespace /backup
       backupStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/backup')
       // this is a callback that triggers when the "my response" event is emitted by the server.

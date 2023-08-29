@@ -180,7 +180,7 @@ class OppleoConfig(object, metaclass=Singleton):
         oldEnergyDeviceModel = EnergyDeviceModel.get(energy_device_id=oldChargerId)
         oldEnergyDeviceModel.delete()
 
-        # Indicate restart required
+        # Indicate restart required (the ID is used in websocket communications)
         self.restartRequired = True
 
     """

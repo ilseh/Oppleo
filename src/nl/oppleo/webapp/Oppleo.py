@@ -146,18 +146,25 @@ try:
     def load_user(username):
         return User.get(username)
 
-
-    @appSocketIO.on("connect", namespace="/")
+    @appSocketIO.on("connect", namespace="/system_status")
+    @appSocketIO.on("connect", namespace="/charge_session")
+    @appSocketIO.on("connect", namespace="/usage")
+    @appSocketIO.on("connect", namespace="/evse_status")
+    @appSocketIO.on("connect", namespace="/backup")
+    @appSocketIO.on("connect", namespace="/mqtt")
+    #@appSocketIO.on("connect", namespace="/")
     @config_dashboard_access_restriction
-    def connect():
+    def connect(*args, **kwargs):
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
+
         with threadLock:
             wsClientCnt += 1
             if request.sid not in oppleoConfig.connectedClients.keys():
                 oppleoConfig.connectedClients[request.sid] = {
-                                    'sid'   : request.sid,
-                                    'auth'  : True if (current_user.is_authenticated) else False,
-                                    'stats' : 'connected'
+                                    'sid'       : request.sid,
+                                    'auth'      : True if (current_user.is_authenticated) else False,
+                                    'stats'     : 'connected',
+                                    'namespace' : request.namespace if request.namespace is not None else 'UNKNOWN'
                                     }
         oppleoLogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
                         request.sid, \
@@ -170,6 +177,7 @@ try:
                                         data={
                                             "clientId"          : request.sid,
                                             'auth'              : True if (current_user.is_authenticated) else False,
+                                            'namespace'         : request.namespace if request.namespace is not None else 'UNKNOWN',
                                             "clientsConnected"  : len(oppleoConfig.connectedClients)
                                         },
                                         id=oppleoConfig.chargerID,
@@ -190,13 +198,21 @@ try:
 
 
 
-    @appSocketIO.on("disconnect", namespace="/")
+    @appSocketIO.on("disconnect", namespace="/system_status")
+    @appSocketIO.on("disconnect", namespace="/charge_session")
+    @appSocketIO.on("disconnect", namespace="/usage")
+    @appSocketIO.on("disconnect", namespace="/evse_status")
+    @appSocketIO.on("disconnect", namespace="/backup")
+    @appSocketIO.on("disconnect", namespace="/mqtt")
+    #@appSocketIO.on("disconnect", namespace="/")
     @config_dashboard_access_restriction
     def disconnect():
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
+
         with threadLock:
             wsClientCnt -= 1
             res = oppleoConfig.connectedClients.pop(request.sid, None)
+
         oppleoLogger.debug('socketio.disconnect sid: {} wsClientCnt: {} connectedClients:{} res:{}'.format( \
                         request.sid, \
                         wsClientCnt, \
@@ -208,6 +224,7 @@ try:
             OutboundEvent.emitMQTTEvent( event='disconnect',
                                         data={
                                             "clientId"          : request.sid,
+                                            'namespace'         : request.namespace if request.namespace is not None else 'UNKNOWN',
                                             "clientsConnected"  : len(oppleoConfig.connectedClients)
                                         },
                                         id=oppleoConfig.chargerID,
