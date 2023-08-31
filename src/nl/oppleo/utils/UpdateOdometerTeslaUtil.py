@@ -104,7 +104,7 @@ class UpdateOdometerTeslaUtil:
         """
         retries = 0
         odometer = None
-        while retries < 3 and odometer = None:
+        while retries < 3 and odometer == None:
             odometer = vApi.getOdometer(odoInKm=True)
             if odometer == None:
                 retries = retries +1
