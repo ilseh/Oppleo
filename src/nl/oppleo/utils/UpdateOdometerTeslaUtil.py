@@ -74,6 +74,8 @@ class UpdateOdometerTeslaUtil:
                 public=public
             )            
 
+
+
     def update_odometer(self):
         self.__logger.debug("update_odometer()")
         self.sendChargeSessionUpdate(event='odomoter_update_started', data={ 'status': True, 'chargeSessionId': self.charge_session_id })
@@ -95,7 +97,18 @@ class UpdateOdometerTeslaUtil:
             return
 
         vApi = VehicleApi(rfid_model=rfid_model)
-        odometer = vApi.getOdometer(odoInKm=True)
+
+        """ BUGFIX 
+            Sometimes the odometer is not obtained. Try again up to 3 times. let's see if that makes the issue go away
+            TODO: make retries configurable. Make delay between tries configurable
+        """
+        retries = 0
+        odometer = None
+        while retries < 3 and odometer = None:
+            odometer = vApi.getOdometer(odoInKm=True)
+            if odometer == None:
+                retries = retries +1
+                self.__logger.error("ODOMETER NOT OBTAINED - try # {} of 3...".format(retries))
 
         # Did the token still work?
         if not vApi.isAuthorized():
