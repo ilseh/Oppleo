@@ -2403,6 +2403,9 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.pushoverSound = value if len(value) > 0 else None
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
+
+
+
     # mqttOutboundEnabled
     if (param == 'mqttOutboundEnabled'):
         oppleoSystemConfig.mqttOutboundEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
@@ -2431,6 +2434,50 @@ def update_settings(param=None, value=None):
     # mqttPassword
     if (param == 'mqttPassword') and isinstance(value, str):
         oppleoSystemConfig.mqttPassword = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    """
+        TODO
+        - reconnect on enabled and changing username/ password/ host/ port etc.
+        - also for MQTT?
+    """
+
+    # homeAssistantMqttEnabled
+    if (param == 'homeAssistantMqttEnabled'):
+        oppleoSystemConfig.homeAssistantMqttEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        homeAssistantMqttClient = HomeAssistantMqttClient()
+        
+        """
+            TODO
+            - disconnect on False, connect on True
+            - send autodiscover on connect in client
+        """
+        homeAssistantMqttClient = HomeAssistantMqttClient()
+        if homeAssistantMqttClient.is_connected() and not oppleoSystemConfig.homeAssistantMqttEnabled:
+            homeAssistantMqttClient.disconnect()
+
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.homeAssistantMqttEnabled }), HTTP_CODE_200_OK
+
+    # homeAssistantMqttHost
+    validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
+    if (param == 'homeAssistantMqttHost') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.homeAssistantMqttHost = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+     # homeAssistantMqttPort
+    validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+    if (param == 'homeAssistantMqttPort') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.homeAssistantMqttPort = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.homeAssistantMqttPort }), HTTP_CODE_200_OK
+
+    # homeAssistantMqttUsername
+    if (param == 'homeAssistantMqttUsername') and isinstance(value, str):
+        oppleoSystemConfig.homeAssistantMqttUsername = value if len(value) > 0 else None
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # homeAssistantMqttPassword
+    if (param == 'homeAssistantMqttPassword') and isinstance(value, str):
+        oppleoSystemConfig.homeAssistantMqttPassword = value if len(value) > 0 else None
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # webChargeOnDashboard
@@ -3449,6 +3496,8 @@ from nl.oppleo.services.PushMessageProwl import PushMessageProwl
 from nl.oppleo.services.PushMessagePushover import PushMessagePushover
 
 from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient 
+from nl.oppleo.services.HomeAssistantMqttClient import HomeAssistantMqttClient 
+
 
 
 # Always returns json

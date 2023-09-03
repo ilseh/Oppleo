@@ -3254,6 +3254,91 @@
                                   value="{% if oppleosystemconfig.mqttPassword is not none  %}{{ oppleosystemconfig.mqttPassword }}{% else %}{% endif %}"
                                   validation="^[A-Za-z0-9]+$"
                                   info="Wachtwoord van de MQTT broker."
+                                  hideEdit=true
+                                  />
+                            </tr>
+
+                            <tr>
+                              <th colspan="2">&nbsp;</th>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-home"></i> HomeAssistant (MQTT) 
+                                  <span class="ml-5"
+                                        style="cursor: help;"
+                                        data-toggle="tooltip" 
+                                        data-placement="bottom" 
+                                        data-html="true" 
+                                        title="Berichten worden verzonden naar topic met prefix <em class='text-warning font-weight-bold'>homeassistant/sensor/{{ oppleoconfig.chargerID }}/</em> zonder retain en QoS waarde 0. Oppleo support alleen tcp verbinding, MQTT versie 3.1.1 (poha default)."
+                                        >
+                                    <i class="fas fa-info-circle"></i>
+                                  </span>
+                                </h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Actief:</td>
+                              <td class="text-primary">
+                                <form id="mqtt-outbound-enabled-form">
+                                  <input type="checkbox" 
+                                    {% if oppleosystemconfig.homeAssistantMqttEnabled %}checked{% endif %}
+                                    name="homeAssistantMqttEnabled"
+                                    id="homeAssistantMqttEnabled"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Host (naam of IP):</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="homeAssistantMqttHost"
+                                  prefix="" 
+                                  value="{% if oppleosystemconfig.homeAssistantMqttHost is not none  %}{{ oppleosystemconfig.homeAssistantMqttHost }}{% else %}{% endif %}"
+                                  validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
+                                  info="Hostnaam of IP adres van de HomeAssistant MQTT broker."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Port:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="homeAssistantMqttPort"
+                                  prefix="" 
+                                  value="{% if oppleosystemconfig.homeAssistantMqttPort is not none  %}{{ oppleosystemconfig.homeAssistantMqttPort }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Poort van de HomeAssistant MQTT broker."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Username:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="homeAssistantMqttUsername"
+                                  prefix="" 
+                                  value="{% if oppleosystemconfig.homeAssistantMqttUsername is not none  %}{{ oppleosystemconfig.homeAssistantMqttUsername }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Gebruikersnaam van de HomeAssistant MQTT broker."
+                                  />
+                            </tr>
+                            <tr>
+                              <td class="text-dark">Password:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="homeAssistantMqttPassword"
+                                  prefix="" 
+                                  value="{% if oppleosystemconfig.homeAssistantMqttPassword is not none  %}{{ oppleosystemconfig.homeAssistantMqttPassword }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="Wachtwoord van de HomeAssistant MQTT broker."
+                                  hideEdit=true
                                   />
                             </tr>
 

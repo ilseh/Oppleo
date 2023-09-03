@@ -92,6 +92,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_MQTT_USERNAME = 'mqtt_username'
     __INI_MQTT_PASSWORD = 'mqtt_password'
 
+    __INI_HOMEASSISTANT_MQTT_ENABLED = 'homeassisitant_mqtt_enabled'
+    __INI_HOMEASSISTANT_MQTT_HOST = 'homeassisitant_mqtt_host'
+    __INI_HOMEASSISTANT_MQTT_PORT = 'homeassisitant_mqtt_port'
+    __INI_HOMEASSISTANT_MQTT_USERNAME = 'homeassisitant_mqtt_username'
+    __INI_HOMEASSISTANT_MQTT_PASSWORD = 'homeassisitant_mqtt_password'
+
     __INI_VEHICLE_OPTIONS_OVERRULING = 'vehicle_options_overruling'
 
     """
@@ -147,6 +153,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __MQTT_PORT = 1883
     __MQTT_USERNAME = None
     __MQTT_PASSWORD = None
+
+    __HOMEASSISTANT_MQTT_ENABLED = False
+    __HOMEASSISTANT_MQTT_HOST = None
+    __HOMEASSISTANT_MQTT_PORT = 1883
+    __HOMEASSISTANT_MQTT_USERNAME = None
+    __HOMEASSISTANT_MQTT_PASSWORD = None
 
     __VEHICLE_OPTIONS_OVERRULING = json.loads('{}')
 
@@ -266,6 +278,12 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__MQTT_USERNAME = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_USERNAME, default=self.__MQTT_USERNAME, log=log)
         self.__MQTT_PASSWORD = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_MQTT_PASSWORD, default=self.__MQTT_PASSWORD, log=log)
 
+        self.__HOMEASSISTANT_MQTT_ENABLED = self.__getBooleanOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_ENABLED, default=self.__HOMEASSISTANT_MQTT_ENABLED, log=log)
+        self.__HOMEASSISTANT_MQTT_HOST = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_HOST, default=self.__HOMEASSISTANT_MQTT_HOST, log=log)
+        self.__HOMEASSISTANT_MQTT_PORT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_PORT, default=self.__HOMEASSISTANT_MQTT_PORT, log=log)
+        self.__HOMEASSISTANT_MQTT_USERNAME = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_USERNAME, default=self.__HOMEASSISTANT_MQTT_USERNAME, log=log)
+        self.__HOMEASSISTANT_MQTT_PASSWORD = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_PASSWORD, default=self.__HOMEASSISTANT_MQTT_PASSWORD, log=log)
+
         self.__VEHICLE_OPTIONS_OVERRULING = self.__getJsonOption__(section=self.__INI_MAIN, option=self.__INI_VEHICLE_OPTIONS_OVERRULING, default=self.__VEHICLE_OPTIONS_OVERRULING, log=log)
 
         self.load_completed = True
@@ -350,6 +368,15 @@ class OppleoSystemConfig(object, metaclass=Singleton):
                 self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_USERNAME] = self.__MQTT_USERNAME
             if self.__MQTT_PASSWORD is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_PASSWORD] = self.__MQTT_PASSWORD
+
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_OUTBOUND_ENABLED] = 'True' if self.__HOMEASSISTANT_MQTT_ENABLED else 'False'
+            if self.__HOMEASSISTANT_MQTT_HOST is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_HOST] = self.__HOMEASSISTANT_MQTT_HOST
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_PORT] = str(self.__HOMEASSISTANT_MQTT_PORT)
+            if self.__HOMEASSISTANT_MQTT_USERNAME is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_USERNAME] = self.__HOMEASSISTANT_MQTT_USERNAME
+            if self.__HOMEASSISTANT_MQTT_PASSWORD is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_PASSWORD] = self.__HOMEASSISTANT_MQTT_PASSWORD
 
             if self.__VEHICLE_OPTIONS_OVERRULING is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_VEHICLE_OPTIONS_OVERRULING] = json.dumps(self.__VEHICLE_OPTIONS_OVERRULING)
@@ -903,6 +930,66 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     @mqttPassword.setter
     def mqttPassword(self, value:str):
         self.__MQTT_PASSWORD = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttEnabled -> __HOMEASSISTANT_MQTT_ENABLED
+    """
+    @property
+    def homeAssistantMqttEnabled(self):
+        return self.__HOMEASSISTANT_MQTT_ENABLED
+
+    @homeAssistantMqttEnabled.setter
+    def homeAssistantMqttEnabled(self, value:bool):
+        self.__HOMEASSISTANT_MQTT_ENABLED = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttHost -> __HOMEASSISTANT_MQTT_HOST
+    """
+    @property
+    def homeAssistantMqttHost(self):
+        return self.__HOMEASSISTANT_MQTT_HOST
+
+    @homeAssistantMqttHost.setter
+    def homeAssistantMqttHost(self, value:str):
+        self.__HOMEASSISTANT_MQTT_HOST = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttPort -> __HOMEASSISTANT_MQTT_PORT
+    """
+    @property
+    def homeAssistantMqttPort(self):
+        return self.__HOMEASSISTANT_MQTT_PORT
+
+    @homeAssistantMqttPort.setter
+    def homeAssistantMqttPort(self, value:int):
+        self.__HOMEASSISTANT_MQTT_PORT = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttUsername -> __HOMEASSISTANT_MQTT_USERNAME
+    """
+    @property
+    def homeAssistantMqttUsername(self):
+        return self.__HOMEASSISTANT_MQTT_USERNAME
+
+    @homeAssistantMqttUsername.setter
+    def homeAssistantMqttUsername(self, value:str):
+        self.__HOMEASSISTANT_MQTT_USERNAME = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttPassword -> __HOMEASSISTANT_MQTT_PASSWORD
+    """
+    @property
+    def homeAssistantMqttPassword(self):
+        return self.__HOMEASSISTANT_MQTT_PASSWORD
+
+    @homeAssistantMqttPassword.setter
+    def homeAssistantMqttPassword(self, value:str):
+        self.__HOMEASSISTANT_MQTT_PASSWORD = value
         self.__writeConfig__()
 
     """
