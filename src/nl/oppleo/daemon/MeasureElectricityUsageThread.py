@@ -11,7 +11,7 @@ oppleoConfig = OppleoConfig()
 
 class MeasureElectricityUsageThread(object):
     appSocketIO = None
-    lock = threading.Lock
+    threadLock = None
     stop_event = None
 
     def __init__(self, appSocketIO):
@@ -19,6 +19,7 @@ class MeasureElectricityUsageThread(object):
         self.appSocketIO = appSocketIO
         self.thread = None
         self.stop_event = threading.Event()
+        self.threadLock = threading.Lock()
         self.createEnergyDevice()
 
     def start(self):
@@ -82,7 +83,8 @@ class MeasureElectricityUsageThread(object):
         self.logger.debug('MeasureElectricityUsageThread.addCallback()...')
         if oppleoConfig.energyDevice is not None:
             self.logger.debug('MeasureElectricityUsageThread.addCallback() to energyDevice %s...' % oppleoConfig.energyDevice.energy_device_id)
-            oppleoConfig.energyDevice.addCallback(fn)
+            with self.threadLock:
+                oppleoConfig.energyDevice.addCallback(fn)
         else:
             self.logger.debug('MeasureElectricityUsageThread.addCallback() FAILED - no energyDevice!')
             

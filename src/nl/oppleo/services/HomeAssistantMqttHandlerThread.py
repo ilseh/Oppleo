@@ -636,7 +636,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         "hz": "Frequency"
                 }
         translated_measurement = {}
-        for item, value in translation:
+        for item, value in translation.items():
             translated_measurement[value] = measurement[item]
     
         self.publish( values=translated_measurement )
