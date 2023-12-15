@@ -111,10 +111,10 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "OffPeak", "icon": "mdi:clock" },
             { "component": "sensor", "name": "Charging", "icon": "mdi:lightning-bolt-outline" },
             { "component": "sensor", "name": "Vehicle", "icon": "mdi:car" },
-            { "component": "sensor", "name": "Start value", "icon": "mdi:gauge-empty" },
-            { "component": "sensor", "name": "End value", "icon": "mdi:gauge-full" },
+            { "component": "sensor", "name": "Start value", "icon": "mdi:gauge-empty", "unit_of_measurement": "kWh"  },
+            { "component": "sensor", "name": "End value", "icon": "mdi:gauge-full", "unit_of_measurement": "kWh"  },
             { "component": "sensor", "name": "Trigger", "icon": "mdi:ray-start-arrow" },
-            { "component": "sensor", "name": "Tariff", "icon": "mdi:currency-eur" },
+            { "component": "sensor", "name": "Tariff", "icon": "mdi:currency-eur", "unit_of_measurement": "€" },
             { "component": "select", "name": "Token", "icon": "mdi:credit-card-scan", "options": rfidTokenList }
         ]
 
@@ -655,7 +655,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         if end_value is not None:
             sessionInfo['End value'] = end_value
         if trigger is not None:
-            sessionInfo['Trigger'] = cost
+            sessionInfo['Trigger'] = trigger
         if tariff is not None:
             sessionInfo['Tariff'] = tariff
         if cost is not None:
