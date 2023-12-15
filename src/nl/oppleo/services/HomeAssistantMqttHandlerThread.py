@@ -89,6 +89,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         rfidTokenList = list(map(lambda rfid: rfid.name if rfid.name != None and rfid.name != "" else rfid.rfid, RfidModel.get_all()))
 
         self.__haItems = [
+            { "component": "sensor", "name": "Meter", "icon": "mdi:lightning-bolt-outline" },
+            { "component": "sensor", "name": "Timestamp", "icon": "mdi:lightning-bolt-outline" },
             { "component": "sensor", "name": "A1", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
             { "component": "sensor", "name": "A2", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
             { "component": "sensor", "name": "A3", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
@@ -111,8 +113,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "OffPeak", "icon": "mdi:clock" },
             { "component": "sensor", "name": "Charging", "icon": "mdi:lightning-bolt-outline" },
             { "component": "sensor", "name": "Vehicle", "icon": "mdi:car" },
-            { "component": "sensor", "name": "Start value", "icon": "mdi:gauge-empty", "unit_of_measurement": "kWh"  },
-            { "component": "sensor", "name": "End value", "icon": "mdi:gauge-full", "unit_of_measurement": "kWh"  },
+            { "component": "sensor", "name": "StartValue", "icon": "mdi:gauge-empty", "unit_of_measurement": "kWh"  },
+            { "component": "sensor", "name": "EndValue", "icon": "mdi:gauge-full", "unit_of_measurement": "kWh"  },
             { "component": "sensor", "name": "Trigger", "icon": "mdi:ray-start-arrow" },
             { "component": "sensor", "name": "Tariff", "icon": "mdi:currency-eur", "unit_of_measurement": "€" },
             { "component": "select", "name": "Token", "icon": "mdi:credit-card-scan", "options": rfidTokenList }
@@ -616,8 +618,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
         # convert into JSON:
         measurement = device_measurement.to_dict()
-        translation = { "energy_device_id": "meter",
-                        "created_at": "timestamp",
+        translation = { "energy_device_id": "Meter",
+                        "created_at": "Timestamp",
                         "kwh_l1": "E1",
                         "kwh_l2": "E2",
                         "kwh_l3": "E3",
@@ -651,9 +653,9 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         if energy is not None:
             sessionInfo['Energy'] = energy
         if start_value is not None:
-            sessionInfo['Start value'] = start_value
+            sessionInfo['StartValue'] = start_value
         if end_value is not None:
-            sessionInfo['End value'] = end_value
+            sessionInfo['EndValue'] = end_value
         if trigger is not None:
             sessionInfo['Trigger'] = trigger
         if tariff is not None:
