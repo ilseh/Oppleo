@@ -559,7 +559,10 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         HomeAssistantMqttHandlerThread.__logger.debug("Sending status update messages to HomeAssistant MQTT Broker...")
 
         # Maintain the most recent values
-        self.__most_recent_state = self.__most_recent_state | values
+        # Python 3.10
+        # self.__most_recent_state = self.__most_recent_state | values
+        # Python < 3.10
+        self.__most_recent_state = {k: v for d in [self.__most_recent_state, values] for k, v in d.items()}
 
         if self.__mqttMsgQueue is not None:
             self.__mqttMsgQueue.put( self.__most_recent_state )
