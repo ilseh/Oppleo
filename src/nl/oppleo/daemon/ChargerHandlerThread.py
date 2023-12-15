@@ -290,7 +290,7 @@ class ChargerHandlerThread(object):
                                                      start_value=start_value,
                                                      energy=0, 
                                                      cost=0, 
-                                                     token=rfid.name if rfid.name is not None and rfid.name is not "" else rfid.rfid, 
+                                                     token=rfidObj.name if rfidObj.name is not None and rfidObj.name is not "" else rfidObj.rfid, 
                                                      tariff=ChargerConfigModel.get_config().charger_tariff,
                                                      trigger=trigger
                                                     )
