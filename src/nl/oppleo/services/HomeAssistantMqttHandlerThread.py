@@ -628,7 +628,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         "a_l3": "A3",
                         "p_l1": "P1",
                         "p_l2": "P2",
-                        "p_l3": "P2",
+                        "p_l3": "P3",
                         "v_l1": "V1",
                         "v_l2": "V2",
                         "v_l3": "V3",
