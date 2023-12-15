@@ -59,6 +59,12 @@ from nl.oppleo.utils.TokenMediator import tokenMediator
 
 from nl.oppleo.daemon.MqttSendHistoryThread import Status as mhtsStatus
 
+from nl.oppleo.services.PushMessage import PushMessage
+from nl.oppleo.services.PushMessageProwl import PushMessageProwl
+from nl.oppleo.services.PushMessagePushover import PushMessagePushover
+
+from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient 
+from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread 
 
 # https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 HTTP_CODE_200_OK                    = 200
@@ -978,6 +984,9 @@ def settings(active=1):
     diag['measurements'] = edmm.get_count()
     diag['measurements_str'] = '{:,}'.format(edmm.get_count()).replace(',', '.')
 
+    homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+    haMqtt = 'OTHER' if not ( hasattr(homeAssistantMqttHandlerThread, 'state') and hasattr(homeAssistantMqttHandlerThread.state, 'name') ) else homeAssistantMqttHandlerThread.state.name
+
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
                 active=active, 
@@ -990,7 +999,9 @@ def settings(active=1):
                 backuputil=BackupUtil(),
                 changelog=changeLog,
                 gitutil=GitUtil,
-                ipv4=IPv4
+                ipv4=IPv4,
+                haMqtt=haMqtt,
+                haMqttHa=homeAssistantMqttHandlerThread.ha_state.name
             )
 
 
@@ -2436,48 +2447,63 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.mqttPassword = value if len(value) > 0 else None
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
-    """
-        TODO
-        - reconnect on enabled and changing username/ password/ host/ port etc.
-        - also for MQTT?
-    """
-
     # homeAssistantMqttEnabled
     if (param == 'homeAssistantMqttEnabled'):
         oppleoSystemConfig.homeAssistantMqttEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
-        homeAssistantMqttClient = HomeAssistantMqttClient()
-        
-        """
-            TODO
-            - disconnect on False, connect on True
-            - send autodiscover on connect in client
-        """
-        homeAssistantMqttClient = HomeAssistantMqttClient()
-        if homeAssistantMqttClient.is_connected() and not oppleoSystemConfig.homeAssistantMqttEnabled:
-            homeAssistantMqttClient.disconnect()
-
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.homeAssistantMqttEnabled }), HTTP_CODE_200_OK
 
     # homeAssistantMqttHost
     validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
     if (param == 'homeAssistantMqttHost') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.homeAssistantMqttHost = value if len(value) > 0 else None
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.reconnect()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
      # homeAssistantMqttPort
     validation="^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
     if (param == 'homeAssistantMqttPort') and isinstance(value, str) and re.match(validation, value):
         oppleoSystemConfig.homeAssistantMqttPort = value
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.reconnect()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.homeAssistantMqttPort }), HTTP_CODE_200_OK
 
     # homeAssistantMqttUsername
     if (param == 'homeAssistantMqttUsername') and isinstance(value, str):
         oppleoSystemConfig.homeAssistantMqttUsername = value if len(value) > 0 else None
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.reconnect()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # homeAssistantMqttPassword
     if (param == 'homeAssistantMqttPassword') and isinstance(value, str):
         oppleoSystemConfig.homeAssistantMqttPassword = value if len(value) > 0 else None
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.reconnect()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # homeAssistantMqttClientId
+    validation="^[A-Za-z0-9_]+$"
+    if (param == 'homeAssistantMqttClientId') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.homeAssistantMqttClientId = value
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.reconnect()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoSystemConfig.homeAssistantMqttClientId }), HTTP_CODE_200_OK
+
+    # homeAssistantMqttDiscoveryPrefix
+    validation="^[A-Za-z0-9]+$"
+    if (param == 'homeAssistantMqttDiscoveryPrefix') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.homeAssistantMqttDiscoveryPrefix = value
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.reconnect()
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
+
+    # homeAssistantMqttBirthAndLastWillAndTestament
+    validation="^[A-Za-z0-9/]$"
+    if (param == 'homeAssistantMqttBirthAndLastWillAndTestament') and isinstance(value, str) and re.match(validation, value):
+        oppleoSystemConfig.homeAssistantMqttBirthAndLastWillAndTestament = value
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.reconnect()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
     # webChargeOnDashboard
@@ -3475,7 +3501,6 @@ def requestOdometerUpdate():
         })
 
 
-
 # Always returns json
 @flaskRoutes.route("/monthly_usage_overview", methods=["GET"])
 @flaskRoutes.route("/monthly_usage_overview/", methods=["GET"])
@@ -3490,13 +3515,6 @@ def monthlyUsageOverview():
     eme = edmm.get_end_month_energy_levels(oppleoConfig.chargerID)
 
     return jsonify(eme)
-
-from nl.oppleo.services.PushMessage import PushMessage
-from nl.oppleo.services.PushMessageProwl import PushMessageProwl
-from nl.oppleo.services.PushMessagePushover import PushMessagePushover
-
-from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient 
-from nl.oppleo.services.HomeAssistantMqttClient import HomeAssistantMqttClient 
 
 
 
@@ -3557,6 +3575,24 @@ def sendTestNotification(msgType:str=None):
         sendSuccess = oppleoMqttClient.publish(topic=topic, message=json.dumps(msg), waitForPublish=True, timeout=1500)
         return jsonify({ 
             'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
+            'type'          : msgType.lower(),
+            'message'       : message
+            })            
+
+    if msgType.lower() == 'ha-mqtt-send-autodiscovery':
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.triggerAutoDiscover()
+        return jsonify({ 
+            'status'        : HTTP_CODE_200_OK,
+            'type'          : msgType.lower(),
+            'message'       : message
+            })            
+
+    if msgType.lower() == 'ha-mqtt-send-most-recent':
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.triggerMostRecent()
+        return jsonify({ 
+            'status'        : HTTP_CODE_200_OK,
             'type'          : msgType.lower(),
             'message'       : message
             })            

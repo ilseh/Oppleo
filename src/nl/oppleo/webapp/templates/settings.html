@@ -778,6 +778,7 @@
     function startBackupStatusWebSocket() {
       // start up the SocketIO connection to the server on namespace /backup
       backupStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/backup')
+
       // this is a callback that triggers when the "my response" event is emitted by the server.
       backupStatusSocket.on('backup_started', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
@@ -789,6 +790,7 @@
       })
       backupStatusSocket.on('backup_completed', function(msg) {
         console.log('Received: ' + JSON.stringify(msg))
+        return // ########
         if (msg.id == '{{ oppleoconfig.chargerID }}') {
           // '%Y-%m-%d %H:%M.%S' -> 2011-10-10T14:48:00
           let ts = new Date(msg.data.started.substring(0, 10)+'T'+msg.data.started.replace(/\./g,':').substring(11, 19))
@@ -871,7 +873,45 @@
           // TODO xxxxx
         }
       })
-    }    
+    }
+
+    let settingsStatusSocket = null
+    function startSettingsStatusWebSocket() {
+
+      // start up the SocketIO connection to the server on namespace /settings
+      settingsStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/settings')
+
+      // this is a callback that triggers when the "my response" event is emitted by the server.
+
+      settingsStatusSocket.on('ha_mqtt_status_update', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+        $('span#ha_mqtt_status_disconnected').toggleClass('d-none', msg.data.state != 'DISCONNECTED')
+        $('span#ha_mqtt_status_connected').toggleClass('d-none', msg.data.state != 'CONNECTED')
+        $('span#ha_mqtt_status_connect_failed').toggleClass('d-none', msg.data.state != 'FAILED')
+        $('span#ha_mqtt_status_not_authorized').toggleClass('d-none', msg.data.state != 'NOT_AUTHORIZED')
+        $('span#ha_mqtt_status_unreachable').toggleClass('d-none', msg.data.state != 'UNREACHABLE')
+        $('span#ha_mqtt_status_other').toggleClass('d-none', msg.data.state != 'OTHER')
+
+        $('button#triggeraction-ha-mqtt-send-autodiscovery').attr('disabled', msg.data.state != 'CONNECTED')
+        $('button#triggeraction-ha-mqtt-send-most-recent').attr('disabled', msg.data.state != 'CONNECTED')
+      })
+
+      settingsStatusSocket.on('ha_mqtt_autodiscover', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+      })
+      settingsStatusSocket.on('ha_mqtt_message_send', function(msg) {
+        console.log('Received: ' + JSON.stringify(msg))
+      })
+
+      settingsStatusSocket.on('ha_mqtt_ha_status', function(msg) {
+        // HomeAssistant has announced to be online/ offline
+        console.log('Received: ' + JSON.stringify(msg))
+        $('span#ha_mqtt_ha_offline').toggleClass('d-none', msg.data.state != 'OFFLINE')
+        $('span#ha_mqtt_ha_online').toggleClass('d-none', msg.data.state != 'ONLINE')
+        $('span#ha_mqtt_ha_unknown').toggleClass('d-none', msg.data.state != 'UNKNOWN')
+      })
+    }
+
 
     function updateMqttHistoryControls(status) {
       // Enable correct buttons
@@ -1856,7 +1896,7 @@
         $('button#'+ev.currentTarget.id).attr('disabled', true)
         let type = ev.currentTarget.id.replace("-send-testmessage", "")
 
-        sendMessage( 'Testbericht', ev.currentTarget.id.replace("-send-testmessage", ""), true, function(result) {
+        sendMessage( 'Testbericht', type, true, function(result) {
           if (result.status == 200) {
             autoHideNotify('success','top-left', 'Testbericht verzonden', 'Testbericht verzonden.')
           } else {
@@ -1867,13 +1907,33 @@
         }, function(result) {
           autoHideNotify('error','top-left', 'Testbericht niet verzonden', 'Testbericht niet verzonden.')
           $('button#'+ev.currentTarget.id).attr('disabled', false)
+        })
+      })
+      $("button[id^='triggeraction-']").on('click', function(ev) {
+        console.log(timestamp() + ' button send homeassistant mqtt autodiscovery')            
+        $('button#'+ev.currentTarget.id).attr('disabled', true)
+        let type = ev.currentTarget.id.replace("triggeraction-", "")
+
+        sendMessage( 'ActionRequest', type, true, function(result) {
+          if (result.status == 200) {
+            autoHideNotify('success','top-left', 'Uitgevoerd', 'De actie is uitgevoerd of aangevraagd.')
+          } else {
+            autoHideNotify('error','top-left', 'Fout', 'De actie kon niet worden uitgevoerd of aangevraagd.')
+          }
+          $('button#'+ev.currentTarget.id).attr('disabled', false)
+
+        }, function(result) {
+          autoHideNotify('error','top-left', 'Fout', 'De actie kon niet worden uitgevoerd of aangevraagd.')
+          $('button#'+ev.currentTarget.id).attr('disabled', false)
 
         })
       })
 
-      // Start websocket
+      // Start websockets
       startMqttHistoryStatusWebSocket()
       requestMqttHistoryStatus()
+      startSettingsStatusWebSocket()
+      startBackupStatusWebSocket()
 
       $("button[id^='mqtt-send-history-']").on('click', function(ev) {
         // Disable buttons
@@ -1930,6 +1990,10 @@
       // MQTT
       $('input#mqttOutboundEnabled').change(function() {
         updateSettings( 'mqttOutboundEnabled', $(this).prop('checked') )
+      })
+      // HOMEASSISTANT MQTT
+      $('input#homeAssistantMqttEnabled').change(function() {
+        updateSettings( 'homeAssistantMqttEnabled', $(this).prop('checked') )
       })
 
       // Remove spinner
@@ -3269,7 +3333,7 @@
                                         data-toggle="tooltip" 
                                         data-placement="bottom" 
                                         data-html="true" 
-                                        title="Berichten worden verzonden naar topic met prefix <em class='text-warning font-weight-bold'>homeassistant/sensor/{{ oppleoconfig.chargerID }}/</em> zonder retain en QoS waarde 0. Oppleo support alleen tcp verbinding, MQTT versie 3.1.1 (poha default)."
+                                        title="Discovery berichten worden verzonden naar een topic met prefix <em class='text-warning font-weight-bold'>{{ oppleosystemconfig.homeAssistantMqttDiscoveryPrefix }}/sensor/{{ oppleoconfig.chargerID }}_{XX}/config</em> en status updates worden verzonden naar topic met prefix <em class='text-warning font-weight-bold'>{{ oppleosystemconfig.homeAssistantMqttDiscoveryPrefix }}/sensor/{{ oppleoconfig.chargerID }}/state</em>, zonder retain en QoS waarde 0. Oppleo support alleen tcp verbinding, MQTT versie 3.1.1 (poha default)."
                                         >
                                     <i class="fas fa-info-circle"></i>
                                   </span>
@@ -3293,9 +3357,63 @@
                                     data-height="30"
                                     data-width="70"
                                   />
+
+                                  <span class="text-muted h6 text-uppercase ml-3" id="ha_mqtt">
+                                    mqtt:
+                                  </span>
+                                  <span class="badge bg-secondary ml-1{% if haMqtt != 'DISCONNECTED' %} d-none{% endif %}" id="ha_mqtt_status_disconnected">
+                                    Disconnected
+                                  </span>
+                                  <span class="badge bg-success ml-1{% if haMqtt != 'CONNECTED' %} d-none{% endif %}" id="ha_mqtt_status_connected">
+                                    Connected
+                                  </span>
+                                  <span class="badge bg-warning ml-1{% if haMqtt != 'CONNECT_FAILED' %} d-none{% endif %}" id="ha_mqtt_status_connect_failed">
+                                    Failed
+                                  </span>
+                                  <span class="badge bg-danger ml-1{% if haMqtt != 'NOT_AUTHORIZED' %} d-none{% endif %}" id="ha_mqtt_status_not_authorized">
+                                    Denied
+                                  </span>
+                                  <span class="badge bg-danger ml-1{% if haMqtt != 'UNREACHABLE' %} d-none{% endif %}" id="ha_mqtt_status_unreachable">
+                                    Unreachable
+                                  </span>
+                                  <span class="badge bg-warning ml-1{% if haMqtt != 'OTHER' %} d-none{% endif %}" id="ha_mqtt_status_other">
+                                    Unknown
+                                  </span>
+                                  <span class="text-muted h6 text-uppercase ml-3" id="ha_mqtt_ha">
+                                    HOME ASSISTANT:
+                                  </span>
+                                  <span class="badge bg-secondary ml-1{% if haMqttHa != 'OFFLINE' %} d-none{% endif %}" id="ha_mqtt_ha_offline">
+                                    Offline
+                                  </span>
+                                  <span class="badge bg-success ml-1{% if haMqttHa != 'ONLINE' %} d-none{% endif %}" id="ha_mqtt_ha_online">
+                                    Online
+                                  </span>
+                                  <span class="badge bg-warning ml-1{% if haMqttHa != 'UNKNOWN' %} d-none{% endif %}" id="ha_mqtt_ha_unknown">
+                                    Unknown
+                                  </span>
+
                                 </form>
+
+
                               </td>
                             </tr>
+                            <tr>
+                              <td class="text-dark">
+                                Acties:
+                                <span style="cursor: help;"
+                                      class="text-primary"
+                                      data-toggle="tooltip" 
+                                      data-placement="bottom" 
+                                      data-html="true" 
+                                      title="Handmatig triggeren van AutoDiscovery en status update berichten. Oppleo stuurt automatisch AutoDiscover en recente status updates bij het opstarten van Oppleo en bij het detecteren van Birth en Last Will and Testament MQTT berichten van Home Assistant."
+                                  ><i class="fas fa-info-circle"></i>
+                                </span>
+                              </td>
+                              <td class="text-primary">
+                                <button type="button" class="btn btn-xs btn-outline-primary" id="triggeraction-ha-mqtt-send-autodiscovery" disabled> <i class="far fa-paper-plane"></i>  AutoDiscovery </button>
+                                <button type="button" class="btn btn-xs btn-outline-primary ml-1" id="triggeraction-ha-mqtt-send-most-recent" disabled> <i class="far fa-paper-plane"></i>  Gegevens update </button>
+                              </td>
+                            </tr>                              
                             <tr>
                               <td class="text-dark">Host (naam of IP):</td >
                               <td class="text-primary">
@@ -3306,6 +3424,7 @@
                                   validation="^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$|((\/(3[0-2]|[012]?[0-9])){0,1})$)){4})$|^((?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\.?)$"
                                   info="Hostnaam of IP adres van de HomeAssistant MQTT broker."
                                   />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Port:</td >
@@ -3317,6 +3436,7 @@
                                   validation="^[A-Za-z0-9]+$"
                                   info="Poort van de HomeAssistant MQTT broker."
                                   />
+                              </td>
                             </tr>
                             <tr>
                               <td class="text-dark">Username:</td >
@@ -3328,7 +3448,9 @@
                                   validation="^[A-Za-z0-9]+$"
                                   info="Gebruikersnaam van de HomeAssistant MQTT broker."
                                   />
+                              </td>
                             </tr>
+
                             <tr>
                               <td class="text-dark">Password:</td >
                               <td class="text-primary">
@@ -3340,6 +3462,47 @@
                                   info="Wachtwoord van de HomeAssistant MQTT broker."
                                   hideEdit=true
                                   />
+                              </td>
+                            </tr>
+
+
+                            <tr>
+                              <td class="text-dark">Client Id:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="homeAssistantMqttClientId"
+                                  prefix="" 
+                                  value="{% if oppleosystemconfig.homeAssistantMqttClientId is not none  %}{{ oppleosystemconfig.homeAssistantMqttClientId }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9_]+$"
+                                  info="De Client ID die door Oppleo wordt gebruikt voor het discovery topic. Mag letters, cijfers en underscore bevatten. Wanneer niet ingevoerd gebruikt Oppleo een standaard formaat met 'Oppleo' + underscore + het Device ID."
+                                  />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Discovery Prefix:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="homeAssistantMqttDiscoveryPrefix"
+                                  prefix="" 
+                                  value="{% if oppleosystemconfig.homeAssistantMqttDiscoveryPrefix is not none  %}{{ oppleosystemconfig.homeAssistantMqttDiscoveryPrefix }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9]+$"
+                                  info="De prefix voor het discovery topic verwacht/ geconfigureerd in Home Assistant (default homeassistant)"
+                                  />
+                              </td>
+                            </tr>
+
+                            <tr>
+                              <td class="text-dark">Birth & Last Will and Testament Topic:</td >
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                  id="homeAssistantMqttBirthAndLastWillAndTestament"
+                                  prefix="" 
+                                  value="{% if oppleosystemconfig.homeAssistantMqttBirthAndLastWillAndTestament is not none  %}{{ oppleosystemconfig.homeAssistantMqttBirthAndLastWillAndTestament }}{% else %}{% endif %}"
+                                  validation="^[A-Za-z0-9/]$"
+                                  info="Het door Home Assistant gebruikte topic voor Birth (iopstarten) en Last Will and Testament (shutdown) notificaties. Default <i>homeassistant/status</i>"
+                                  />
+                              </td>
                             </tr>
 
                             {% endif %}

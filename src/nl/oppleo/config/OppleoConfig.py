@@ -8,7 +8,7 @@ from json import JSONDecodeError
 
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
-from  nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
+from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.config import Logger
 from nl.oppleo.utils.IPv4 import IPv4
 

@@ -24,7 +24,7 @@ from nl.oppleo.services.RfidReader import RfidReader
 from nl.oppleo.utils.ModulePresence import ModulePresence
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.OutboundEvent import OutboundEvent 
-
+from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread
 
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
@@ -284,6 +284,16 @@ class ChargerHandlerThread(object):
         oppleoConfig.vcsmThread.rfid = rfid
         oppleoConfig.vcsmThread.start()
 
+        # Announce on MQTT to HomeAssitant
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.sessionUpdate(status='Wachten', 
+                                                     start_value=start_value,
+                                                     energy=0, 
+                                                     cost=0, 
+                                                     token=rfid.name if rfid.name is not None and rfid.name is not "" else rfid.rfid, 
+                                                     tariff=ChargerConfigModel.get_config().charger_tariff,
+                                                     trigger=trigger
+                                                    )
 
 
     # evse_reader_thread
@@ -328,6 +338,16 @@ class ChargerHandlerThread(object):
                 namespace='/charge_session',
                 public=False
             )
+        # Announce on MQTT to HomeAssitant
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+        homeAssistantMqttHandlerThread.sessionUpdate(status='Geen sessie', 
+                                                     start_value=0,
+                                                     energy=0, 
+                                                     cost=0,
+                                                     trigger=''
+                                                    )
+
+
         # Stop the VehicleChargeStatusMonitorThread
         if oppleoConfig.vcsmThread is not None:
             oppleoConfig.vcsmThread.stop()
@@ -520,3 +540,10 @@ class ChargerHandlerThread(object):
                         public=False
                     )
 
+                # Announce on MQTT to HomeAssitant
+                homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+                homeAssistantMqttHandlerThread.sessionUpdate(energy=open_charge_session_for_device.total_energy , 
+                                                             cost=open_charge_session_for_device.total_price,
+                                                             end_value=open_charge_session_for_device.end_value,
+                                                            )
+        

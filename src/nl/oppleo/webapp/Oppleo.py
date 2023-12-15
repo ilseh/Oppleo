@@ -88,6 +88,8 @@ try:
     from nl.oppleo.daemon.MeasureElectricityUsageThread import MeasureElectricityUsageThread
     from nl.oppleo.daemon.ChargerHandlerThread import ChargerHandlerThread
     from nl.oppleo.daemon.PeakHoursMonitorThread import PeakHoursMonitorThread
+    from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread 
+    
     from nl.oppleo.services.Buzzer import Buzzer
     from nl.oppleo.services.Evse import Evse
     from nl.oppleo.services.EvseReader import EvseReader
@@ -152,6 +154,7 @@ try:
     @appSocketIO.on("connect", namespace="/evse_status")
     @appSocketIO.on("connect", namespace="/backup")
     @appSocketIO.on("connect", namespace="/mqtt")
+    @appSocketIO.on("connect", namespace="/settings")
     #@appSocketIO.on("connect", namespace="/")
     @config_dashboard_access_restriction
     def connect(*args, **kwargs):
@@ -204,6 +207,7 @@ try:
     @appSocketIO.on("disconnect", namespace="/evse_status")
     @appSocketIO.on("disconnect", namespace="/backup")
     @appSocketIO.on("disconnect", namespace="/mqtt")
+    @appSocketIO.on("disconnect", namespace="/settings")
     #@appSocketIO.on("disconnect", namespace="/")
     @config_dashboard_access_restriction
     def disconnect():
@@ -353,6 +357,14 @@ try:
                 datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
                 )
             )
+
+        homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+
+        if meuThread is not None:
+            meuThread.addCallback(homeAssistantMqttHandlerThread.energyUpdate)
+
+        # Loop the thread
+        homeAssistantMqttHandlerThread.start()
 
         appSocketIO.run(app, 
             port=oppleoSystemConfig.httpPort, 

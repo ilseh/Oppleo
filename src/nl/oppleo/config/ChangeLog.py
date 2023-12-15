@@ -155,6 +155,10 @@ class ChangeLog():
         return self.__currentVersion
 
     @property
+    def currentVersionStr(self) -> str:
+        return "" if self.__currentVersion is None else str(self.currentVersion)
+
+    @property
     def currentVersionDate(self):
         return self.__currentVersionDate
 

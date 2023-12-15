@@ -92,11 +92,14 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_MQTT_USERNAME = 'mqtt_username'
     __INI_MQTT_PASSWORD = 'mqtt_password'
 
-    __INI_HOMEASSISTANT_MQTT_ENABLED = 'homeassisitant_mqtt_enabled'
-    __INI_HOMEASSISTANT_MQTT_HOST = 'homeassisitant_mqtt_host'
-    __INI_HOMEASSISTANT_MQTT_PORT = 'homeassisitant_mqtt_port'
-    __INI_HOMEASSISTANT_MQTT_USERNAME = 'homeassisitant_mqtt_username'
-    __INI_HOMEASSISTANT_MQTT_PASSWORD = 'homeassisitant_mqtt_password'
+    __INI_HOMEASSISTANT_MQTT_ENABLED = 'homeassistant_mqtt_enabled'
+    __INI_HOMEASSISTANT_MQTT_HOST = 'homeassistant_mqtt_host'
+    __INI_HOMEASSISTANT_MQTT_PORT = 'homeassistant_mqtt_port'
+    __INI_HOMEASSISTANT_MQTT_USERNAME = 'homeassistant_mqtt_username'
+    __INI_HOMEASSISTANT_MQTT_PASSWORD = 'homeassistant_mqtt_password'
+    __INI_HOMEASSISTANT_MQTT_CLIENT_ID = 'homeassistant_mqtt_client_id'
+    __INI_HOMEASSISTANT_MQTT_DISCOVERY_PREFIX = 'homeassistant_mqtt_discovery_prefix'
+    __INI_HOMEASSISTANT_MQTT_BLWT = 'homeassistant_mqtt_blwt'
 
     __INI_VEHICLE_OPTIONS_OVERRULING = 'vehicle_options_overruling'
 
@@ -159,6 +162,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __HOMEASSISTANT_MQTT_PORT = 1883
     __HOMEASSISTANT_MQTT_USERNAME = None
     __HOMEASSISTANT_MQTT_PASSWORD = None
+
+    __HOMEASSISTANT_MQTT_CLIENT_ID = None
+    __HOMEASSISTANT_MQTT_DISCOVERY_PREFIX = "homeassistant"
+    __HOMEASSISTANT_MQTT_BLWT = "homeassistant/status"
 
     __VEHICLE_OPTIONS_OVERRULING = json.loads('{}')
 
@@ -283,6 +290,9 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         self.__HOMEASSISTANT_MQTT_PORT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_PORT, default=self.__HOMEASSISTANT_MQTT_PORT, log=log)
         self.__HOMEASSISTANT_MQTT_USERNAME = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_USERNAME, default=self.__HOMEASSISTANT_MQTT_USERNAME, log=log)
         self.__HOMEASSISTANT_MQTT_PASSWORD = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_PASSWORD, default=self.__HOMEASSISTANT_MQTT_PASSWORD, log=log)
+        self.__HOMEASSISTANT_MQTT_CLIENT_ID = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_CLIENT_ID, default=self.__HOMEASSISTANT_MQTT_CLIENT_ID, log=log)
+        self.__HOMEASSISTANT_MQTT_DISCOVERY_PREFIX = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_DISCOVERY_PREFIX, default=self.__HOMEASSISTANT_MQTT_DISCOVERY_PREFIX, log=log)
+        self.__HOMEASSISTANT_MQTT_BLWT = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_HOMEASSISTANT_MQTT_BLWT, default=self.__HOMEASSISTANT_MQTT_BLWT, log=log)
 
         self.__VEHICLE_OPTIONS_OVERRULING = self.__getJsonOption__(section=self.__INI_MAIN, option=self.__INI_VEHICLE_OPTIONS_OVERRULING, default=self.__VEHICLE_OPTIONS_OVERRULING, log=log)
 
@@ -309,7 +319,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         # Try to add the main section
         try:
             self.__ini_settings.add_section(self.__INI_MAIN)
-        except:
+        except Exception as e:
             # DuplicateSectionError - Section already exists
             # ValueError - Default Section
             # TypeError - Section name not a string
@@ -369,7 +379,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             if self.__MQTT_PASSWORD is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_MQTT_PASSWORD] = self.__MQTT_PASSWORD
 
-            self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_OUTBOUND_ENABLED] = 'True' if self.__HOMEASSISTANT_MQTT_ENABLED else 'False'
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_ENABLED] = 'True' if self.__HOMEASSISTANT_MQTT_ENABLED else 'False'
             if self.__HOMEASSISTANT_MQTT_HOST is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_HOST] = self.__HOMEASSISTANT_MQTT_HOST
             self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_PORT] = str(self.__HOMEASSISTANT_MQTT_PORT)
@@ -377,6 +387,11 @@ class OppleoSystemConfig(object, metaclass=Singleton):
                 self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_USERNAME] = self.__HOMEASSISTANT_MQTT_USERNAME
             if self.__HOMEASSISTANT_MQTT_PASSWORD is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_PASSWORD] = self.__HOMEASSISTANT_MQTT_PASSWORD
+            if self.__HOMEASSISTANT_MQTT_CLIENT_ID is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_CLIENT_ID] = self.__HOMEASSISTANT_MQTT_CLIENT_ID
+            if self.__HOMEASSISTANT_MQTT_DISCOVERY_PREFIX is not None:
+                self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_DISCOVERY_PREFIX] = self.__HOMEASSISTANT_MQTT_DISCOVERY_PREFIX
+            self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_BLWT] = self.__HOMEASSISTANT_MQTT_BLWT
 
             if self.__VEHICLE_OPTIONS_OVERRULING is not None:
                 self.__ini_settings[self.__INI_MAIN][self.__INI_VEHICLE_OPTIONS_OVERRULING] = json.dumps(self.__VEHICLE_OPTIONS_OVERRULING)
@@ -990,6 +1005,43 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     @homeAssistantMqttPassword.setter
     def homeAssistantMqttPassword(self, value:str):
         self.__HOMEASSISTANT_MQTT_PASSWORD = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttClientId -> __HOMEASSISTANT_MQTT_CLIENT_ID
+    """
+    @property
+    def homeAssistantMqttClientId(self):
+        return self.__HOMEASSISTANT_MQTT_CLIENT_ID
+
+    @homeAssistantMqttClientId.setter
+    def homeAssistantMqttClientId(self, value:str):
+        self.__HOMEASSISTANT_MQTT_CLIENT_ID = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttDiscoveryPrefix -> __HOMEASSISTANT_MQTT_DISCOVERY_PREFIX
+    """
+    @property
+    def homeAssistantMqttDiscoveryPrefix(self):
+        return self.__HOMEASSISTANT_MQTT_DISCOVERY_PREFIX
+
+    @homeAssistantMqttDiscoveryPrefix.setter
+    def homeAssistantMqttDiscoveryPrefix(self, value:str):
+        self.__HOMEASSISTANT_MQTT_DISCOVERY_PREFIX = value
+        self.__writeConfig__()
+
+    """
+        homeAssistantMqttBirthAndLastWillAndTestament -> __HOMEASSISTANT_MQTT_BLWT
+        The MQTT Topic subscribing
+    """
+    @property
+    def homeAssistantMqttBirthAndLastWillAndTestament(self):
+        return self.__HOMEASSISTANT_MQTT_BLWT
+
+    @homeAssistantMqttBirthAndLastWillAndTestament.setter
+    def homeAssistantMqttBirthAndLastWillAndTestament(self, value:str):
+        self.__HOMEASSISTANT_MQTT_BLWT = value
         self.__writeConfig__()
 
     """
