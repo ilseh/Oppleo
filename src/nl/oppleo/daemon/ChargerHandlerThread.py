@@ -286,7 +286,7 @@ class ChargerHandlerThread(object):
 
         # Announce on MQTT to HomeAssitant
         homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-        homeAssistantMqttHandlerThread.sessionUpdate(status='Laden' if self.is_status_charging else 'Wachten'
+        homeAssistantMqttHandlerThread.sessionUpdate(status='Laden' if self.is_status_charging else 'Wachten',
                                                      start_value=start_value,
                                                      energy=0, 
                                                      cost=0, 
