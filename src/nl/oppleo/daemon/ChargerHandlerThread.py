@@ -286,7 +286,7 @@ class ChargerHandlerThread(object):
 
         # Announce on MQTT to HomeAssitant
         homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-        homeAssistantMqttHandlerThread.sessionUpdate(status='Wachten', 
+        homeAssistantMqttHandlerThread.sessionUpdate(status='Laden' if self.is_status_charging else 'Wachten'
                                                      start_value=start_value,
                                                      energy=0, 
                                                      cost=0, 
@@ -294,6 +294,9 @@ class ChargerHandlerThread(object):
                                                      tariff=ChargerConfigModel.get_config().charger_tariff,
                                                      trigger=trigger
                                                     )
+
+
+
 
 
     # evse_reader_thread
@@ -424,6 +427,12 @@ class ChargerHandlerThread(object):
                         namespace='/charge_session',
                         public=True
                     )
+                homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+                homeAssistantMqttHandlerThread.sessionUpdate(status='Laden',
+                                                             evse=evse_state
+                                                            )
+
+
             self.logger.debug('.handle_charging() - Start charging light pulse')
             oppleoConfig.rgblcThread.charging = True
 
@@ -442,6 +451,9 @@ class ChargerHandlerThread(object):
                         namespace='/charge_session',
                         public=True
                     )
+                homeAssistantMqttHandlerThread.sessionUpdate(status='Wachten',
+                                                             evse=EvseState.EVSE_STATE_CONNECTED
+                                                            )
 
         if oppleoConfig.rgblcThread.charging != (evse_state == EvseState.EVSE_STATE_CHARGING):
             # Only the change
@@ -542,8 +554,19 @@ class ChargerHandlerThread(object):
 
                 # Announce on MQTT to HomeAssitant
                 homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+                """
                 homeAssistantMqttHandlerThread.sessionUpdate(energy=open_charge_session_for_device.total_energy , 
                                                              cost=open_charge_session_for_device.total_price,
                                                              end_value=open_charge_session_for_device.end_value,
+                                                            )
+                """
+                rfidObj = ChargeSessionModel.get_one(open_charge_session_for_device.rfid)
+                homeAssistantMqttHandlerThread.sessionUpdate(energy=open_charge_session_for_device.total_energy,
+                                                             cost=open_charge_session_for_device.total_price,
+                                                             end_value=open_charge_session_for_device.end_value,
+                                                             # Repeat other values
+                                                             token=rfidObj.name if rfidObj.name is not None and rfidObj.name is not "" else rfidObj.rfid, 
+                                                             tariff=open_charge_session_for_device.tariff,
+                                                             trigger=open_charge_session_for_device.trigger
                                                             )
         
