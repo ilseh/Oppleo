@@ -986,6 +986,7 @@ def settings(active=1):
 
     homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
     haMqtt = 'OTHER' if not ( hasattr(homeAssistantMqttHandlerThread, 'state') and hasattr(homeAssistantMqttHandlerThread.state, 'name') ) else homeAssistantMqttHandlerThread.state.name
+    diag_hamqtt_json = homeAssistantMqttHandlerThread.diag()
 
     charger_config_str = ChargerConfigModel().get_config().to_str()
     return render_template("settings.html", 
@@ -1001,6 +1002,7 @@ def settings(active=1):
                 gitutil=GitUtil,
                 ipv4=IPv4,
                 haMqtt=haMqtt,
+                diag_hamqtt_json=diag_hamqtt_json,
                 haMqttHa=homeAssistantMqttHandlerThread.ha_state.name
             )
 

@@ -956,6 +956,10 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     @homeAssistantMqttEnabled.setter
     def homeAssistantMqttEnabled(self, value:bool):
+        if value and not self.__HOMEASSISTANT_MQTT_ENABLED:
+            from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread 
+            homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
+            homeAssistantMqttHandlerThread.state = homeAssistantMqttHandlerThread.STATES.DISCONNECTED
         self.__HOMEASSISTANT_MQTT_ENABLED = value
         self.__writeConfig__()
 

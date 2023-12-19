@@ -46,10 +46,10 @@ class OppleoMqttClient(object, metaclass=Singleton):
             self.mqttClient.disconnect()
 
     def setUser(self) -> None:
-        if oppleoSystemConfig.mqttUsername is not None and oppleoSystemConfig.mqttUsername is not "": 
+        if oppleoSystemConfig.mqttUsername is not None and oppleoSystemConfig.mqttUsername != "": 
             OppleoMqttClient.logger.debug("Setting user for MQTT Broker to {}...".format(oppleoSystemConfig.mqttUsername))
             self.mqttClient.username_pw_set( oppleoSystemConfig.mqttUsername, 
-                                             oppleoSystemConfig.mqttPassword if oppleoSystemConfig.mqttPassword is not None and oppleoSystemConfig.mqttPassword is not "" else None
+                                             oppleoSystemConfig.mqttPassword if oppleoSystemConfig.mqttPassword is not None and oppleoSystemConfig.mqttPassword != "" else None
                                            )
     """
         timeout in ms

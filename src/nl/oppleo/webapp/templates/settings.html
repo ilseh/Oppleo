@@ -714,6 +714,9 @@
     }
 
     var diag_data = {{ diag_json | safe }}
+    var diag_hamqtt_data = {{ diag_hamqtt_json | safe }}
+     
+
     var backupOffsiteDialog = null
 
     function updateSmbBackupSettings(includeType=false) {
@@ -1224,6 +1227,10 @@
         JSON.stringify(diag_data, undefined, 2) 
       )
       $('pre#diag_json').show()
+      $('pre#diag_hamqtt_json').html( 
+        JSON.stringify(diag_hamqtt_data, undefined, 2) 
+      )
+      $('pre#diag_hamqtt_json').show()
       $('input#allowPeakOnePeriod').bootstrapToggle()
       $('input#allowPeakOnePeriod').change(function() {
         updateSettings( 'allowPeakOnePeriod', $(this).prop('checked') )
@@ -4534,6 +4541,12 @@
                                 <pre id="diag_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
                               </td>
                             </tr>
+                            <tr>
+                              <td class="text-dark" colspan="2">
+                                <pre id="diag_hamqtt_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
+                              </td>
+                            </tr>
+
                           </tbody>
                         </table>
 

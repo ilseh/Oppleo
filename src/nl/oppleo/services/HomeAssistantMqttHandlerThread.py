@@ -172,6 +172,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     if self.__triggerMostRecent:
                         with self.__threadLock:
                             self.__triggerMostRecent = False
+                        self.__sync_open_session()
                         self.__publish__(topic=self.__stateTopic, message=json.dumps(self.__most_recent_state), notify=False)
 
                     if not self.__mqttMsgQueue.empty():
@@ -181,7 +182,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
             else:
                 HomeAssistantMqttHandlerThread.__logger.debug("HomeAssistant MQTT Broker connection not enabled.")
-                if self.state != self.STATES.DISCONNECTED:
+                if self.state not in [self.STATES.DISCONNECTED, self.STATES.NOT_AUTHORIZED]:
 
                     if self.state == self.STATES.CONNECTED:
                         HomeAssistantMqttHandlerThread.__logger.debug("HomeAssistant MQTT Broker connected, disconnecting...")
@@ -265,10 +266,12 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 )
 
             elif rc == 5:
-                if homeAssistantMqttHandlerThread.isConnected or homeAssistantMqttHandlerThread.state != homeAssistantMqttHandlerThread.STATES.NOT_AUTHORIZED:
+                if homeAssistantMqttHandlerThread.isConnected or \
+                   homeAssistantMqttHandlerThread.state != homeAssistantMqttHandlerThread.STATES.NOT_AUTHORIZED:
                     homeAssistantMqttHandlerThread.isConnected = False
                     homeAssistantMqttHandlerThread.__logger.warn("Connecting to HomeAssistant MQTT Broker failed (NOT AUTHORIZED) [1 rc={rc}].".format(rc=rc))
                     homeAssistantMqttHandlerThread.state = homeAssistantMqttHandlerThread.STATES.NOT_AUTHORIZED
+                    oppleoSystemConfig.homeAssistantMqttEnabled = False
                     OutboundEvent.triggerEvent(
                         event='ha_mqtt_status_update', 
                         id=oppleoConfig.chargerID,
@@ -291,7 +294,9 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         
         def __on_disconnect__(client, userdata, rc):
             homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-            if homeAssistantMqttHandlerThread.isConnected or homeAssistantMqttHandlerThread.state != homeAssistantMqttHandlerThread.STATES.DISCONNECTED:
+            if homeAssistantMqttHandlerThread.isConnected or \
+                homeAssistantMqttHandlerThread.state not in [homeAssistantMqttHandlerThread.STATES.DISCONNECTED, 
+                                                            homeAssistantMqttHandlerThread.STATES.NOT_AUTHORIZED]:
                 homeAssistantMqttHandlerThread.__logger.warn("Disconnected from HomeAssistant MQTT Broker [rc={rc}].".format(rc=rc))
                 homeAssistantMqttHandlerThread.isConnected = False
                 homeAssistantMqttHandlerThread.state = homeAssistantMqttHandlerThread.STATES.DISCONNECTED
@@ -674,3 +679,67 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             sessionInfo['Vehicle'] = vehicle
 
         self.publish( values=sessionInfo )
+
+    def __sync_open_session(self):
+        self.__logger.debug('.__sync_open_session()')
+
+        # Get session info or reset
+        openSession = ChargeSessionModel.getOpenChargeSession(oppleoConfig.device)
+        if openSession is not None:
+            self.__logger.debug('Open session')
+            # Open session
+            self.__most_recent_state['Status'] = openSession.start_time
+            self.__most_recent_state['StartTime'] = openSession.start_time
+            self.__most_recent_state['StartValue'] = openSession.start_value
+            self.__most_recent_state['EndValue'] = openSession.end_value
+            self.__most_recent_state['energy_device_id'] = openSession.energy_device_id
+            self.__most_recent_state['km'] = openSession.km
+            self.__most_recent_state['Energy'] = openSession.total_energy
+            self.__most_recent_state['Cost'] = openSession.total_price
+            self.__most_recent_state['Trigger'] = openSession.trigger
+            self.__most_recent_state['Tariff'] = openSession.rfid.name
+            self.__most_recent_state['Token'] = openSession.rfid.name
+            self.__most_recent_state['Vehicle'] = openSession.rfid.name
+            self.__most_recent_state['Charging'] = openSession.rfid.name
+            self.__most_recent_state['EVSE'] = openSession.rfid.name
+        else:
+            self.__logger.debug('No open session')
+            # No charge session
+            self.__most_recent_state['Status'] = 'Geen sessie'
+            self.__most_recent_state['StartTime'] = ''
+            self.__most_recent_state['StartValue'] = 0
+            self.__most_recent_state['EndValue'] = 0
+            self.__most_recent_state['energy_device_id'] = oppleoConfig.energy_device_id
+            self.__most_recent_state['km'] = 0
+            self.__most_recent_state['Energy'] = 0
+            self.__most_recent_state['Cost'] = 0
+            self.__most_recent_state['Trigger'] = '-'
+            self.__most_recent_state['Tariff'] = 0
+            self.__most_recent_state['Token'] = ''
+            self.__most_recent_state['Vehicle'] = ''
+            self.__most_recent_state['Charging'] = False
+            self.__most_recent_state['EVSE'] = ''
+
+        self.__most_recent_state['OffPeak'] = oppleoConfig.offpeakEnabled
+
+
+
+    def diag(self):
+        return json.dumps({
+            "state": "-" if self.state is None else self.state.name,
+            "discovery_prefix": "-" if self.discovery_prefix is None else self.discovery_prefix,
+            "object_id": "-" if self.object_id is None else self.object_id,
+            "clean_session": self.clean_session,
+            "protocol": self.protocol,
+            "transport": self.transport,
+            "reconnect_on_failure": self.reconnect_on_failure,
+            "isConnected": self.isConnected,
+            "keepalive": self.keepalive,
+            "__selectedToken": "-" if self.__selectedToken is None else self.__selectedToken,
+            "ha_state": "-" if self.ha_state is None else self.ha_state.name,
+            "__haItems": self.__haItems,
+            "__triggerAutoDiscover": self.__triggerAutoDiscover,
+            "__stateTopic": "-" if self.__stateTopic is None else self.__stateTopic,
+            "__reconnectRequested": self.__reconnectRequested,
+            "__most_recent_state": self.__most_recent_state
+            })

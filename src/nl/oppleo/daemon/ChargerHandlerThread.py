@@ -290,7 +290,7 @@ class ChargerHandlerThread(object):
                                                      start_value=start_value,
                                                      energy=0, 
                                                      cost=0, 
-                                                     token=rfidObj.name if rfidObj.name is not None and rfidObj.name is not "" else rfidObj.rfid, 
+                                                     token=rfidObj.name if rfidObj.name is not None and rfidObj.name != "" else rfidObj.rfid, 
                                                      tariff=ChargerConfigModel.get_config().charger_tariff,
                                                      trigger=trigger
                                                     )
@@ -565,7 +565,7 @@ class ChargerHandlerThread(object):
                                                              cost=open_charge_session_for_device.total_price,
                                                              end_value=open_charge_session_for_device.end_value,
                                                              # Repeat other values
-                                                             token=rfidObj.name if rfidObj.name is not None and rfidObj.name is not "" else rfidObj.rfid, 
+                                                             token=rfidObj.name if rfidObj.name is not None and rfidObj.name != "" else rfidObj.rfid, 
                                                              tariff=open_charge_session_for_device.tariff,
                                                              trigger=open_charge_session_for_device.trigger
                                                             )
