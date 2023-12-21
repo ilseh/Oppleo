@@ -4,7 +4,6 @@ import threading
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
-from nl.oppleo.utils.EnergyModbusReader import EnergyModbusReader
 from nl.oppleo.daemon.EnergyDevice import EnergyDevice
 
 oppleoConfig = OppleoConfig()
@@ -47,13 +46,16 @@ class MeasureElectricityUsageThread(object):
             self.logger.warn('No measurement device found!')
             return
 
-        self.logger.info('Found energy device {} (enabled={})'.format(energy_device_data.energy_device_id, 
-                                                                      energy_device_data.device_enabled))
-
+        self.logger.info('Found energy device {} (enabled={}, simulate={})'.format(energy_device_data.energy_device_id, 
+                                                                                   energy_device_data.device_enabled, 
+                                                                                   energy_device_data.simulate))
+        
+        # Create energy device
         oppleoConfig.energyDevice = EnergyDevice(
                                         energy_device_id=energy_device_data.energy_device_id,
                                         modbusInterval=oppleoConfig.modbusInterval,
                                         enabled=energy_device_data.device_enabled,
+                                        simulate=energy_device_data.simulate,
                                         appSocketIO=self.appSocketIO
                                         )
 
@@ -62,7 +64,9 @@ class MeasureElectricityUsageThread(object):
         self.logger.debug('monitorEnergyDeviceLoop()...')
         timer = 0
         while not self.stop_event.is_set():
-            if (oppleoConfig.energyDevice is not None and oppleoConfig.energyDevice.enabled):
+            if (oppleoConfig.energyDevice is not None and 
+                (oppleoConfig.energyDevice.enabled or oppleoConfig.energyDevice.simulate)
+                ):
                 oppleoConfig.energyDevice.handleIfTimeTo()
             # Sleep is interruptable by other threads, but sleeing 7 seconds before checking if 
             # stop is requested is a bit long, so sleep for 0.1 seconds, then check passed time

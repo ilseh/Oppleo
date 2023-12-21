@@ -89,7 +89,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         rfidTokenList = list(map(lambda rfid: rfid.name if rfid.name != None and rfid.name != "" else rfid.rfid, RfidModel.get_all()))
 
         self.__haItems = [
-            { "component": "sensor", "name": "Meter", "icon": "mdi:lightning-bolt-outline" },
+            { "component": "sensor", "name": "EnergyDeviceID", "icon": "mdi:lightning-bolt-outline" },
             { "component": "sensor", "name": "Timestamp", "icon": "mdi:lightning-bolt-outline" },
             { "component": "sensor", "name": "A1", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
             { "component": "sensor", "name": "A2", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
@@ -119,13 +119,6 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "Tariff", "icon": "mdi:currency-eur", "unit_of_measurement": "€" },
             { "component": "select", "name": "Token", "icon": "mdi:credit-card-scan", "options": rfidTokenList }
         ]
-
-    def sessionUpdate(self, status:str=None, energy:float=None, cost:float=None, token:str=None, EVSE:str=None, offpeak:bool=None, charging:bool=None, 
-                      vehicle:str=None, start_value:float=None, end_value:float=None, trigger:str=None, tariff:float=None):
-        self.__logger.debug('.sessionUpdate()...')
-
-
-
 
 
     def start(self):
@@ -173,7 +166,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         with self.__threadLock:
                             self.__triggerMostRecent = False
                         self.__sync_open_session()
-                        self.__publish__(topic=self.__stateTopic, message=json.dumps(self.__most_recent_state), notify=False)
+                        # json.dumps(s, default=str) -- overcomes "TypeError: Object of type 'datetime' is not JSON serializable"
+                        self.__publish__(topic=self.__stateTopic, message=json.dumps(self.__most_recent_state, default=str), notify=False)
 
                     if not self.__mqttMsgQueue.empty():
                         # Blocking call, make sure there is a message to obtain
@@ -623,7 +617,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
         # convert into JSON:
         measurement = device_measurement.to_dict()
-        translation = { "energy_device_id": "Meter",
+        translation = { "energy_device_id": "EnergyDeviceID",
                         "created_at": "Timestamp",
                         "kwh_l1": "E1",
                         "kwh_l2": "E2",
@@ -653,6 +647,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         self.__logger.debug('.sessionUpdate()...')
 
         sessionInfo = {}
+
         if status is not None:
             sessionInfo['Status'] = status
         if energy is not None:
@@ -680,28 +675,31 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
         self.publish( values=sessionInfo )
 
+
+
     def __sync_open_session(self):
         self.__logger.debug('.__sync_open_session()')
 
         # Get session info or reset
-        openSession = ChargeSessionModel.getOpenChargeSession(oppleoConfig.device)
+        openSession = ChargeSessionModel.getOpenChargeSession(oppleoConfig.chargerID)
         if openSession is not None:
-            self.__logger.debug('Open session')
+            self.__logger.debug('Open session: {}'.format(openSession.to_str()))
+            rfid = RfidModel.get_one(rfid=openSession.rfid)
             # Open session
-            self.__most_recent_state['Status'] = openSession.start_time
+            self.__most_recent_state['Status'] = 'Wachten'
             self.__most_recent_state['StartTime'] = openSession.start_time
             self.__most_recent_state['StartValue'] = openSession.start_value
             self.__most_recent_state['EndValue'] = openSession.end_value
-            self.__most_recent_state['energy_device_id'] = openSession.energy_device_id
+            self.__most_recent_state['EnergyDeviceID'] = openSession.energy_device_id
             self.__most_recent_state['km'] = openSession.km
             self.__most_recent_state['Energy'] = openSession.total_energy
             self.__most_recent_state['Cost'] = openSession.total_price
             self.__most_recent_state['Trigger'] = openSession.trigger
-            self.__most_recent_state['Tariff'] = openSession.rfid.name
-            self.__most_recent_state['Token'] = openSession.rfid.name
-            self.__most_recent_state['Vehicle'] = openSession.rfid.name
-            self.__most_recent_state['Charging'] = openSession.rfid.name
-            self.__most_recent_state['EVSE'] = openSession.rfid.name
+            self.__most_recent_state['Tariff'] = openSession.tariff
+            self.__most_recent_state['Token'] = rfid.name if rfid.name != None and rfid.name != "" else rfid.rfid
+            self.__most_recent_state['Vehicle'] = "TBD"
+            self.__most_recent_state['Charging'] = "TBD"
+            self.__most_recent_state['EVSE'] = "TBD"
         else:
             self.__logger.debug('No open session')
             # No charge session
@@ -709,7 +707,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             self.__most_recent_state['StartTime'] = ''
             self.__most_recent_state['StartValue'] = 0
             self.__most_recent_state['EndValue'] = 0
-            self.__most_recent_state['energy_device_id'] = oppleoConfig.energy_device_id
+            self.__most_recent_state['EnergyDeviceID'] = oppleoConfig.energy_device_id
             self.__most_recent_state['km'] = 0
             self.__most_recent_state['Energy'] = 0
             self.__most_recent_state['Cost'] = 0
@@ -742,4 +740,6 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             "__stateTopic": "-" if self.__stateTopic is None else self.__stateTopic,
             "__reconnectRequested": self.__reconnectRequested,
             "__most_recent_state": self.__most_recent_state
-            })
+            }, 
+            default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
+        )

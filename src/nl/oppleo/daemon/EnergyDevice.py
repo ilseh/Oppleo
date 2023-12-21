@@ -5,6 +5,7 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.utils.EnergyModbusReader import EnergyModbusReader
+from nl.oppleo.utils.EnergyModbusReaderSimulator import EnergyModbusReaderSimulator
 
 oppleoConfig = OppleoConfig()
 
@@ -15,18 +16,20 @@ class EnergyDevice():
     logger = None
     energy_device_id = None
     enabled = False
+    simulate = False
     energyModbusReader = None
     modbusInterval = 10 # default value
     lastRun = 0
     appSocketIO = None
     callbackList = []
 
-    def __init__(self, energy_device_id=None, modbusInterval=10, enabled=False, appSocketIO=None):
+    def __init__(self, energy_device_id=None, modbusInterval:int=10, enabled:bool=False, appSocketIO=None, simulate:bool=False):
         self.logger = logging.getLogger('nl.oppleo.daemon.EnergyDevice')
         self.energy_device_id = energy_device_id
         self.modbusInterval = modbusInterval
         self.appSocketIO = appSocketIO
         self.enabled = enabled
+        self.simulate = simulate
         self.createEnergyModbusReader()
 
 
@@ -34,9 +37,17 @@ class EnergyDevice():
         self.logger.debug("createEnergyModbusReader()")
         self.energyModbusReader = None
         if not self.enabled:
-            self.logger.debug("createEnergyModbusReader() not enabled, not starting energyModbusReader for {}".format(self.energy_device_id))
+            if self.simulate:
+                # Create simulator device
+                self.logger.warn("Using SIMULATOR for energyModbusReader!!!")
+                self.energyModbusReader = EnergyModbusReaderSimulator(
+                                                energy_device_id=self.energy_device_id,
+                                                appSocketIO=self.appSocketIO
+                                                )
+            else:
+                self.logger.debug("createEnergyModbusReader() not enabled, not starting energyModbusReader for {}".format(self.energy_device_id))
             return
-
+        # The real deal
         try:
             self.energyModbusReader = EnergyModbusReader(
                                             energy_device_id=self.energy_device_id,
@@ -157,3 +168,8 @@ class EnergyDevice():
     def enable(self, enabled=True):
         self.logger.debug('EnergyDevice.enable(enabled={})'.format(enabled))
         self.enabled = enabled
+
+
+    def simulation(self, simulate=False):
+        self.logger.debug('EnergyDevice.simulate(simulate={})'.format(simulate))
+        self.simulate = simulate

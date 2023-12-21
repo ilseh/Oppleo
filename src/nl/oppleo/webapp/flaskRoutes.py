@@ -2340,12 +2340,14 @@ def update_settings(param=None, value=None):
         energyDeviceModel.save()
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.serial_timeout }), HTTP_CODE_200_OK
 
-    # Modbus debug
-    if param == 'debug':
+    # Modbus simulate
+    if param == 'simulate':
         energyDeviceModel = EnergyDeviceModel.get()
-        energyDeviceModel.debug = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        energyDeviceModel.simulate = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         energyDeviceModel.save()
-        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.debug }), HTTP_CODE_200_OK
+        if oppleoConfig.energyDevice is not None:
+            oppleoConfig.energyDevice.simulation( energyDeviceModel.simulate )
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': energyDeviceModel.simulate }), HTTP_CODE_200_OK
 
     # Modbus close_port_after_each_call
     if param == 'close_port_after_each_call':

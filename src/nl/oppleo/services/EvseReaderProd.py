@@ -84,7 +84,6 @@ class EvseReaderProd:
 
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
-        self.logger.setLevel(logging.WARNING)
 
     def loop(self, cb_until, cb_result):
         global oppleoConfig, modulePresence

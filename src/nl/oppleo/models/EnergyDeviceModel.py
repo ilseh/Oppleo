@@ -1,3 +1,4 @@
+import logging
 from marshmallow import fields, Schema
 
 from nl.oppleo.models.Base import Base, DbSession
@@ -23,7 +24,7 @@ class EnergyDeviceModel(Base):
     parity = Column(String(1))
     stopbits = Column(Integer)
     serial_timeout = Column(Float)
-    debug = Column(Boolean)
+    simulate = Column(Boolean)
     mode = Column(String(10))
     close_port_after_each_call = Column(Boolean)
     modbus_config = Column(String(100))
@@ -181,7 +182,7 @@ class EnergyDeviceSchema(Schema):
     parity = fields.Str(dump_only=True)
     stopbits = fields.Int(dump_only=True)
     serial_timeout = fields.Float(dump_only=True)
-    debug = fields.Bool(dump_only=True)
+    simulate = fields.Bool(dump_only=True)
     mode = fields.Str(dump_only=True)
     close_port_after_each_call = fields.Bool(dump_only=True)
     modbus_config = fields.Str(dump_only=True)

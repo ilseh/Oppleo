@@ -452,7 +452,7 @@ class ChargerHandlerThread(object):
                         public=True
                     )
                 homeAssistantMqttHandlerThread.sessionUpdate(status='Wachten',
-                                                             evse=EvseState.EVSE_STATE_CONNECTED
+                                                             evse=EvseState.EVSE_STATE_CONNECTED.name
                                                             )
 
         if oppleoConfig.rgblcThread.charging != (evse_state == EvseState.EVSE_STATE_CHARGING):

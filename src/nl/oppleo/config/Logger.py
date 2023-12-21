@@ -46,7 +46,7 @@ def init_log(process_name, log_file, daemons=None, loglevel=logging.WARNING, max
 
     for daemon in daemons:
         logger_daemon = logging.getLogger(daemon)
-        logger_daemon.setLevel(logging.DEBUG)
+        logger_daemon.setLevel(loglevel)
         logger_daemon.addHandler(fh)
         logger_daemon.addHandler(ch)
         logger_daemon.addHandler(rfHandler)

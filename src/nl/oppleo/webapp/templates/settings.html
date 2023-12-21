@@ -1183,7 +1183,7 @@
       })
     }
 
-    function activatekWhMeterSettings$(enabled=false) {
+    function activatekWhMeterSettings$(enabled=false, simulating=false) {
       // Cancel editing
       $('oppleo-edit-str#port_name')[0].cancel()
       $('oppleo-edit-str#slave_address')[0].cancel()
@@ -1196,29 +1196,40 @@
       $('oppleo-edit-select#modbusConfig')[0].cancel()
       $('oppleo-edit-str#modbusInterval')[0].cancel()
       // Disable
-      $('oppleo-edit-str#port_name')[0].disable(enabled)
-      $('oppleo-edit-str#slave_address')[0].disable(enabled)
-      $('oppleo-edit-select#mode')[0].disable(enabled)
-      $('oppleo-edit-select#baudrate')[0].disable(enabled)
-      $('oppleo-edit-select#bytesize')[0].disable(enabled)
-      $('oppleo-edit-select#stopbits')[0].disable(enabled)
-      $('oppleo-edit-select#parity')[0].disable(enabled)
-      $('oppleo-edit-str#serial_timeout')[0].disable(enabled)
-      $('oppleo-edit-select#modbusConfig')[0].disable(enabled)
-      $('oppleo-edit-str#modbusInterval')[0].disable(enabled)
+      $('oppleo-edit-str#port_name')[0].disable(enabled||simulating)
+      $('oppleo-edit-str#slave_address')[0].disable(enabled||simulating)
+      $('oppleo-edit-select#mode')[0].disable(enabled||simulating)
+      $('oppleo-edit-select#baudrate')[0].disable(enabled||simulating)
+      $('oppleo-edit-select#bytesize')[0].disable(enabled||simulating)
+      $('oppleo-edit-select#stopbits')[0].disable(enabled||simulating)
+      $('oppleo-edit-select#parity')[0].disable(enabled||simulating)
+      $('oppleo-edit-str#serial_timeout')[0].disable(enabled||simulating)
+      $('oppleo-edit-select#modbusConfig')[0].disable(enabled||simulating)
+      $('oppleo-edit-str#modbusInterval')[0].disable(enabled||simulating)
 
-      $('input#debug').bootstrapToggle('destroy')
-      $('input#debug').attr('data-onstyle', (enabled?"secondary":"primary"))
-      $('input#debug').attr("disabled",enabled)
-      $('input#debug').bootstrapToggle()
+      $('input#simulate').bootstrapToggle('destroy')
+      $('input#simulate').attr('data-onstyle', (enabled?"secondary":"primary"))
+      $('input#simulate').attr("disabled",enabled)
+      $('input#simulate').bootstrapToggle()
+
+      $('input#energyDeviceEnabled').bootstrapToggle('destroy')
+      $('input#energyDeviceEnabled').attr('data-onstyle', (simulating?"secondary":"primary"))
+      $('input#energyDeviceEnabled').attr("disabled",simulating)
+      $('input#energyDeviceEnabled').bootstrapToggle()
+
       $('input#close_port_after_each_call').bootstrapToggle('destroy')
-      $('input#close_port_after_each_call').attr('data-onstyle', (enabled?"secondary":"primary"))
-      $('input#close_port_after_each_call').attr("disabled",enabled)
+      $('input#close_port_after_each_call').attr('data-onstyle', (enabled||simulating?"secondary":"primary"))
+      $('input#close_port_after_each_call').attr("disabled",enabled||simulating)
       $('input#close_port_after_each_call').bootstrapToggle()
 
       $('span#energyDeviceEnabledInfo').toggleClass('text-secondary', !enabled)
       $('span#energyDeviceEnabledInfo').toggleClass('text-warning', enabled)
       $('span#energyDeviceEnabledInfo').toggleClass('font-italic', !enabled)
+
+      $('span#energyDeviceSimulateInfo').toggleClass('text-secondary', !simulating)
+      $('span#energyDeviceSimulateInfo').toggleClass('text-warning', simulating)
+      $('span#energyDeviceSimulateInfo').toggleClass('font-italic', !simulating)
+
     }
 
     jQuery(document).ready(function() {
@@ -1284,13 +1295,14 @@
       $('input#energyDeviceEnabled').bootstrapToggle()
       $('input#energyDeviceEnabled').change(function() {
         // Only allow changes if this is disabled
-        activatekWhMeterSettings$( $(this).prop('checked') )
+        activatekWhMeterSettings$( $(this).prop('checked'), $('input#simulate').prop('checked') )
         updateSettings( 'energyDeviceEnabled', $(this).prop('checked') )
       })
       // Default
       activatekWhMeterSettings$( {% if energydevicemodel.device_enabled %}true{% else %}false{% endif %} )
-      $('input#debug').change(function() {
-        updateSettings( 'debug', $(this).prop('checked') )
+      $('input#simulate').change(function() {
+        activatekWhMeterSettings$( $('input#energyDeviceEnabled').prop('checked'), $(this).prop('checked') )
+        updateSettings( 'simulate', $(this).prop('checked') )
       })
       $('input#close_port_after_each_call').change(function() {
         updateSettings( 'close_port_after_each_call', $(this).prop('checked') )
@@ -2817,11 +2829,11 @@
                               </td>
                             </tr>
                             <tr>
-                              <td class="text-dark">Debug:</td>
+                              <td class="text-dark">Simulate:</td>
                               <td class="text-primary">
                                 <input type="checkbox" 
-                                  {% if energydevicemodel.debug %}checked{% endif %}
-                                  id="debug"
+                                  {% if energydevicemodel.simulate %}checked{% endif %}
+                                  id="simulate"
                                   data-toggle="toggle"
                                   data-on="<i class='far fa-thumbs-up'></i></i> JA"
                                   data-off="<i class='far fa-thumbs-down'></i> NEE"
@@ -2831,6 +2843,7 @@
                                   data-height="30"
                                   data-width="70"
                                   />
+                                <span id="energyDeviceSimulateInfo" class="pl-2 text-secondary">Deactiveer om te wijzigen</span>
                               </td>
                             </tr>
                             <tr>
