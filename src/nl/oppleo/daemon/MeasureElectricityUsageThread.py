@@ -29,7 +29,7 @@ class MeasureElectricityUsageThread(object):
         #   appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
-        self.thread = threading.Thread(target=self.monitorEnergyDeviceLoop, name='kWhMeterReaderThread')
+        self.thread = threading.Thread(target=self.monitorEnergyDeviceLoop, name='MeasureElectricityUsageThread')
         self.thread.start()
 
 

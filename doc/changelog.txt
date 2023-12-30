@@ -1,3 +1,9 @@
+Version 1.6.0           2023-12-30
+
+Added
+- Home Assistant MQTT output, with auto discovery and session updates.
+- EVSE and Modbus Reader simulation for debugging
+
 Version 1.5.0           2023-11-16
 
 Added

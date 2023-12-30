@@ -883,7 +883,7 @@ class BackupUtil(object, metaclass=Singleton):
     def setBackupCalDay(self, calday:int=-1, enable:bool=False):
         calDayList = json.loads(self.oppleoConfig.backupIntervalCalday)
         calDayList[calday] = enable
-        self.oppleoConfig.backupIntervalCalday = json.dumps(calDayList)
+        self.oppleoConfig.backupIntervalCalday = json.dumps(calDayList, default=str)
 
     """
         Helper function to set or reset a specific weekday
@@ -892,7 +892,7 @@ class BackupUtil(object, metaclass=Singleton):
     def setBackupWeekDay(self, weekday:int=-1, enable:bool=False):
         weekDayList = json.loads(self.oppleoConfig.backupIntervalWeekday)
         weekDayList[weekday] = enable
-        self.oppleoConfig.backupIntervalWeekday = json.dumps(weekDayList)
+        self.oppleoConfig.backupIntervalWeekday = json.dumps(weekDayList, default=str)
 
     def isBackupDue(self) -> bool:
         lastBackup = self.oppleoConfig.backupSuccessTimestamp

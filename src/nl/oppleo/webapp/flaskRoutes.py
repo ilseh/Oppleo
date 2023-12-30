@@ -46,7 +46,7 @@ from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
 from nl.oppleo.api.VehicleApi import VehicleApi
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
-from nl.oppleo.services.Evse import Evse
+from nl.oppleo.services.EvseOutput import EvseOutput
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.utils.GitUtil import GitUtil
 from nl.oppleo.utils.Authenticator import (keyUri, makeQR, generateTotpSharedSecret, encryptAES, decryptAES, validateTotp)
@@ -1230,18 +1230,18 @@ def active_charge_session():
         ChargeSessionModel.get_open_charge_session_for_device(
                 oppleoConfig.chargerID
         )
-    evse = Evse()
+    evseOutput = EvseOutput()
     if open_charge_session_for_device is None:
         # None, no active session
         return jsonify({
             'status'            : HTTP_CODE_404_NOT_FOUND, 
             'id'                : oppleoConfig.chargerID, 
             'chargeSession'     : False,
-            'evseEnabled'       : True if evse.is_enabled() else False,
+            'evseEnabled'       : True if evseOutput.is_enabled() else False,
             'charging'          : True if oppleoConfig.chThread is not None and oppleoConfig.chThread.is_status_charging else False,
             'offPeakEnabled'    : oppleoConfig.offpeakEnabled,
             'offPeakAllowedOnce': oppleoConfig.allowPeakOnePeriod,
-            'offPeak'           : True if evse.isOffPeak else False,
+            'offPeak'           : True if evseOutput.isOffPeak else False,
             'auth'              : True if (current_user.is_authenticated) else False,
             'reason'            : 'No active charge session'
             })
@@ -1251,11 +1251,11 @@ def active_charge_session():
             'status'            : HTTP_CODE_200_OK,
             'id'                : oppleoConfig.chargerID, 
             'chargeSession'     : True if open_charge_session_for_device is not None else False,
-            'evseEnabled'       : True if evse.is_enabled() else False,
+            'evseEnabled'       : True if evseOutput.is_enabled() else False,
             'charging'          : True if oppleoConfig.chThread.is_status_charging else False,
             'offPeakEnabled'    : oppleoConfig.offpeakEnabled,
             'offPeakAllowedOnce': oppleoConfig.allowPeakOnePeriod,
-            'offPeak'           : True if evse.isOffPeak else False,
+            'offPeak'           : True if evseOutput.isOffPeak else False,
             'auth'              : True if (current_user.is_authenticated) else False,
             'data'              : open_charge_session_for_device.to_str() if (current_user.is_authenticated) else None,
             'rfid'              : rfid_data.to_str() if (current_user.is_authenticated) else None
@@ -1525,14 +1525,14 @@ def rfid_token_create(token=None):
     rfid_data = RfidModel.get_one(token)
     if rfid_data is not None:
         # 403 Forbidden
-        return json.dumps({'success': False, 'token': token, 'status': 403, 'description': 'Existing token'}), 403, {'ContentType':'application/json'} 
+        return json.dumps({'success': False, 'token': token, 'status': 403, 'description': 'Existing token'}, default=str), 403, {'ContentType':'application/json'} 
 
     # does not exist, new id
     new_rfid_entry = RfidModel()
     new_rfid_entry.set({"rfid": token})
     new_rfid_entry.save()
     # 201 created
-    return json.dumps({'success': True, 'token': token, 'status': 201}), 201, {'ContentType':'application/json'} 
+    return json.dumps({'success': True, 'token': token, 'status': 201}, default=str), 201, {'ContentType':'application/json'} 
 
 
 
@@ -1658,10 +1658,10 @@ def rfid_tokens(token=None):
                 'success': False, 
                 'token': token, 
                 'reason': 'Token has {} charge sessions.'.format(charge_sessions_for_rfid)
-                }), 405, {'ContentType':'application/json'} 
+                }, default=str), 405, {'ContentType':'application/json'} 
         rfid_model.delete()
         # 204 leads to no data in the response
-        return json.dumps({'success': True, 'token': token, 'status': HTTP_CODE_200_OK}), HTTP_CODE_200_OK, {'ContentType':'application/json'} 
+        return json.dumps({'success': True, 'token': token, 'status': HTTP_CODE_200_OK}, default=str), HTTP_CODE_200_OK, {'ContentType':'application/json'} 
 
 
     if (request.method == 'POST'):
@@ -2585,7 +2585,7 @@ def update_settings(param=None, value=None):
         try:
             lst = json.loads(value)
             if len(lst) == 7 and all(isinstance(x, bool) for x in lst):
-                oppleoConfig.backupIntervalWeekday = json.dumps(lst)
+                oppleoConfig.backupIntervalWeekday = json.dumps(lst, default=str)
                 return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
         except Exception as e:
             pass
@@ -2599,7 +2599,7 @@ def update_settings(param=None, value=None):
                 # List is 1 offset, make 0 offset by popping the first entry
                 lst.pop(0)
             if len(lst) == 31 and all(isinstance(x, bool) for x in lst):
-                oppleoConfig.backupIntervalCalday = json.dumps(lst)
+                oppleoConfig.backupIntervalCalday = json.dumps(lst, default=str)
                 return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
         except Exception as e:
             pass
@@ -3576,7 +3576,7 @@ def sendTestNotification(msgType:str=None):
         msg['title'] = "Oppleo {}".format(oppleoConfig.chargerID)
         msg['message'] = message
         msg['priority'] = int(PushMessage.priorityNormal)
-        sendSuccess = oppleoMqttClient.publish(topic=topic, message=json.dumps(msg), waitForPublish=True, timeout=1500)
+        sendSuccess = oppleoMqttClient.publish(topic=topic, message=json.dumps(msg, default=str), waitForPublish=True, timeout=1500)
         return jsonify({ 
             'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,
             'type'          : msgType.lower(),

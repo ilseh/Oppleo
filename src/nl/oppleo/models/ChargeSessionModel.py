@@ -609,7 +609,9 @@ class ChargeSessionModel(Base):
                 "km": str(self.km),
                 "end_time": self.datetime_to_date_str( self.end_time ),
                 "trigger": str(self.trigger)
-            })
+            },
+            default=str
+            )
         )
 
 

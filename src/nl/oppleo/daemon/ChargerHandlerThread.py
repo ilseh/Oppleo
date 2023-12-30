@@ -8,6 +8,8 @@ from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException,
                                              OtherRfidHasOpenSessionException, 
                                              ExpiredException)
 
+from flask_socketio import SocketIO, emit
+
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.led.RGBLedControllerThread import RGBLedControllerThread
@@ -16,12 +18,10 @@ from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.models.RfidModel import RfidModel
-from nl.oppleo.services.Buzzer import Buzzer
-from nl.oppleo.services.Evse import Evse
+from nl.oppleo.services.EvseState import EvseState, EvseStateName
 from nl.oppleo.services.EvseReader import EvseReader
-from nl.oppleo.services.EvseReaderProd import EvseState
+from nl.oppleo.services.EvseOutput import EvseOutput
 from nl.oppleo.services.RfidReader import RfidReader
-from nl.oppleo.utils.ModulePresence import ModulePresence
 from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
 from nl.oppleo.utils.OutboundEvent import OutboundEvent 
 from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread
@@ -32,31 +32,31 @@ oppleoConfig = OppleoConfig()
  
 class ChargerHandlerThread(object):
     threadLock = None
-    appSocketIO = None
+    __appSocketIO = None
     logger = None
     evse_reader_thread = None
     rfid_reader_thread = None
     stop_event = None
     charger = None
     buzzer = None
-    evse = None
-    evse_reader = None
+    __evseOutput = None
+    __evseReader = None
     is_status_charging = False
     device = None
     counter = 0
     __rfidreader = None
 
-    def __init__(self, device, buzzer, evse, evse_reader, appSocketIO):
+    def __init__(self, device, buzzer, evseOutput:EvseOutput=None, evseReader:EvseReader=None, appSocketIO:SocketIO=None):
         self.threadLock = threading.Lock()
         self.logger = logging.getLogger('nl.oppleo.daemon.ChargerHandlerThread')
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()
         self.buzzer = buzzer
-        self.evse = evse
-        self.evse_reader = evse_reader
+        self.__evseOutput = evseOutput
+        self.__evseReader = evseReader
         self.is_status_charging = False
-        self.appSocketIO = appSocketIO
+        self.__appSocketIO = appSocketIO
         self.device = device
 
 
@@ -69,16 +69,16 @@ class ChargerHandlerThread(object):
         oppleoConfig.rgblcThread.start()
 
         self.logger.debug('.start() - start_background_task - evseReaderLoop')
-        # self.evse_reader_thread = self.appSocketIO.start_background_task(self.evse_reader_thread)
-        #   appSocketIO.start_background_task launches a background_task
+        # self.evse_reader_thread = self.__appSocketIO.start_background_task(self.evse_reader_thread)
+        #   __appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
         self.evse_reader_thread = threading.Thread(target=self.evseReaderLoop, name='EvseLedReaderThread')
         self.evse_reader_thread.start()
 
         self.logger.debug('.start() start_background_task - rfidReaderLoop')
-        # self.rfid_reader_thread = self.appSocketIO.start_background_task(self.rfidReaderLoop)
-        #   appSocketIO.start_background_task launches a background_task
+        # self.rfid_reader_thread = self.__appSocketIO.start_background_task(self.rfidReaderLoop)
+        #   __appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
         self.__rfidReader = RfidReader()
@@ -93,7 +93,7 @@ class ChargerHandlerThread(object):
         global oppleoConfig
 
         try:
-            self.evse_reader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
+            self.__evseReader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
         except Exception as e:
             self.logger.exception('.evseReaderLoop() - Could not start evse reader loop {}'.format(str(e)))
             oppleoConfig.rgblcThread.error = True
@@ -381,9 +381,9 @@ class ChargerHandlerThread(object):
     # rfid_reader_thread
     def update_charger_and_led(self, start_session):
         if start_session:
-            self.evse.switch_on()
+            self.__evseOutput.switch_on()
         else:
-            self.evse.switch_off()
+            self.__evseOutput.switch_off()
         oppleoConfig.rgblcThread.openSession = start_session
 
 
@@ -419,7 +419,7 @@ class ChargerHandlerThread(object):
                 self.handle_auto_session()
 
                 self.is_status_charging = True
-                self.logger.debug('.handle_charging() - Send msg charge_session_status_update ...{}'.format(evse_state))
+                self.logger.debug('.handle_charging() - Send msg charge_session_status_update ...{}'.format(EvseStateName(evse_state)))
                 OutboundEvent.triggerEvent(
                         event='charge_session_status_update', 
                         status=evse_state, 
@@ -429,7 +429,7 @@ class ChargerHandlerThread(object):
                     )
                 homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
                 homeAssistantMqttHandlerThread.sessionUpdate(status='Laden',
-                                                             evse=evse_state
+                                                             evse_state=evse_state
                                                             )
 
 
@@ -442,7 +442,7 @@ class ChargerHandlerThread(object):
             if self.is_status_charging:
                 self.is_status_charging = False
                 self.logger.debug(".handle_charging() - Charging is stopped")
-                self.logger.debug('.handle_charging() - Send msg charge_session_status_update ...'.format(evse_state))
+                self.logger.debug('.handle_charging() - Send msg charge_session_status_update ({}:{})...'.format(evse_state, EvseStateName(evse_state=evse_state)))
                 OutboundEvent.triggerEvent(
                         event='charge_session_status_update', 
                         # INACTIVE IS ALSO CONNECTED
@@ -451,13 +451,14 @@ class ChargerHandlerThread(object):
                         namespace='/charge_session',
                         public=True
                     )
+                homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
                 homeAssistantMqttHandlerThread.sessionUpdate(status='Wachten',
-                                                             evse=EvseState.EVSE_STATE_CONNECTED.name
+                                                             evse_state=EvseState.EVSE_STATE_CONNECTED
                                                             )
 
         if oppleoConfig.rgblcThread.charging != (evse_state == EvseState.EVSE_STATE_CHARGING):
             # Only the change
-            self.logger.debug('.handle_charging() - Charging light pulse to {}'.format(str(evse_state == EvseState.EVSE_STATE_CHARGING)))
+            self.logger.debug('.handle_charging() - Charging light pulse to {} ({}:{})'.format(str(evse_state == EvseState.EVSE_STATE_CHARGING), evse_state, EvseStateName(evse_state=evse_state)))
             oppleoConfig.rgblcThread.charging = (evse_state == EvseState.EVSE_STATE_CHARGING)
 
 
@@ -560,12 +561,16 @@ class ChargerHandlerThread(object):
                                                              end_value=open_charge_session_for_device.end_value,
                                                             )
                 """
-                rfidObj = ChargeSessionModel.get_one(open_charge_session_for_device.rfid)
+                rfidObj = RfidModel.get_one(open_charge_session_for_device.rfid)
+                if rfidObj is not None:
+                    self.logger.debug('.energyUpdate() retrieved RFID (name={}, id={}'.format(rfidObj.name, rfidObj.rfid))
+                else:
+                    self.logger.warn('.energyUpdate() retrieving RFID failed!!!')
                 homeAssistantMqttHandlerThread.sessionUpdate(energy=open_charge_session_for_device.total_energy,
                                                              cost=open_charge_session_for_device.total_price,
                                                              end_value=open_charge_session_for_device.end_value,
                                                              # Repeat other values
-                                                             token=rfidObj.name if rfidObj.name is not None and rfidObj.name != "" else rfidObj.rfid, 
+                                                             token="Unknown" if rfidObj is None else (rfidObj.name if rfidObj.name is not None and rfidObj.name != "" else rfidObj.rfid), 
                                                              tariff=open_charge_session_for_device.tariff,
                                                              trigger=open_charge_session_for_device.trigger
                                                             )

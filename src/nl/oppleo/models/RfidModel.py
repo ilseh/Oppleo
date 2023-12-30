@@ -165,7 +165,8 @@ class RfidModel(Base):
             RfidModel.__cleanupDbSession(db_session, RfidModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            RfidModel.__logger.error("Could not query from {} table in database".format(RfidModel.__tablename__ ), exc_info=True)
+            if RfidModel.__logger is not None and RfidModel.__tablename__ is not None:
+                RfidModel.__logger.error("Could not query from table {} in database".format(RfidModel.__tablename__), exc_info=True)
             raise DbException("Could not query from {} table in database".format(RfidModel.__tablename__ ))
         return rfidm
 

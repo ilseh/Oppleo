@@ -357,7 +357,9 @@ class EnergyDeviceMeasureModel(Base):
                 "v_l3": str(self.v_l3),
                 "kw_total": str(self.kw_total),
                 "hz": str(self.hz)
-            })
+            },
+            default=str
+            )
         )
 
 

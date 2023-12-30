@@ -91,7 +91,7 @@ try:
     from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread 
     
     from nl.oppleo.services.Buzzer import Buzzer
-    from nl.oppleo.services.Evse import Evse
+    from nl.oppleo.services.EvseOutput import EvseOutput
     from nl.oppleo.services.EvseReader import EvseReader
 
     from nl.oppleo.webapp.flaskRoutes import flaskRoutes
@@ -276,8 +276,8 @@ try:
             chThread = ChargerHandlerThread(
                         device=oppleoConfig.chargerID,
                         buzzer=Buzzer(), 
-                        evse=Evse(),
-                        evse_reader=EvseReader(), 
+                        evseOutput=EvseOutput(),
+                        evseReader=EvseReader(), 
                         appSocketIO=appSocketIO
                     )
         except Exception as e:

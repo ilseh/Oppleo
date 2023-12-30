@@ -1,9 +1,9 @@
 import time
-from enum import Enum, IntEnum
+from enum import Enum
 import logging
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.utils.ModulePresence import modulePresence
+from nl.oppleo.services.EvseState import EvseState, EvseStateName
 from nl.oppleo.utils.EvseReaderUtil import EvseReaderUtil
 
 LOGGER_PATH = "nl.oppleo.services.EvseReaderProd"
@@ -15,15 +15,6 @@ class EvseDirection(Enum):
     UP = 1
     DOWN = -1
     NONE = 0
-
-# enum.Enum is not jsonify serializable, IntEnum can be dumped using json.dumps()
-class EvseState(IntEnum):
-    EVSE_STATE_UNKNOWN = 0  # Initial
-    EVSE_STATE_INACTIVE = 1  # SmartEVSE State A: LED ON dimmed. Contactor OFF. Inactive
-    EVSE_STATE_CONNECTED = 2  # SmartEVSE State B: LED ON full brightness, Car connected
-    EVSE_STATE_CHARGING = 3  # SmartEVSE State C: charging (pulsing)
-    EVSE_STATE_ERROR = 4  # SmartEVSE State ?: ERROR (quick pulse)
-
 
 EVSE_MINLEVEL_STATE_CONNECTED = 8  # A dc lower than this indicates state A, higher state B
 
@@ -58,6 +49,7 @@ def is_current_measurement_interval_normal_pulse(evse_measurement_milliseconds):
     :return:
     '''
     logger = logging.getLogger(LOGGER_PATH)
+
     delta = current_time_milliseconds() - evse_measurement_milliseconds
     logger.debug('Normal pulse cycle? interval of change is calculated: %f' % delta)
     return evse_measurement_milliseconds is not None \
@@ -80,7 +72,8 @@ def is_pulse_direction_changed(direction_current, direction_previous):
     return direction_current != direction_previous
 
 
-class EvseReaderProd:
+class EvseReaderProd(object):
+    logger = None
 
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
@@ -143,7 +136,7 @@ class EvseReaderProd:
         error_filter_value = 3
         error_filter = error_filter_value
 
-        self.logger.info(" Starting, state is {}".format(evse_state.name))
+        self.logger.info(" Starting, state is {} ({})".format(evse_state, EvseStateName(evse_state=evse_state)))
         while not cb_until():
 
             self.logger.debug("In loop to read evse status")
@@ -201,7 +194,7 @@ class EvseReaderProd:
                     evse_direction_overall_previous = evse_direction_overall
                     evse_direction_change_moment = current_time_milliseconds()
 
-            self.logger.debug("Current evse_state %s" % evse_state.name)
+            self.logger.debug(" Current evse_state state is {} ({})".format(evse_state, EvseStateName(evse_state=evse_state)))
             cb_result(evse_state)
             # Remember current evse direction for next run
             evse_direction_previous = evse_direction_overall

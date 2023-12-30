@@ -650,7 +650,7 @@ class OppleoConfig(object, metaclass=Singleton):
         for i in range(len(ip_list)):            
             if IPv4.validIP(ip_list[i]) and not IPv4.validSubnet(ip_list[i]):
                 ip_list[i] = ip_list[i] + '/32'
-        self.__chargerConfigModel.setAndSave('router_ip_address', json.dumps(ip_list))
+        self.__chargerConfigModel.setAndSave('router_ip_address', json.dumps(ip_list, default=str))
 
     """
         receiptPrefix --> receipt_prefix

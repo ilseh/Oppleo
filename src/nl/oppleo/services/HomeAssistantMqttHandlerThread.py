@@ -19,8 +19,11 @@ from paho.mqtt.client import MQTTMessageInfo, MQTTv311, MQTTv5
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 from nl.oppleo.models.RfidModel import RfidModel
-from  nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
+from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
+
+from nl.oppleo.services.EvseState import EvseState, EvseStateName
+
 
 """
     Start thread, connect upon enabled True in system-config
@@ -172,7 +175,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     if not self.__mqttMsgQueue.empty():
                         # Blocking call, make sure there is a message to obtain
                         msg = self.__mqttMsgQueue.get()
-                        self.__publish__(topic=self.__stateTopic, message=json.dumps(msg), notify=False)
+                        # json.dumps(s, default=str) -- overcomes "TypeError: Object of type 'datetime' is not JSON serializable"
+                        self.__publish__(topic=self.__stateTopic, message=json.dumps(msg, default=str), notify=False)
 
             else:
                 HomeAssistantMqttHandlerThread.__logger.debug("HomeAssistant MQTT Broker connection not enabled.")
@@ -526,7 +530,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             #msg['device']['configuration_url'] = "http://192.168.2.160"
             msg['device']['sw_version'] = changeLog.currentVersionStr
 
-            HomeAssistantMqttHandlerThread.__logger.debug("HA MQTT sending {} to {}.".format(json.dumps(msg), configTopic))
+            # json.dumps(s, default=str) -- overcomes "TypeError: Object of type 'datetime' is not JSON serializable"
+            HomeAssistantMqttHandlerThread.__logger.debug("HA MQTT sending {} to {}.".format(json.dumps(msg, default=str), configTopic))
             self.__publish__(topic=configTopic, message=json.dumps(msg), notify=False)
 
 
@@ -600,7 +605,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 OutboundEvent.triggerEvent(
                     event='ha_mqtt_message_send', 
                     id=oppleoConfig.chargerID,
-                    data=json.dumps(data),
+                    data=json.dumps(data, default=str),
                     namespace='/settings',
                     public=False
                 )            
@@ -640,10 +645,9 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
     
         self.publish( values=translated_measurement )
 
-
     # TODO: Standardize the session status
-    def sessionUpdate(self, status:str=None, energy:float=None, cost:float=None, token:str=None, EVSE:str=None, offpeak:bool=None, charging:bool=None, 
-                      vehicle:str=None, start_value:float=None, end_value:float=None, trigger:str=None, tariff:float=None):
+    def sessionUpdate(self, status:str=None, energy:float=None, cost:float=None, token:str=None, offpeak:bool=None, charging:bool=None, 
+                      vehicle:str=None, start_value:float=None, end_value:float=None, trigger:str=None, tariff:float=None, evse_state:EvseState=None):
         self.__logger.debug('.sessionUpdate()...')
 
         sessionInfo = {}
@@ -664,8 +668,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             sessionInfo['Cost'] = cost
         if token is not None:
             sessionInfo['Token'] = token
-        if EVSE is not None:
-            sessionInfo['EVSE'] = EVSE
+        if evse_state is not None:
+            sessionInfo['EVSE'] = EvseStateName(evse_state)
         if offpeak is not None:
             sessionInfo['OffPeak'] = offpeak
         if charging is not None:
@@ -707,7 +711,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             self.__most_recent_state['StartTime'] = ''
             self.__most_recent_state['StartValue'] = 0
             self.__most_recent_state['EndValue'] = 0
-            self.__most_recent_state['EnergyDeviceID'] = oppleoConfig.energy_device_id
+            self.__most_recent_state['EnergyDeviceID'] = oppleoConfig.chargerID
             self.__most_recent_state['km'] = 0
             self.__most_recent_state['Energy'] = 0
             self.__most_recent_state['Cost'] = 0

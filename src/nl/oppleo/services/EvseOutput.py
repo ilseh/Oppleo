@@ -18,8 +18,8 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class EvseProd(object):
-    logger = logging.getLogger('nl.oppleo.services.EvseProd')
+class EvseOutputGenerator(object):
+    logger = logging.getLogger('nl.oppleo.services.EvseOutputGenerator')
     threadLock = None
 
     def __init__(self):
@@ -27,14 +27,14 @@ class EvseProd(object):
 
         self.threadLock = threading.Lock()
         if not modulePresence.gpioAvailable():
-            self.logger.debug("EvseProd.__init__() - GPIO not loaded")
+            self.logger.debug("EvseOutputGenerator.__init__() - GPIO not loaded")
         else:
             GPIO = modulePresence.GPIO
             try:
                 # GPIO.setmode(GPIO.BCM) # Use physical pin numbering
                 GPIO.setup(oppleoConfig.pinEvseSwitch, GPIO.OUT, initial=GPIO.HIGH)
             except Exception as e:
-                self.logger.debug("EvseProd.__init__() - Could not set pin {} to {} with initial {}".format(
+                self.logger.debug("EvseOutputGenerator.__init__() - Could not set pin {} to {} with initial {}".format(
                     oppleoConfig.pinEvseSwitch, GPIO.OUT, GPIO.HIGH
                 ))
 
@@ -43,18 +43,18 @@ class EvseProd(object):
         global oppleoConfig, modulePresence
 
         if not modulePresence.gpioAvailable():
-            self.logger.debug("EvseProd.switch_on() - GPIO not loaded")
+            self.logger.debug("EvseOutputGenerator.switch_on() - GPIO not loaded")
             return
 
         with self.threadLock:
 
             GPIO = modulePresence.GPIO
-            self.logger.debug("EvseProd.switch_on() - on")
+            self.logger.debug("EvseOutputGenerator.switch_on() - on")
             # Setting the output to LOW enables the charging. Keep low.
             try:
                 GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.LOW)
             except Exception as e:
-                self.logger.debug("EvseProd.switch_on() - Could not set pin {} output to {}".format(
+                self.logger.debug("EvseOutputGenerator.switch_on() - Could not set pin {} output to {}".format(
                     oppleoConfig.pinEvseSwitch, GPIO.LOW
                 ))
 
@@ -64,17 +64,17 @@ class EvseProd(object):
         global oppleoConfig, modulePresence
 
         if not modulePresence.gpioAvailable():
-            self.logger.debug("EvseProd.switch_off() - GPIO not loaded")
+            self.logger.debug("EvseOutputGenerator.switch_off() - GPIO not loaded")
             return
 
         with self.threadLock:
             GPIO = modulePresence.GPIO
-            self.logger.debug("EvseProd.switch_off() - off")
+            self.logger.debug("EvseOutputGenerator.switch_off() - off")
             try:
                 # Setting the output to HIGH disables the charging. Keep high.
                 GPIO.output(oppleoConfig.pinEvseSwitch, GPIO.HIGH)
             except Exception as e:
-                self.logger.debug("EvseProd.switch_off() - Could not set pin {} output to {}".format(
+                self.logger.debug("EvseOutputGenerator.switch_off() - Could not set pin {} output to {}".format(
                     oppleoConfig.pinEvseSwitch, GPIO.HIGH
                 ))
 
@@ -84,49 +84,52 @@ class EvseProd(object):
         global oppleoConfig, modulePresence
 
         if not modulePresence.gpioAvailable():
-            self.logger.debug("EvseProd.is_enabled() - GPIO not loaded")
+            self.logger.debug("EvseOutputGenerator.is_enabled() - GPIO not loaded")
             return False
 
         with self.threadLock:
             GPIO = modulePresence.GPIO
-            self.logger.debug("EvseProd.is_enabled()")
+            self.logger.debug("EvseOutputGenerator.is_enabled()")
 
             # Note: LOW is ON, and HIGH is OFF
             state = GPIO.input(oppleoConfig.pinEvseSwitch)
-            self.logger.debug("EvseProd.is_enabled() - Evse read state {} (return {})".format(state, (not state)))
+            self.logger.debug("EvseOutputGenerator.is_enabled() - Evse read state {} (return {})".format(state, (not state)))
             return not state
 
 
-class EvseDev(object):
-    logger = logging.getLogger('nl.oppleo.services.EvseDev')
+class EvseOutputSimulator(object):
+    __logger = logging.getLogger('nl.oppleo.services.EvseOutputSimulator')
+    __simulatedEvseOutputState = False
 
     def switch_on(self):
-        self.logger.debug("Fake turn evse on")
+        self.__logger.debug("Turn EVSE output simulator ON")
+        self.__simulatedEvseOutputState = True
 
     def switch_off(self):
-        self.logger.debug("Fake turn evse off")
+        self.__logger.debug("Turn EVSE output simulator OFF")
+        self.__simulatedEvseOutputState = False
 
     def is_enabled(self):
-        self.logger.debug("Fake read evse state")
-        return False
+        self.__logger.debug("Return simulated EVSE output state (state={})".format(self.__simulatedEvseOutputState))
+        return self.__simulatedEvseOutputState
 
 """
   This is a Singleton. This allows the Off Peak status to be stored, and captures EVSE being switched
   ON in off-peak hours before it actually is switched on.
 """
-class Evse(object, metaclass=Singleton):
+class EvseOutput(object, metaclass=Singleton):
     logger = None
-    evse = None
+    evseOutput = None
     isOffPeak = False
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.services.Evse')
+        self.logger = logging.getLogger('nl.oppleo.services.EvseOutput')
         if oppleoSystemConfig.evseSwitchEnabled:
-            self.logger.debug("Using production Evse")
-            self.evse = EvseProd()
+            self.logger.debug("Using real Evse Output Generator")
+            self.evseOutput = EvseOutputGenerator()
         else:
-            self.logger.debug("Using fake Evse")
-            self.evse = EvseDev()
+            self.logger.debug("Evse Output not enabled, using Evse Output Simulator")
+            self.evseOutput = EvseOutputSimulator()
 
     def switch_on(self):
         global oppleoConfig
@@ -140,7 +143,7 @@ class Evse(object, metaclass=Singleton):
                             oppleoConfig.allowPeakOnePeriod
                             )
                         )
-            self.evse.switch_on()
+            self.evseOutput.switch_on()
             OutboundEvent.triggerEvent(
                 event='evse_enabled', 
                 id=oppleoConfig.chargerID,
@@ -149,12 +152,12 @@ class Evse(object, metaclass=Singleton):
             )
 
         else:
-            self.logger.debug('Evse NOT switched on. Waiting for Off Peak hours')
+            self.logger.debug('Evse utput NOT switched on. Waiting for Off Peak hours')
 
     def switch_off(self):
         global oppleoConfig
 
-        self.evse.switch_off()
+        self.evseOutput.switch_off()
         OutboundEvent.triggerEvent(
             event='evse_disabled', 
             id=oppleoConfig.chargerID,
@@ -163,4 +166,4 @@ class Evse(object, metaclass=Singleton):
         )
 
     def is_enabled(self):
-        return self.evse.is_enabled()
+        return self.evseOutput.is_enabled()

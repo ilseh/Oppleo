@@ -75,12 +75,12 @@ class EnergyDevice():
     def handle(self):
         self.logger.debug("Start measure %s" % self.energy_device_id)
 
-        if not self.enabled:
+        if not self.enabled and not self.simulate:
             self.energyModbusReader = None
-            self.logger.debug("Skip measure {} (enabled=False)".format(self.energy_device_id))
+            self.logger.debug("Skip measure {} (enabled={}, simulate={})".format(self.energy_device_id, self.enabled, self.simulate))
             return
 
-        if self.energyModbusReader is None and self.enabled:
+        if self.energyModbusReader is None and (self.enabled or self.simulate):
             # Try to create it
             self.createEnergyModbusReader()
             if self.energyModbusReader is None:
@@ -94,8 +94,9 @@ class EnergyDevice():
         device_measurement = EnergyDeviceMeasureModel()
         device_measurement.set(data)
 
-        self.logger.debug('New measurement values: %s, %s, %s' % (device_measurement.id, device_measurement.kw_total,
-                                                            device_measurement.created_at))
+        self.logger.debug('New measurement values: %s, %s, %s' % (device_measurement.id, 
+                                                                  device_measurement.kw_total,
+                                                                  device_measurement.created_at))
 
         last_save_measurement = EnergyDeviceMeasureModel().get_last_saved(self.energy_device_id)
 

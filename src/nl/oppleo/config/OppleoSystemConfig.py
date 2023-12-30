@@ -394,7 +394,7 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__ini_settings[self.__INI_MAIN][self.__INI_HOMEASSISTANT_MQTT_BLWT] = self.__HOMEASSISTANT_MQTT_BLWT
 
             if self.__VEHICLE_OPTIONS_OVERRULING is not None:
-                self.__ini_settings[self.__INI_MAIN][self.__INI_VEHICLE_OPTIONS_OVERRULING] = json.dumps(self.__VEHICLE_OPTIONS_OVERRULING)
+                self.__ini_settings[self.__INI_MAIN][self.__INI_VEHICLE_OPTIONS_OVERRULING] = json.dumps(self.__VEHICLE_OPTIONS_OVERRULING, default=str)
 
             # Write actial file
             with open(self.__getConfigFile__(), 'w') as configfile:
