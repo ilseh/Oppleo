@@ -1,3 +1,4 @@
+import warnings
 import logging
 import threading
 import time
@@ -39,6 +40,7 @@ invalidate(token, key)
 
 """
 
+@warnings.deprecated() 
 class TokenObj:
     code = None
     inUse:bool = False
@@ -54,7 +56,7 @@ class TokenObj:
         self.ref = ref
         self.key = key
 
-
+@warnings.deprecated() 
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
@@ -62,7 +64,8 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
-
+@warnings.deprecated() 
+#class TokenMediator(object, metaclass=Singleton):
 class TokenMediator:
     __logger = None
     __lock = None

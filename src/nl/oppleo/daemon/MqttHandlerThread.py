@@ -1,3 +1,4 @@
+import warnings
 import sys
 import threading
 import time
@@ -16,7 +17,7 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
- 
+@warnings.deprecated
 class MqttHandlerThread(object):
     threadLock = None
     appSocketIO = None
