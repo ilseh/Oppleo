@@ -60,7 +60,7 @@ class EnergyModbusReader:
         self.instrument.serial.parity = energy_device_data.parity
         self.instrument.serial.stopbits = energy_device_data.stopbits
         self.instrument.serial.timeout = energy_device_data.serial_timeout
-        self.instrument.debug = energy_device_data.debug
+        self.instrument.debug = energy_device_data.simulate
         self.instrument.mode = MODE_ASCII if energy_device_data.mode.lower() == MODE_ASCII else MODE_RTU
         self.instrument.close_port_after_each_call = energy_device_data.close_port_after_each_call
 
