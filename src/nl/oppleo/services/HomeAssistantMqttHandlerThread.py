@@ -189,23 +189,6 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         else:
                             self.sessionUpdate(evse_state=EvseState.EVSE_STATE_INACTIVE)
 
-    open_charge_session_for_device = \
-        ChargeSessionModel.get_open_charge_session_for_device(
-                oppleoConfig.chargerID
-        )
-    if open_charge_session_for_device is None:
-        # None, no active session
-        return jsonify({
-            'status'            : HTTP_CODE_404_NOT_FOUND, 
-            'id'                : oppleoConfig.chargerID, 
-            'chargeSession'     : False,
-            'evseEnabled'       : True if evseOutput.is_enabled() else False,
-            'charging'          : True if oppleoConfig.chThread is not None and oppleoConfig.chThread.is_status_charging else False,
-
-
-
-
-
                     if not self.__mqttMsgQueue.empty():
                         # Blocking call, make sure there is a message to obtain
                         msg = self.__mqttMsgQueue.get()
