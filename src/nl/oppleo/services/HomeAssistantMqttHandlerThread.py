@@ -24,6 +24,7 @@ from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 
 from nl.oppleo.services.EvseState import EvseState, EvseStateName
+from nl.oppleo.services.EvseOutput import EvseOutput
 
 
 """
@@ -180,8 +181,30 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                             last_save_measurement = energyDeviceMeasureModel.get_last_saved(energy_device_data.energy_device_id)
                             self.energyUpdate(device_measurement=last_save_measurement)
                         # Trigger last known EVSE status
-                        evse_state = oppleoConfig.chThread.getEvseState()
-                        self.sessionUpdate(evse_state=evse_state)
+                        evseOutput = EvseOutput()
+                        if oppleoConfig.chThread is not None and oppleoConfig.chThread.is_status_charging:
+                            self.sessionUpdate(evse_state=EvseState.EVSE_STATE_CHARGING)
+                        elif evseOutput.is_enabled():
+                            self.sessionUpdate(evse_state=EvseState.EVSE_STATE_CONNECTED)
+                        else:
+                            self.sessionUpdate(evse_state=EvseState.EVSE_STATE_INACTIVE)
+
+    open_charge_session_for_device = \
+        ChargeSessionModel.get_open_charge_session_for_device(
+                oppleoConfig.chargerID
+        )
+    if open_charge_session_for_device is None:
+        # None, no active session
+        return jsonify({
+            'status'            : HTTP_CODE_404_NOT_FOUND, 
+            'id'                : oppleoConfig.chargerID, 
+            'chargeSession'     : False,
+            'evseEnabled'       : True if evseOutput.is_enabled() else False,
+            'charging'          : True if oppleoConfig.chThread is not None and oppleoConfig.chThread.is_status_charging else False,
+
+
+
+
 
                     if not self.__mqttMsgQueue.empty():
                         # Blocking call, make sure there is a message to obtain
