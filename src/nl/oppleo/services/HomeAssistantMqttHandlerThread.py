@@ -92,18 +92,19 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         rfidTokenList = list(map(lambda rfid: rfid.name if rfid.name != None and rfid.name != "" else rfid.rfid, RfidModel.get_all()))
 
         self.__haItems = [
-            { "component": "sensor", "name": "EnergyDeviceID", "icon": "mdi:lightning-bolt-outline" },
+            { "component": "sensor", "name": "ChargerID", "icon": "mdi:ev-station" },
+            { "component": "sensor", "name": "EnergyDeviceID", "icon": "mdi:id-card" },
             { "component": "sensor", "name": "Timestamp", "icon": "mdi:lightning-bolt-outline" },
-            { "component": "sensor", "name": "A1", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
-            { "component": "sensor", "name": "A2", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
-            { "component": "sensor", "name": "A3", "icon": "mdi:lightning-bolt-outline", "unit_of_measurement": "A" },
+            { "component": "sensor", "name": "A1", "icon": "mdi:sine-wave", "unit_of_measurement": "A" },
+            { "component": "sensor", "name": "A2", "icon": "mdi:sine-wave", "unit_of_measurement": "A" },
+            { "component": "sensor", "name": "A3", "icon": "mdi:sine-wave", "unit_of_measurement": "A" },
             { "component": "sensor", "name": "V1", "icon": "mdi:transmission-tower", "unit_of_measurement": "V" },
             { "component": "sensor", "name": "V2", "icon": "mdi:transmission-tower", "unit_of_measurement": "V" },
             { "component": "sensor", "name": "V3", "icon": "mdi:transmission-tower", "unit_of_measurement": "V" },
             { "component": "sensor", "name": "E1", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
             { "component": "sensor", "name": "E2", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
             { "component": "sensor", "name": "E3", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
-            { "component": "sensor", "name": "ET", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
+            { "component": "sensor", "name": "TotalEnergy", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
             { "component": "sensor", "name": "P1", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W" },
             { "component": "sensor", "name": "P2", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W" },
             { "component": "sensor", "name": "P3", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W" },
@@ -115,7 +116,6 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "EVSE", "icon": "mdi:home-battery-outline" },
             { "component": "sensor", "name": "OffPeak", "icon": "mdi:clock" },
             { "component": "sensor", "name": "Charging", "icon": "mdi:lightning-bolt-outline" },
-            { "component": "sensor", "name": "Vehicle", "icon": "mdi:car" },
             { "component": "sensor", "name": "StartValue", "icon": "mdi:gauge-empty", "unit_of_measurement": "kWh"  },
             { "component": "sensor", "name": "EndValue", "icon": "mdi:gauge-full", "unit_of_measurement": "kWh"  },
             { "component": "sensor", "name": "Trigger", "icon": "mdi:ray-start-arrow" },
@@ -636,7 +636,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         "v_l1": "V1",
                         "v_l2": "V2",
                         "v_l3": "V3",
-                        "kw_total": "ET",
+                        "kw_total": "TotalEnergy",
                         "hz": "Frequency"
                 }
         translated_measurement = {}
@@ -652,20 +652,22 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
         sessionInfo = {}
 
+        sessionInfo['ChargerID'] = oppleoConfig.chargerID
+
         if status is not None:
             sessionInfo['Status'] = status
         if energy is not None:
-            sessionInfo['Energy'] = energy
+            sessionInfo['Energy'] = round( energy, 1 )
         if start_value is not None:
-            sessionInfo['StartValue'] = start_value
+            sessionInfo['StartValue'] = round( start_value, 1 )
         if end_value is not None:
-            sessionInfo['EndValue'] = end_value
+            sessionInfo['EndValue'] = round( end_value, 1 )
         if trigger is not None:
             sessionInfo['Trigger'] = trigger
         if tariff is not None:
-            sessionInfo['Tariff'] = tariff
+            sessionInfo['Tariff'] = round( tariff, 2 ) 
         if cost is not None:
-            sessionInfo['Cost'] = cost
+            sessionInfo['Cost'] = round( cost, 2 )
         if token is not None:
             sessionInfo['Token'] = token
         if evse_state is not None:
@@ -690,7 +692,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             self.__logger.debug('Open session: {}'.format(openSession.to_str()))
             rfid = RfidModel.get_one(rfid=openSession.rfid)
             # Open session
-            self.__most_recent_state['Status'] = 'Wachten'
+            self.__most_recent_state['Status'] = 'Waiting'
             self.__most_recent_state['StartTime'] = openSession.start_time
             self.__most_recent_state['StartValue'] = openSession.start_value
             self.__most_recent_state['EndValue'] = openSession.end_value
@@ -701,13 +703,12 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             self.__most_recent_state['Trigger'] = openSession.trigger
             self.__most_recent_state['Tariff'] = openSession.tariff
             self.__most_recent_state['Token'] = rfid.name if rfid.name != None and rfid.name != "" else rfid.rfid
-            self.__most_recent_state['Vehicle'] = "TBD"
-            self.__most_recent_state['Charging'] = "TBD"
+            self.__most_recent_state['Charging'] = False
             self.__most_recent_state['EVSE'] = "TBD"
         else:
             self.__logger.debug('No open session')
             # No charge session
-            self.__most_recent_state['Status'] = 'Geen sessie'
+            self.__most_recent_state['Status'] = 'No active session'
             self.__most_recent_state['StartTime'] = ''
             self.__most_recent_state['StartValue'] = 0
             self.__most_recent_state['EndValue'] = 0
@@ -718,7 +719,6 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             self.__most_recent_state['Trigger'] = '-'
             self.__most_recent_state['Tariff'] = 0
             self.__most_recent_state['Token'] = ''
-            self.__most_recent_state['Vehicle'] = ''
             self.__most_recent_state['Charging'] = False
             self.__most_recent_state['EVSE'] = ''
 

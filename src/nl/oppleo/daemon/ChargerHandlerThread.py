@@ -286,7 +286,8 @@ class ChargerHandlerThread(object):
 
         # Announce on MQTT to HomeAssitant
         homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-        homeAssistantMqttHandlerThread.sessionUpdate(status='Laden' if self.is_status_charging else 'Wachten',
+        homeAssistantMqttHandlerThread.sessionUpdate(status='Charging' if self.is_status_charging else 'Waiting',
+                                                     charging=self.is_status_charging,
                                                      start_value=start_value,
                                                      energy=0, 
                                                      cost=0, 
@@ -343,7 +344,8 @@ class ChargerHandlerThread(object):
             )
         # Announce on MQTT to HomeAssitant
         homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-        homeAssistantMqttHandlerThread.sessionUpdate(status='Geen sessie', 
+        homeAssistantMqttHandlerThread.sessionUpdate(status='No active session',
+                                                     charging=self.is_status_charging,
                                                      start_value=0,
                                                      energy=0, 
                                                      cost=0,
@@ -428,7 +430,8 @@ class ChargerHandlerThread(object):
                         public=True
                     )
                 homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-                homeAssistantMqttHandlerThread.sessionUpdate(status='Laden',
+                homeAssistantMqttHandlerThread.sessionUpdate(status='Charging',
+                                                             charging=self.is_status_charging,
                                                              evse_state=evse_state
                                                             )
 
@@ -452,7 +455,8 @@ class ChargerHandlerThread(object):
                         public=True
                     )
                 homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-                homeAssistantMqttHandlerThread.sessionUpdate(status='Wachten',
+                homeAssistantMqttHandlerThread.sessionUpdate(status='Waiting',
+                                                             charging=self.is_status_charging,
                                                              evse_state=EvseState.EVSE_STATE_CONNECTED
                                                             )
 

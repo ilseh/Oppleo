@@ -8,8 +8,6 @@ from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.api.VehicleApi import VehicleApi
 from nl.oppleo.models.RfidModel import RfidModel
 
-#from nl.oppleo.utils.TokenMediator import tokenMediator
-
 HTTP_CODE_200_OK                    = 200
 HTTP_CODE_202_ACCEPTED              = 202  # Accepted, processing pending
 HTTP_CODE_303_SEE_OTHER             = 303  # Conflict, POST on existing resource

@@ -55,8 +55,6 @@ from nl.oppleo.utils.IPv4 import IPv4
 from nl.oppleo.utils.EnergyModbusReader import modbusConfigOptions
 from nl.oppleo.utils.BackupUtil import BackupUtil
 
-from nl.oppleo.utils.TokenMediator import tokenMediator
-
 from nl.oppleo.daemon.MqttSendHistoryThread import Status as mhtsStatus
 
 from nl.oppleo.services.PushMessage import PushMessage

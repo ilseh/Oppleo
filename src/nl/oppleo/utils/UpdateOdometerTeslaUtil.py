@@ -10,7 +10,6 @@ from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.RfidModel import RfidModel
 
-# from nl.oppleo.utils.TokenMediator import tokenMediator
 from nl.oppleo.api.VehicleApi import VehicleApi
 
 from nl.oppleo.services.PushMessage import PushMessage

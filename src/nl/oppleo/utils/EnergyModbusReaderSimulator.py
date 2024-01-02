@@ -148,7 +148,7 @@ class EnergyModbusReaderSimulator():
             "p_l1": self.__l1_p,
             "p_l2": self.__l2_p,
             "p_l3": self.__l3_p,
-            "kw_total": self.__l1_e + self.__l2_e + self.__l3_e,
+            "kw_total": round( self.__l1_e + self.__l2_e + self.__l3_e, 1 ),
             "hz": self.__f
         }
         self.__logger.debug('Simulating (charging:{}, interval:{}s) values {}'.format(
