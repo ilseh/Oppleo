@@ -20,6 +20,7 @@ from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
 from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
+from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 
 from nl.oppleo.services.EvseState import EvseState, EvseStateName
@@ -171,6 +172,16 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         self.__sync_open_session()
                         # json.dumps(s, default=str) -- overcomes "TypeError: Object of type 'datetime' is not JSON serializable"
                         self.__publish__(topic=self.__stateTopic, message=json.dumps(self.__most_recent_state, default=str), notify=False)
+                        # TODO
+                        # Re-trigger last Modbus Read
+                        energyDeviceMeasureModel = EnergyDeviceMeasureModel()
+                        energy_device_data = EnergyDeviceModel.get()
+                        if energy_device_data is not None:
+                            last_save_measurement = energyDeviceMeasureModel.get_last_saved(energy_device_data.energy_device_id)
+                            self.energyUpdate(device_measurement=last_save_measurement)
+                        # Trigger last known EVSE status
+                        evse_state = oppleoConfig.chThread.getEvseState()
+                        self.sessionUpdate(evse_state=evse_state)
 
                     if not self.__mqttMsgQueue.empty():
                         # Blocking call, make sure there is a message to obtain

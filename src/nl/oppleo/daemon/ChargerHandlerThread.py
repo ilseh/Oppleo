@@ -45,6 +45,7 @@ class ChargerHandlerThread(object):
     device = None
     counter = 0
     __rfidreader = None
+    __evse_state = EvseState.EVSE_STATE_UNKNOWN
 
     def __init__(self, device, buzzer, evseOutput:EvseOutput=None, evseReader:EvseReader=None, appSocketIO:SocketIO=None):
         self.threadLock = threading.Lock()
@@ -447,7 +448,7 @@ class ChargerHandlerThread(object):
                 self.logger.debug(".handle_charging() - Charging is stopped")
                 self.logger.debug('.handle_charging() - Send msg charge_session_status_update ({}:{})...'.format(evse_state, EvseStateName(evse_state=evse_state)))
                 OutboundEvent.triggerEvent(
-                        event='charge_session_status_update', 
+                        event='charge_session_status_update',  
                         # INACTIVE IS ALSO CONNECTED
                         status=EvseState.EVSE_STATE_CONNECTED, 
                         id=oppleoConfig.chargerID, 
@@ -465,6 +466,11 @@ class ChargerHandlerThread(object):
             self.logger.debug('.handle_charging() - Charging light pulse to {} ({}:{})'.format(str(evse_state == EvseState.EVSE_STATE_CHARGING), evse_state, EvseStateName(evse_state=evse_state)))
             oppleoConfig.rgblcThread.charging = (evse_state == EvseState.EVSE_STATE_CHARGING)
 
+        self.__evse_state = evse_state
+
+
+    def getEvseState(self):
+        return self.__evse_state
 
 
     # Auto Session starts a new session when the EVSE starts charging and during the set amount of minutes less
