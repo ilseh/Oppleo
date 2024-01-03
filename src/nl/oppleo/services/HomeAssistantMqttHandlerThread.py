@@ -111,6 +111,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "P2", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W" },
             { "component": "sensor", "name": "P3", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W" },
             { "component": "sensor", "name": "Frequency", "icon": "mdi:sine-wave", "unit_of_measurement": "Hz" },
+            { "component": "sensor", "name": "ChargeSpeed", "icon": "mdi:car-speed-limiter", "unit_of_measurement": "km" },
             { "component": "sensor", "name": "Status", "icon": "mdi:clipboard-edit-outline" },
             { "component": "sensor", "name": "Energy", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
             { "component": "sensor", "name": "Cost", "icon": "mdi:currency-eur", "unit_of_measurement": "€" },
@@ -659,7 +660,19 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         translated_measurement = {}
         for item, value in translation.items():
             translated_measurement[value] = measurement[item]
-    
+
+        translated_measurement['ChargeSpeed'] = str(round( 
+                    (
+                        (
+                            (float(measurement['p_l1']) if 'p_l1' in measurement else 0.0) +
+                            (float(measurement['p_l2']) if 'p_l2' in measurement else 0.0) +
+                            (float(measurement['p_l3']) if 'p_l3' in measurement else 0.0)
+                        )
+                        / oppleoConfig.factorWhkm
+                    ),
+                    1   # 1 decimal
+                ))
+
         self.publish( values=translated_measurement )
 
     # TODO: Standardize the session status
