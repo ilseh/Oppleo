@@ -111,7 +111,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "P2", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W" },
             { "component": "sensor", "name": "P3", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W" },
             { "component": "sensor", "name": "Frequency", "icon": "mdi:sine-wave", "unit_of_measurement": "Hz" },
-            { "component": "sensor", "name": "ChargeSpeed", "icon": "mdi:car-speed-limiter", "unit_of_measurement": "km" },
+            { "component": "sensor", "name": "ChargeSpeed", "icon": "mdi:car-speed-limiter", "unit_of_measurement": "km/h" },
             { "component": "sensor", "name": "Status", "icon": "mdi:clipboard-edit-outline" },
             { "component": "sensor", "name": "Energy", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
             { "component": "sensor", "name": "Cost", "icon": "mdi:currency-eur", "unit_of_measurement": "€" },
