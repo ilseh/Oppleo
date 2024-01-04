@@ -1,6 +1,8 @@
 
 import logging
 import time
+import json
+
 from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
@@ -76,3 +78,12 @@ class RfidReader(object):
             return {}
 
         return modulePresence.OppleoMFRC522.oLog.to_str()
+
+    def diag(self):
+        return json.dumps({
+            "OppleoMFRC522_IsStub": modulePresence.OppleoMFRC522_IsStub,
+            "OppleoMFRC522Available": modulePresence.OppleoMFRC522Available,
+            "log": self.read_log()
+            }, 
+            default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
+        )

@@ -109,6 +109,7 @@ class ModulePresence(object, metaclass=Singleton):
     """
         mfrc522
     """
+    @property
     def OppleoMFRC522Available(self):
         return self.__mfrc522_installed
 

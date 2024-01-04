@@ -45,7 +45,7 @@ class ChargerHandlerThread(object):
     is_status_charging = False
     device = None
     counter = 0
-    __rfidreader = None
+    __rfidReader = None
 
     def __init__(self, device, buzzer, evseOutput:EvseOutput=None, evseReader:EvseReader=None, appSocketIO:SocketIO=None):
         self.threadLock = threading.Lock()
@@ -598,7 +598,8 @@ class ChargerHandlerThread(object):
             "is_status_charging": self.is_status_charging,
             "counter": self.counter,
             "device": self.device,
-            "__rfidreader": self.__rfidreader,
+            "__rfidReader_class": type(self.__rfidReader).__name__,
+            "__rfidReader": "-" if self.__rfidReader is None else json.loads(self.__rfidReader.diag()),
             "__evse_state": EvseStateName(evse_state=self.__evse_state)
             }, 
             default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"

@@ -30,7 +30,7 @@ class EvseReader(object):
 
     def diag(self):
         return json.dumps({
-            "reader_class": "-" if self.reader is None else self.reader.__class__,
+            "reader_class": "-" if self.reader is None else type(self.reader).__name__,
             "reader": "-" if self.reader is None else json.loads(self.reader.diag())
             }, 
             default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
