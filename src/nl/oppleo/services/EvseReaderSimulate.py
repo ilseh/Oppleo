@@ -1,10 +1,11 @@
 
 import logging
 from datetime import datetime
+import json
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
-from nl.oppleo.services.EvseState import EvseState
+from nl.oppleo.services.EvseState import EvseState, EvseStateName
 from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 
@@ -40,6 +41,7 @@ oppleoConfig = OppleoConfig()
 class EvseReaderSimulate(object):
     __logger = None
     __current_state = None    
+    __openSession = None    
 
     def __init__(self):
         self.__logger = logging.getLogger('nl.oppleo.service.EvseReaderSimulate')
@@ -52,14 +54,14 @@ class EvseReaderSimulate(object):
         self.__logger.warn('Simulated Evse Read loop!')
         while not cb_until():
 
-            openSession = ChargeSessionModel.getOpenChargeSession(oppleoConfig.chargerID)
+            self.__openSession = ChargeSessionModel.getOpenChargeSession(oppleoConfig.chargerID)
 
-            if openSession is None and self.__current_state != EvseState.EVSE_STATE_INACTIVE:
+            if self.__openSession is None and self.__current_state != EvseState.EVSE_STATE_INACTIVE:
                 self.__logger.warn('SIMULATE EVSE state change to INACTIVE!')
                 self.__current_state = EvseState.EVSE_STATE_INACTIVE
                 cb_result(EvseState.EVSE_STATE_INACTIVE)
 
-            if openSession is not None:
+            if self.__openSession is not None:
 
                 minute = datetime.now().minute % 9
                 self.__logger.debug('Simulated Evse Read loop!')
@@ -75,3 +77,18 @@ class EvseReaderSimulate(object):
 
             oppleoConfig.appSocketIO.sleep(2)
 
+
+    def diag(self):
+        return json.dumps({
+            "__current_state": EvseStateName(evse_state=self.__current_state),
+            "__openSession": "None" if self.__openSession is None else json.loads(self.__openSession.to_json())
+            }, 
+            default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
+        )
+
+        return json.dumps({
+            "__current_state": EvseStateName(evse_state=self.__current_state),
+            "__openSession": "None" if self.__openSession is None else self.__openSession.to_json()
+            }, 
+            default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
+        )

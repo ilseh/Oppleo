@@ -3,6 +3,7 @@ import threading
 import time
 import logging
 from datetime import datetime, timedelta
+import json
 
 from nl.oppleo.exceptions.Exceptions import (NotAuthorizedException, 
                                              OtherRfidHasOpenSessionException, 
@@ -37,7 +38,7 @@ class ChargerHandlerThread(object):
     evse_reader_thread = None
     rfid_reader_thread = None
     stop_event = None
-    charger = None
+    # charger = None
     buzzer = None
     __evseOutput = None
     __evseReader = None
@@ -58,6 +59,7 @@ class ChargerHandlerThread(object):
         self.is_status_charging = False
         self.__appSocketIO = appSocketIO
         self.device = device
+        self.__evse_state = EvseState.EVSE_STATE_UNKNOWN
 
 
     def start(self):
@@ -465,6 +467,9 @@ class ChargerHandlerThread(object):
             self.logger.debug('.handle_charging() - Charging light pulse to {} ({}:{})'.format(str(evse_state == EvseState.EVSE_STATE_CHARGING), evse_state, EvseStateName(evse_state=evse_state)))
             oppleoConfig.rgblcThread.charging = (evse_state == EvseState.EVSE_STATE_CHARGING)
 
+        # Memorize
+        self.__evse_state = evse_state
+
 
 
     # Auto Session starts a new session when the EVSE starts charging and during the set amount of minutes less
@@ -578,4 +583,23 @@ class ChargerHandlerThread(object):
                                                              tariff=open_charge_session_for_device.tariff,
                                                              trigger=open_charge_session_for_device.trigger
                                                             )
-        
+
+    def getEvseState(self) -> EvseState:
+        return self.__evse_state
+    
+
+    def diag(self):
+        return json.dumps({
+            "__appSocketIO": self.__appSocketIO,
+            "evse_reader_thread": "-" if self.evse_reader_thread is None else self.evse_reader_thread,
+            "rfid_reader_thread": "-" if self.rfid_reader_thread is None else self.rfid_reader_thread,
+            "__evseOutput": self.__evseOutput,
+            "__evseReader": "-" if self.__evseReader is None else json.loads(self.__evseReader.diag()),
+            "is_status_charging": self.is_status_charging,
+            "counter": self.counter,
+            "device": self.device,
+            "__rfidreader": self.__rfidreader,
+            "__evse_state": EvseStateName(evse_state=self.__evse_state)
+            }, 
+            default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
+        )

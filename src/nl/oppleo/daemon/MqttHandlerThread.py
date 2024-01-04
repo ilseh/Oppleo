@@ -1,5 +1,6 @@
 import warnings
 import sys
+import json
 import threading
 import time
 import logging
@@ -24,7 +25,6 @@ class MqttHandlerThread(object):
     logger = None
     __mqtt_handler_thread = None
     stop_event = None
-    counter = 0
 
     def __init__(self):
         self.threadLock = threading.Lock()
@@ -64,3 +64,12 @@ class MqttHandlerThread(object):
         if self.__mqtt_handler_thread is not None:
             self.__mqtt_handler_thread.stop()
 
+    # convert into JSON:
+    def to_json(self) -> str:
+        return (
+            json.dumps({
+                "appSocketIO": str(self.appSocketIO)
+            },
+            default=str
+            )
+        )

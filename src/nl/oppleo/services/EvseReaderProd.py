@@ -1,6 +1,7 @@
 import time
 from enum import Enum
 import logging
+import json
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.services.EvseState import EvseState, EvseStateName
@@ -74,6 +75,7 @@ def is_pulse_direction_changed(direction_current, direction_previous):
 
 class EvseReaderProd(object):
     logger = None
+    __evse_state = EvseState.EVSE_STATE_UNKNOWN
 
     def __init__(self):
         self.logger = logging.getLogger(LOGGER_PATH)
@@ -99,7 +101,7 @@ class EvseReaderProd(object):
         evse_reader = EvseReaderUtil(pigpio=modulePresence.pigpio, pi=pigpio_pi, pin=oppleoConfig.pinEvseLed)
         self.logger.debug('Init EvseReaderUtil done')
 
-        evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
+        self.__evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
 
         """
         if the Duty Cycle is changing, assume it is charging
@@ -136,7 +138,7 @@ class EvseReaderProd(object):
         error_filter_value = 3
         error_filter = error_filter_value
 
-        self.logger.info(" Starting, state is {} ({})".format(evse_state, EvseStateName(evse_state=evse_state)))
+        self.logger.info(" Starting, state is {} ({})".format(self.__evse_state, EvseStateName(evse_state=self.__evse_state)))
         while not cb_until():
 
             self.logger.debug("In loop to read evse status")
@@ -165,11 +167,11 @@ class EvseReaderProd(object):
                     self.logger.debug('In the time-span a pulse would change direction, the evse value did not change')
                     if evse_dcf >= EVSE_MINLEVEL_STATE_CONNECTED:
                         self.logger.debug("Evse is connected (not charging)")
-                        evse_state = EvseState.EVSE_STATE_CONNECTED
+                        self.__evse_state = EvseState.EVSE_STATE_CONNECTED
                     else:
                         self.logger.debug("Evse is inactive (not charging)")
                         # State A (Inactive)
-                        evse_state = EvseState.EVSE_STATE_INACTIVE
+                        self.__evse_state = EvseState.EVSE_STATE_INACTIVE
                 # Connected or Inactive - reset error filter
                 error_filter = error_filter_value
             else:
@@ -179,12 +181,12 @@ class EvseReaderProd(object):
                     self.logger.debug(
                         'Direction of evse dutycycle changed. Current direction overall: %s' % evse_direction_overall.name)
                     if is_current_measurement_interval_normal_pulse(evse_direction_change_moment):
-                        evse_state = EvseState.EVSE_STATE_CHARGING
+                        self.__evse_state = EvseState.EVSE_STATE_CHARGING
                         # Charging - reset error filter
                         error_filter = error_filter_value
                     elif is_current_measurement_interval_error_pulse(evse_direction_change_moment):
                         if error_filter == 0:
-                            evse_state = EvseState.EVSE_STATE_ERROR
+                            self.__evse_state = EvseState.EVSE_STATE_ERROR
                         else:
                             error_filter -= 1
                     else:
@@ -194,8 +196,8 @@ class EvseReaderProd(object):
                     evse_direction_overall_previous = evse_direction_overall
                     evse_direction_change_moment = current_time_milliseconds()
 
-            self.logger.debug(" Current evse_state state is {} ({})".format(evse_state, EvseStateName(evse_state=evse_state)))
-            cb_result(evse_state)
+            self.logger.debug(" Current evse_state state is {} ({})".format(self.__evse_state, EvseStateName(evse_state=self.__evse_state)))
+            cb_result(self.__evse_state)
             # Remember current evse direction for next run
             evse_direction_previous = evse_direction_overall
             # Remember current duty cycle for next run
@@ -205,3 +207,10 @@ class EvseReaderProd(object):
 
         pigpio_pi.stop()
 
+
+    def diag(self):
+        return json.dumps({
+            "__evse_state": self.__evse_state
+            }, 
+            default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
+        )

@@ -715,7 +715,8 @@
 
     var diag_data = {{ diag_json | safe }}
     var diag_hamqtt_data = {{ diag_hamqtt_json | safe }}
-     
+    var diag_cht = {{ diag_cht | safe }}
+    
 
     var backupOffsiteDialog = null
 
@@ -1242,6 +1243,10 @@
         JSON.stringify(diag_hamqtt_data, undefined, 2) 
       )
       $('pre#diag_hamqtt_json').show()
+      $('pre#diag_cht').html( 
+        JSON.stringify(diag_cht, undefined, 2) 
+      )
+      $('pre#diag_cht').show()
       $('input#allowPeakOnePeriod').bootstrapToggle()
       $('input#allowPeakOnePeriod').change(function() {
         updateSettings( 'allowPeakOnePeriod', $(this).prop('checked') )
@@ -4555,8 +4560,23 @@
                               </td>
                             </tr>
                             <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-network-wired"></i> HomeAssistant MQTT</h4>
+                              </th>
+                            </tr>
+                            <tr>
                               <td class="text-dark" colspan="2">
                                 <pre id="diag_hamqtt_json" style="color:rgba(255, 255, 255, 0.7);"></pre>
+                              </td>
+                            </tr>
+                            <tr>
+                              <th colspan="2" style="line-height: 40px;">
+                                <h4 class="m-t-0 header-title"><i class="fas fa-network-wired"></i> ChargeHandlerThread</h4>
+                              </th>
+                            </tr>
+                            <tr>
+                              <td class="text-dark" colspan="2">
+                                <pre id="diag_cht" style="color:rgba(255, 255, 255, 0.7);"></pre>
                               </td>
                             </tr>
 

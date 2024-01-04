@@ -755,7 +755,6 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         self.__most_recent_state['OffPeak'] = oppleoConfig.offpeakEnabled
 
 
-
     def diag(self):
         return json.dumps({
             "state": "-" if self.state is None else self.state.name,
