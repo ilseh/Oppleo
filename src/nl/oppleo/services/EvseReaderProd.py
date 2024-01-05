@@ -4,6 +4,7 @@ import logging
 import json
 
 from nl.oppleo.config.OppleoConfig import OppleoConfig
+from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.services.EvseState import EvseState, EvseStateName
 from nl.oppleo.utils.EvseReaderUtil import EvseReaderUtil
 
@@ -210,7 +211,8 @@ class EvseReaderProd(object):
 
     def diag(self):
         return json.dumps({
-            "__evse_state": self.__evse_state
+            "__evse_state": self.__evse_state,
+            "__evse_state_name": EvseStateName(evse_state=self.__evse_state)
             }, 
             default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
         )
