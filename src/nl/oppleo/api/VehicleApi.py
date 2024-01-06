@@ -124,6 +124,11 @@ class VehicleApi:
                     "None" if rfid_model is None else rfid_model.rfid, 
                     "None" if rfid_model is None else rfid_model.name)
                     )
+            import inspect, traceback
+            frame = inspect.currentframe()
+            stack_trace = traceback.format_stack(frame)
+            self.__logger.warn(stack_trace[:-1])
+
             return False
 
         if rfid_model.vehicle_make == "Tesla":
