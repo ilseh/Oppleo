@@ -6,6 +6,7 @@ Added
 
 Fixed
 - Fixed reference error
+- Logout with MQTT enabled failed
 
 Version 1.5.0           2023-11-16
 

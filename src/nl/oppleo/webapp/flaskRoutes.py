@@ -336,7 +336,7 @@ def login2(username:str=None):
     if oppleoSystemConfig.mqttOutboundEnabled:
         OutboundEvent.emitMQTTEvent( event='login',
                                     data={
-                                        "user" : user.username,
+                                        "user" : username,
                                     },
                                     id=oppleoConfig.chargerID,
                                     namespace='/webclient'
@@ -362,6 +362,8 @@ def login2(username:str=None):
 def logout():
     global flaskRoutesLogger, oppleoSystemConfig
     flaskRoutesLogger.debug('/logout {}'.format(request.method))
+    # Memorize
+    username = current_user.username
     # Logout the current user
     user = current_user
     user.authenticated = False
@@ -370,7 +372,7 @@ def logout():
     if oppleoSystemConfig.mqttOutboundEnabled:
         OutboundEvent.emitMQTTEvent( event='logout',
                                     data={
-                                        "user" : user.username,
+                                        "user" : username,
                                     },
                                     id=oppleoConfig.chargerID,
                                     namespace='/webclient'

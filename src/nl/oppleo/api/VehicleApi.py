@@ -120,7 +120,10 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("isAuthorized() - Cannot identify authorization status for rfid_model.")
+            self.__logger.warn("isAuthorized() - Cannot identify authorization status for rfid_model (rfid={}, name={}).".format(
+                    "None" if rfid_model is None else rfid_model.rfid, 
+                    "None" if rfid_model is None else rfid_model.name)
+                    )
             return False
 
         if rfid_model.vehicle_make == "Tesla":

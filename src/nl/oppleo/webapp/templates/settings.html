@@ -3658,10 +3658,14 @@
                             </tr>
                             {% endif %}
 
+                            <tr>
+                              <td class="text-dark">Connected WebClients:</td>
+                              <td class="text-primary">{{ oppleoconfig.connectedClients | length }}</td>
+                            </tr>
                             {% for sid, connectedClient in oppleoconfig.connectedClients.items() %}
                             <tr>
-                              <td class="text-dark">Connected WebClient:</td>
-                              <td class="text-primary">{{ sid }}</td>
+                              <td class="text-dark"><i class="fas fa-level-up-alt fa-rotate-90 pr-1"></i> Client {{loop.index}}:</td>
+                              <td class="text-primary">{{ sid }} ( {% if connectedClient['auth'] %}Authenticated{% else %}Not authenticated{% endif %} - {{ connectedClient['namespace'] }} - {{ connectedClient['stats']}} )</td>
                             </tr>
                             {% endfor %}
 

@@ -219,7 +219,7 @@ class TeslaPyWrapper:
     def getVehicleData(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=False):
 
         # TODO - temp
-        self.__logger.error("getVehicleData() !!!!! wake_up: {}".format(wake_up))
+        self.__logger.info("getVehicleData() wake_up: {}".format(wake_up))
 
 
         if email is None:
