@@ -115,19 +115,25 @@ class VehicleApi:
         self.__logger.warn("authorizeByUrl() - Cannot get authorizate by url for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return False
 
-
-    def isAuthorized(self, rfid_model:RfidModel=None) -> bool:
+    """
+        Expected: an authorization is expected. If not, no warning logged (just querying)
+    """
+    def isAuthorized(self, rfid_model:RfidModel=None, expected:bool=True) -> bool:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("isAuthorized() - Cannot identify authorization status for rfid_model (rfid={}, name={}).".format(
-                    "None" if rfid_model is None else rfid_model.rfid, 
-                    "None" if rfid_model is None else rfid_model.name)
-                    )
-            import inspect, traceback
-            frame = inspect.currentframe()
-            stack_trace = traceback.format_stack(frame)
-            self.__logger.warn(stack_trace[:-1])
+            # No authorization, expected?
+            if expected:
+                # Log as warning
+                self.__logger.warn("isAuthorized() - Cannot identify authorization status for rfid_model (rfid={}, name={}).".format(
+                        "None" if rfid_model is None else rfid_model.rfid, 
+                        "None" if rfid_model is None else rfid_model.name)
+                        )
+                # Potentially log a trace
+                # import inspect, traceback
+                # frame = inspect.currentframe()
+                # stack_trace = traceback.format_stack(frame)
+                # self.__logger.warn(stack_trace[:-1])
 
             return False
 

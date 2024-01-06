@@ -1623,7 +1623,7 @@ def rfid_tokens(token=None):
                 entry['chargeSessions'] = ChargeSessionModel.get_charge_session_count_for_rfid(rfid_model.rfid)
                 entry['get_odometer'] = True if rfid_model.get_odometer else False
                 vApi = VehicleApi(rfid_model=rfid_model)
-                entry['make_api_authorized'] = vApi.isAuthorized()
+                entry['make_api_authorized'] = vApi.isAuthorized(expected=False)    # Don't log a warning if not authorized
 
                 vFilename = rfid_model.getVehicleFilename()
                 vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
