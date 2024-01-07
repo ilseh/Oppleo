@@ -160,15 +160,21 @@ try:
     def connect(*args, **kwargs):
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
 
+        # TODO REMOVE - EXTRA LOGGINH
+        oppleoLogger.error('socketio.connect [1] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
+
         with threadLock:
             wsClientCnt += 1
             if request.sid not in oppleoConfig.connectedClients.keys():
                 oppleoConfig.connectedClients[request.sid] = {
                                     'sid'       : request.sid,
-                                    'auth'      : True if (current_user.is_authenticated) else False,
+                                    'auth'      : False if current_user is None or not current_user.is_authenticated else True,
                                     'stats'     : 'connected',
                                     'namespace' : request.namespace if request.namespace is not None else 'UNKNOWN'
                                     }
+        # TODO REMOVE - EXTRA LOGGINH
+        oppleoLogger.error('socketio.connect [2] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
+                
         oppleoLogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
                         request.sid, \
                         wsClientCnt, \
@@ -179,13 +185,16 @@ try:
             OutboundEvent.emitMQTTEvent( event='connect',
                                         data={
                                             "clientId"          : request.sid,
-                                            'auth'              : True if (current_user.is_authenticated) else False,
+                                            'auth'              : False if current_user is None or not current_user.is_authenticated else True,
                                             'namespace'         : request.namespace if request.namespace is not None else 'UNKNOWN',
                                             "clientsConnected"  : len(oppleoConfig.connectedClients)
                                         },
                                         id=oppleoConfig.chargerID,
                                         namespace='/websocket'
                                         )
+        # TODO REMOVE - EXTRA LOGGINH
+        oppleoLogger.error('socketio.connect [3] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
+
         OutboundEvent.triggerEvent(
                 event='update', 
                 id=oppleoConfig.chargerID,
@@ -198,6 +207,8 @@ try:
                 public=False,
                 room=request.sid
             )
+        # TODO REMOVE - EXTRA LOGGINH
+        oppleoLogger.error('socketio.connect [4] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
 
 
@@ -213,6 +224,9 @@ try:
     def disconnect():
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
 
+        # TODO REMOVE - EXTRA LOGGING
+        oppleoLogger.error('socketio.disconnect [1] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
+
         with threadLock:
             wsClientCnt -= 1
             res = oppleoConfig.connectedClients.pop(request.sid, None)
@@ -224,6 +238,10 @@ try:
                         res
                         )
                     )
+
+        # TODO REMOVE - EXTRA LOGGING
+        oppleoLogger.error('socketio.disconnect [2] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
+        
         if oppleoSystemConfig.mqttOutboundEnabled:
             OutboundEvent.emitMQTTEvent( event='disconnect',
                                         data={
@@ -234,6 +252,8 @@ try:
                                         id=oppleoConfig.chargerID,
                                         namespace='/websocket'
                                         )
+        # TODO REMOVE - EXTRA LOGGING
+        oppleoLogger.error('socketio.disconnect [3] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
 
 
