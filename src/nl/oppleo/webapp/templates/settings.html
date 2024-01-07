@@ -3624,7 +3624,7 @@
                                   {{ thread.name }}
                                 </span>
                                 {% if thread.daemon %} <span class="text-muted small">daemon</span>{% endif %}
-                                {% if thread._initialized and not thread._is_stopped %} <span class="text-success font-italic small">initialized</span>{% endif %}
+                                {% if thread._initialized and thread.is_alive() %} <span class="text-success font-italic small">alive</span>{% else %} <span class="text-success font-italic small">ended</span>{% endif %}
                                 {% if thread._is_stopped %} <span class="text-danger font-weight-bold">stopped</span>{% endif %}
                               </td>
                             </tr>

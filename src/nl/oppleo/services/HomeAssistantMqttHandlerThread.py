@@ -260,6 +260,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 The LWT message will be sent on clean (shut-down), on unclean (crashing or losing connection) disconnect.
                 By default, Home Assistant sends online and offline to homeassistant/status.
                 """
+                homeAssistantMqttHandlerThread.__logger.info("Subscribing to topic {topic} with QOS={qos}".format(topic=oppleoSystemConfig.homeAssistantMqttBirthAndLastWillAndTestament,qos=homeAssistantMqttHandlerThread.__MQTT_QOS_EXACTLY_ONCE))
                 client.subscribe((oppleoSystemConfig.homeAssistantMqttBirthAndLastWillAndTestament, homeAssistantMqttHandlerThread.__MQTT_QOS_EXACTLY_ONCE))
 
                 """
@@ -271,12 +272,13 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     if item['component'] in ["select"]:
                         uniqueId = self.object_id + "_" + item["name"]
                         command_topic = self.discovery_prefix + '/' + item['component'] + '/' + uniqueId + '/select'
+                        homeAssistantMqttHandlerThread.__logger.info("Subscribing to topic {topic} with QOS={qos}".format(topic=command_topic,qos=homeAssistantMqttHandlerThread.__MQTT_QOS_EXACTLY_ONCE))
                         client.subscribe((command_topic, homeAssistantMqttHandlerThread.__MQTT_QOS_EXACTLY_ONCE))
 
                 OutboundEvent.triggerEvent(
                     event='ha_mqtt_status_update', 
                     id=oppleoConfig.chargerID,
-                    data={ "state": homeAssistantMqttHandlerThread.state.name },
+                    data={ "state": "None" if homeAssistantMqttHandlerThread.state is None else homeAssistantMqttHandlerThread.state.name },
                     namespace='/settings',
                     public=True
                 )
