@@ -209,7 +209,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                             event='ha_mqtt_status_update', 
                             id=oppleoConfig.chargerID,
                             data={ "state": self.state.name },
-                            namespace='/settings',
+                            namespace='/io_settings',
                             public=True
                         )
 

@@ -882,8 +882,8 @@
     let settingsStatusSocket = null
     function startSettingsStatusWebSocket() {
 
-      // start up the SocketIO connection to the server on namespace /settings
-      settingsStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/settings')
+      // start up the SocketIO connection to the server on namespace /io_settings
+      settingsStatusSocket = io.connect(window.location.protocol+'//'+window.location.hostname+(window.location.port?':'+window.location.port:'')+'/io_settings')
 
       // this is a callback that triggers when the "my response" event is emitted by the server.
 

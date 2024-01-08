@@ -170,7 +170,7 @@ try:
     @appSocketIO.on("connect", namespace="/evse_status")
     @appSocketIO.on("connect", namespace="/backup")
     @appSocketIO.on("connect", namespace="/mqtt")
-    @appSocketIO.on("connect", namespace="/settings")
+    @appSocketIO.on("connect", namespace="/io_settings")
     #@appSocketIO.on("connect", namespace="/")
     @config_dashboard_access_restriction
     def connect(*args, **kwargs):
@@ -234,7 +234,7 @@ try:
     @appSocketIO.on("disconnect", namespace="/evse_status")
     @appSocketIO.on("disconnect", namespace="/backup")
     @appSocketIO.on("disconnect", namespace="/mqtt")
-    @appSocketIO.on("disconnect", namespace="/settings")
+    @appSocketIO.on("disconnect", namespace="/io_settings")
     #@appSocketIO.on("disconnect", namespace="/")
     @config_dashboard_access_restriction
     def disconnect():
