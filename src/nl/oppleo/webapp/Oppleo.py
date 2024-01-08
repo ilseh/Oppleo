@@ -611,8 +611,8 @@ except Exception as e:
             )
 
     if oppleoSystemConfig.pushoverEnabled:
-        from nl.oppleo.services.PushMessagePushover import PushMessagePushover
-        PushMessagePushover.sendMessage(
+        from nl.oppleo.services.PushMessagePushover import pushMessagePushover
+        pushMessagePushover.sendMessage(
             title="Crashed" if restartFailed else "Restarting", 
             message="An exception caused a restart at {}. (signature: {} Exception details: {}{})"
                 .format(
@@ -621,7 +621,7 @@ except Exception as e:
                     str(e),
                     '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerNameText, str) else ' chargerName: {}'.format(oppleoConfig.chargerNameText)
                 ),
-            priority=PushMessagePushover.priorityHigh,
+            priority=pushMessagePushover.priorityHigh,
             apiKey=oppleoSystemConfig.pushoverApiKey,
             userKey=oppleoSystemConfig.pushoverUserKey,
             device=oppleoSystemConfig.pushoverDevice,
