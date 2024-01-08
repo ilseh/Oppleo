@@ -2,10 +2,14 @@ import logging
 from datetime import datetime
 from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = None
 
-oppleoLogger = logging.getLogger('nl.oppleo.webapp.Oppleo')
+# __name__ refers to __main__
+moduleName = 'nl.oppleo.webapp.Oppleo'
+oppleoLogger = logging.getLogger(moduleName)
+oppleoLogger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(moduleName))
 oppleoLogger.debug('Initializing Oppleo...')
 
 import sys
@@ -23,9 +27,9 @@ try:
     oppleoConfig = OppleoConfig()
     oppleoSystemConfig.chargerID = oppleoConfig.chargerID
 
-    from nl.oppleo.services.PushMessage import PushMessage
+    from nl.oppleo.services.PushMessage import pushMessage
 
-    if modulePresence.gpioAvailable():
+    if modulePresence.gpioAvailable:
         GPIO = modulePresence.GPIO
         try:
             if oppleoConfig.gpioMode == "BOARD":
@@ -124,7 +128,7 @@ try:
             # request.remote_addr - returns remote address, or IP of reverse proxy
             # request.headers.get('X-Forwarded-For') - returns router address (router is behind the reverse proxy)
 
-            # TODO REMOVE - EXTRA LOGGINH
+            # TODO REMOVE - EXTRA LOGGING
             oppleoLogger.error('config_dashboard_access_restriction decorator [1] (restrictDashboardAccess: {restrictDashboardAccess}, remote_addr: {remote_addr}, routerIPAddress: {routerIPAddress}, is_authenticated: {is_authenticated})'.format(
                 restrictDashboardAccess=oppleoConfig.restrictDashboardAccess, 
                 remote_addr=request.remote_addr,
@@ -136,14 +140,14 @@ try:
                 ( oppleoConfig.allowLocalDashboardAccess and request.remote_addr != oppleoConfig.routerIPAddress ) or \
                 current_user.is_authenticated):
 
-                # TODO REMOVE - EXTRA LOGGINH
+                # TODO REMOVE - EXTRA LOGGING
                 oppleoLogger.error('config_dashboard_access_restriction decorator [2] allowed')
 
                 return function(*args, **kwargs)
             # return abort(403) # unauthenticated
             # Not allowed.
 
-            # TODO REMOVE - EXTRA LOGGINH
+            # TODO REMOVE - EXTRA LOGGING
             oppleoLogger.error('config_dashboard_access_restriction decorator [3] NOT allowed')
 
             # delete old - never used - cookie
@@ -176,7 +180,7 @@ try:
     def connect(*args, **kwargs):
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
 
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [1] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
         with threadLock:
@@ -188,7 +192,7 @@ try:
                                     'stats'     : 'connected',
                                     'namespace' : request.namespace if request.namespace is not None else 'UNKNOWN'
                                     }
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [2] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
                 
         oppleoLogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
@@ -208,7 +212,7 @@ try:
                                         id=oppleoConfig.chargerID,
                                         namespace='/websocket'
                                         )
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [3] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
         OutboundEvent.triggerEvent(
@@ -223,7 +227,7 @@ try:
                 public=False,
                 room=request.sid
             )
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [4] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
 
@@ -385,7 +389,7 @@ try:
                 public=False
             )
 
-        PushMessage.sendMessage(
+        pushMessage.sendMessage(
             "Starting", 
             "Starting Oppleo {} at {}."
             .format(
@@ -409,7 +413,7 @@ try:
             host=oppleoSystemConfig.httpHost
             )
 
-        PushMessage.sendMessage(
+        pushMessage.sendMessage(
             "Terminating", 
             "Terminating Oppleo {} at {}."
             .format(

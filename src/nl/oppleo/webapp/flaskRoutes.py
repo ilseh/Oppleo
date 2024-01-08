@@ -57,9 +57,7 @@ from nl.oppleo.utils.BackupUtil import BackupUtil
 
 from nl.oppleo.daemon.MqttSendHistoryThread import Status as mhtsStatus
 
-from nl.oppleo.services.PushMessage import PushMessage
-from nl.oppleo.services.PushMessageProwl import PushMessageProwl
-from nl.oppleo.services.PushMessagePushover import PushMessagePushover
+from nl.oppleo.services.PushMessage import pushMessage
 
 from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient 
 from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread 
@@ -106,7 +104,8 @@ DETAIL_CODE_202_ACCEPTED                            = 202    # HTTP_CODE_202_ACC
 """
 flaskRoutes = Blueprint('flaskRoutes', __name__, template_folder='templates')
 
-flaskRoutesLogger = logging.getLogger('nl.oppleo.webapp.flaskRoutes')
+flaskRoutesLogger = logging.getLogger(__name__)
+flaskRoutesLogger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
 flaskRoutesLogger.debug('Initializing routes')
 
 threadLock = threading.Lock()
@@ -3577,7 +3576,7 @@ def sendTestNotification(msgType:str=None):
         msg = {}
         msg['title'] = "Oppleo {}".format(oppleoConfig.chargerID)
         msg['message'] = message
-        msg['priority'] = int(PushMessage.priorityNormal)
+        msg['priority'] = int(pushMessage.priorityNormal)
         sendSuccess = oppleoMqttClient.publish(topic=topic, message=json.dumps(msg, default=str), waitForPublish=True, timeout=1500)
         return jsonify({ 
             'status'        : HTTP_CODE_200_OK if sendSuccess else HTTP_CODE_424_FAILED_DEPENDENCY,

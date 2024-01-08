@@ -10,6 +10,9 @@ from nl.oppleo.exceptions.Exceptions import DbException
 from sqlalchemy import orm, Column, String, Boolean, DateTime
 from sqlalchemy.exc import InvalidRequestError
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
 
 """
 # Alternatively, catch reload events
@@ -47,7 +50,8 @@ class RfidModel(Base):
 
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.models.RfidModel')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method

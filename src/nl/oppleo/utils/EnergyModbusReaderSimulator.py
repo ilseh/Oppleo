@@ -3,9 +3,11 @@ import time
 import random
 import json
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.daemon.ChargerHandlerThread import ChargerHandlerThread
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 """
@@ -75,7 +77,9 @@ class EnergyModbusReaderSimulator():
 
 
     def __init__(self, energy_device_id=None, appSocketIO=None):
-        self.__logger = logging.getLogger('nl.oppleo.daemon.EnergyModbusReaderSimulator')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
+
         self.__energy_device_id = energy_device_id
         self.__appSocketIO = appSocketIO
         self.__lasttime = time.time()

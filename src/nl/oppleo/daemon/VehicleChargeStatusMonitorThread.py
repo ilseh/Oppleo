@@ -3,6 +3,7 @@ import logging
 import time
 import os
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.api.VehicleApi import VehicleApi
@@ -22,6 +23,7 @@ HTTP_CODE_424_FAILED_DEPENDENCY     = 424
 HTTP_CODE_500_INTERNAL_SERVER_ERROR = 500
 HTTP_CODE_501_NOT_IMPLEMENTED       = 501
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 class VehicleChargeStatusMonitorThread(object):
@@ -41,7 +43,8 @@ class VehicleChargeStatusMonitorThread(object):
     def __init__(self):
         self.__threadLock = threading.Lock()
         self.__stop_event = threading.Event()
-        self.__logger = logging.getLogger('nl.oppleo.daemon.VehicleChargeStatusMonitorThread')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))               
 
     @property
     def rfid(self):

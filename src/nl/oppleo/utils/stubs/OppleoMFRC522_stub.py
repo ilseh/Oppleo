@@ -1,6 +1,10 @@
 import logging
 import time
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 """
     Stub OppleoMFRC522 object 
 """
@@ -10,7 +14,8 @@ class OppleoMFRC522_stub(object):
     __logger = None
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.stubs.OppleoMFRC522_stub')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.__logger.debug("OppleoMFRC522_stub.init()")
 
     def __format(self, params=None):

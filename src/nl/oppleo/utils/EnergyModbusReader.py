@@ -3,6 +3,7 @@ from serial import SerialException
 
 import threading
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 import logging
@@ -19,22 +20,27 @@ from nl.oppleo.utils.modbus.SDM360v2 import SDM630v2
 # Eastron SDM120-Modbus MID, 1 Fase kWh energie meter 45A LCD MID        €  52
 from nl.oppleo.utils.modbus.SDM120 import SDM120
 
+oppleoSystemConfig = OppleoSystemConfig()
+oppleoConfig = OppleoConfig()
+
 modbusConfigOptions = [ SDM630v2, SDM120 ]
 
 
 
 class EnergyModbusReader:
+    __logger = None
     energy_device_id = None
     instrument = None
     appSocketIO = None
     modbusConfig = None
  
     def __init__(self, energy_device_id, appSocketIO=None):
-        self.logger = logging.getLogger('nl.oppleo.services.EnergyModbusReader')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.energy_device_id = energy_device_id
         self.appSocketIO = appSocketIO
         self.oppleoConfig:OppleoConfig = OppleoConfig()
-        self.logger.debug('Production environment, calling initInstrument()')
+        self.__logger.debug('Production environment, calling initInstrument()')
         self.initInstrument()
         self.threadLock = threading.Lock()
 
@@ -43,7 +49,7 @@ class EnergyModbusReader:
         global SDM630v2, SDM120
 
         energy_device_data = EnergyDeviceModel.get()
-        self.logger.debug(
+        self.__logger.debug(
             'found device: %s %s %d' % (energy_device_data.energy_device_id, energy_device_data.port_name, energy_device_data.slave_address))
 
         try:
@@ -51,7 +57,7 @@ class EnergyModbusReader:
                                          slaveaddress=energy_device_data.slave_address
                                     )
         except Exception as e:
-            self.logger.error("initInstrument() failed: {}".format(str(e)))
+            self.__logger.error("initInstrument() failed: {}".format(str(e)))
             raise
 
         # Get this from the database
@@ -68,13 +74,13 @@ class EnergyModbusReader:
         for i in range(len(modbusConfigOptions)): 
             if energy_device_data.modbus_config == modbusConfigOptions[i][MB.NAME]:
                 self.modbusConfig = modbusConfigOptions[i]
-        self.logger.debug("Modbus config {} selected (default: {}).".format(self.modbusConfig[MB.NAME], SDM630v2[MB.NAME]))
+        self.__logger.debug("Modbus config {} selected (default: {}).".format(self.modbusConfig[MB.NAME], SDM630v2[MB.NAME]))
 
         self.readSerialNumber(energy_device_data.port_name, energy_device_data.slave_address)
 
 
     def readSerialNumber(self, port_name=None, slave_address=None):
-        self.logger.debug('readSerialNumber()')
+        self.__logger.debug('readSerialNumber()')
 
         if self.modbusConfig[MB.SN][MB.ENABLED]:
             if self.modbusConfig[MB.SN][MB.TYPE] == MB.TYPE_REGISTER:
@@ -90,16 +96,16 @@ class EnergyModbusReader:
                                 self.modbusConfig[MB.SN][MB.LO][MB.FUNCTION_CODE],  \
                                 self.modbusConfig[MB.SN][MB.LO][MB.SIGNED]    \
                                 )
-                self.logger.debug('readSerialNumber() serial_Hi:{} serial_Lo:{}'.format(serial_Hi, serial_Lo))     
+                self.__logger.debug('readSerialNumber() serial_Hi:{} serial_Lo:{}'.format(serial_Hi, serial_Lo))     
                 self.oppleoConfig.kWhMeterSerial = str((serial_Hi * 65536 ) + serial_Lo)
-                self.logger.info('kWh meter serial number: {} (port:{}, address:{})'.format(
+                self.__logger.info('kWh meter serial number: {} (port:{}, address:{})'.format(
                         self.oppleoConfig.kWhMeterSerial,
                         port_name,
                         slave_address
                         )
                     )     
             else:
-                self.logger.warn('modbusConfig serialNumber type {} not supported!'.format(self.modbusConfig[MB.SN][MB.TYPE]))
+                self.__logger.warn('modbusConfig serialNumber type {} not supported!'.format(self.modbusConfig[MB.SN][MB.TYPE]))
                 self.oppleoConfig.kWhMeterSerial = 99999999
         else:
             self.oppleoConfig.kWhMeterSerial = 99999999
@@ -110,11 +116,11 @@ class EnergyModbusReader:
 
 
     def getTotalKWHHValue(self):
-        self.logger.debug('Production environment, getting real data')
+        self.__logger.debug('Production environment, getting real data')
         return self.getProdTotalKWHHValue()
 
     def getMeasurementValue(self):
-        self.logger.debug('Production environment, getting real data')
+        self.__logger.debug('Production environment, getting real data')
         return self.getProdMeasurementValue()
 
 
@@ -131,18 +137,18 @@ class EnergyModbusReader:
                 1
                 )
         else:
-            self.logger.warn('modbusConfig total_kWh type {} not supported!'.format(self.modbusConfig[MB.TOTAL_ENERGY][MB.TYPE]))
+            self.__logger.warn('modbusConfig total_kWh type {} not supported!'.format(self.modbusConfig[MB.TOTAL_ENERGY][MB.TYPE]))
             return 0
 
 
     def try_read_float_from_config(self, name, el):
-        # self.logger.debug("try_read_float_from_config name:{} el:{}".format(name, str(el)))
+        # self.__logger.debug("try_read_float_from_config name:{} el:{}".format(name, str(el)))
 
         if not el[MB.ENABLED]:
-            self.logger.debug("Modbus element {} not enabled".format(name))
+            self.__logger.debug("Modbus element {} not enabled".format(name))
             return 0
         if el[MB.TYPE] != MB.TYPE_FLOAT:
-            self.logger.warn("Type {} for modbus element {} not supported (must be {})".format(el[MB.TYPE], name, MB.TYPE_FLOAT))
+            self.__logger.warn("Type {} for modbus element {} not supported (must be {})".format(el[MB.TYPE], name, MB.TYPE_FLOAT))
             return 0
         return round(self.try_read_float( 
                             value_desc=name, 
@@ -215,17 +221,17 @@ class EnergyModbusReader:
                 return value
             except (ModbusException, NoResponseError, SerialException) as e:
                 # Recoverable IO errors, try again
-                self.logger.debug("Could not read value {} due to potential recoverable exception {}".format(value_desc, e))
+                self.__logger.debug("Could not read value {} due to potential recoverable exception {}".format(value_desc, e))
             except (TypeError, ValueError, Exception) as e:
                 # Catch all, won't recover
-                self.logger.warning("Failed to read {} from modbus due to exception {}. Using {}".format(value_desc, e, value))
+                self.__logger.warning("Failed to read {} from modbus due to exception {}. Using {}".format(value_desc, e, value))
                 return value
             if tries >= maxRetries:
                 # No more retries, fail now
-                self.logger.warning("Failed to read {} from modbus after trying {} times. Using {}".format(value_desc, tries, value))
+                self.__logger.warning("Failed to read {} from modbus after trying {} times. Using {}".format(value_desc, tries, value))
                 return value
             tries += 1
             # Wait before retry
             if self.appSocketIO is not None:
                 self.appSocketIO.sleep(0.05)
-            self.logger.debug("Trying again ({}) to read modbus for {}...".format((tries), value_desc))
+            self.__logger.debug("Trying again ({}) to read modbus for {}...".format((tries), value_desc))

@@ -5,6 +5,10 @@ import time
 import os
 from base64 import b64encode
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 """
 When using a token based api, the token has to be refreshed at some point. In a multi-threaded environment the token can be in use
 in multiple locations. When the refresh happens the use can be denied at any point.
@@ -42,6 +46,7 @@ invalidate(token, key)
 
 @warnings.deprecated() 
 class TokenObj:
+    __logger = None
     code = None
     inUse:bool = False
     valid:bool = True
@@ -49,7 +54,8 @@ class TokenObj:
     key = None
 
     def __init__(self, code, inUse:bool=False, ref=None, key=None, valid:bool=True):
-        self.__logger = logging.getLogger('nl.oppleo.utils.TokenObj')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.code = code
         self.inUse = inUse
         self.valid = valid
@@ -73,7 +79,8 @@ class TokenMediator:
     __KEY_SIZE = 24
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.TokenMediator')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.__lock = threading.Lock()
 
     def generateKey(self):

@@ -17,15 +17,18 @@ https://docs.sqlalchemy.org/en/14/orm/session_api.html#sqlalchemy.orm.make_trans
 from sqlalchemy.orm import make_transient, make_transient_to_detached
 
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
+
+oppleoSystemConfig = OppleoSystemConfig()
 
 """ 
     The charger config model refers to a single charger config, represented by a single database row.
 """
 
 class ChargerConfigModel(Base):
-    logger = logging.getLogger('nl.oppleo.models.ChargerConfigModel')
+    __logger = None
     __tablename__ = 'charger_config'
 
     charger_id = Column(String(100), primary_key=True)
@@ -92,46 +95,52 @@ class ChargerConfigModel(Base):
     vehicle_data_on_dashboard = Column(Boolean) 
 
     def __init__(self):
-        self.logger.debug('.init()')
+        if self.__logger is None:
+            self.__logger = logging.getLogger(__name__)
+            self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))        
+        self.__logger.debug('.init()')
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
     def init_on_load(self):
-        self.logger.debug('.init_on_load()')
+        if self.__logger is None:
+            self.__logger = logging.getLogger(__name__)
+            self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))        
+        self.__logger.debug('.init_on_load()')
         self.__init__()
 
     def set(self, data:dict):
-        self.logger.debug('.set()')
+        self.__logger.debug('.set()')
         for key in data:
-            self.logger.debug('.set() key:{} value:{}'.format(key, data.get(key)))
+            self.__logger.debug('.set() key:{} value:{}'.format(key, data.get(key)))
             setattr(self, key, data.get(key))
         self.modified_at = datetime.datetime.now()
-        self.logger.debug('.set() modified_at:{}'.format(self.modified_at))
+        self.__logger.debug('.set() modified_at:{}'.format(self.modified_at))
 
     """
         Set a single variable
     """
     def setAndSave(self, key, value, allowed=None):
-        self.logger.debug('.setAndSave() key:{} value:{} range:{}'.format(key, value, allowed))
+        self.__logger.debug('.setAndSave() key:{} value:{} range:{}'.format(key, value, allowed))
         curVal = getattr(self, key)
-        self.logger.debug('.setAndSave() curVal:{}'.format(curVal))
+        self.__logger.debug('.setAndSave() curVal:{}'.format(curVal))
         if not isinstance(value, type(curVal)):
-            self.logger.debug(".setAndSave() {} TypeError: {} must be type {}".format(key, type(curVal)))
+            self.__logger.debug(".setAndSave() {} TypeError: {} must be type {}".format(key, type(curVal)))
             raise TypeError("{} must be type {}".format(key, type(curVal)))
-        self.logger.debug('.setAndSave() no TypeError')
+        self.__logger.debug('.setAndSave() no TypeError')
         if allowed is not None and value not in allowed:
-            self.logger.debug(".setAndSave() {} ValueError: value {} of key {} not within range {}".format(value, key, allowed))
+            self.__logger.debug(".setAndSave() {} ValueError: value {} of key {} not within range {}".format(value, key, allowed))
             raise ValueError("{} value {} of key {} not within range {}".format(value, key, allowed))
-        self.logger.debug('.setAndSave() no ValueError')
+        self.__logger.debug('.setAndSave() no ValueError')
         setattr(self, key, value)
-        self.logger.debug('.setAndSave() curVal:{} getattr(self, key)={}'.format(curVal, getattr(self, key)))
+        self.__logger.debug('.setAndSave() curVal:{} getattr(self, key)={}'.format(curVal, getattr(self, key)))
         if curVal != getattr(self, key):
             # Value changed
             self.modified_at = datetime.datetime.now()
             self.save()
 
     def save(self):
-        self.logger.debug(".save()")
+        self.__logger.debug(".save()")
         db_session = DbSession()
         # Prevent expiration after the session is closed or object is made transient or disconnected
         db_session.expire_on_commit = False
@@ -143,11 +152,11 @@ class ChargerConfigModel(Base):
             make_transient(self)
             make_transient_to_detached(self)
         except InvalidRequestError as e:
-            self.logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not commit to {} table in database".format(self.__tablename__ ))
 
 
@@ -164,7 +173,7 @@ class ChargerConfigModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
 
@@ -187,7 +196,10 @@ class ChargerConfigModel(Base):
             ChargerConfigModel.__cleanupDbSession(db_session, ChargerConfigModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargerConfigModel.logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
+            if ChargerConfigModel.__logger is None:
+                ChargerConfigModel.__logger = logging.getLogger(__name__)
+                ChargerConfigModel.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
+            ChargerConfigModel.__logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ))
         return ccm
 
@@ -206,7 +218,7 @@ class ChargerConfigModel(Base):
             ChargerConfigModel.__cleanupDbSession(db_session, ChargerConfigModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            ChargerConfigModel.logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
+            ChargerConfigModel.__logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ))
         return ccm
 

@@ -45,6 +45,13 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     __INI_LOG_FILE = 'LOG_FILE'
 
     __INI_LOG_LEVEL = 'LOG_LEVEL'
+    __INI_LOG_LEVEL_DEBUG = 'LOG_LEVEL_DEBUG'
+    __INI_LOG_LEVEL_INFO = 'LOG_LEVEL_INFO'
+    __INI_LOG_LEVEL_WARNING = 'LOG_LEVEL_WARNING'
+    __INI_LOG_LEVEL_ERROR = 'LOG_LEVEL_ERROR'
+    __INI_LOG_LEVEL_CRITICAL = 'LOG_LEVEL_CRITICAL'
+    __INI_LOG_LEVEL_FATAL = 'LOG_LEVEL_FATAL'
+
     __INI_LOG_MAX_BYTES = 'LOG_MAX_FILESIZE'
     __INI_LOG_BACKUP_COUNT = 'LOG_FILE_BACKUP_COUNT'
 
@@ -113,6 +120,16 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
     __LOG_FILE = '/tmp/%s.log' % __PROCESS_NAME
     __LOG_LEVEL_STR = 'warning'
+    __LOG_LEVEL_DEBUG = ''
+    __LOG_LEVEL_INFO = ''
+    __LOG_LEVEL_WARNING = ''
+    __LOG_LEVEL_ERROR = ''
+    __LOG_LEVEL_CRITICAL = ''
+    __LOG_LEVEL_FATAL = ''
+
+    __logLevelExceptionTypes = {}
+
+
     __LOG_MAX_BYTES = 524288
     __LOG_BACKUP_COUNT = 5
 
@@ -244,6 +261,14 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
         self.__LOG_FILE = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_FILE, default=self.__LOG_FILE, log=log)
         self.__LOG_LEVEL_STR = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL, default=self.__LOG_LEVEL_STR, log=log)
+        self.__LOG_LEVEL_DEBUG = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL_DEBUG, default=self.__LOG_LEVEL_DEBUG, log=log)
+        self.__LOG_LEVEL_INFO = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL_INFO, default=self.__LOG_LEVEL_INFO, log=log)
+        self.__LOG_LEVEL_WARNING = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL_WARNING, default=self.__LOG_LEVEL_WARNING, log=log)
+        self.__LOG_LEVEL_ERROR = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL_ERROR, default=self.__LOG_LEVEL_ERROR, log=log)
+        self.__LOG_LEVEL_CRITICAL = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL_CRITICAL, default=self.__LOG_LEVEL_CRITICAL, log=log)
+        self.__LOG_LEVEL_FATAL = self.__getOption__(section=self.__INI_MAIN, option=self.__INI_LOG_LEVEL_FATAL, default=self.__LOG_LEVEL_FATAL, log=log)
+        self.buildLogLevelExceptions()
+
         self.__LOG_MAX_BYTES = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_LOG_MAX_BYTES, default=self.__LOG_MAX_BYTES, log=log)
         self.__LOG_BACKUP_COUNT = self.__getIntOption__(section=self.__INI_MAIN, option=self.__INI_LOG_BACKUP_COUNT, default=self.__LOG_BACKUP_COUNT, log=log)
 
@@ -330,6 +355,13 @@ class OppleoSystemConfig(object, metaclass=Singleton):
 
             self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_FILE] = self.__LOG_FILE
             self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL] = self.__LOG_LEVEL_STR
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL_DEBUG] = self.__LOG_LEVEL_DEBUG
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL_INFO] = self.__LOG_LEVEL_INFO
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL_WARNING] = self.__LOG_LEVEL_WARNING
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL_ERROR] = self.__LOG_LEVEL_ERROR
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL_CRITICAL] = self.__LOG_LEVEL_CRITICAL
+            self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_LEVEL_FATAL] = self.__LOG_LEVEL_FATAL
+
             self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_MAX_BYTES] = str(self.__LOG_MAX_BYTES)
             self.__ini_settings[self.__INI_MAIN][self.__INI_LOG_BACKUP_COUNT] = str(self.__LOG_BACKUP_COUNT)
 
@@ -482,7 +514,9 @@ class OppleoSystemConfig(object, metaclass=Singleton):
                         maxBytes=self.__LOG_MAX_BYTES,
                         backupCount=self.__LOG_BACKUP_COUNT
                         )
-        self.__logger = logging.getLogger('nl.oppleo.config.OppleoSystemConfig')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=self.getLogLevelForModule(__name__))        
+        
 
 
     def sqlAlchemyPoolStatus(self) -> dict:
@@ -1063,6 +1097,48 @@ class OppleoSystemConfig(object, metaclass=Singleton):
             self.__initLogger__()
 
     """
+        logLevelDebug -> __LOG_LEVEL_DEBUG
+    """
+    @property
+    def logLevelDebug(self):
+        return self.__LOG_LEVEL_DEBUG
+
+    """
+        logLevelInfo -> __LOG_LEVEL_INFO
+    """
+    @property
+    def logLevelInfo(self):
+        return self.__LOG_LEVEL_INFO
+
+    """
+        logLevelWarning -> __LOG_LEVEL_WARNING
+    """
+    @property
+    def logLevelWarning(self):
+        return self.__LOG_LEVEL_WARNING
+
+    """
+        logLevelError -> __LOG_LEVEL_ERROR
+    """
+    @property
+    def logLevelError(self):
+        return self.__LOG_LEVEL_ERROR
+
+    """
+        logLevelCritical -> __LOG_LEVEL_CRITICAL
+    """
+    @property
+    def logLevelCritical(self):
+        return self.__LOG_LEVEL_CRITICAL
+
+    """
+        logLevelFatal -> __LOG_LEVEL_FATAL
+    """
+    @property
+    def logLevelFatal(self):
+        return self.__LOG_LEVEL_FATAL
+
+    """
         logMaxBytes -> __LOG_MAX_BYTES
     """
     @property
@@ -1122,6 +1198,29 @@ class OppleoSystemConfig(object, metaclass=Singleton):
         if level == logging.FATAL:
             return 'fatal'
         return 'warning'
+
+
+    def buildLogLevelExceptions(self) -> None:
+        self.__logLevelExceptionTypes = { 
+            'debug': { 'logLevelExceptions': self.logLevelDebug.split(','), 'result': logging.DEBUG }, 
+            'info': { 'logLevelExceptions': self.logLevelInfo.split(','), 'result': logging.INFO },
+            'warning': { 'logLevelExceptions': self.logLevelWarning.split(','), 'result': logging.WARNING },
+            'error': { 'logLevelExceptions': self.logLevelError.split(','), 'result': logging.ERROR },
+            'critical': { 'logLevelExceptions': self.logLevelCritical.split(','), 'result': logging.CRITICAL },
+            'fatal': { 'logLevelExceptions': self.logLevelFatal.split(','), 'result': logging.FATAL } 
+            }
+        
+
+    def getLogLevelForModule(self, moduleName:str=None) -> int:
+
+        for exceptionType, exceptionTypeData in self.__logLevelExceptionTypes.items():
+            for logLevelException in exceptionTypeData['logLevelExceptions']:
+                stripped = logLevelException.strip()
+                if stripped != '' and moduleName.startswith(stripped):
+                    return exceptionTypeData['result']
+        
+        # No exception, return default loglevel
+        return self.intoLogLevel(self.logLevel)
 
 
     def getVehicleOptions(self, make:str=None, vin:str=None, default:str='') -> str:

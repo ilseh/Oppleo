@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 
 """ 
@@ -10,10 +11,12 @@ from nl.oppleo.config.OppleoConfig import OppleoConfig
   to web sockets
 """
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 class WebSocketQueueReaderBackgroundTask(object):
     # Count the message updates send through the websocket
+    __logger = None
     counter = 0
     most_recent = ""
     appSocketIO = None
@@ -21,17 +24,18 @@ class WebSocketQueueReaderBackgroundTask(object):
     stop_event = None
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.webapp.WebSocketQueueReaderBackgroundTask')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.thread = None
         self.stop_event = threading.Event()
 
     def stop(self):
-        self.logger.debug('Requested to stop')
+        self.__logger.debug('Requested to stop')
         self.stop_event.set()
 
     def websocket_start(self):
         global oppleoConfig
-        self.logger.debug('Starting background task...')
+        self.__logger.debug('Starting background task...')
         while not self.stop_event.is_set():
             # Sleep is interruptable by other threads, so sleep for 0.1 seconds, then check passed time
 
@@ -43,7 +47,7 @@ class WebSocketQueueReaderBackgroundTask(object):
                 """
                 # Emit as web socket update
                 self.counter += 1
-                self.logger.debug(f'Send msg {self.counter} via websocket ...{msg}')
+                self.__logger.debug(f'Send msg {self.counter} via websocket ...{msg}')
                 m_body = {}
                 if 'data' in msg and msg['data'] is not None:
                     m_body['data'] = msg['data']
@@ -83,7 +87,7 @@ class WebSocketQueueReaderBackgroundTask(object):
                                 continue
                             if 'auth' in connectedClient and connectedClient['auth']:
                                 # Authenticated client, emit data
-                                self.logger.debug('Sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
+                                self.__logger.debug('Sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
                                 self.appSocketIO.emit(
                                         event=msg['event'],
                                         data=m_body,
@@ -91,19 +95,19 @@ class WebSocketQueueReaderBackgroundTask(object):
                                         room=connectedClient['sid']
                                         )
                             else:
-                                self.logger.debug('NOT sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
+                                self.__logger.debug('NOT sending msg {} via websocket to {}...'.format(msg, connectedClient['sid']))
 
 
                 self.wsEmitQueue.task_done()
             self.appSocketIO.sleep(0.5)
 
-        self.logger.debug(f'Terminating thread')
+        self.__logger.debug(f'Terminating thread')
         # Releasing session if applicable
 
 
     def start(self, appSocketIO, wsEmitQueue):
         self.stop_event.clear()
-        self.logger.debug('Launching background task...')
+        self.__logger.debug('Launching background task...')
         self.appSocketIO = appSocketIO
         self.wsEmitQueue = wsEmitQueue
         self.thread = self.appSocketIO.start_background_task(self.websocket_start)

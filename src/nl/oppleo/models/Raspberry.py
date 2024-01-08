@@ -8,18 +8,23 @@ import subprocess
 import sys
 import re
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
 
 class Raspberry(object):
+    __logger = None
     """
     Raspberry Model
     """
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.models.Raspberry')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))     
 
 
     def get_ip_info(self):
-        self.logger.debug("get_ip_info()")
+        self.__logger.debug("get_ip_info()")
         i_ids = netifaces.interfaces()
         r = {}
         for i_id in i_ids:
@@ -43,7 +48,7 @@ class Raspberry(object):
         return None
 
     def get_os(self):
-        self.logger.debug("get_os()")
+        self.__logger.debug("get_os()")
         un = os.uname()
         osi = {}
         osi['nodename'] = un.nodename
@@ -54,46 +59,46 @@ class Raspberry(object):
         return osi
 
     def get_cpuinfo_entry(self, entry_name="Unknown"):
-        self.logger.debug("get_cpuinfo_entry() entry_name={}".format(entry_name))
+        self.__logger.debug("get_cpuinfo_entry() entry_name={}".format(entry_name))
         proc_list = self.get_cpuinfo()
         if proc_list is None:
-            self.logger.debug('proc_list = None, returning Unknown')
+            self.__logger.debug('proc_list = None, returning Unknown')
             return "Unknown"
         try:
             # cpuinfo returns an entry per processor, plus an entry for the model
             for proc_index in range(len(proc_list)):
                 for proc_data_key in proc_list[proc_index]:
                     if entry_name == proc_data_key:
-                        self.logger.debug('Found entry {}, returning {}'.format(proc_data_key, proc_list[proc_index][proc_data_key]))
+                        self.__logger.debug('Found entry {}, returning {}'.format(proc_data_key, proc_list[proc_index][proc_data_key]))
                         return proc_list[proc_index][proc_data_key]
         except TypeError:
-            self.logger.debug('Data is not iterable')
+            self.__logger.debug('Data is not iterable')
 
-        self.logger.debug('Returning Unknown')
+        self.__logger.debug('Returning Unknown')
         return "Unknown"
 
     def get_serial(self):
-        self.logger.debug("get_serial()")
+        self.__logger.debug("get_serial()")
         return self.get_cpuinfo_entry('Serial')
 
     def get_revision(self):
-        self.logger.debug("get_revision()")
+        self.__logger.debug("get_revision()")
         return self.get_cpuinfo_entry('Revision')
 
     def get_model(self):
-        self.logger.debug("get_model()")
+        self.__logger.debug("get_model()")
         return self.get_cpuinfo_entry('Model')
 
     def get_cpuinfo(self):
-        self.logger.debug("get_cpuinfo()")
+        self.__logger.debug("get_cpuinfo()")
         cpu = {}
         i = 0
         cpu[i] = {}
         try:
-            self.logger.debug("Open /proc/cpuinfo to read...")
+            self.__logger.debug("Open /proc/cpuinfo to read...")
             f = open('/proc/cpuinfo','r')
             for line in f:
-                self.logger.debug("Line: {} ...".format(line))
+                self.__logger.debug("Line: {} ...".format(line))
                 if line not in ['\n', '\r\n']:
                     line_parts = line.split(':')
                     cpu[i][line_parts[0].strip()] = line_parts[1].strip()
@@ -103,18 +108,18 @@ class Raspberry(object):
 
             f.close()
         except:
-            self.logger.debug('Could not open /proc/cpuinfo to get cpu and raspberry revision info...')
+            self.__logger.debug('Could not open /proc/cpuinfo to get cpu and raspberry revision info...')
             return None
-        self.logger.debug("Returning cpu: {}...".format(cpu))
+        self.__logger.debug("Returning cpu: {}...".format(cpu))
         return cpu
 
 
     def get_cpu_percent(self):
-        self.logger.debug("get_cpu_percent()")
+        self.__logger.debug("get_cpu_percent()")
         return str(psutil.cpu_percent())
 
     def get_virtual_memory(self):
-        self.logger.debug("get_virtual_memory()")
+        self.__logger.debug("get_virtual_memory()")
         mem = {}
         vmem = psutil.virtual_memory()
         mem['available'] = vmem.available
@@ -123,47 +128,47 @@ class Raspberry(object):
         try:
             mem['totalFormatted'] = self.format_size( vmem.total )
         except:
-            self.logger.debug("totalFormatted could not be formatted")
+            self.__logger.debug("totalFormatted could not be formatted")
         try:
             mem['availableFormatted'] = self.format_size( vmem.available )
         except:
-            self.logger.debug("availableFormatted could not be formatted")
+            self.__logger.debug("availableFormatted could not be formatted")
         return mem
 
     def get_physical_memory(self):
-        self.logger.debug("get_physical_memory()")
+        self.__logger.debug("get_physical_memory()")
         mem = {}
         try:
             f = open('/proc/meminfo','r')
             for line in f:
                 line_parts = line.split(':')
-                self.logger.debug('{} = {}'.format(line_parts[0].strip(), line_parts[1].strip()))
+                self.__logger.debug('{} = {}'.format(line_parts[0].strip(), line_parts[1].strip()))
                 mem[line_parts[0].strip()] = line_parts[1].strip()
             f.close()
         except:
-            self.logger.debug('Could not open /proc/meminfo to get cpu and raspberry revision info...')
+            self.__logger.debug('Could not open /proc/meminfo to get cpu and raspberry revision info...')
             return None
         # MemTotal
         try:
             mem['MemTotalFormatted'] = self.format_size( int(mem['MemTotal'].strip().split(' ')[0]) * 1000 )
         except:
-            self.logger.debug("MemTotalFormatted could not be formatted")
+            self.__logger.debug("MemTotalFormatted could not be formatted")
         # MemFree
         try:
             mem['MemFreeFormatted'] = self.format_size( int(mem['MemFree'].strip().split(' ')[0]) * 1000 )
         except:
-            self.logger.debug("MemFreeFormatted could not be formatted")
+            self.__logger.debug("MemFreeFormatted could not be formatted")
         # MemAvailable
         try:
             mem['MemAvailableFormatted'] = self.format_size( int(mem['MemAvailable'].strip().split(' ')[0]) * 1000 )
         except:
-            self.logger.debug("MemAvailableFormatted could not be formatted")
-        self.logger.debug("get_physical_memory() return {}".format(mem))
+            self.__logger.debug("MemAvailableFormatted could not be formatted")
+        self.__logger.debug("get_physical_memory() return {}".format(mem))
         return mem
 
 
     def format_size(self, val): # 18.983.407.616 - 18GB 18.983MB - 18.983.407KB - 18.983.407.616B
-        self.logger.debug("format_size()")
+        self.__logger.debug("format_size()")
         f = {}
         f['size'] = val
         f['unit'] = "Bytes"
@@ -182,7 +187,7 @@ class Raspberry(object):
         return f 
 
     def get_disk(self):
-        self.logger.debug("get_disk()")
+        self.__logger.debug("get_disk()")
         dsk = {}
         du = psutil.disk_usage('/')
         dsk['free'] = self.format_size(du.free)
@@ -194,21 +199,21 @@ class Raspberry(object):
 
 
     def getPid(self) -> str:
-        self.logger.debug("getPid(): {}".format(str(os.getpid())))
+        self.__logger.debug("getPid(): {}".format(str(os.getpid())))
         return str(os.getpid())
 
     def getPPid(self) -> str:
-        self.logger.debug("getPPid(): {}".format(str(os.getppid())))
+        self.__logger.debug("getPPid(): {}".format(str(os.getppid())))
         return str(os.getppid())
 
     def getPidStartTime(self, pid) -> str:
-        self.logger.debug("getPidStartTime()")
+        self.__logger.debug("getPidStartTime()")
         result = subprocess.run("ps -o start= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         # print(result.stderr)
         return result.stdout.rstrip()
 
     def getPidElapsedTime(self, pid) -> str:
-        self.logger.debug("getPidElapsedTime()")
+        self.__logger.debug("getPidElapsedTime()")
         result = subprocess.run("ps -o etime= -p {}".format(pid), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
         # print(result.stderr)
         return result.stdout.rstrip()
@@ -220,7 +225,7 @@ class Raspberry(object):
         Returns a string describing the uptime of this Oppleo instance
     """
     def uptime(self):
-        self.logger.debug("uptime()")
+        self.__logger.debug("uptime()")
         ut = {}
         ut['sysstarttime'] = self.getPidStartTime(1)
         ut['sysuptime'] = self.getPidElapsedTime(1)
@@ -238,7 +243,7 @@ class Raspberry(object):
     """
 
     def getPlatformType(self):
-        self.logger.debug("getPlatformType(): ".format(sys.platform))
+        self.__logger.debug("getPlatformType(): ".format(sys.platform))
         if sys.platform == 'linux':
             return 'Linux'
         if sys.platform == 'darwin':
@@ -302,7 +307,7 @@ class Raspberry(object):
 
     def get_all(self):
         try:
-            self.logger.debug("get_all()")
+            self.__logger.debug("get_all()")
         except Exception as e:
             pass
         data = {}

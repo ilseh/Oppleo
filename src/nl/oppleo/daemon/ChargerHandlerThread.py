@@ -34,7 +34,7 @@ oppleoConfig = OppleoConfig()
 class ChargerHandlerThread(object):
     threadLock = None
     __appSocketIO = None
-    logger = None
+    __logger = None
     evse_reader_thread = None
     rfid_reader_thread = None
     stop_event = None
@@ -49,7 +49,8 @@ class ChargerHandlerThread(object):
 
     def __init__(self, device, buzzer, evseOutput:EvseOutput=None, evseReader:EvseReader=None, appSocketIO:SocketIO=None):
         self.threadLock = threading.Lock()
-        self.logger = logging.getLogger('nl.oppleo.daemon.ChargerHandlerThread')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()
@@ -64,13 +65,13 @@ class ChargerHandlerThread(object):
 
     def start(self):
         self.stop_event.clear()
-        self.logger.debug('Launching Threads...')
+        self.__logger.debug('Launching Threads...')
 
-        self.logger.debug('.start() - start RGBLedControllerThread')
+        self.__logger.debug('.start() - start RGBLedControllerThread')
         oppleoConfig.rgblcThread = RGBLedControllerThread()
         oppleoConfig.rgblcThread.start()
 
-        self.logger.debug('.start() - start_background_task - evseReaderLoop')
+        self.__logger.debug('.start() - start_background_task - evseReaderLoop')
         # self.evse_reader_thread = self.__appSocketIO.start_background_task(self.evse_reader_thread)
         #   __appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
@@ -78,7 +79,7 @@ class ChargerHandlerThread(object):
         self.evse_reader_thread = threading.Thread(target=self.evseReaderLoop, name='EvseLedReaderThread')
         self.evse_reader_thread.start()
 
-        self.logger.debug('.start() start_background_task - rfidReaderLoop')
+        self.__logger.debug('.start() start_background_task - rfidReaderLoop')
         # self.rfid_reader_thread = self.__appSocketIO.start_background_task(self.rfidReaderLoop)
         #   __appSocketIO.start_background_task launches a background_task
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
@@ -87,7 +88,7 @@ class ChargerHandlerThread(object):
         self.rfid_reader_thread = threading.Thread(target=self.rfidReaderLoop, name='RfidReaderThread')
         self.rfid_reader_thread.start()
 
-        self.logger.debug('.start() - Done starting rfid reader and evse reader background tasks')
+        self.__logger.debug('.start() - Done starting rfid reader and evse reader background tasks')
 
 
     # evse_reader_thread
@@ -97,7 +98,7 @@ class ChargerHandlerThread(object):
         try:
             self.__evseReader.loop(self.stop_event.is_set, lambda evse_state: self.try_handle_charging(evse_state))
         except Exception as e:
-            self.logger.exception('.evseReaderLoop() - Could not start evse reader loop {}'.format(str(e)))
+            self.__logger.exception('.evseReaderLoop() - Could not start evse reader loop {}'.format(str(e)))
             oppleoConfig.rgblcThread.error = True
 
 
@@ -113,11 +114,11 @@ class ChargerHandlerThread(object):
     # webapp thread
     # rfid_reader_thread
     def rfidAuthorized(self, rfid:str) -> bool:
-        self.logger.debug(".rfidAuthorized() - rfid:{}".format(rfid))
+        self.__logger.debug(".rfidAuthorized() - rfid:{}".format(rfid))
 
         rfidData = RfidModel.get_one(rfid)
         if rfidData is None:
-            self.logger.warn("Unknown rfid offered ({}). Access denied and rfid value saved in db.".format(rfid))
+            self.__logger.warn("Unknown rfid offered ({}). Access denied and rfid value saved in db.".format(rfid))
             newRfid = RfidModel()
             newRfid.set({"rfid": rfid})
             newRfid.save()
@@ -133,14 +134,14 @@ class ChargerHandlerThread(object):
 
     # rfid_reader_thread
     def resume_session_if_applicable(self):
-        self.logger.debug(".resume_session_if_applicable()")
+        self.__logger.debug(".resume_session_if_applicable()")
 
         # Check if there was a charge session active when Oppleo was stopped.
         openChargeSession = ChargeSessionModel.getOpenChargeSession(self.device)
         if openChargeSession is None:
-            self.logger.info("No open charge session to resume.")
+            self.__logger.info("No open charge session to resume.")
         else:
-            self.logger.info("Resume charge session {} for rfid {}".format(openChargeSession.id, openChargeSession.rfid))
+            self.__logger.info("Resume charge session {} for rfid {}".format(openChargeSession.id, openChargeSession.rfid))
             # Start the VehicleChargeStatusMonitorThread
             oppleoConfig.vcsmThread = VehicleChargeStatusMonitorThread()
             oppleoConfig.vcsmThread.rfid = openChargeSession.rfid
@@ -156,14 +157,14 @@ class ChargerHandlerThread(object):
             if oppleoSystemConfig.rfidEnabled:
                 # Returns [int, str]
                 rfid, text = self.__rfidReader.read()
-                self.logger.info("Handle rfid:{} text:{}".format(rfid, text))
+                self.__logger.info("Handle rfid:{} text:{}".format(rfid, text))
                 self.handleOfferedRfid(str(rfid))
 
             # Sleep to prevent re-reading the same tag twice
             # time.sleep(0.25)
             time.sleep(0.75)
 
-        self.logger.info(".rfidReaderLoop() - Stopping RfidReader")
+        self.__logger.info(".rfidReaderLoop() - Stopping RfidReader")
 
     def rfidReaderLog(self):
         if self.__rfidReader is not None:
@@ -178,7 +179,7 @@ class ChargerHandlerThread(object):
 
     # rfid_reader_thread
     def handleOfferedRfid(self, rfid:str):
-        self.logger.debug(".handleOfferedRfid() - rfid {}".format(rfid))
+        self.__logger.debug(".handleOfferedRfid() - rfid {}".format(rfid))
         """
         TODO - hand callback function to check off-peak from the thread
         """
@@ -196,16 +197,16 @@ class ChargerHandlerThread(object):
                 # Case 1
                 if openSession.rfid != rfid:
                     # No go (Case 1)
-                    self.logger.info("Rfid [id={}][type={}] cannot stop charge session started by rfid [id={}][type={}]".format(
+                    self.__logger.info("Rfid [id={}][type={}] cannot stop charge session started by rfid [id={}][type={}]".format(
                         rfid, type(rfid), openSession.rfid, type(openSession.rfid)))
                     self.buzz_error()
                     oppleoConfig.rgblcThread.errorFlash = True
                     return
                 else:
                     # Correct rfid, close session (Case 1)
-                    self.logger.info("Rfid [id={}][type={}] stop charge session started by rfid [id={}][type={}]".format(
+                    self.__logger.info("Rfid [id={}][type={}] stop charge session started by rfid [id={}][type={}]".format(
                         rfid, type(rfid), openSession.rfid, type(openSession.rfid)))
-#                    self.logger.info("Rfid {} stop charge session".format(rfid))
+#                    self.__logger.info("Rfid {} stop charge session".format(rfid))
                     self.buzz_ok()
                     # Set end-time to now (when RFID was presented)
                     self.end_charge_session(charge_session=openSession, detect=False)
@@ -215,7 +216,7 @@ class ChargerHandlerThread(object):
                 # Case 2
                 if self.rfidAuthorized(rfid):
                     # Valid rfid, open charge session (Case 2)
-                    self.logger.info("Starting new charging session for rfid {}".format(rfid))
+                    self.__logger.info("Starting new charging session for rfid {}".format(rfid))
                     self.buzz_ok()
                     # Do not condense, an actual RFID was presented
                     self.start_charge_session(
@@ -238,7 +239,7 @@ class ChargerHandlerThread(object):
     def start_charge_session(self, rfid:str, trigger=ChargeSessionModel.TRIGGER_RFID, condense=False):
         global oppleoConfig
 
-        self.logger.debug(".start_charge_session() new charging session for rfid {}".format(rfid))
+        self.__logger.debug(".start_charge_session() new charging session for rfid {}".format(rfid))
 
         # Optimize: maybe get this from the latest db value rather than from the energy meter directly
 
@@ -247,7 +248,7 @@ class ChargerHandlerThread(object):
             oppleoConfig.energyDevice.enabled and
             oppleoConfig.energyDevice.energyModbusReader is not None):
             start_value = oppleoConfig.energyDevice.energyModbusReader.getTotalKWHHValue()
-            self.logger.debug(".start_charge_session() start_value from energyModbusReader: {}".format(start_value))
+            self.__logger.debug(".start_charge_session() start_value from energyModbusReader: {}".format(start_value))
 
         data_for_session = {
             "rfid"              : rfid, 
@@ -262,18 +263,18 @@ class ChargerHandlerThread(object):
         charge_session = ChargeSessionModel()
         charge_session.set(data_for_session)
         charge_session.save()
-        self.logger.info('.start_charge_session() New charge session started with {}'.format(charge_session.id))
+        self.__logger.info('.start_charge_session() New charge session started with {}'.format(charge_session.id))
 
         rfidObj = RfidModel.get_one(rfid)
         if rfidObj.vehicle_make.upper() == "TESLA" and rfidObj.get_odometer: 
             # Try to add odometer
-            self.logger.debug('.start_charge_session() Update odometer for this Tesla')
+            self.__logger.debug('.start_charge_session() Update odometer for this Tesla')
             self.save_tesla_values_in_thread(
                     charge_session_id=charge_session.id,
                     condense=condense
                     )
         # Emit websocket update
-        self.logger.debug('.start_charge_session() Send msg charge_session_started event ...{}'.format(charge_session.to_str))
+        self.__logger.debug('.start_charge_session() Send msg charge_session_started event ...{}'.format(charge_session.to_str))
         OutboundEvent.triggerEvent(
                     event='charge_session_started', 
                     id=oppleoConfig.chargerID,
@@ -310,7 +311,7 @@ class ChargerHandlerThread(object):
 
         if charge_session is None:
             # Somehow the session was already ended
-            self.logger.error(".end_charge_session() - session end requested, but no open session provided. (charge_session=None, detect={})".format(detect))
+            self.__logger.error(".end_charge_session() - session end requested, but no open session provided. (charge_session=None, detect={})".format(detect))
             return
 
         charge_session.end_value = 0
@@ -320,7 +321,7 @@ class ChargerHandlerThread(object):
             oppleoConfig.energyDevice.enabled and
             oppleoConfig.energyDevice.energyModbusReader is not None):
             charge_session.end_value = oppleoConfig.energyDevice.energyModbusReader.getTotalKWHHValue()
-            self.logger.debug(".end_charge_session() - end_value from energyModbusReader: {}".format(charge_session.end_value))
+            self.__logger.debug(".end_charge_session() - end_value from energyModbusReader: {}".format(charge_session.end_value))
 
         if detect:
             # end_time is the time the kWh was updated to this value, and the current went to 0
@@ -329,14 +330,14 @@ class ChargerHandlerThread(object):
                             charge_session.end_value
                             )
             charge_session.end_time = end_time if end_time is not None else datetime.now()
-            self.logger.debug('.end_charge_session() - Detected end time is {}'.format(charge_session.end_time.strftime("%d/%m/%Y, %H:%M:%S")))
+            self.__logger.debug('.end_charge_session() - Detected end time is {}'.format(charge_session.end_time.strftime("%d/%m/%Y, %H:%M:%S")))
         else:
             charge_session.end_time = datetime.now()
         charge_session.total_energy = charge_session.end_value - charge_session.start_value
         charge_session.total_price = round(charge_session.total_energy * charge_session.tariff * 100) /100
         charge_session.save()
         # Emit websocket update
-        self.logger.debug('.end_charge_session() - Send msg charge_session_ended ...'.format(charge_session.to_str))
+        self.__logger.debug('.end_charge_session() - Send msg charge_session_ended ...'.format(charge_session.to_str))
         OutboundEvent.triggerEvent(
                 event='charge_session_ended', 
                 id=oppleoConfig.chargerID,
@@ -366,7 +367,7 @@ class ChargerHandlerThread(object):
     # rfid_reader_thread
     # charge_session_id is the row id in the database table
     def save_tesla_values_in_thread(self, charge_session_id, condense=False):
-        self.logger.debug('.save_tesla_values_in_thread() id = {} and condense = {}'.format(charge_session_id, condense))
+        self.__logger.debug('.save_tesla_values_in_thread() id = {} and condense = {}'.format(charge_session_id, condense))
         uotu = UpdateOdometerTeslaUtil()
         uotu.charge_session_id = charge_session_id
         uotu.condense = condense
@@ -377,7 +378,7 @@ class ChargerHandlerThread(object):
         #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
         #   Therefore use standard threads
         if oppleoConfig.vuThread is not None and oppleoConfig.vuThread.is_alive():
-            self.logger.warning('.save_tesla_values_in_thread() VehicleUpdateThread was running (odometer) - running another one')
+            self.__logger.warning('.save_tesla_values_in_thread() VehicleUpdateThread was running (odometer) - running another one')
         oppleoConfig.vuThread = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
         oppleoConfig.vuThread.start()
 
@@ -392,7 +393,7 @@ class ChargerHandlerThread(object):
 
 
     def stop(self, block=False):
-        self.logger.debug('.stop() - Requested to stop')
+        self.__logger.debug('.stop() - Requested to stop')
         if oppleoConfig.rgblcThread is not None:
             oppleoConfig.rgblcThread.stop()
         self.stop_event.set()
@@ -403,7 +404,7 @@ class ChargerHandlerThread(object):
         try:
             self.handle_charging(evse_state)
         except Exception as e:
-            self.logger.error(".try_handle_charging() - Error handle charging: %s", e, exc_info=True)
+            self.__logger.error(".try_handle_charging() - Error handle charging: %s", e, exc_info=True)
             oppleoConfig.rgblcThread.error = True
 
 
@@ -411,7 +412,7 @@ class ChargerHandlerThread(object):
     # evse_reader_thread
     def handle_charging(self, evse_state):
         if evse_state == EvseState.EVSE_STATE_CHARGING:
-            # self.logger.debug("Device is currently charging")
+            # self.__logger.debug("Device is currently charging")
             if not self.is_status_charging:
                 # Switching to charging
                 """
@@ -423,7 +424,7 @@ class ChargerHandlerThread(object):
                 self.handle_auto_session()
 
                 self.is_status_charging = True
-                self.logger.debug('.handle_charging() - Send msg charge_session_status_update ...{}'.format(EvseStateName(evse_state)))
+                self.__logger.debug('.handle_charging() - Send msg charge_session_status_update ...{}'.format(EvseStateName(evse_state)))
                 OutboundEvent.triggerEvent(
                         event='charge_session_status_update', 
                         status=evse_state, 
@@ -438,16 +439,16 @@ class ChargerHandlerThread(object):
                                                             )
 
 
-            self.logger.debug('.handle_charging() - Start charging light pulse')
+            self.__logger.debug('.handle_charging() - Start charging light pulse')
             oppleoConfig.rgblcThread.charging = True
 
         else:
-            # self.logger.debug("Not charging")
+            # self.__logger.debug("Not charging")
             # Not charging. If it was charging, set light back to previous (before charging) light
             if self.is_status_charging:
                 self.is_status_charging = False
-                self.logger.debug(".handle_charging() - Charging is stopped")
-                self.logger.debug('.handle_charging() - Send msg charge_session_status_update ({}:{})...'.format(evse_state, EvseStateName(evse_state=evse_state)))
+                self.__logger.debug(".handle_charging() - Charging is stopped")
+                self.__logger.debug('.handle_charging() - Send msg charge_session_status_update ({}:{})...'.format(evse_state, EvseStateName(evse_state=evse_state)))
                 OutboundEvent.triggerEvent(
                         event='charge_session_status_update',  
                         # INACTIVE IS ALSO CONNECTED
@@ -464,7 +465,7 @@ class ChargerHandlerThread(object):
 
         if oppleoConfig.rgblcThread.charging != (evse_state == EvseState.EVSE_STATE_CHARGING):
             # Only the change
-            self.logger.debug('.handle_charging() - Charging light pulse to {} ({}:{})'.format(str(evse_state == EvseState.EVSE_STATE_CHARGING), evse_state, EvseStateName(evse_state=evse_state)))
+            self.__logger.debug('.handle_charging() - Charging light pulse to {} ({}:{})'.format(str(evse_state == EvseState.EVSE_STATE_CHARGING), evse_state, EvseStateName(evse_state=evse_state)))
             oppleoConfig.rgblcThread.charging = (evse_state == EvseState.EVSE_STATE_CHARGING)
 
         # Memorize
@@ -478,7 +479,7 @@ class ChargerHandlerThread(object):
     # Only called upon switch from not-charging to charging by the EVSE, so a session is ongoin
     # evse_reader_thread
     def handle_auto_session(self):
-        self.logger.debug('.handle_auto_session() enabled: {}'.format(oppleoConfig.autoSessionEnabled))
+        self.__logger.debug('.handle_auto_session() enabled: {}'.format(oppleoConfig.autoSessionEnabled))
         # Open session, otherwise this method is not called
         if oppleoConfig.autoSessionEnabled: 
             edmm = EnergyDeviceMeasureModel()
@@ -487,7 +488,7 @@ class ChargerHandlerThread(object):
                     (datetime.today() - timedelta(minutes=oppleoConfig.autoSessionMinutes))
                     )
             if kwh_used > oppleoConfig.autoSessionEnergy:
-                self.logger.debug('.handle_auto_session() - Keep the current session. More energy ({}kWh) used than {}kWh in {} minutes'
+                self.__logger.debug('.handle_auto_session() - Keep the current session. More energy ({}kWh) used than {}kWh in {} minutes'
                            .format(
                                 kwh_used,
                                 oppleoConfig.autoSessionEnergy, 
@@ -495,7 +496,7 @@ class ChargerHandlerThread(object):
                             )
                         )
             else:
-                self.logger.info('.handle_auto_session() - Start a new session (auto-session). Less energy ({}kWh) used than {}kWh in {} minutes'
+                self.__logger.info('.handle_auto_session() - Start a new session (auto-session). Less energy ({}kWh) used than {}kWh in {} minutes'
                            .format(
                                 kwh_used,
                                 oppleoConfig.autoSessionEnergy,
@@ -507,7 +508,7 @@ class ChargerHandlerThread(object):
                     charge_session = ChargeSessionModel.get_open_charge_session_for_device(self.device)
                     if charge_session is None:
                         # No open charge session found
-                        self.logger.warn(".handle_auto_session() - was expecting an open charge session to close...")
+                        self.__logger.warn(".handle_auto_session() - was expecting an open charge session to close...")
 
                     # Try to detect the last power consumption
                     self.end_charge_session(charge_session, True)
@@ -530,7 +531,7 @@ class ChargerHandlerThread(object):
 
     # Callback from MeasureElectricityUsageThread with updated EnergyDeviceMeasureModel
     def energyUpdate(self, device_measurement):
-        self.logger.debug('.energyUpdate() callback...')
+        self.__logger.debug('.energyUpdate() callback...')
         # Open charge session for this energy device?
         with self.threadLock:
             open_charge_session_for_device = \
@@ -538,21 +539,21 @@ class ChargerHandlerThread(object):
                         device_measurement.energy_device_id
                 )
             if open_charge_session_for_device != None:
-                self.logger.debug('.energyUpdate() open charge session, updating usage. device_measurement {}, open_charge_session_for_device {}'.format(str(device_measurement.to_str()), str(open_charge_session_for_device.to_str())))
+                self.__logger.debug('.energyUpdate() open charge session, updating usage. device_measurement {}, open_charge_session_for_device {}'.format(str(device_measurement.to_str()), str(open_charge_session_for_device.to_str())))
                 # Update session usage
                 open_charge_session_for_device.end_value = device_measurement.kw_total
-                self.logger.debug('.energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
+                self.__logger.debug('.energyUpdate() end_value to %s...' % open_charge_session_for_device.end_value)
                 open_charge_session_for_device.total_energy = \
                     round((open_charge_session_for_device.end_value - open_charge_session_for_device.start_value) *10) /10
-                self.logger.debug('.energyUpdate() total_energy to %s...' % open_charge_session_for_device.total_energy)
+                self.__logger.debug('.energyUpdate() total_energy to %s...' % open_charge_session_for_device.total_energy)
                 open_charge_session_for_device.total_price = \
                     round(open_charge_session_for_device.total_energy * open_charge_session_for_device.tariff * 100) /100 
-                self.logger.debug('.energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
+                self.__logger.debug('.energyUpdate() total_price to %s...' % open_charge_session_for_device.total_price)
                 open_charge_session_for_device.save() 
                 # Emit change events
 
                 self.counter += 1
-                self.logger.debug('.energyUpdate() Send msg {} for charge_session_data_update ...'.format(self.counter))
+                self.__logger.debug('.energyUpdate() Send msg {} for charge_session_data_update ...'.format(self.counter))
                 # Emit only to authenticated users, not public
                 OutboundEvent.triggerEvent(
                         event='charge_session_data_update', 
@@ -572,9 +573,9 @@ class ChargerHandlerThread(object):
                 """
                 rfidObj = RfidModel.get_one(open_charge_session_for_device.rfid)
                 if rfidObj is not None:
-                    self.logger.debug('.energyUpdate() retrieved RFID (name={}, id={}'.format(rfidObj.name, rfidObj.rfid))
+                    self.__logger.debug('.energyUpdate() retrieved RFID (name={}, id={}'.format(rfidObj.name, rfidObj.rfid))
                 else:
-                    self.logger.warn('.energyUpdate() retrieving RFID failed!!!')
+                    self.__logger.warn('.energyUpdate() retrieving RFID failed!!!')
                 homeAssistantMqttHandlerThread.sessionUpdate(energy=open_charge_session_for_device.total_energy,
                                                              cost=open_charge_session_for_device.total_price,
                                                              end_value=open_charge_session_for_device.end_value,

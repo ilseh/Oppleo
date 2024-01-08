@@ -2,19 +2,21 @@ import threading
 import logging
 import time
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.services.EvseOutput import EvseOutput
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 class PeakHoursMonitorThread(object):
     thread = None
     threadLock = None
     appSocketIO = None
-    logger = None
+    __logger = None
     stop_event = None
     # Check EVSE status change every 2 seconds [seconds]
     changeEvseStatusCheckInterval = 2
@@ -24,16 +26,17 @@ class PeakHoursMonitorThread(object):
     sleepInterval = 0.25
 
     def __init__(self, appSocketIO ):
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
         self.threadLock = threading.Lock()
         self.stop_event = threading.Event()
-        self.logger = logging.getLogger('nl.oppleo.daemon.PeakHoursMonitorThread')
         self.appSocketIO = appSocketIO
         self.sleepInterval = min(self.changeEvseStatusCheckInterval, self.offPeakWindowCheckInterval) / 4
 
 
     def start(self):
         self.stop_event.clear()
-        self.logger.debug('Launching Thread...')
+        self.__logger.debug('Launching Thread...')
 
         self.thread = threading.Thread(target=self.monitor, name='PeakHoursMonitorThread')
         self.thread.start()
@@ -84,7 +87,7 @@ class PeakHoursMonitorThread(object):
                                 namespace='/charge_session',
                                 public=True
                             )
-                    self.logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( 
+                    self.__logger.debug('Off Peak Window Change check ... (wasOffPeak:{}, isOffPeak:{})'.format( 
                                     wasOffPeak, 
                                     evseOutput.isOffPeak
                                     )
@@ -95,7 +98,7 @@ class PeakHoursMonitorThread(object):
                 EVSE Status Change check
                 """
                 if (time.time() *1000.0) > (changeEvseStatusCheckLastRun + (self.changeEvseStatusCheckInterval *1000.0)):
-                    self.logger.debug('EVSE Status Change check ...')
+                    self.__logger.debug('EVSE Status Change check ...')
                     # Time to check if the EVSE should be disabled in Peak or Enabled in Off Peak
 
                     # When to switch the EVSE off:
@@ -108,7 +111,7 @@ class PeakHoursMonitorThread(object):
                             not oppleoConfig.allowPeakOnePeriod  \
                             ) \
                     ):
-                        self.logger.debug('Peak hours, EVSE ON and Off Peak enabled (not bypassed). Switching EVSE OFF')
+                        self.__logger.debug('Peak hours, EVSE ON and Off Peak enabled (not bypassed). Switching EVSE OFF')
                         # Switch the EVSE off untill Off Peak hours
                         evseOutput.switch_off()  
 
@@ -128,7 +131,7 @@ class PeakHoursMonitorThread(object):
                                                     )
                         if csm is not None:
                             # Open charge session, enable the EVSE
-                            self.logger.debug('Off Peak hours, EVSE OFF and Active charge session. Switching EVSE ON')
+                            self.__logger.debug('Off Peak hours, EVSE OFF and Active charge session. Switching EVSE ON')
                             evseOutput.switch_on()
                     if evseOutput.isOffPeak:
                         with self.threadLock:
@@ -142,14 +145,14 @@ class PeakHoursMonitorThread(object):
                 # Sleep for quite a while, and yield for other threads
                 self.appSocketIO.sleep(self.sleepInterval)
             except Exception as e:
-                self.logger.error("Exception tracking off peak hours", exc_info=True)
+                self.__logger.error("Exception tracking off peak hours", exc_info=True)
 
 
-        self.logger.info("Stopping PeakHoursMonitorThread")
+        self.__logger.info("Stopping PeakHoursMonitorThread")
 
 
     def stop(self, block=False):
-        self.logger.debug('Requested to stop')
+        self.__logger.debug('Requested to stop')
         self.stop_event.set()
 
 
