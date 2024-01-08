@@ -352,7 +352,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
         def __on_message__(client, userdata, message):
             homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-            homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message [client={client}, userdata={userdata}, message={message}].".format(client=client, userdata=userdata, message=message))
+            homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message [client={client}, userdata={userdata}, topic={topic}, message={message}].".format(client=client, userdata=userdata, topic=message.topic, message=message.payload.decode("utf-8")))
 
             # BLWT
             if message.topic == oppleoSystemConfig.homeAssistantMqttBirthAndLastWillAndTestament:
@@ -395,11 +395,13 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 # Done
                 return
 
-            key = message.topic.split('/')[2].split('_')[1] 
-            homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message [key={key}].".format(key=key))
-
             # homeassistant/select/OPPLEOA001N01_Token/select
-            key = message.topic.split('/')[2].split('_')[1] 
+            key = None
+            try:
+                key = message.topic.split('/')[2].split('_')[1] 
+            except Exception as e:
+                homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message - could not process key from topic [topic={topic}].".format(topic=message.topic))
+
             homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message [key={key}].".format(key=key))
             if key == "Token":
                 homeAssistantMqttHandlerThread.__logger.debug("HomeAssistant MQTT Broker - Request to switch token to {rToken}...".format(rToken=message.payload.decode("utf-8")))
@@ -431,18 +433,10 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 self.__selectedToken = selectedRfid
                 homeAssistantMqttHandlerThread.publish({'Token': (selectedRfid.name if selectedRfid.name != None and selectedRfid.name != "" else selectedRfid.rfid)})
 
-
-
-            print("received message =",str(message.payload.decode("utf-8")))
-            data = "{'" + str(message.payload) + "', " + str(message.topic) + "}"
-            print("received message = {}".format(data) )
             # Is this a Birth message from Home Assistant?
             # - if so send a Discovery and send Last Status
-
             # Is this a Last Will and testament message from Home Assistant?
             # - notify connection lost due to Last Will and Testament
-
-            pass
 
         if oppleoSystemConfig.homeAssistantMqttClientId != None and oppleoSystemConfig.homeAssistantMqttClientId != '':
             self.__client_id = oppleoSystemConfig.homeAssistantMqttClientId

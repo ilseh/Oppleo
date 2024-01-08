@@ -124,12 +124,28 @@ try:
             # request.remote_addr - returns remote address, or IP of reverse proxy
             # request.headers.get('X-Forwarded-For') - returns router address (router is behind the reverse proxy)
 
+            # TODO REMOVE - EXTRA LOGGINH
+            oppleoLogger.error('config_dashboard_access_restriction decorator [1] (restrictDashboardAccess: {restrictDashboardAccess}, remote_addr: {remote_addr}, routerIPAddress: {routerIPAddress}, is_authenticated: {is_authenticated})'.format(
+                restrictDashboardAccess=oppleoConfig.restrictDashboardAccess, 
+                remote_addr=request.remote_addr,
+                routerIPAddress=oppleoConfig.routerIPAddress,
+                is_authenticated=current_user.is_authenticated)
+                )
+
             if (not oppleoConfig.restrictDashboardAccess or \
                 ( oppleoConfig.allowLocalDashboardAccess and request.remote_addr != oppleoConfig.routerIPAddress ) or \
                 current_user.is_authenticated):
+
+                # TODO REMOVE - EXTRA LOGGINH
+                oppleoLogger.error('config_dashboard_access_restriction decorator [2] allowed')
+
                 return function(*args, **kwargs)
             # return abort(403) # unauthenticated
             # Not allowed.
+
+            # TODO REMOVE - EXTRA LOGGINH
+            oppleoLogger.error('config_dashboard_access_restriction decorator [3] NOT allowed')
+
             # delete old - never used - cookie
             if 'login_next' in session:
                 del session['login_next']
