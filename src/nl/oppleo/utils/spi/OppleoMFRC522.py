@@ -7,6 +7,10 @@ import signal
 import time
 import logging
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 """
     Small improvements on the MFRC522 class in https://github.com/pimylifeup/MFRC522-python/blob/master/mfrc522/MFRC522.py
     - add SimpleFRMC522 read function with yield
