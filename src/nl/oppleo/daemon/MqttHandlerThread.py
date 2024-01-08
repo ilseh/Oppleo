@@ -38,9 +38,10 @@ class MqttHandlerThread(object):
         self.stop_event.clear()
         self.__logger.debug('Launching Thread...')
 
-        self.__logger.debug('.start() - start MqttHandlerThread')
-        self.__mqtt_handler_thread = threading.Thread(target=self.mqttReaderLoop, name='MqttHandlerThread')
-        self.__mqtt_handler_thread.start()
+        if self.__mqtt_handler_thread is None or not self.__mqtt_handler_thread.is_alive():
+            self.__logger.debug('.start() - start MqttHandlerThread')
+            self.__mqtt_handler_thread = threading.Thread(target=self.mqttReaderLoop, name='MqttHandlerThread')
+            self.__mqtt_handler_thread.start()
 
         self.__logger.debug('.start() - Done starting MqttHandlerThread background tasks')
 

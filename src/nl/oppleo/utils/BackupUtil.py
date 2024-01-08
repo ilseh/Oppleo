@@ -114,18 +114,17 @@ class BackupUtil(object, metaclass=Singleton):
         automatically creates one 
     """
     def startBackupMonitorThread(self) -> bool:
-        self.__logger.debug('startBackupMonitorThread() - BackupMonitorThread')
-        # self.thread = oppleoConfig.appSocketIO.start_background_task(self.monitorEnergyDevicesLoop)
-        #   appSocketIO.start_background_task launches a background_task
-        #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
-        #   Therefore use standard threads
-        if self.monitorThread is not None and self.monitorThread.is_alive():
-            # Thread already running, don't start another one 
-            return False
-        self.stop_event.clear()
-        self.monitorThread = threading.Thread(target=self.monitorBackupDueStatusLoop, name='BackupMonitorThread')
-        self.monitorThread.start()
-        return True
+        if self.monitorThread is None or not self.monitorThread.is_alive():
+            self.__logger.debug('startBackupMonitorThread() - BackupMonitorThread')
+            # self.thread = oppleoConfig.appSocketIO.start_background_task(self.monitorEnergyDevicesLoop)
+            #   appSocketIO.start_background_task launches a background_task
+            #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
+            #   Therefore use standard threads
+            self.stop_event.clear()
+            self.monitorThread = threading.Thread(target=self.monitorBackupDueStatusLoop, name='BackupMonitorThread', daemon=True)
+            self.monitorThread.start()
+            return True
+        return False
 
 
     def stopBackupMonitorThread(self) -> bool:

@@ -134,8 +134,9 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         self.__stop_event.clear()
         self.__logger.debug('Launching HomeAssistant Mqtt Thread...')
 
-        self.__thread = threading.Thread(target=self.__loop__, name='HomeAssistantMqttThread')
-        self.__thread.start()
+        if self.__thread is None or not self.__thread.is_alive():
+            self.__thread = threading.Thread(target=self.__loop__, name='HomeAssistantMqttThread')
+            self.__thread.start()
 
 
     def is_alive(self):

@@ -199,10 +199,11 @@ class RGBLedControllerThread(object):
 
     def start(self):
         self.stopEvent.clear()
-        self.__logger.debug('Launching Thread...')
 
-        self.thread = threading.Thread(target=self.run, name='RGBLedControllerThread')
-        self.thread.start()
+        if self.thread is None or not self.thread.is_alive():
+            self.__logger.debug('Launching Thread...')
+            self.thread = threading.Thread(target=self.run, name='RGBLedControllerThread', daemon=True)
+            self.thread.start()
 
 
     def stop(self):

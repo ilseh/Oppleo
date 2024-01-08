@@ -3493,8 +3493,9 @@ def requestOdometerUpdate():
             'msg'   : 'Already running'
             })
 
-    oppleoConfig.vuThread = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
-    oppleoConfig.vuThread.start()
+    if oppleoConfig.vuThread is None or not oppleoConfig.vuThread.is_alive():
+        oppleoConfig.vuThread = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
+        oppleoConfig.vuThread.start()
 
     return jsonify({ 
         'status'        : HTTP_CODE_202_ACCEPTED,

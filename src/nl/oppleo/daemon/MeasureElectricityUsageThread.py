@@ -28,13 +28,14 @@ class MeasureElectricityUsageThread(object):
     def start(self):
         self.stop_event.clear()
         self.__logger.debug('Launching background task...')
-        self.__logger.debug('start_background_task() - monitorEnergyDeviceLoop')
-        # self.thread = self.appSocketIO.start_background_task(self.monitorEnergyDeviceLoop)
-        #   appSocketIO.start_background_task launches a background_task
-        #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
-        #   Therefore use standard threads
-        self.thread = threading.Thread(target=self.monitorEnergyDeviceLoop, name='MeasureElectricityUsageThread')
-        self.thread.start()
+        if self.thread is None or not self.thread.is_alive():
+            self.__logger.debug('start_background_task() - monitorEnergyDeviceLoop')
+            # self.thread = self.appSocketIO.start_background_task(self.monitorEnergyDeviceLoop)
+            #   appSocketIO.start_background_task launches a background_task
+            #   This really doesn't do parallelism well, basically runs the whole thread befor it yields...
+            #   Therefore use standard threads
+            self.thread = threading.Thread(target=self.monitorEnergyDeviceLoop, name='MeasureElectricityUsageThread')
+            self.thread.start()
 
 
     def stop(self):

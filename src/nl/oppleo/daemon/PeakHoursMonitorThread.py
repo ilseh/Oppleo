@@ -36,10 +36,11 @@ class PeakHoursMonitorThread(object):
 
     def start(self):
         self.stop_event.clear()
-        self.__logger.debug('Launching Thread...')
 
-        self.thread = threading.Thread(target=self.monitor, name='PeakHoursMonitorThread')
-        self.thread.start()
+        if self.thread is None or not self.thread.is_alive():
+            self.__logger.debug('Launching Thread...')
+            self.thread = threading.Thread(target=self.monitor, name='PeakHoursMonitorThread')
+            self.thread.start()
 
 
     # PeakHoursMonitorThread

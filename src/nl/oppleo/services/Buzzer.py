@@ -67,7 +67,7 @@ class BuzzerProd(object):
 
     def buzz_other_thread(self, buzz_duration_s, iterations=1):
         self.__logger.debug("Starting buzzer in other thread")
-        thread_for_pulse = threading.Thread(target=self.buzz, name="BuzzerThread", args=(buzz_duration_s, iterations))
+        thread_for_pulse = threading.Thread(target=self.buzz, name="BuzzerThread", args=(buzz_duration_s, iterations), daemon=True)
         thread_for_pulse.start()
 
 

@@ -206,12 +206,15 @@ class VehicleChargeStatusMonitorThread(object):
             public      = False
             )
 
+
     def start(self):
         self.__stop_event.clear()
-        self.__logger.debug('Launching Thread...')
+        if self.__thread is None or not self.__thread.is_alive():
+            self.__logger.debug('Launching Thread...')
 
-        self.__thread = threading.Thread(target=self.monitor, name='VehicleChargeStatusMonitorThread')
-        self.__thread.start()
+            self.__thread = threading.Thread(target=self.monitor, name='VehicleChargeStatusMonitorThread')
+            self.__thread.start()
+
 
     def stop(self, block=False):
         self.__logger.debug('Requested to stop')
