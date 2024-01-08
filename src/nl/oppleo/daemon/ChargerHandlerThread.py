@@ -67,7 +67,7 @@ class ChargerHandlerThread(object):
         self.stop_event.clear()
         self.__logger.debug('Launching Threads...')
 
-        if self.rgblcThread is None or not self.rgblcThread.is_alive():
+        if oppleoConfig.rgblcThread is None or not oppleoConfig.rgblcThread.is_alive():
             self.__logger.debug('.start() - start RGBLedControllerThread')
             # Thread not running, start one 
             oppleoConfig.rgblcThread = RGBLedControllerThread()
