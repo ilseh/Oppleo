@@ -545,15 +545,15 @@ except DbException as dbe:
 
         # Oppleo Limp mode Prowl apiKey and no chargerID
         if oppleoSystemConfig.pushoverEnabled:
-            from nl.oppleo.services.PushMessagePushover import PushMessagePushover
-            PushMessagePushover.sendMessage(
+            from nl.oppleo.services.PushMessagePushover import pushMessagePushover
+            pushMessagePushover.sendMessage(
                 title="Limp mode", 
                 message="Database exception caused limp mode at {}. [signature: {}]"
                     .format(
                         datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                         oppleoSystemConfig.SIGNATURE
                     ),
-                priority=PushMessagePushover.priorityHigh,
+                priority=pushMessagePushover.priorityHigh,
                 apiKey=oppleoSystemConfig.pushoverApiKey,
                 userKey=oppleoSystemConfig.pushoverUserKey,
                 device=oppleoSystemConfig.pushoverDevice,
