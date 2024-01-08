@@ -80,6 +80,7 @@ class RGBLedControllerThread(object):
     ERROR_FLASH_DURATION_MILLIS = 400   # Duration in millisec of an Error Flash (card rejected etc.)
 
     __logger = None
+    thread = None
     threadLock = None
     stopEvent = None
 
