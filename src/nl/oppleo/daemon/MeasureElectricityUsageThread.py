@@ -12,6 +12,7 @@ oppleoConfig = OppleoConfig()
 
 class MeasureElectricityUsageThread(object):
     __logger = None
+    thread = None
     appSocketIO = None
     threadLock = None
     stop_event = None

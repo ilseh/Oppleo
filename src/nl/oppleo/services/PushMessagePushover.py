@@ -97,11 +97,11 @@ class PushMessagePushover(object, metaclass=Singleton):
                 return response_dict['sounds']
 
         except requests.exceptions.ConnectTimeout as ct:
-            self.__logger.warn("self.availableSounds(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            self.__logger.warn("self.userValidation(): ConnectTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
         except requests.ReadTimeout as rt:
-            self.__logger.warn("self.availableSounds(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
+            self.__logger.warn("self.userValidation(): ReadTimeout (>{}s)".format(oppleoSystemConfig.httpTimeout))
         except Exception as e:
-            self.__logger.warn("self.availableSounds(): Exception {} not Ok!".format(e))
+            self.__logger.warn("self.userValidation(): Exception {} not Ok!".format(e))
     
         return None
 
@@ -146,7 +146,7 @@ class PushMessagePushover(object, metaclass=Singleton):
                 url     = self.__API_SOUNDS_BASE + '?token=' + apiKey,
                 timeout = oppleoSystemConfig.httpTimeout
             )
-            self.__logger.debug("Result {} - {} ".format(r.status_code, r.reason))
+            self.__logger.debug("self.availableSounds(): Result {} - {} ".format(r.status_code, r.reason))
             if r.status_code == self.HTTP_200_OK:
                 self.__logger.info("self.availableSounds(): status code {} Ok".format(r.status_code))
                 response_dict = json.loads(r.text)
