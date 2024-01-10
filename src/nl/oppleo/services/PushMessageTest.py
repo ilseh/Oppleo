@@ -1,3 +1,3 @@
-from nl.oppleo.services.PushMessage import PushMessage
+from nl.oppleo.services.PushMessage import pushMessage
 
-PushMessage.sendMessage("Test title", "Test message of some more words", PushMessage.priorityEmergency)
+pushMessage.sendMessage("Test title", "Test message of some more words", pushMessage.priorityEmergency)

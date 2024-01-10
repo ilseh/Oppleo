@@ -24,7 +24,7 @@ class AccesslogModel(Base):
     days = Column(Integer)          # Individual days
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.models.AccesslogModel')
+        self.__logger = logging.getLogger(__name__)
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method

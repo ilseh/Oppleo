@@ -8,10 +8,16 @@ from sqlalchemy import orm, func, Column, String, Integer, Boolean, Float, desc
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm.session import make_transient
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 class EnergyDeviceModel(Base):
     """
     EnergyDevice Model
     """
+
+    __logger = None
 
     # table name
     __tablename__ = 'energy_device'
@@ -31,7 +37,8 @@ class EnergyDeviceModel(Base):
     device_enabled = Column(Boolean)
 
     def __init__(self, data):
-        pass
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))  
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
@@ -49,7 +56,7 @@ class EnergyDeviceModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
     """
@@ -65,7 +72,7 @@ class EnergyDeviceModel(Base):
             EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            EnergyDeviceModel.logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
+            EnergyDeviceModel.__logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
             raise DbException("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)))
         return edm
     """
@@ -78,7 +85,7 @@ class EnergyDeviceModel(Base):
             db_session.commit()
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
 
 
     """
@@ -94,7 +101,7 @@ class EnergyDeviceModel(Base):
             EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            EnergyDeviceModel.logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
+            EnergyDeviceModel.__logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
             raise DbException("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)))
         return edm
     """
@@ -117,7 +124,7 @@ class EnergyDeviceModel(Base):
             EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            EnergyDeviceModel.logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
+            EnergyDeviceModel.__logger.error("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)), exc_info=True)
             raise DbException("Could not get energy device from table {} in database ({})".format(EnergyDeviceModel.__tablename__, str(e)))
         return edm
 
@@ -135,7 +142,7 @@ class EnergyDeviceModel(Base):
             EnergyDeviceModel.__cleanupDbSession(db_session, EnergyDeviceModel.__class__)
         except Exception as e:
             # Nothing to roll back
-            EnergyDeviceModel.logger.error("Could not duplicate energy device {} to {} in table {} in database ({})".format(self.energy_device_id, newEnergyDeviceId, self.__tablename__, str(e)), exc_info=True)
+            EnergyDeviceModel.__logger.error("Could not duplicate energy device {} to {} in table {} in database ({})".format(self.energy_device_id, newEnergyDeviceId, self.__tablename__, str(e)), exc_info=True)
             raise DbException("Could not duplicate energy device {} to {} in table {} in database ({})".format(self.energy_device_id, newEnergyDeviceId, self.__tablename__, str(e)))
         return self
 
@@ -148,7 +155,7 @@ class EnergyDeviceModel(Base):
             count_q = q.statement.with_only_columns([func.count()]).order_by(None)
             count = q.session.execute(count_q).scalar()
         except Exception as e:
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return count
 

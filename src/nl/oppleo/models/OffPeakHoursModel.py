@@ -12,6 +12,10 @@ from sqlalchemy.exc import InvalidRequestError
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 """
     Off-Peak Hours
         Day is timestamp.date().day based - day of month is 1 based (1st = 1)
@@ -31,7 +35,7 @@ class Weekday(IntEnum):
 
 
 class OffPeakHoursModel(Base):
-    logger = logging.getLogger('nl.oppleo.models.OffPeakHoursModel')
+    __logger = None
     __tablename__ = 'off_peak_hours'
 
     """ WEEKDAY IS ZERO BASED - DATETIME WEEKDAY IS ZERO BASED - IN DATABASE DUTCH TEXT """
@@ -54,7 +58,8 @@ class OffPeakHoursModel(Base):
     off_peak_end = Column(Time)
 
     def __init__(self):
-        pass
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))       
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
@@ -75,7 +80,7 @@ class OffPeakHoursModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not save to {} table in database".format(self.__tablename__ ))
 
 
@@ -88,7 +93,7 @@ class OffPeakHoursModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            self.logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not delete from {} table in database".format(self.__tablename__ ))
 
     @staticmethod
@@ -103,7 +108,7 @@ class OffPeakHoursModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             db_session.rollback()
-            OffPeakHoursModel.logger.error("Could not delete {} from {} table in database".format(id, OffPeakHoursModel.__tablename__ ), exc_info=True)
+            OffPeakHoursModel.__logger.error("Could not delete {} from {} table in database".format(id, OffPeakHoursModel.__tablename__ ), exc_info=True)
             raise DbException("Could not delete {} from {} table in database".format(id, OffPeakHoursModel.__tablename__ ))
 
     @staticmethod
@@ -130,9 +135,9 @@ class OffPeakHoursModel(Base):
 
     # Timestamp of type datetime
     def is_off_peak(self, timestamp) -> bool:
-        self.logger.debug('is_off_peak()')
+        self.__logger.debug('is_off_peak()')
         if not isinstance(timestamp, datetime):
-            self.logger.debug('is_off_peak() - timestamp is not of type datetime')
+            self.__logger.debug('is_off_peak() - timestamp is not of type datetime')
             return False
             
         db_session = DbSession()
@@ -147,11 +152,11 @@ class OffPeakHoursModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
 
         if r is not None and self.get_count(r) > 0:
-            self.logger.debug('is_off_peak(): DayOfWeek {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
+            self.__logger.debug('is_off_peak(): DayOfWeek {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
             return True
 
         # Is this a public holiday?
@@ -178,14 +183,14 @@ class OffPeakHoursModel(Base):
             self.__cleanupDbSession(db_session, self.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
 
         if r is not None and self.get_count(r) > 0:
-            self.logger.debug('is_off_peak(): Holiday {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
+            self.__logger.debug('is_off_peak(): Holiday {} within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
             return True
 
-        self.logger.debug('is_off_peak(): {} not within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
+        self.__logger.debug('is_off_peak(): {} not within off-peak'.format(str(timestamp.strftime("%d/%m/%Y, %H:%M:%S"))))
         return False
 
 
@@ -227,7 +232,7 @@ class OffPeakHoursModel(Base):
             self.__cleanupDbSession(db_session, OffPeakHoursModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            OffPeakHoursModel.logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
+            OffPeakHoursModel.__logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ))
         return r
 
@@ -245,7 +250,7 @@ class OffPeakHoursModel(Base):
             OffPeakHoursModel.__cleanupDbSession(db_session, OffPeakHoursModel.__class__.__name__)
         except Exception as e:
             # Nothing to roll back
-            OffPeakHoursModel.logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
+            OffPeakHoursModel.__logger.error("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(OffPeakHoursModel.__tablename__ ))
         return r
         
@@ -316,10 +321,10 @@ class OffPeakHoursModel(Base):
                     # Completely double covered
                     if repr[-1]['offPeak']:
                         # Section completely doubles previous section.
-                        OffPeakHoursModel.logger.debug('OffPeak weekday {} config has entries double covering')
+                        OffPeakHoursModel.__logger.debug('OffPeak weekday {} config has entries double covering')
                     else:
                         # Section completely doubles previous peak section, definately not handling this correctly
-                        OffPeakHoursModel.logger.warn('OffPeak weekday {} completely double covering entries not interpreted correctly')
+                        OffPeakHoursModel.__logger.warn('OffPeak weekday {} completely double covering entries not interpreted correctly')
                 else:
                     # Was previous period off peak?
                     if repr[-1]['offPeak']:
@@ -328,7 +333,7 @@ class OffPeakHoursModel(Base):
                         repr[-1]['offPeak']['diffMins'] = OffPeakHoursModel.diffMins(repr[-1]['offPeak']['end'], repr[-1]['offPeak']['start'])
                     else:
                         # Section partly doubles previous peak section, definately not handling this correctly
-                        OffPeakHoursModel.logger.warn('OffPeak weekday {} partly double covering entries not interpreted correctly')
+                        OffPeakHoursModel.__logger.warn('OffPeak weekday {} partly double covering entries not interpreted correctly')
                 pass
             # Move to next section
             section_start_time = section_start_time.replace(hour=op_entry.off_peak_end.hour, minute=op_entry.off_peak_end.minute)
@@ -357,7 +362,7 @@ class OffPeakHoursModel(Base):
             count = q.session.execute(count_q).scalar()
         except Exception as e:
             # Nothing to roll back
-            self.logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
+            self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(self.__tablename__ ))
         return count
 

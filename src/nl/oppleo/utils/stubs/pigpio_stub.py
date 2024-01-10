@@ -1,5 +1,10 @@
 import logging
 
+
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 """
     Stub pigpio object 
 """
@@ -8,7 +13,8 @@ class pi_stub(object):
     __logger = None
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.stubs.pi_stub')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
         self.__logger.debug("pi_stub.init()")
 
     def __format(self, params=None):
@@ -32,7 +38,8 @@ class pigpio_stub(object):
     EITHER_EDGE = 1
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.pigpio_stub')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
         self.__logger.debug("pigpio_stub.init()")
 
     def __format(self, params):

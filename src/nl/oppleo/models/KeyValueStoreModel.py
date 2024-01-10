@@ -13,6 +13,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy_json import mutable_json_type
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 """
     JSON in sqlalchemy
     https://amercader.net/blog/beware-of-json-fields-in-sqlalchemy/
@@ -35,7 +39,8 @@ class KeyValueStoreModel(Base):
 
 
     def __init__(self, **kwargs):
-        self.__logger = logging.getLogger('nl.oppleo.models.KeyValueStoreModel')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
         for kw in kwargs:
             self.set( { kw: kwargs[kw] } )
 

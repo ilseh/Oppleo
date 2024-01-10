@@ -10,23 +10,24 @@ oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 class EvseReader(object):
-    logger = None
+    __logger = None
     reader = None
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.service.EvseReader' )
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         if oppleoSystemConfig.evseLedReaderEnabled:
-            self.logger.debug("Using production Evse reader")
+            self.__logger.debug("Using production Evse reader")
             self.reader = EvseReaderProd()
         else:
-            self.logger.debug("Using SIMULATED Evse reader!")
+            self.__logger.debug("Using SIMULATED Evse reader!")
             self.reader = EvseReaderSimulate()
 
     def loop(self, cb_until, cb_result):
         try:
             self.reader.loop(cb_until, cb_result)
         except Exception as e:
-            self.logger.error('Could not start EvseReader loop ({})'.format(str(e)))
+            self.__logger.error('Could not start EvseReader loop ({})'.format(str(e)))
 
     def diag(self):
         return json.dumps({

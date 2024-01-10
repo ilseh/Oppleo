@@ -79,7 +79,8 @@ class RGBLedControllerThread(object):
     ERROR_LED_SWITCH_FREQUENCY = 2      # Frequency of led pulses
     ERROR_FLASH_DURATION_MILLIS = 400   # Duration in millisec of an Error Flash (card rejected etc.)
 
-    logger = None
+    __logger = None
+    thread = None
     threadLock = None
     stopEvent = None
 
@@ -150,7 +151,9 @@ class RGBLedControllerThread(object):
 
     def __init__(self):
         global oppleoConfig
-        self.logger = logging.getLogger('nl.oppleo.services.RGBLedControllerThread')
+
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
 
         self.resetLedEffects()
         self.threadLock = threading.Lock()
@@ -197,14 +200,15 @@ class RGBLedControllerThread(object):
 
     def start(self):
         self.stopEvent.clear()
-        self.logger.debug('Launching Thread...')
 
-        self.thread = threading.Thread(target=self.run, name='RGBLedControllerThread')
-        self.thread.start()
+        if self.thread is None or not self.thread.is_alive():
+            self.__logger.debug('Launching Thread...')
+            self.thread = threading.Thread(target=self.run, name='RGBLedControllerThread', daemon=True)
+            self.thread.start()
 
 
     def stop(self):
-        self.logger.debug(".stop()")
+        self.__logger.debug(".stop()")
         self.stopEvent.set()
 
 
@@ -235,7 +239,7 @@ class RGBLedControllerThread(object):
                             ((ledPinBehaviour.high_intensity - ledPinBehaviour.low_intensity) /100)
                         )
                     )
-        # self.logger.debug("Pin:{}  dc:{} ".format(ledPinBehaviour.pin, dutyCycle))
+        # self.__logger.debug("Pin:{}  dc:{} ".format(ledPinBehaviour.pin, dutyCycle))
         pwmLed.ChangeDutyCycle(dutyCycle)
 
 
@@ -246,7 +250,7 @@ class RGBLedControllerThread(object):
     def run(self):
         global modulePresence
 
-        self.logger.info("Starting RGBLedControllerThread")
+        self.__logger.info("Starting RGBLedControllerThread")
 
         # Start the leds all in PWM
         self.initLedOutputs()
@@ -294,7 +298,7 @@ class RGBLedControllerThread(object):
                         timeDelayDivider = timeDelayDivider *2
                     timeDelayDividerCounter = 0
 
-                # self.logger.debug("run() dutyCyclePercentage:{}".format(dutyCyclePercentage))
+                # self.__logger.debug("run() dutyCyclePercentage:{}".format(dutyCyclePercentage))
 
                 # Run effect if due, skip if divider
                 if timeDelayDividerCounter == 0:
@@ -323,9 +327,9 @@ class RGBLedControllerThread(object):
                 time.sleep(timeDelay)
 
             except Exception as e:
-                self.logger.error("run() Exception controlling the RGB Led", exc_info=True)
+                self.__logger.error("run() Exception controlling the RGB Led", exc_info=True)
 
-        self.logger.info("Stopping RGBLedControllerThread")
+        self.__logger.info("Stopping RGBLedControllerThread")
 
         # Start the leds all in PWM
         self.cleanLedOutputs()

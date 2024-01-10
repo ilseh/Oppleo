@@ -113,7 +113,7 @@ class OppleoConfig(object, metaclass=Singleton):
         Private variables
     """
     # OppleoConfig Logger
-    ___logger = None
+    __logger = None
     __chargerConfigModel = None
     __restartRequired = False
     __upSinceDatetime = datetime.now()
@@ -151,8 +151,8 @@ class OppleoConfig(object, metaclass=Singleton):
     kWhMeter_serial = None
 
     def __init__(self):
-        self.___logger = logging.getLogger('nl.oppleo.config.' + self.__class__.__name__)
-        self.___logger.debug('Initializing Oppleo...')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.debug('Initializing Oppleo...')
         self.__chargerConfigModel = ChargerConfigModel.get_config()
 
     """
@@ -499,7 +499,7 @@ class OppleoConfig(object, metaclass=Singleton):
                     )
 
         except ValueError:
-            self.___logger.warning("@restartRequired.setter - Value {} could not be interpreted as bool".format(value), exc_info=True)
+            self.__logger.warning("@restartRequired.setter - Value {} could not be interpreted as bool".format(value), exc_info=True)
 
 
     """
@@ -531,7 +531,7 @@ class OppleoConfig(object, metaclass=Singleton):
                     )
 
         except ValueError:
-            self.___logger.warning("@softwareUpdateInProgress.setter - Value {} could not be interpreted as bool".format(value), exc_info=True)
+            self.__logger.warning("@softwareUpdateInProgress.setter - Value {} could not be interpreted as bool".format(value), exc_info=True)
 
 
 

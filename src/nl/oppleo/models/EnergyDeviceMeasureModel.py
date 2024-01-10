@@ -14,12 +14,15 @@ from nl.oppleo.models.Base import engine    # For fetchmany
 from nl.oppleo.exceptions.Exceptions import DbException
 import json
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
 
 class EnergyDeviceMeasureModel(Base):
     """
     EnergyDeviceMeasure Model
     """
-    __logger = logging.getLogger('nl.oppleo.models.EnergyDeviceMeasureModel')
+    __logger = None
 
     # table name
     __tablename__ = 'energy_device_measures'
@@ -43,7 +46,9 @@ class EnergyDeviceMeasureModel(Base):
     hz = Column(Float)
 
     def __init__(self):
-        pass
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))          
+
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   

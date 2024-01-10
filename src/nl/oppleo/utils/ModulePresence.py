@@ -1,8 +1,12 @@
 import logging
+
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.utils.stubs.GPIO_stub import GPIO_stub
 from nl.oppleo.utils.stubs.pigpio_stub import pigpio_stub
 from nl.oppleo.utils.stubs.OppleoMFRC522_stub import OppleoMFRC522_stub
 
+
+oppleoSystemConfig = OppleoSystemConfig()
 """
 """
 
@@ -36,7 +40,8 @@ class ModulePresence(object, metaclass=Singleton):
 
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.utils.ModulePresence')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
 
         try:
             from mfrc522 import MFRC522
@@ -44,12 +49,12 @@ class ModulePresence(object, metaclass=Singleton):
             self.__mfrc522_installed = True
             self.__OppleoMFRC522 = OppleoMFRC522()
         except RuntimeError as re:
-            self.logger.warning('MFRC522 RuntimeError - possible privilege issue.')
+            self.__logger.warning('MFRC522 RuntimeError - possible privilege issue.')
         except ModuleNotFoundError as mnfe:
-            self.logger.warning('MFRC522 not installed.')
+            self.__logger.warning('MFRC522 not installed.')
 
         if self.__enable_OppleoMFRC522_stub and not self.__mfrc522_installed:
-            self.logger.warning('OppleoMFRC522_stub enabled (MFRC522 not installed)')
+            self.__logger.warning('OppleoMFRC522_stub enabled (MFRC522 not installed)')
             self.__mfrc522_installed = True
             self.__OppleoMFRC522 = OppleoMFRC522_stub()
 
@@ -58,10 +63,10 @@ class ModulePresence(object, metaclass=Singleton):
             self.__pigpio_installed = True
             self.__pigpio = pigpio
         except ModuleNotFoundError:
-            self.logger.debug('PiGPIO not installed.')
+            self.__logger.debug('PiGPIO not installed.')
 
         if self.__enable_pigpio_stub and not self.__pigpio_installed:
-            self.logger.warning('pigpio_stub enabled (pigpio not installed)')
+            self.__logger.warning('pigpio_stub enabled (pigpio not installed)')
             self.__pigpio_installed = True
             self.__pigpio = pigpio_stub()
 
@@ -71,12 +76,12 @@ class ModulePresence(object, metaclass=Singleton):
             self.__rgpio_installed = True
             self.__GPIO = GPIO
         except RuntimeError:
-            self.logger.debug('GPIO (RPi) RuntimeError - possible privilege issue.')
+            self.__logger.debug('GPIO (RPi) RuntimeError - possible privilege issue.')
         except ModuleNotFoundError:
-            self.logger.debug('GPIO (RPi) not installed.')
+            self.__logger.debug('GPIO (RPi) not installed.')
 
         if self.__enable_GPIO_stub and not self.__rgpio_installed:
-            self.logger.warning('GPIO_stub enabled (GPIO not installed)')
+            self.__logger.warning('GPIO_stub enabled (GPIO not installed)')
             self.__rgpio_installed = True
             self.__GPIO = GPIO_stub()
 
@@ -132,6 +137,7 @@ class ModulePresence(object, metaclass=Singleton):
     """
         GPIO
     """
+    @property
     def gpioAvailable(self):
         return self.__rgpio_installed and self.__GPIO is not None
 
@@ -153,6 +159,7 @@ class ModulePresence(object, metaclass=Singleton):
     """
         pigpio
     """
+    @property
     def pigpioAvailable(self):
         return self.__pigpio_installed and self.__pigpio is not None
 

@@ -18,7 +18,7 @@ class VehicleApi:
     __rfid_model = None
 
     def __init__(self, rfid_model:RfidModel=None):
-        self.__logger = logging.getLogger('nl.oppleo.api.VehicleApi')
+        self.__logger = logging.getLogger(__name__)
         self.__logger.debug('VehicleApi.__init__')
         self.__rfid_model=rfid_model
 

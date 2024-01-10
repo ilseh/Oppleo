@@ -4,6 +4,7 @@ import threading
 import datetime
 from flask_socketio import SocketIO
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
@@ -12,8 +13,9 @@ from nl.oppleo.models.RfidModel import RfidModel
 
 from nl.oppleo.api.VehicleApi import VehicleApi
 
-from nl.oppleo.services.PushMessage import PushMessage
+from nl.oppleo.services.PushMessage import pushMessage
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 """
@@ -32,7 +34,8 @@ class UpdateOdometerTeslaUtil:
 
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.UpdateOdometerTeslaUtil')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.__logger.debug('UpdateOdometerTeslaUtil.__init__')
         self.__thread = None
         self.__threadLock = threading.Lock()
@@ -118,7 +121,7 @@ class UpdateOdometerTeslaUtil:
             rfid_model.cleanupVehicleInfo()
             
             # Inform through push messages if configured
-            PushMessage.sendMessage(
+            pushMessage.sendMessage(
                 "Tesla token invalid", 
                 "Unauthorized when updating odometer for charge session {}." + \
                     " Removing token from rfid tag {} ({})."
@@ -136,7 +139,7 @@ class UpdateOdometerTeslaUtil:
                 rfid_model.rfid,
                 self.__charge_session_id
             ))
-            PushMessage.sendMessage(
+            pushMessage.sendMessage(
                 "Tesla odometer update failed", 
                 "Could not retrieve odometer value for rfid {} ({}) on charge session {}."
                 .format(
@@ -153,7 +156,7 @@ class UpdateOdometerTeslaUtil:
             if charge_session is None:
                 self.__logger.error("Charge session with id {} could no longer be found. (Condensed?)".format(self.__charge_session_id))
                 # Inform through push messages if configured
-                PushMessage.sendMessage(
+                pushMessage.sendMessage(
                     "Charge session not found", 
                     "Charge session with id {} could no longer be found, when adding odometer value. (Condensed?)."
                     .format(

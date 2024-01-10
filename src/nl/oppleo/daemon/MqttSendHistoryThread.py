@@ -4,12 +4,13 @@ import time
 from enum import IntEnum
 import random
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 
 from nl.oppleo.models.EnergyDeviceMeasureModel import EnergyDeviceMeasureModel
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 
-
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 DEFAULT_DELAY_BETWEEN_MQTT_EVENTS = 0.05
@@ -62,7 +63,8 @@ class MqttSendHistoryThread(object):
                  delay_between_mqtt_events=DEFAULT_DELAY_BETWEEN_MQTT_EVENTS, 
                  time_between_front_end_updates=DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES,
                  mode=MqttSendHistoryThreadMode.MODE_TWO):
-        self.__logger = logging.getLogger('nl.oppleo.daemon.MqttSendHistoryThread')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))        
         self.__thread = None
         self.__status = Status.INITIAL
         self.__threadLock = threading.Lock()        

@@ -7,6 +7,10 @@ import signal
 import time
 import logging
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 """
     Small improvements on the MFRC522 class in https://github.com/pimylifeup/MFRC522-python/blob/master/mfrc522/MFRC522.py
     - add SimpleFRMC522 read function with yield
@@ -99,7 +103,7 @@ class OppleoMFRC522Log():
             }
 
 class OppleoMFRC522(MFRC522):
-    logger = None
+    __logger = None
     oLog = OppleoMFRC522Log()
 
     KEY = [0xFF,0xFF,0xFF,0xFF,0xFF,0xFF]
@@ -124,7 +128,8 @@ class OppleoMFRC522(MFRC522):
 
 
     def __init__(self):
-        self.logger = logging.getLogger('nl.oppleo.utils.spi.OppleoMFRC522')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         # Don't call MFRC522 default init
 
 
@@ -170,12 +175,12 @@ class OppleoMFRC522(MFRC522):
 
     def read_no_block(self, select:bool=True, auth:bool=True):
         self.oLog.logReadNoBlock()
-        self.logger.debug('read_no_block() select={}, auth={}'.format(select, auth))
+        self.__logger.debug('read_no_block() select={}, auth={}'.format(select, auth))
         (status, tagType) = self.MFRC522_Request(self.PICC_REQIDL)
         # tagType 16 (cc, mtc)
         if status == self.MI_OK:
             self.oLog.logDetectedRfid()
-            self.logger.info('Detected rfid tag (type={})'.format(tagType))
+            self.__logger.info('Detected rfid tag (type={})'.format(tagType))
         if status != self.MI_OK:
             # No card read, return id=None, text=None
             self.oLog.logDetectedNothing()
@@ -183,10 +188,10 @@ class OppleoMFRC522(MFRC522):
         (status, uid) = self.MFRC522_Anticoll()
         if status != self.MI_OK:
             self.oLog.logDetectCollission()
-            self.logger.info('Collision reading rfid tag, skipping')
+            self.__logger.info('Collision reading rfid tag, skipping')
             return None, None
         id = self.uid_to_num(uid)
-        self.logger.info('Read rfid tag (id={})'.format(id))
+        self.__logger.info('Read rfid tag (id={})'.format(id))
         text_read = ''
         if select:
             self.MFRC522_SelectTag(uid)
@@ -228,7 +233,7 @@ class OppleoMFRC522(MFRC522):
         # Check if an error occurred
         if (not (status == self.MI_OK) or
             not (self.Read_MFRC522(self.Status2Reg) & 0x08) != 0):
-                self.logger.error("Rfid tag authentication failed")
+                self.__logger.error("Rfid tag authentication failed")
 
         # Return the status
         return status

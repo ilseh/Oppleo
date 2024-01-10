@@ -2,10 +2,14 @@ import logging
 from datetime import datetime
 from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
 oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = None
 
-oppleoLogger = logging.getLogger('nl.oppleo.webapp.Oppleo')
+# __name__ refers to __main__
+moduleName = 'nl.oppleo.webapp.Oppleo'
+oppleoLogger = logging.getLogger(moduleName)
+oppleoLogger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(moduleName))
 oppleoLogger.debug('Initializing Oppleo...')
 
 import sys
@@ -23,9 +27,9 @@ try:
     oppleoConfig = OppleoConfig()
     oppleoSystemConfig.chargerID = oppleoConfig.chargerID
 
-    from nl.oppleo.services.PushMessage import PushMessage
+    from nl.oppleo.services.PushMessage import pushMessage
 
-    if modulePresence.gpioAvailable():
+    if modulePresence.gpioAvailable:
         GPIO = modulePresence.GPIO
         try:
             if oppleoConfig.gpioMode == "BOARD":
@@ -124,12 +128,28 @@ try:
             # request.remote_addr - returns remote address, or IP of reverse proxy
             # request.headers.get('X-Forwarded-For') - returns router address (router is behind the reverse proxy)
 
+            # TODO REMOVE - EXTRA LOGGING
+            oppleoLogger.error('config_dashboard_access_restriction decorator [1] (restrictDashboardAccess: {restrictDashboardAccess}, remote_addr: {remote_addr}, routerIPAddress: {routerIPAddress}, is_authenticated: {is_authenticated})'.format(
+                restrictDashboardAccess=oppleoConfig.restrictDashboardAccess, 
+                remote_addr=request.remote_addr,
+                routerIPAddress=oppleoConfig.routerIPAddress,
+                is_authenticated=current_user.is_authenticated)
+                )
+
             if (not oppleoConfig.restrictDashboardAccess or \
                 ( oppleoConfig.allowLocalDashboardAccess and request.remote_addr != oppleoConfig.routerIPAddress ) or \
                 current_user.is_authenticated):
+
+                # TODO REMOVE - EXTRA LOGGING
+                oppleoLogger.error('config_dashboard_access_restriction decorator [2] allowed')
+
                 return function(*args, **kwargs)
             # return abort(403) # unauthenticated
             # Not allowed.
+
+            # TODO REMOVE - EXTRA LOGGING
+            oppleoLogger.error('config_dashboard_access_restriction decorator [3] NOT allowed')
+
             # delete old - never used - cookie
             if 'login_next' in session:
                 del session['login_next']
@@ -154,13 +174,13 @@ try:
     @appSocketIO.on("connect", namespace="/evse_status")
     @appSocketIO.on("connect", namespace="/backup")
     @appSocketIO.on("connect", namespace="/mqtt")
-    @appSocketIO.on("connect", namespace="/settings")
+    @appSocketIO.on("connect", namespace="/io_settings")
     #@appSocketIO.on("connect", namespace="/")
     @config_dashboard_access_restriction
     def connect(*args, **kwargs):
         global oppleoLogger, oppleoConfig, threadLock, wsClientCnt, oppleoSystemConfig
 
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [1] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
         with threadLock:
@@ -172,7 +192,7 @@ try:
                                     'stats'     : 'connected',
                                     'namespace' : request.namespace if request.namespace is not None else 'UNKNOWN'
                                     }
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [2] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
                 
         oppleoLogger.debug('socketio.connect sid: {} wsClientCnt: {} connectedClients:{}'.format( \
@@ -192,7 +212,7 @@ try:
                                         id=oppleoConfig.chargerID,
                                         namespace='/websocket'
                                         )
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [3] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
         OutboundEvent.triggerEvent(
@@ -207,7 +227,7 @@ try:
                 public=False,
                 room=request.sid
             )
-        # TODO REMOVE - EXTRA LOGGINH
+        # TODO REMOVE - EXTRA LOGGING
         oppleoLogger.error('socketio.connect [4] (sid: {sid}, wsClientCnt: {wsClientCnt})'.format(sid=request.sid, wsClientCnt=wsClientCnt))
 
 
@@ -218,7 +238,7 @@ try:
     @appSocketIO.on("disconnect", namespace="/evse_status")
     @appSocketIO.on("disconnect", namespace="/backup")
     @appSocketIO.on("disconnect", namespace="/mqtt")
-    @appSocketIO.on("disconnect", namespace="/settings")
+    @appSocketIO.on("disconnect", namespace="/io_settings")
     #@appSocketIO.on("disconnect", namespace="/")
     @config_dashboard_access_restriction
     def disconnect():
@@ -369,7 +389,7 @@ try:
                 public=False
             )
 
-        PushMessage.sendMessage(
+        pushMessage.sendMessage(
             "Starting", 
             "Starting Oppleo {} at {}."
             .format(
@@ -393,7 +413,7 @@ try:
             host=oppleoSystemConfig.httpHost
             )
 
-        PushMessage.sendMessage(
+        pushMessage.sendMessage(
             "Terminating", 
             "Terminating Oppleo {} at {}."
             .format(
@@ -525,15 +545,15 @@ except DbException as dbe:
 
         # Oppleo Limp mode Prowl apiKey and no chargerID
         if oppleoSystemConfig.pushoverEnabled:
-            from nl.oppleo.services.PushMessagePushover import PushMessagePushover
-            PushMessagePushover.sendMessage(
+            from nl.oppleo.services.PushMessagePushover import pushMessagePushover
+            pushMessagePushover.sendMessage(
                 title="Limp mode", 
                 message="Database exception caused limp mode at {}. [signature: {}]"
                     .format(
                         datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                         oppleoSystemConfig.SIGNATURE
                     ),
-                priority=PushMessagePushover.priorityHigh,
+                priority=pushMessagePushover.priorityHigh,
                 apiKey=oppleoSystemConfig.pushoverApiKey,
                 userKey=oppleoSystemConfig.pushoverUserKey,
                 device=oppleoSystemConfig.pushoverDevice,
@@ -591,8 +611,8 @@ except Exception as e:
             )
 
     if oppleoSystemConfig.pushoverEnabled:
-        from nl.oppleo.services.PushMessagePushover import PushMessagePushover
-        PushMessagePushover.sendMessage(
+        from nl.oppleo.services.PushMessagePushover import pushMessagePushover
+        pushMessagePushover.sendMessage(
             title="Crashed" if restartFailed else "Restarting", 
             message="An exception caused a restart at {}. (signature: {} Exception details: {}{})"
                 .format(
@@ -601,7 +621,7 @@ except Exception as e:
                     str(e),
                     '' if oppleoConfig is None or not isinstance(oppleoConfig.chargerNameText, str) else ' chargerName: {}'.format(oppleoConfig.chargerNameText)
                 ),
-            priority=PushMessagePushover.priorityHigh,
+            priority=pushMessagePushover.priorityHigh,
             apiKey=oppleoSystemConfig.pushoverApiKey,
             userKey=oppleoSystemConfig.pushoverUserKey,
             device=oppleoSystemConfig.pushoverDevice,

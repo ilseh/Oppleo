@@ -7,13 +7,17 @@ import logging
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
+
 # generate_password_hash(password, method='sha256')
 
 class User(Base):
     """
     """
     __tablename__ = 'users'
-    __logger = logging.getLogger('nl.oppleo.models.User')
+    __logger = None
 
     username = Column(String, primary_key=True)
     password = Column(String)
@@ -25,7 +29,8 @@ class User(Base):
 
 
     def __init__(self, username=None, password=None, authenticated=None):
-        #self.__logger = logging.getLogger('nl.oppleo.models.User')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
         # If the variables are already initialized by the reconstructor, let them be
         if self.username is None and self.password is None:
             self.username = username

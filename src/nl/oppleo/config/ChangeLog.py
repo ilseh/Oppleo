@@ -17,7 +17,7 @@ class Version():
     build:int = 0
 
     def __init__(self, version:str='0.0.0'):
-        self.__logger = logging.getLogger('nl.oppleo.config.Version')
+        self.__logger = logging.getLogger(__name__)
         if version is None:
             return
         keys = version.split('.')
@@ -63,7 +63,7 @@ class ChangeLog():
 
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.config.ChangeLog')
+        self.__logger = logging.getLogger(__name__)
 
         fileContent = self.__readChangeLogFile__()
         parsedChangeLog = self.parse(changeLogText=fileContent)

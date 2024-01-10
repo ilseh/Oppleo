@@ -45,7 +45,7 @@ class Singleton(type):
 
 
 class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
-    __logger = logging.getLogger('nl.oppleo.services.HomeAssistantMqttHandlerThread')
+    __logger = None
     # functional syntax
     STATES = Enum('Status', ['CONNECTED', 'DISCONNECTED', 'CONNECT_FAILED', 'UNREACHABLE', 'NOT_AUTHORIZED', 'OTHER'])
     state = Enum('Status', ['OTHER']).OTHER
@@ -78,6 +78,9 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
     def __init__(self) -> None:
         super().__init__()
+
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
 
         self.__thread = None
         self.__threadLock = threading.Lock()
@@ -131,8 +134,9 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         self.__stop_event.clear()
         self.__logger.debug('Launching HomeAssistant Mqtt Thread...')
 
-        self.__thread = threading.Thread(target=self.__loop__, name='HomeAssistantMqttThread')
-        self.__thread.start()
+        if self.__thread is None or not self.__thread.is_alive():
+            self.__thread = threading.Thread(target=self.__loop__, name='HomeAssistantMqttThread')
+            self.__thread.start()
 
 
     def is_alive(self):
@@ -150,7 +154,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             if oppleoSystemConfig.homeAssistantMqttEnabled:
 
                 if self.__reconnectRequested:
-                    HomeAssistantMqttHandlerThread.__logger.debug("Requesting reconnect from HomeAssistant MQTT Broker...")
+                    self.__logger.debug("Requesting reconnect from HomeAssistant MQTT Broker...")
                     with self.__threadLock:
                         self.disconnect()
                         self.__reconnectRequested = False
@@ -197,11 +201,11 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         self.__publish__(topic=self.__stateTopic, message=json.dumps(msg, default=str), notify=False)
 
             else:
-                HomeAssistantMqttHandlerThread.__logger.debug("HomeAssistant MQTT Broker connection not enabled.")
+                self.__logger.debug("HomeAssistant MQTT Broker connection not enabled.")
                 if self.state not in [self.STATES.DISCONNECTED, self.STATES.NOT_AUTHORIZED]:
 
                     if self.state == self.STATES.CONNECTED:
-                        HomeAssistantMqttHandlerThread.__logger.debug("HomeAssistant MQTT Broker connected, disconnecting...")
+                        self.__logger.debug("HomeAssistant MQTT Broker connected, disconnecting...")
                         self.disconnect()
                     else:
                         self.state = self.STATES.DISCONNECTED
@@ -209,7 +213,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                             event='ha_mqtt_status_update', 
                             id=oppleoConfig.chargerID,
                             data={ "state": self.state.name },
-                            namespace='/settings',
+                            namespace='/io_settings',
                             public=True
                         )
 
@@ -225,7 +229,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
             # Sleep to allow other threads
             time.sleep(0.75)
-        HomeAssistantMqttHandlerThread.__logger.warning("HomeAssistant MQTT Broker connect Thread stopping...")
+        self.__logger.warning("HomeAssistant MQTT Broker connect Thread stopping...")
 
 
     def stop(self, block=False):
@@ -279,7 +283,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     event='ha_mqtt_status_update', 
                     id=oppleoConfig.chargerID,
                     data={ "state": "None" if homeAssistantMqttHandlerThread.state is None else homeAssistantMqttHandlerThread.state.name },
-                    namespace='/settings',
+                    namespace='/io_settings',
                     public=True
                 )
 
@@ -294,7 +298,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         event='ha_mqtt_status_update', 
                         id=oppleoConfig.chargerID,
                         data={ "state": homeAssistantMqttHandlerThread.state.name },
-                        namespace='/settings',
+                        namespace='/io_settings',
                         public=True
                     )
             else:
@@ -306,11 +310,12 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                             event='ha_mqtt_status_update', 
                             id=oppleoConfig.chargerID,
                             data={ "state": homeAssistantMqttHandlerThread.state.name },
-                            namespace='/settings',
+                            namespace='/io_settings',
                             public=True
                         )
         
         def __on_disconnect__(client, userdata, rc):
+
             homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
             if homeAssistantMqttHandlerThread.isConnected or \
                 homeAssistantMqttHandlerThread.state not in [homeAssistantMqttHandlerThread.STATES.DISCONNECTED, 
@@ -322,7 +327,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         event='ha_mqtt_status_update', 
                         id=oppleoConfig.chargerID,
                         data={ "state": homeAssistantMqttHandlerThread.state.name },
-                        namespace='/settings',
+                        namespace='/io_settings',
                         public=True
                     )
 
@@ -337,22 +342,22 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         event='ha_mqtt_status_update', 
                         id=oppleoConfig.chargerID,
                         data={ "state": homeAssistantMqttHandlerThread.state.name },
-                        namespace='/settings',
+                        namespace='/io_settings',
                         public=True
                     )
 
         def __on_subscribe__(client, userdata, mid, granted_qos):
             homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-            homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - subscribed [client={client}, userdata={userdata}, mid={mid}, granted_qos={granted_qos}].".format(client=client, userdata=userdata, mid=mid, granted_qos=granted_qos))
+            homeAssistantMqttHandlerThread.__logger.info("HomeAssistant MQTT Broker - subscribed [client={client}, userdata={userdata}, mid={mid}, granted_qos={granted_qos}].".format(client=client, userdata=userdata, mid=mid, granted_qos=granted_qos))
             pass
         def __on_unsubscribe__(client, userdata, mid):
             homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-            homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - unsubscribed [client={client}, userdata={userdata}, mid={mid}].".format(client=client, userdata=userdata, mid=mid))
+            homeAssistantMqttHandlerThread.__logger.info("HomeAssistant MQTT Broker - unsubscribed [client={client}, userdata={userdata}, mid={mid}].".format(client=client, userdata=userdata, mid=mid))
             pass
 
         def __on_message__(client, userdata, message):
             homeAssistantMqttHandlerThread = HomeAssistantMqttHandlerThread()
-            homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message [client={client}, userdata={userdata}, message={message}].".format(client=client, userdata=userdata, message=message))
+            homeAssistantMqttHandlerThread.__logger.info("HomeAssistant MQTT Broker - message [client={client}, userdata={userdata}, topic={topic}, message={message}].".format(client=client, userdata=userdata, topic=message.topic, message=message.payload.decode("utf-8")))
 
             # BLWT
             if message.topic == oppleoSystemConfig.homeAssistantMqttBirthAndLastWillAndTestament:
@@ -364,7 +369,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     OutboundEvent.triggerEvent(
                         event='ha_mqtt_ha_status', 
                         id=oppleoConfig.chargerID,
-                        namespace='/settings',
+                        namespace='/io_settings',
                         data={ "state": homeAssistantMqttHandlerThread.ha_state.name },
                         public=False
                     )
@@ -377,7 +382,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     OutboundEvent.triggerEvent(
                         event='ha_mqtt_ha_status', 
                         id=oppleoConfig.chargerID,
-                        namespace='/settings',
+                        namespace='/io_settings',
                         data={ "state": homeAssistantMqttHandlerThread.ha_state.name },
                         public=False
                     )
@@ -387,7 +392,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     OutboundEvent.triggerEvent(
                         event='ha_mqtt_ha_status', 
                         id=oppleoConfig.chargerID,
-                        namespace='/settings',
+                        namespace='/io_settings',
                         data={ "state": homeAssistantMqttHandlerThread.ha_state.name },
                         public=False
                     )
@@ -395,11 +400,13 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 # Done
                 return
 
-            key = message.topic.split('/')[2].split('_')[1] 
-            homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message [key={key}].".format(key=key))
-
             # homeassistant/select/OPPLEOA001N01_Token/select
-            key = message.topic.split('/')[2].split('_')[1] 
+            key = None
+            try:
+                key = message.topic.split('/')[2].split('_')[1] 
+            except Exception as e:
+                homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message - could not process key from topic [topic={topic}].".format(topic=message.topic))
+
             homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - message [key={key}].".format(key=key))
             if key == "Token":
                 homeAssistantMqttHandlerThread.__logger.debug("HomeAssistant MQTT Broker - Request to switch token to {rToken}...".format(rToken=message.payload.decode("utf-8")))
@@ -423,7 +430,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
                 # If not found there is a consistency issue, revert
                 if selectedRfid is None:
-                    HomeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - cannot switch to non exixstend token {rToken}.".format(rToken=message.payload.decode("utf-8")))
+                    homeAssistantMqttHandlerThread.__logger.warn("HomeAssistant MQTT Broker - cannot switch to non exixstend token {rToken}.".format(rToken=message.payload.decode("utf-8")))
                     self.__selectedToken = None
                     return
 
@@ -431,18 +438,10 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 self.__selectedToken = selectedRfid
                 homeAssistantMqttHandlerThread.publish({'Token': (selectedRfid.name if selectedRfid.name != None and selectedRfid.name != "" else selectedRfid.rfid)})
 
-
-
-            print("received message =",str(message.payload.decode("utf-8")))
-            data = "{'" + str(message.payload) + "', " + str(message.topic) + "}"
-            print("received message = {}".format(data) )
             # Is this a Birth message from Home Assistant?
             # - if so send a Discovery and send Last Status
-
             # Is this a Last Will and testament message from Home Assistant?
             # - notify connection lost due to Last Will and Testament
-
-            pass
 
         if oppleoSystemConfig.homeAssistantMqttClientId != None and oppleoSystemConfig.homeAssistantMqttClientId != '':
             self.__client_id = oppleoSystemConfig.homeAssistantMqttClientId
@@ -481,7 +480,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                         event='ha_mqtt_status_update', 
                         id=oppleoConfig.chargerID,
                         data={ "state": self.state.name },
-                        namespace='/settings',
+                        namespace='/io_settings',
                         public=True
                     )
 
@@ -505,10 +504,10 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
     def __sendAutoDiscover(self) -> bool:
         global oppleoConfig
 
-        HomeAssistantMqttHandlerThread.__logger.debug("Sending Auto-Discover config messages to HomeAssistant MQTT Broker...")
+        self.__logger.debug("Sending Auto-Discover config messages to HomeAssistant MQTT Broker...")
 
         if not self.isConnected:
-            HomeAssistantMqttHandlerThread.__logger.warn("Cannot send Auto-Discover config messages to HomeAssistant MQTT Broker, not connected.")
+            self.__logger.warn("Cannot send Auto-Discover config messages to HomeAssistant MQTT Broker, not connected.")
             return False
 
         r = Raspberry()
@@ -551,7 +550,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             msg['device']['sw_version'] = changeLog.currentVersionStr
 
             # json.dumps(s, default=str) -- overcomes "TypeError: Object of type 'datetime' is not JSON serializable"
-            HomeAssistantMqttHandlerThread.__logger.debug("HA MQTT sending {} to {}.".format(json.dumps(msg, default=str), configTopic))
+            self.__logger.debug("HA MQTT sending {} to {}.".format(json.dumps(msg, default=str), configTopic))
             self.__publish__(topic=configTopic, message=json.dumps(msg), notify=False)
 
 
@@ -559,22 +558,22 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             event='ha_mqtt_autodiscover', 
             id=oppleoConfig.chargerID,
             data={},
-            namespace='/settings',
+            namespace='/io_settings',
             public=True
         )
 
 
     def disconnect(self) -> None:
-        HomeAssistantMqttHandlerThread.__logger.debug("Requesting disconnect from HomeAssistant MQTT Broker...")
+        self.__logger.debug("Requesting disconnect from HomeAssistant MQTT Broker...")
         if self.isConnected:
-            HomeAssistantMqttHandlerThread.__logger.debug("Disconnecting from HomeAssistant MQTT Broker...")
+            self.__logger.debug("Disconnecting from HomeAssistant MQTT Broker...")
             self.mqttClient.disconnect()
 
     def __set_user__(self) -> None:
         global oppleoSystemConfig
 
         if oppleoSystemConfig.homeAssistantMqttUsername is not None and oppleoSystemConfig.homeAssistantMqttUsername != "": 
-            HomeAssistantMqttHandlerThread.__logger.debug("Setting user for HomeAssistant MQTT Broker to {}...".format(oppleoSystemConfig.homeAssistantMqttUsername))
+            self.__logger.debug("Setting user for HomeAssistant MQTT Broker to {}...".format(oppleoSystemConfig.homeAssistantMqttUsername))
             self.mqttClient.username_pw_set( oppleoSystemConfig.homeAssistantMqttUsername, 
                                              oppleoSystemConfig.homeAssistantMqttPassword if oppleoSystemConfig.homeAssistantMqttPassword is not None and oppleoSystemConfig.homeAssistantMqttPassword != "" else None
                                             )
@@ -582,7 +581,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
   
     def publish(self, values:dict=None) -> None:
-        HomeAssistantMqttHandlerThread.__logger.debug("Sending status update messages to HomeAssistant MQTT Broker...")
+        self.__logger.debug("Sending status update messages to HomeAssistant MQTT Broker...")
 
         # Maintain the most recent values
         # Python 3.10
@@ -601,10 +600,10 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
     def __publish__(self, topic:str='homeassistant', message:str=None, waitForPublish:bool=False, timeout:int=1000, notify:bool=True) -> bool:
         global oppleoConfig
 
-        HomeAssistantMqttHandlerThread.__logger.debug(f'Publish msg {message} to HomeAssistant topic {topic} ... ')
+        self.__logger.debug(f'Publish msg {message} to HomeAssistant topic {topic} ... ')
 
         if not self.isConnected:
-            HomeAssistantMqttHandlerThread.__logger.warn("Cannot publish status message to HomeAssistant MQTT Broker, not connected.")
+            self.__logger.warn("Cannot publish status message to HomeAssistant MQTT Broker, not connected.")
             return False
 
         # Can be async connected, with self.mqttClient.is_connected() returning false...
@@ -613,7 +612,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
         #            OppleoMqttClient.__logger.warn(f'Failed to publish msg {message} to topic {topic}, not connected')
         #            return False
             
-        HomeAssistantMqttHandlerThread.__logger.debug(f'Publishing HomeAssistant MQTT msg {message} to topic {topic}')
+        self.__logger.debug(f'Publishing HomeAssistant MQTT msg {message} to topic {topic}')
         
         data = {}
         data['topic'] = topic
@@ -626,7 +625,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                     event='ha_mqtt_message_send', 
                     id=oppleoConfig.chargerID,
                     data=json.dumps(data, default=str),
-                    namespace='/settings',
+                    namespace='/io_settings',
                     public=False
                 )            
             if waitForPublish:

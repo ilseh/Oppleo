@@ -13,13 +13,16 @@ from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
 import json
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
 
 class ChargeSessionModel(Base):
     """
     Charge Session Model
     """
 
-    __logger = logging.getLogger('nl.oppleo.models.ChargeSessionModel')
+    __logger = None
 
     # table name
     __tablename__ = 'charge_session'  # -> sessions
@@ -45,7 +48,8 @@ class ChargeSessionModel(Base):
 
     # class constructor
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.models.ChargeSessionModel')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method

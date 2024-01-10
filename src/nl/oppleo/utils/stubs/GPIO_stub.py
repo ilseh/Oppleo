@@ -1,5 +1,8 @@
 import logging
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
+
+oppleoSystemConfig = OppleoSystemConfig()
 """
     Stub GPIO object 
 """
@@ -8,7 +11,8 @@ class GPIOPWM_stub(object):
     __logger = None
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.GPIOPWM_stub')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.__logger.debug("GPIOPWM_stub.init()")
 
     def __format(self, params):
@@ -60,7 +64,8 @@ class GPIO_stub(object):
     VERSION = '0.0.0'
 
     def __init__(self):
-        self.__logger = logging.getLogger('nl.oppleo.utils.stubs.GPIO_stub')
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
         self.__logger.debug("GPIO_stub.init()")
 
     def __format(self, params=None):
