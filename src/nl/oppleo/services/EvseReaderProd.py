@@ -1,13 +1,17 @@
 import time
 from enum import Enum, IntEnum
 import logging
+import json
 
+from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import OppleoConfig
 from nl.oppleo.utils.ModulePresence import modulePresence
+from nl.oppleo.services.EvseState import EvseState, EvseStateName
 from nl.oppleo.utils.EvseReaderUtil import EvseReaderUtil
 
 LOGGER_PATH = "nl.oppleo.services.EvseReaderProd"
 
+oppleoSystemConfig = OppleoSystemConfig()
 oppleoConfig = OppleoConfig()
 
 
@@ -81,19 +85,21 @@ def is_pulse_direction_changed(direction_current, direction_previous):
 
 
 class EvseReaderProd:
+    __logger = None
+    __evse_state = EvseState.EVSE_STATE_UNKNOWN
 
     def __init__(self):
-        self.logger = logging.getLogger(LOGGER_PATH)
-        self.logger.setLevel(logging.WARNING)
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))  
 
     def loop(self, cb_until, cb_result):
         global oppleoConfig, modulePresence
 
-        self.logger.debug('In loop, doing setup GPIO')
+        self.__logger.debug('In loop, doing setup GPIO')
         GPIO = modulePresence.GPIO
 
         if GPIO is None:
-            self.logger.warn("EVSE LED Reader is enabled but GPIO is not loaded (config error).")
+            self.__logger.warn("EVSE LED Reader is enabled but GPIO is not loaded (config error).")
             cb_result(EvseState.EVSE_STATE_UNKNOWN)
             while not cb_until():
                 # Loop here untill done
@@ -105,9 +111,9 @@ class EvseReaderProd:
         pigpio_pi = modulePresence.pigpio.pi()
 
         evse_reader = EvseReaderUtil(pigpio=modulePresence.pigpio, pi=pigpio_pi, pin=oppleoConfig.pinEvseLed)
-        self.logger.debug('Init EvseReaderUtil done')
+        self.__logger.debug('Init EvseReaderUtil done')
 
-        evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
+        self.__evse_state = EvseState.EVSE_STATE_UNKNOWN  # active state INACTIVE | CONNECTED | CHARGING | ERROR
 
         """
         if the Duty Cycle is changing, assume it is charging
@@ -144,10 +150,10 @@ class EvseReaderProd:
         error_filter_value = 3
         error_filter = error_filter_value
 
-        self.logger.info(" Starting, state is {}".format(evse_state.name))
+        self.__logger.info(" Starting, state is {}".format(self.__evse_state.name))
         while not cb_until():
 
-            self.logger.debug("In loop to read evse status")
+            self.__logger.debug("In loop to read evse status")
 
             oppleoConfig.appSocketIO.sleep(SAMPLE_TIME)
 
@@ -162,48 +168,48 @@ class EvseReaderProd:
             if evse_direction_current != EvseDirection.NONE:
                 evse_direction_overall = evse_direction_current
 
-            self.logger.debug('evse_current and prev %f vs %f' % (evse_dcf, evse_dcf_prev))
+            self.__logger.debug('evse_current and prev %f vs %f' % (evse_dcf, evse_dcf_prev))
             if evse_direction_current == EvseDirection.NONE:
-                self.logger.debug(
+                self.__logger.debug(
                     'Direction is neutral. Overall direction %s.' % evse_direction_overall.name if evse_direction_overall else '<null>')
                 if evse_stable_since is None:
                     evse_stable_since = current_time_milliseconds()
 
                 if is_current_measurement_interval_normal_pulse(evse_stable_since):
-                    self.logger.debug('In the time-span a pulse would change direction, the evse value did not change')
+                    self.__logger.debug('In the time-span a pulse would change direction, the evse value did not change')
                     if evse_dcf >= EVSE_MINLEVEL_STATE_CONNECTED:
-                        self.logger.debug("Evse is connected (not charging)")
-                        evse_state = EvseState.EVSE_STATE_CONNECTED
+                        self.__logger.debug("Evse is connected (not charging)")
+                        self.__evse_state = EvseState.EVSE_STATE_CONNECTED
                     else:
-                        self.logger.debug("Evse is inactive (not charging)")
+                        self.__logger.debug("Evse is inactive (not charging)")
                         # State A (Inactive)
-                        evse_state = EvseState.EVSE_STATE_INACTIVE
+                        self.__evse_state = EvseState.EVSE_STATE_INACTIVE
                 # Connected or Inactive - reset error filter
                 error_filter = error_filter_value
             else:
                 # Evse measure changed
                 evse_stable_since = None
                 if is_pulse_direction_changed(evse_direction_overall, evse_direction_overall_previous):
-                    self.logger.debug(
+                    self.__logger.debug(
                         'Direction of evse dutycycle changed. Current direction overall: %s' % evse_direction_overall.name)
                     if is_current_measurement_interval_normal_pulse(evse_direction_change_moment):
-                        evse_state = EvseState.EVSE_STATE_CHARGING
+                        self.__evse_state = EvseState.EVSE_STATE_CHARGING
                         # Charging - reset error filter
                         error_filter = error_filter_value
                     elif is_current_measurement_interval_error_pulse(evse_direction_change_moment):
                         if error_filter == 0:
-                            evse_state = EvseState.EVSE_STATE_ERROR
+                            self.__evse_state = EvseState.EVSE_STATE_ERROR
                         else:
                             error_filter -= 1
                     else:
-                        self.logger.debug('Changed direction too slow, is not pulsing, assume only level changed.')
+                        self.__logger.debug('Changed direction too slow, is not pulsing, assume only level changed.')
                         # Charging - reset error filter
                         error_filter = error_filter_value
                     evse_direction_overall_previous = evse_direction_overall
                     evse_direction_change_moment = current_time_milliseconds()
 
-            self.logger.debug("Current evse_state %s" % evse_state.name)
-            cb_result(evse_state)
+            self.__logger.debug("Current evse_state %s" % self.__evse_state.name)
+            cb_result(self.__evse_state)
             # Remember current evse direction for next run
             evse_direction_previous = evse_direction_overall
             # Remember current duty cycle for next run
@@ -212,3 +218,11 @@ class EvseReaderProd:
         evse_reader.cancel()
 
         pigpio_pi.stop()
+
+    def diag(self):
+        return json.dumps({
+            "__evse_state": self.__evse_state,
+            "__evse_state_name": EvseStateName(evse_state=self.__evse_state)
+            }, 
+            default=str     # Overcome "TypeError: Object of type datetime is not JSON serializable"
+        )
