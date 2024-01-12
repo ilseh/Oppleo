@@ -7,10 +7,6 @@ from nl.oppleo.utils.EvseReaderUtil import EvseReaderUtil
 
 from nl.oppleo.services.EvseOutput import EvseOutputGenerator
 
-evseOutputGenerator = EvseOutputGenerator()
-
-print("Enabling EVSE...")
-evseOutputGenerator.switch_on()
 
 class EvseDirection(Enum):
     UP = 1
@@ -91,6 +87,10 @@ evse_reader = EvseReaderUtil(pigpio=modulePresence.pigpio, pi=pigpio_pi, pin=opp
 print('Init EvseReaderUtil done')
 
 print('EvseState.EVSE_STATE_UNKNOWN')
+
+print("Enabling EVSE...")
+evseOutputGenerator = EvseOutputGenerator()
+evseOutputGenerator.switch_on()
 
 """
 if the Duty Cycle is changing, assume it is charging
