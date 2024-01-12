@@ -20,7 +20,7 @@ SAMPLE_TIME = 0.05  # .05 sec
 pi = pigpio.pi()
 
 def _cbf(pin, level, tick):
-    print("pin={pin} level={level} tick={}".format(pin=pin, level=level, tick=tick))
+    print("pin={pin} level={level} tick={tick}".format(pin=pin, level=level, tick=tick))
 
 _cb = pi.callback(EVSE_IN, pigpio.EITHER_EDGE, _cbf)
 
