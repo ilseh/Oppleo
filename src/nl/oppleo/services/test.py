@@ -128,6 +128,8 @@ error_filter_value = 3
 error_filter = error_filter_value
 
 print(" Starting, state is unknown")
+evse_direction_overall = EvseDirection.NONE
+evse_direction_overall_previous = EvseDirection.NONE
 
 try:
     while True:
@@ -152,8 +154,7 @@ try:
 
         print('evse_current and prev %f vs %f' % (evse_dcf, evse_dcf_prev))
         if evse_direction_current == EvseDirection.NONE:
-            print(
-                'Direction is neutral. Overall direction %s.' % evse_direction_overall.name if evse_direction_overall else '<null>')
+            print('Direction is neutral. Overall direction %s.' % evse_direction_overall.name if evse_direction_overall else '<null>')
             if evse_stable_since is None:
                 evse_stable_since = current_time_milliseconds()
 
