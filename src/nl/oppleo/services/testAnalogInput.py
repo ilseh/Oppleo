@@ -30,11 +30,12 @@ print("Enabling EVSE...")
 # GPIO.setmode(GPIO.BCM) # Use physical pin numbering
 GPIO.setup(EVSE_OUT, GPIO.OUT, initial=GPIO.HIGH)
 
-
+cnt = 0
 try:
     while True:
 
-        print("Reading value={value}".format(value=pi.read(EVSE_IN)))
+        cnt = (cnt +1) % 1000
+        print("Reading {cnt} value={value}".format(cnt=cnt, value=pi.read(EVSE_IN)))
         time.sleep(SAMPLE_TIME)
 
 except KeyboardInterrupt as kbi:
