@@ -45,4 +45,7 @@ print("Disabling EVSE...")
 # Off is push high
 GPIO.output(EVSE_OUT, GPIO.HIGH)
 
+print("Resetting GPIO I/O...")
+GPIO.cleanup()
+
 print("Done")
