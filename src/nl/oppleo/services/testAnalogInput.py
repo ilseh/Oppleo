@@ -34,7 +34,7 @@ GPIO.setup(EVSE_OUT, GPIO.OUT, initial=GPIO.HIGH)
 try:
     while True:
 
-        print("Reading value={value}".format(pi.read(EVSE_IN)))
+        print("Reading value={value}".format(value=pi.read(EVSE_IN)))
         time.sleep(SAMPLE_TIME)
 
 except KeyboardInterrupt as kbi:
