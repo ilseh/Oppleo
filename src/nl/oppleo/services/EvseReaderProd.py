@@ -96,7 +96,7 @@ class EvseReaderProd:
     def loop(self, cb_until, cb_result):
         global oppleoConfig, modulePresence
 
-        self.__logger.error('(FALSE ERROR) level={level}, handle={handle}'.format( level=self.__logger.level(), handle=self.__logger.handle))
+        self.__logger.error('(FALSE ERROR) level={level}, handle={name}'.format( level=self.__logger.level, name=self.__logger.name))
         self.__logger.debug('In loop, doing setup GPIO')
         GPIO = modulePresence.GPIO
 
