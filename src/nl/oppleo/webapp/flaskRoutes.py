@@ -58,6 +58,8 @@ from nl.oppleo.utils.BackupUtil import BackupUtil
 from nl.oppleo.daemon.MqttSendHistoryThread import Status as mhtsStatus
 
 from nl.oppleo.services.PushMessage import pushMessage
+from nl.oppleo.services.PushMessagePushover import pushMessagePushover
+from nl.oppleo.services.PushMessageProwl import pushMessageProwl
 
 from nl.oppleo.services.OppleoMqttClient import OppleoMqttClient 
 from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread 
@@ -3529,7 +3531,8 @@ def monthlyUsageOverview():
 @flaskRoutes.route("/notification/<path:msgType>/", methods=["POST", "PUT"])
 @authenticated_resource
 def sendTestNotification(msgType:str=None):
-    global flaskRoutesLogger, oppleoConfig
+    global flaskRoutesLogger, oppleoConfig, pushMessagePushover, pushMessageProwl
+
     flaskRoutesLogger.debug('/sendTestNotification {}'.format(type))
 
     message = request.form.get('message', default=None, type=str)
@@ -3541,10 +3544,10 @@ def sendTestNotification(msgType:str=None):
             })            
 
     if msgType.lower() == 'prowl':
-        sendSuccess = PushMessageProwl.sendMessage(
+        sendSuccess = pushMessageProwl.sendMessage(
             title='Oppleo ' + oppleoConfig.chargerNameText,
             message=message,
-            priority=PushMessageProwl.priorityNormal,
+            priority=pushMessageProwl.priorityNormal,
             apiKey=oppleoSystemConfig.prowlApiKey,
             chargerName=oppleoConfig.chargerNameText
             )
@@ -3555,10 +3558,10 @@ def sendTestNotification(msgType:str=None):
             })            
 
     if msgType.lower() == 'pushover':
-        sendSuccess = PushMessagePushover.sendMessage(
+        sendSuccess = pushMessagePushover.sendMessage(
             title='Oppleo ' + oppleoConfig.chargerNameText, 
             message=message,
-            priority=PushMessagePushover.priorityNormal,
+            priority=pushMessagePushover.priorityNormal,
             apiKey=oppleoSystemConfig.pushoverApiKey,
             userKey=oppleoSystemConfig.pushoverUserKey,
             device=oppleoSystemConfig.pushoverDevice,
@@ -3617,10 +3620,10 @@ def sendTestNotification(msgType:str=None):
 @flaskRoutes.route("/pushover/<path:apiKey>/sounds/", methods=["GET"])
 @authenticated_resource
 def pushoverSounds(apiKey:str=None):
-    global flaskRoutesLogger, oppleoConfig
+    global flaskRoutesLogger, oppleoConfig, pushMessagePushover
     flaskRoutesLogger.debug('/pushover/{}/sounds/'.format(apiKey))
 
-    soundList = PushMessagePushover.availableSounds(apiKey=apiKey)
+    soundList = pushMessagePushover.availableSounds(apiKey=apiKey)
     return jsonify({ 
         'status'        : HTTP_CODE_200_OK if soundList is not None else HTTP_CODE_404_NOT_FOUND,
         'apiKey'        : apiKey if apiKey is not None else '-', 
@@ -3633,10 +3636,11 @@ def pushoverSounds(apiKey:str=None):
 @flaskRoutes.route("/pushover/<path:userKey>/<path:apiKey>/devices/", methods=["GET"])
 @authenticated_resource
 def pushoverDevices(userKey:str=None, apiKey:str=None):
-    global flaskRoutesLogger, oppleoConfig
+    global flaskRoutesLogger, oppleoConfig, pushMessagePushover
+
     flaskRoutesLogger.debug('/pushover/{}/{}/devices/'.format(userKey, apiKey))
 
-    deviceList = PushMessagePushover.deviceList(userKey=userKey, apiKey=apiKey)
+    deviceList = pushMessagePushover.deviceList(userKey=userKey, apiKey=apiKey)
 
     return jsonify({ 
         'status'        : HTTP_CODE_200_OK if deviceList is not None else HTTP_CODE_404_NOT_FOUND,
