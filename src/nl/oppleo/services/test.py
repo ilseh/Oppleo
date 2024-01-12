@@ -128,6 +128,7 @@ while True:
     time.sleep(SAMPLE_TIME)
 
     evse_dcf = evse_reader.evse_value()
+    print("evse_value evse_dcf={evse_dcf}".format(evse_dcf=evse_dcf))
 
     # First run?
     if evse_dcf_prev is None:
