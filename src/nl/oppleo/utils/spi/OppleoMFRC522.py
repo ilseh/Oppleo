@@ -175,7 +175,7 @@ class OppleoMFRC522(MFRC522):
 
     def read_no_block(self, select:bool=True, auth:bool=True):
         self.oLog.logReadNoBlock()
-        self.__logger.debug('read_no_block() select={}, auth={}'.format(select, auth))
+        self.__logger.debug('OppleoMFRC522.read_no_block() select={}, auth={}'.format(select, auth))
         (status, tagType) = self.MFRC522_Request(self.PICC_REQIDL)
         # tagType 16 (cc, mtc)
         if status == self.MI_OK:
