@@ -5,6 +5,13 @@ from nl.oppleo.config.OppleoConfig import oppleoConfig
 from nl.oppleo.utils.ModulePresence import modulePresence
 from nl.oppleo.utils.EvseReaderUtil import EvseReaderUtil
 
+from nl.oppleo.services.EvseOutput import EvseOutputGenerator
+
+evseOutputGenerator = EvseOutputGenerator()
+
+print("Enabling EVSE...")
+evseOutputGenerator.switch_on()
+
 class EvseDirection(Enum):
     UP = 1
     DOWN = -1
@@ -121,37 +128,48 @@ error_filter_value = 3
 error_filter = error_filter_value
 
 print(" Starting, state is unknown")
-while True:
 
-    print("In loop to read evse status")
+try:
+    while True:
 
-    time.sleep(SAMPLE_TIME)
+        print("In loop to read evse status")
 
-    evse_dcf = evse_reader.evse_value()
-    print("evse_value evse_dcf={evse_dcf}".format(evse_dcf=evse_dcf))
+        time.sleep(SAMPLE_TIME)
 
-    # First run?
-    if evse_dcf_prev is None:
-        evse_dcf_prev = evse_dcf
-        continue  # next iteration
+        evse_dcf = evse_reader.evse_value()
+        print("evse_value evse_dcf={evse_dcf}".format(evse_dcf=evse_dcf))
 
-    print('determine_evse_direction: evse_dcf={evse_dcf},evse_dcf_prev={evse_dcf_prev}'.format(evse_dcf=evse_dcf, evse_dcf_prev=evse_dcf_prev))
-    evse_direction_current = determine_evse_direction(evse_dcf - evse_dcf_prev)
-    print('evse_direction_current: evse_direction_current={evse_direction_current}'.format(evse_direction_current=evse_direction_current))
-    if evse_direction_current != EvseDirection.NONE:
-        evse_direction_overall = evse_direction_current
+        # First run?
+        if evse_dcf_prev is None:
+            evse_dcf_prev = evse_dcf
+            continue  # next iteration
 
-    print('evse_current and prev %f vs %f' % (evse_dcf, evse_dcf_prev))
-    if evse_direction_current == EvseDirection.NONE:
-        print(
-            'Direction is neutral. Overall direction %s.' % evse_direction_overall.name if evse_direction_overall else '<null>')
-        if evse_stable_since is None:
-            evse_stable_since = current_time_milliseconds()
+        print('determine_evse_direction: evse_dcf={evse_dcf},evse_dcf_prev={evse_dcf_prev}'.format(evse_dcf=evse_dcf, evse_dcf_prev=evse_dcf_prev))
+        evse_direction_current = determine_evse_direction(evse_dcf - evse_dcf_prev)
+        print('evse_direction_current: evse_direction_current={evse_direction_current}'.format(evse_direction_current=evse_direction_current))
+        if evse_direction_current != EvseDirection.NONE:
+            evse_direction_overall = evse_direction_current
 
-        if is_current_measurement_interval_normal_pulse(evse_stable_since):
-            print('In the time-span a pulse would change direction, the evse value did not change')
-            if evse_dcf >= EVSE_MINLEVEL_STATE_CONNECTED:
-                print("Evse is connected (not charging)")
-            else:
-                print("Evse is inactive (not charging)")
-                # State A (Inactive)
+        print('evse_current and prev %f vs %f' % (evse_dcf, evse_dcf_prev))
+        if evse_direction_current == EvseDirection.NONE:
+            print(
+                'Direction is neutral. Overall direction %s.' % evse_direction_overall.name if evse_direction_overall else '<null>')
+            if evse_stable_since is None:
+                evse_stable_since = current_time_milliseconds()
+
+            if is_current_measurement_interval_normal_pulse(evse_stable_since):
+                print('In the time-span a pulse would change direction, the evse value did not change')
+                if evse_dcf >= EVSE_MINLEVEL_STATE_CONNECTED:
+                    print("Evse is connected (not charging)")
+                else:
+                    print("Evse is inactive (not charging)")
+                    # State A (Inactive)
+except KeyboardInterrupt as kbi:
+    print("Stopped")
+    pass
+
+
+print("Disabling EVSE...")
+evseOutputGenerator.switch_off()
+
+print("Done")
