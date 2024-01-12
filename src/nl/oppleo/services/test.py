@@ -134,9 +134,9 @@ while True:
         evse_dcf_prev = evse_dcf
         continue  # next iteration
 
-    print('determine_evse_direction: evse_dcf={evse_dcf},evse_dcf_prev={evse_dcf_prev}', format(evse_dcf=evse_dcf, evse_dcf_prev=evse_dcf_prev))
+    print('determine_evse_direction: evse_dcf={evse_dcf},evse_dcf_prev={evse_dcf_prev}'.format(evse_dcf=evse_dcf, evse_dcf_prev=evse_dcf_prev))
     evse_direction_current = determine_evse_direction(evse_dcf - evse_dcf_prev)
-    print('evse_direction_current: evse_direction_current={evse_direction_current}', format(evse_direction_current=evse_direction_current))
+    print('evse_direction_current: evse_direction_current={evse_direction_current}'.format(evse_direction_current=evse_direction_current))
     if evse_direction_current != EvseDirection.NONE:
         evse_direction_overall = evse_direction_current
 
