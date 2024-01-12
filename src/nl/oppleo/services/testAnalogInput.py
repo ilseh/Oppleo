@@ -26,9 +26,17 @@ _cb = pi.callback(EVSE_IN, pigpio.EITHER_EDGE, _cbf)
 
 print('Init EvseReader done')
 
+print('LED green')
+GPIO.setup(LED_RED_PIN, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(LED_GREEN_PIN, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(LED_BLUE_PIN, GPIO.OUT, initial=GPIO.LOW)
+
+
 print("Enabling EVSE...")
 # GPIO.setmode(GPIO.BCM) # Use physical pin numbering
 GPIO.setup(EVSE_OUT, GPIO.OUT, initial=GPIO.HIGH)
+# Setting the output to LOW enables the charging
+GPIO.output(EVSE_OUT, GPIO.LOW)
 
 cnt = 0
 try:
@@ -46,6 +54,11 @@ except KeyboardInterrupt as kbi:
 print("Disabling EVSE...")
 # Off is push high
 GPIO.output(EVSE_OUT, GPIO.HIGH)
+
+print('LED off')
+GPIO.output(LED_RED_PIN, GPIO.LOW)
+GPIO.output(LED_GREEN_PIN, GPIO.LOW)
+GPIO.output(LED_BLUE_PIN, GPIO.LOW)
 
 print("Resetting GPIO I/O...")
 GPIO.cleanup()
