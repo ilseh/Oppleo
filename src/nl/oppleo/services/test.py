@@ -12,6 +12,12 @@ class EvseDirection(Enum):
 
 GPIO = modulePresence.GPIO
 
+if oppleoConfig.gpioMode == "BOARD":
+    print("Setting GPIO MODE to BOARD")
+    GPIO.setmode(GPIO.BOARD)
+else:
+    print("Setting GPIO MODE to BCM")
+    GPIO.setmode(GPIO.BCM)
 
 def current_time_milliseconds():
     return time.time() * 1000
