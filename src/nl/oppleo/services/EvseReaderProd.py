@@ -1,6 +1,7 @@
 import time
 from enum import Enum, IntEnum
 import logging
+from logging import Logger
 import json
 
 from nl.oppleo.config.OppleoSystemConfig import OppleoSystemConfig
@@ -95,6 +96,7 @@ class EvseReaderProd:
     def loop(self, cb_until, cb_result):
         global oppleoConfig, modulePresence
 
+        self.__logger.error('(FALSE ERROR) level={level}, handle={handle}'.format( level=self.__logger.level(), handle=self.__logger.handle))
         self.__logger.debug('In loop, doing setup GPIO')
         GPIO = modulePresence.GPIO
 
