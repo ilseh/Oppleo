@@ -7,7 +7,7 @@ from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttH
 
 """
     Home Assistant MQTT Test
-
+    Testing the Home Assistant autodiscovery
 
 """
 
