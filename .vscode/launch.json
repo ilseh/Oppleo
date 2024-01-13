@@ -29,6 +29,7 @@
                 "FLASK_APP": "Oppleo.py",
                 "FLASK_ENV": "Development",
                 "PYTHONPATH": "./src",
+                // "RUST_BACKTRACE": "full"
             },
             "jinja": true
         }
