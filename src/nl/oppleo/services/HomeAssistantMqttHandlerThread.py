@@ -116,6 +116,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "Frequency", "icon": "mdi:sine-wave", "unit_of_measurement": "Hz" },
             { "component": "sensor", "name": "ChargeSpeed", "icon": "mdi:car-speed-limiter", "unit_of_measurement": "km/h" },
             { "component": "sensor", "name": "Status", "icon": "mdi:clipboard-edit-outline" },
+            { "component": "sensor", "name": "SessionId", "icon": "mdi:identifier" },
             { "component": "sensor", "name": "Energy", "icon": "mdi:atom", "unit_of_measurement": "kWh" },
             { "component": "sensor", "name": "Cost", "icon": "mdi:currency-eur", "unit_of_measurement": "€" },
             { "component": "sensor", "name": "Token", "icon": "mdi:credit-card-scan" },
@@ -678,7 +679,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
 
     # TODO: Standardize the session status
     def sessionUpdate(self, status:str=None, energy:float=None, cost:float=None, token:str=None, offpeak:bool=None, charging:bool=None, 
-                      vehicle:str=None, start_value:float=None, end_value:float=None, trigger:str=None, tariff:float=None, evse_state:EvseState=None):
+                      vehicle:str=None, start_value:float=None, end_value:float=None, trigger:str=None, tariff:float=None, evse_state:EvseState=None, sessionId:int=-1):
         self.__logger.debug('.sessionUpdate()...')
 
         sessionInfo = {}
@@ -709,6 +710,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             sessionInfo['Charging'] = charging
         if vehicle is not None:
             sessionInfo['Vehicle'] = vehicle
+        if sessionId >= 0:
+            sessionInfo['SessionId'] = None if sessionId == 0 else sessionId
 
         self.publish( values=sessionInfo )
 

@@ -301,7 +301,8 @@ class ChargerHandlerThread(object):
                                                      cost=0, 
                                                      token=rfidObj.name if rfidObj.name is not None and rfidObj.name != "" else rfidObj.rfid, 
                                                      tariff=ChargerConfigModel.get_config().charger_tariff,
-                                                     trigger=trigger
+                                                     trigger=trigger,
+                                                     sessionId=charge_session.id
                                                     )
 
 
@@ -357,7 +358,8 @@ class ChargerHandlerThread(object):
                                                      start_value=0,
                                                      energy=0, 
                                                      cost=0,
-                                                     trigger=''
+                                                     trigger='',
+                                                     sessionId=0
                                                     )
 
 
