@@ -739,6 +739,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             self.__most_recent_state['Token'] = rfid.name if rfid.name != None and rfid.name != "" else rfid.rfid
             self.__most_recent_state['Charging'] = False
             self.__most_recent_state['EVSE'] = "TBD"
+            self.__most_recent_state['SessionId'] = openSession.id
+
         else:
             self.__logger.debug('No open session')
             # No charge session
@@ -755,6 +757,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             self.__most_recent_state['Token'] = ''
             self.__most_recent_state['Charging'] = False
             self.__most_recent_state['EVSE'] = ''
+            self.__most_recent_state['SessionId'] = None
 
         self.__most_recent_state['OffPeak'] = oppleoConfig.offpeakEnabled
 
