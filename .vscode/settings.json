@@ -4,5 +4,8 @@
         "*.jinja2": "jinja2"
     },
     "python.linting.pylintArgs": ["--load-plugins", "pylint-flask"],
-    "PYTHONPATH": "./src"
+    "PYTHONPATH": "./src",
+    "python.analysis.extraPaths": [
+        "./src"
+    ]
 }
