@@ -516,16 +516,16 @@ class ChargerHandlerThread(object):
                     if charge_session is None:
                         # No open charge session found
                         self.__logger.warn(".handle_auto_session() - was expecting an open charge session to close...")
-
-                    # Try to detect the last power consumption
-                    self.end_charge_session(charge_session, True)
-                    # Verify if the auto session was generated correctly. If the odometer value is equal, the session should be condensed
-                    # Condense after the odometer update has completed! Done in the same thread
-                    self.start_charge_session(
-                            rfid=charge_session.rfid,
-                            trigger=ChargeSessionModel.TRIGGER_AUTO,
-                            condense=oppleoConfig.autoSessionCondenseSameOdometer
-                            )
+                    else:
+                        # Open charge session, try to detect the last power consumption
+                        self.end_charge_session(charge_session, True)
+                        # Verify if the auto session was generated correctly. If the odometer value is equal, the session should be condensed
+                        # Condense after the odometer update has completed! Done in the same thread
+                        self.start_charge_session(
+                                rfid=charge_session.rfid,
+                                trigger=ChargeSessionModel.TRIGGER_AUTO,
+                                condense=oppleoConfig.autoSessionCondenseSameOdometer
+                                )
 
 
     # rfid_reader_thread
