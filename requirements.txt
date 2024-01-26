@@ -30,7 +30,7 @@ Flask-Script==2.0.6
 Flask-SocketIO==5.3.5
 Flask-SQLAlchemy==2.5.1
 Flask-User==1.0.2.2
-Flask-WTF==1.1.1
+Flask-WTF==1.2.1
 gevent==22.10.2
 greenlet==2.0.2
 idna==3.3
@@ -103,7 +103,7 @@ virtualenvwrapper==4.8.4
 websocket-client==1.2.3
 Werkzeug==2.3.7
 wrapt==1.13.3
-WTForms==2.2.1
+WTForms==3.1.2
 zipp==3.6.0
 zope.event==4.6
 zope.interface==6.0
