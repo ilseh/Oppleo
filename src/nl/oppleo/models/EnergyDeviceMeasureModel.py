@@ -46,8 +46,8 @@ class EnergyDeviceMeasureModel(Base):
     hz = Column(Float)
 
     def __init__(self):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))          
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))          
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
@@ -69,7 +69,7 @@ class EnergyDeviceMeasureModel(Base):
             db_session.add(self)
             db_session.commit()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -95,7 +95,7 @@ class EnergyDeviceMeasureModel(Base):
                              .limit(n) \
                              .all()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -120,7 +120,7 @@ class EnergyDeviceMeasureModel(Base):
                                  .limit(n) \
                                  .all()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -138,7 +138,7 @@ class EnergyDeviceMeasureModel(Base):
                                 .order_by(desc(EnergyDeviceMeasureModel.created_at)) \
                                 .all()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -156,7 +156,7 @@ class EnergyDeviceMeasureModel(Base):
                                  ) \
                              .scalar()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -208,7 +208,7 @@ class EnergyDeviceMeasureModel(Base):
                                 .offset(offset) \
                                 .limit(limit)
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -259,7 +259,7 @@ class EnergyDeviceMeasureModel(Base):
             emeTs2 = emeTs2.filter( EnergyDeviceMeasureModel.created_at.in_( lastMonthReadingTimestamps ) ).all()
 
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -291,7 +291,7 @@ class EnergyDeviceMeasureModel(Base):
                                     .order_by(desc(EnergyDeviceMeasureModel.created_at)) \
                                     .first()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             self.__logger.error("Could not query from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -322,7 +322,7 @@ class EnergyDeviceMeasureModel(Base):
                              .order_by(EnergyDeviceMeasureModel.created_at.asc()) \
                              .first()
         except InvalidRequestError as e:
-            EnergyDeviceMeasureModel.__cleanupDbSession(db_session, EnergyDeviceMeasureModel.__name__)
+            EnergyDeviceMeasureModel.__cleanupDbSession(db_session, EnergyDeviceMeasureModel.__module__)
         except Exception as e:
             # Nothing to roll back
             EnergyDeviceMeasureModel.__logger.error("Could not query from {} table in database".format(EnergyDeviceMeasureModel.__tablename__ ), exc_info=True)

@@ -66,7 +66,7 @@ class User(Base):
             db_session.add(self)
             db_session.commit()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -118,7 +118,7 @@ class User(Base):
                                          .delete()
             db_session.commit()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -134,7 +134,7 @@ class User(Base):
                                          .delete()
             db_session.commit()
         except InvalidRequestError as e:
-            User.__cleanupDbSession(db_session, User.__class__.__name__)
+            User.__cleanupDbSession(db_session, User.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             User.__logger.error("Could not commit to {} table in database".format(User.__tablename__ ), exc_info=True)

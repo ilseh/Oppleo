@@ -24,8 +24,8 @@ class TeslaPyWrapper:
     __email = None
 
     def __init__(self, rfid:str=None, email:str=None):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
+        self.__logger = logging.getLogger(self.__class__.__name__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__name__))
         self.__logger.debug('TeslaPyWrapper.__init__')
         self.__rfid=rfid
         self.__email=email
