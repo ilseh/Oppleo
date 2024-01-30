@@ -35,8 +35,8 @@ class EnergyModbusReader:
     modbusConfig = None
  
     def __init__(self, energy_device_id, appSocketIO=None):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
         self.energy_device_id = energy_device_id
         self.appSocketIO = appSocketIO
         self.oppleoConfig:OppleoConfig = OppleoConfig()

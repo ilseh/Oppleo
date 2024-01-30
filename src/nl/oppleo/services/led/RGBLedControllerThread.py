@@ -152,8 +152,8 @@ class RGBLedControllerThread(object):
     def __init__(self):
         global oppleoConfig
 
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
 
         self.resetLedEffects()
         self.threadLock = threading.Lock()

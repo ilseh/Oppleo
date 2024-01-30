@@ -49,8 +49,8 @@ class ChargerHandlerThread(object):
 
     def __init__(self, device, buzzer, evseOutput:EvseOutput=None, evseReader:EvseReader=None, appSocketIO:SocketIO=None):
         self.threadLock = threading.Lock()
-        self.__logger = logging.getLogger(self.__class__.__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__name__)) 
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__)) 
         self.evse_reader_thread = None
         self.rfid_reader_thread = None
         self.stop_event = threading.Event()

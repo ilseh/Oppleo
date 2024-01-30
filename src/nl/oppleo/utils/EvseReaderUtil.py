@@ -28,8 +28,8 @@ class EvseReaderUtil:
       the old reading has no effect.  This may be used to
       smooth the data.
       """
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
         self.pigpio = pigpio
         self.pi = pi
         self.pin = pin

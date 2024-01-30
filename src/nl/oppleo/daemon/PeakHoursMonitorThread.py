@@ -26,8 +26,8 @@ class PeakHoursMonitorThread(object):
     sleepInterval = 0.25
 
     def __init__(self, appSocketIO ):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))
         self.threadLock = threading.Lock()
         self.stop_event = threading.Event()
         self.appSocketIO = appSocketIO

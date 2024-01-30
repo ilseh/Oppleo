@@ -37,8 +37,8 @@ class EnergyDeviceModel(Base):
     device_enabled = Column(Boolean)
 
     def __init__(self, data):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))  
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))  
 
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
@@ -53,7 +53,7 @@ class EnergyDeviceModel(Base):
             db_session.add(self)
             db_session.commit()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)

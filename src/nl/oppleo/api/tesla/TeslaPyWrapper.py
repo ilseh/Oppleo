@@ -1,9 +1,11 @@
 from email.policy import default
 import logging
+from requests import HTTPError
 import teslapy
 from requests.exceptions import ReadTimeout
 from oauthlib.oauth2.rfc6749.errors import UnauthorizedClientError, MissingCodeError
 from nl.oppleo.config.OppleoSystemConfig import oppleoSystemConfig
+from nl.oppleo.services.PushMessage import pushMessage
 
 from nl.oppleo.models.KeyValueStoreModel import KeyValueStoreModel
 
@@ -24,8 +26,8 @@ class TeslaPyWrapper:
     __email = None
 
     def __init__(self, rfid:str=None, email:str=None):
-        self.__logger = logging.getLogger(self.__class__.__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__name__))
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))
         self.__logger.debug('TeslaPyWrapper.__init__')
         self.__rfid=rfid
         self.__email=email
@@ -166,7 +168,19 @@ class TeslaPyWrapper:
             self.__logger.warn("getVehicleList() - Email {} not authorizd".format(email))
             return []
 
-        return teslaPy.vehicle_list()
+        try:
+            return teslaPy.vehicle_list()
+        except HTTPError as he:
+            """
+                HTTPError too many requests
+                HTTPError 412 Client Error: Endpoint is only available on fleetapi. Visit https://developer.tesla.com/docs for more info for url: https://owner-api.teslamotors.com/api/1/vehicles
+            """
+            self.__logger.error("getVehicleList() - HTTPError {}".format(he))
+            pushMessage.sendMessage(
+                    "TeslaPy failed",
+                    "{}".format(he) 
+                )
+            return []
 
 
 

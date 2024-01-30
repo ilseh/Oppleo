@@ -24,8 +24,8 @@ class EvseOutputGenerator(object):
     def __init__(self):
         global oppleoConfig, modulePresence
 
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
 
         self.threadLock = threading.Lock()
         if not modulePresence.gpioAvailable:
@@ -104,8 +104,8 @@ class EvseOutputSimulator(object):
     __simulatedEvseOutputState = False
 
     def __init__(self):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
 
     def switch_on(self):
         self.__logger.debug("Turn EVSE output simulator ON")
@@ -129,8 +129,8 @@ class EvseOutput(object, metaclass=Singleton):
     isOffPeak = False
 
     def __init__(self):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
         if oppleoSystemConfig.evseSwitchEnabled:
             self.__logger.debug("Using real Evse Output Generator")
             self.evseOutput = EvseOutputGenerator()

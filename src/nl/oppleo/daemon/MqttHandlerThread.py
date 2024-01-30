@@ -27,8 +27,8 @@ class MqttHandlerThread(object):
     stop_event = None
 
     def __init__(self):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))
         self.threadLock = threading.Lock()
         self.__mqtt_handler_thread = None
         self.stop_event = threading.Event()

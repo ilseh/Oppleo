@@ -63,8 +63,8 @@ class MqttSendHistoryThread(object):
                  delay_between_mqtt_events=DEFAULT_DELAY_BETWEEN_MQTT_EVENTS, 
                  time_between_front_end_updates=DEFAULT_TIME_BETWEEN_FRONT_END_UPDATES,
                  mode=MqttSendHistoryThreadMode.MODE_TWO):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))        
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))        
         self.__thread = None
         self.__status = Status.INITIAL
         self.__threadLock = threading.Lock()        

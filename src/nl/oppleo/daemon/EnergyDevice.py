@@ -28,8 +28,8 @@ class EnergyDevice():
     def __init__(self, energy_device_id=None, modbusInterval:int=10, enabled:bool=False, appSocketIO=None, simulate:bool=False):
         global oppleoSystemConfig
         
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))
         self.energy_device_id = energy_device_id
         self.modbusInterval = modbusInterval
         self.appSocketIO = appSocketIO

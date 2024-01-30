@@ -54,8 +54,8 @@ class TokenObj:
     key = None
 
     def __init__(self, code, inUse:bool=False, ref=None, key=None, valid:bool=True):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
         self.code = code
         self.inUse = inUse
         self.valid = valid
@@ -79,8 +79,8 @@ class TokenMediator:
     __KEY_SIZE = 24
 
     def __init__(self):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))   
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
         self.__lock = threading.Lock()
 
     def generateKey(self):

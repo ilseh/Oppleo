@@ -39,8 +39,8 @@ class KeyValueStoreModel(Base):
 
 
     def __init__(self, **kwargs):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))    
         for kw in kwargs:
             self.set( { kw: kwargs[kw] } )
 
@@ -66,7 +66,7 @@ class KeyValueStoreModel(Base):
             db_session.add(self)
             db_session.commit()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not save to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -78,7 +78,7 @@ class KeyValueStoreModel(Base):
         try:
             db_session.commit()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not commit (update) to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -91,7 +91,7 @@ class KeyValueStoreModel(Base):
             db_session.delete(self)
             db_session.commit()
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -109,7 +109,7 @@ class KeyValueStoreModel(Base):
                              .filter(KeyValueStoreModel.key == key) \
                              .first()
         except InvalidRequestError as e:
-            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__name__)
+            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             KeyValueStoreModel.__logger.error("Could not query from {} table in database".format(KeyValueStoreModel.__tablename__ ), exc_info=True)
@@ -127,7 +127,7 @@ class KeyValueStoreModel(Base):
                              .filter(KeyValueStoreModel.scope == scope) \
                              .all()
         except InvalidRequestError as e:
-            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__name__)
+            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             KeyValueStoreModel.__logger.error("Could not query from {} table in database".format(KeyValueStoreModel.__tablename__ ), exc_info=True)
@@ -144,7 +144,7 @@ class KeyValueStoreModel(Base):
                              .filter(KeyValueStoreModel.kvstore == kvstore) \
                              .all()
         except InvalidRequestError as e:
-            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__name__)
+            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             KeyValueStoreModel.__logger.error("Could not query from {} table in database".format(KeyValueStoreModel.__tablename__ ), exc_info=True)
@@ -160,7 +160,7 @@ class KeyValueStoreModel(Base):
             rfidm = db_session.query(KeyValueStoreModel) \
                               .all()
         except InvalidRequestError as e:
-            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__name__)
+            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__module__)
         except Exception as e:
             # Nothing to roll back
             KeyValueStoreModel.__logger.error("Could not query from {} table in database".format(KeyValueStoreModel.__tablename__ ), exc_info=True)
@@ -189,7 +189,7 @@ class KeyValueStoreModel(Base):
                 db_session.add(key_value_obj)
             db_session.commit()
         except InvalidRequestError as e:
-            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__name__)
+            KeyValueStoreModel.__cleanupDbSession(db_session, KeyValueStoreModel.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             KeyValueStoreModel.__logger.error("Could not save to {} table in database".format(KeyValueStoreModel.__tablename__ ), exc_info=True)

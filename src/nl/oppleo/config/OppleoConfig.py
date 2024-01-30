@@ -151,7 +151,7 @@ class OppleoConfig(object, metaclass=Singleton):
     kWhMeter_serial = None
 
     def __init__(self):
-        self.__logger = logging.getLogger(__name__)
+        self.__logger = logging.getLogger(self.__class__.__module__)
         self.__logger.debug('Initializing Oppleo...')
         self.__chargerConfigModel = ChargerConfigModel.get_config()
 

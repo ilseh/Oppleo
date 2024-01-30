@@ -96,16 +96,16 @@ class ChargerConfigModel(Base):
 
     def __init__(self):
         if self.__logger is None:
-            self.__logger = logging.getLogger(__name__)
-            self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))        
+            self.__logger = logging.getLogger(self.__class__.__module__)
+            self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))        
         self.__logger.debug('.init()')
 
     # sqlalchemy calls __new__ not __init__ on reconstructing from database. Decorator to call this method
     @orm.reconstructor   
     def init_on_load(self):
         if self.__logger is None:
-            self.__logger = logging.getLogger(__name__)
-            self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))        
+            self.__logger = logging.getLogger(self.__class__.__module__)
+            self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))        
         self.__logger.debug('.init_on_load()')
         self.__init__()
 
@@ -153,7 +153,7 @@ class ChargerConfigModel(Base):
             make_transient_to_detached(self)
         except InvalidRequestError as e:
             self.__logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error(".save() - Could not commit to {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -170,7 +170,7 @@ class ChargerConfigModel(Base):
             make_transient(self)
             make_transient_to_detached(self)
         except InvalidRequestError as e:
-            self.__cleanupDbSession(db_session, self.__class__.__name__)
+            self.__cleanupDbSession(db_session, self.__class__.__module__)
         except Exception as e:
             db_session.rollback()
             self.__logger.error("Could not delete from {} table in database".format(self.__tablename__ ), exc_info=True)
@@ -197,8 +197,8 @@ class ChargerConfigModel(Base):
         except Exception as e:
             # Nothing to roll back
             if ChargerConfigModel.__logger is None:
-                ChargerConfigModel.__logger = logging.getLogger(__name__)
-                ChargerConfigModel.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
+                ChargerConfigModel.__logger = logging.getLogger(self.__class__.__module__)
+                ChargerConfigModel.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))    
             ChargerConfigModel.__logger.error("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargerConfigModel.__tablename__ ))
         return ccm

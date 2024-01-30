@@ -514,8 +514,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
                         maxBytes=self.__LOG_MAX_BYTES,
                         backupCount=self.__LOG_BACKUP_COUNT
                         )
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=self.getLogLevelForModule(__name__))        
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=self.getLogLevelForModule(self.__class__.__module__))        
         
 
 

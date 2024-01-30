@@ -29,8 +29,8 @@ class User(Base):
 
 
     def __init__(self, username=None, password=None, authenticated=None):
-        self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(__name__))    
+        self.__logger = logging.getLogger(self.__class__.__module__)
+        self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))    
         # If the variables are already initialized by the reconstructor, let them be
         if self.username is None and self.password is None:
             self.username = username
