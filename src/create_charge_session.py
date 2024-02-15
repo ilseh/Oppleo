@@ -1,7 +1,7 @@
 
 
 
-from nl.oppleo.config.OppleoSystemConfig import oppleoSystemConfig
+#from nl.oppleo.config.OppleoSystemConfig import oppleoSystemConfig
 from nl.oppleo.config.OppleoConfig import oppleoConfig
 from nl.oppleo.models.ChargeSessionModel import ChargeSessionModel
 from nl.oppleo.models.ChargerConfigModel import ChargerConfigModel
@@ -71,7 +71,7 @@ while retry:
 
 
     except KeyboardInterrupt:
-        print('Interrupted')
+        print('\nInterrupted')
         retry = False
         exit(0)
 
