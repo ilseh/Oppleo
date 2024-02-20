@@ -6,7 +6,7 @@ from marshmallow import fields, Schema
 from datetime import datetime
 import logging
 
-from sqlalchemy import orm, func, Column, Integer, String, Float, DateTime, desc, update
+from sqlalchemy import orm, func, Column, Integer, String, Float, DateTime, desc, asc, update
 from sqlalchemy.exc import InvalidRequestError
 
 from nl.oppleo.models.Base import Base, DbSession
@@ -121,6 +121,29 @@ class ChargeSessionModel(Base):
             ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
             raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
         return csm
+
+    @staticmethod
+    def get_sessions_from_id_to_id(startId:int=None, toId:int=None, rfid:int=None, energy_device_id:str=None) -> typing.List[ChargeSessionModel] | None:
+        db_session = DbSession()
+        csList = None
+        try:
+            csList = db_session.query(ChargeSessionModel)
+            if startId is not None:
+                csList = csList.filter(ChargeSessionModel.id >= startId)
+            if toId is not None:
+                csList = csList.filter(ChargeSessionModel.id < toId)
+            if rfid is not None:
+                csList = csList.filter(ChargeSessionModel.rfid == rfid)
+            if energy_device_id is not None:
+                csList = csList.filter(ChargeSessionModel.energy_device_id == energy_device_id)
+            csList = csList.order_by(asc(ChargeSessionModel.id))
+        except InvalidRequestError as e:
+            ChargeSessionModel.__cleanupDbSession(db_session, ChargeSessionModel.__class__)
+        except Exception as e:
+            # Nothing to roll back
+            ChargeSessionModel.__logger.error("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ), exc_info=True)
+            raise DbException("Could not query from {} table in database".format(ChargeSessionModel.__tablename__ ))
+        return csList
 
 
     @staticmethod
