@@ -510,7 +510,8 @@ class OppleoSystemConfig(object, metaclass=Singleton):
     def __initLogger__(self):
         Logger.init_log(process_name=self.__PROCESS_NAME,
                         log_file=self.__LOG_FILE,
-                        loglevel=self.intoLogLevel(self.__LOG_LEVEL_STR),
+                        # loglevel=self.intoLogLevel(self.__LOG_LEVEL_STR),
+                        loglevel=self.getLogLevelForModule(self.__class__.__module__),
                         maxBytes=self.__LOG_MAX_BYTES,
                         backupCount=self.__LOG_BACKUP_COUNT
                         )
