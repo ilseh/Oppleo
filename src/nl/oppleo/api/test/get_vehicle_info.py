@@ -3,7 +3,7 @@ from nl.oppleo.api.VehicleApi import VehicleApi
 from nl.oppleo.api.tesla.TeslaApiFormatters import formatTeslaVehicle, formatTeslaChargeState
 import json
 
-token = "12345"
+token = "856853722117"
 
 if __name__ == "__main__":
 
@@ -13,8 +13,8 @@ if __name__ == "__main__":
 
   #  img = vApi.composeImage()
 
-    awake = vApi.isAwake()
-    print ("awake: {}".format(awake))
+    available = vApi.isAvailable()
+    print ("available: {}".format(available))
 
     vd = vApi.getVehicleData()
     print ("vd: {}".format(json.dumps(vd, indent=4)))
@@ -23,7 +23,9 @@ if __name__ == "__main__":
  
     cs = vApi.getChargeState()
     print ("cd: {}".format(json.dumps(cs, indent=4)))
-    fcs = formatTeslaVehicle(cs)
+    vdn = {}
+    vdn['charge_state'] = cs
+    fcs = formatTeslaVehicle(vdn)
     print ("formatTeslaChargeState(cs): {}".format(json.dumps(fcs, indent=4, default=str)))
 
     """ 
@@ -39,7 +41,9 @@ if __name__ == "__main__":
  
     cs = vApi.getChargeState()
     print ("cd: {}".format(json.dumps(cs, indent=4)))
-    fcs = formatTeslaVehicle(cs)
+    vdn = {}
+    vdn['charge_state'] = cs
+    fcs = formatTeslaVehicle(vdn)
     print ("formatTeslaChargeState(cs): {}".format(json.dumps(fcs, indent=4, default=str)))
 
 print ("Done")

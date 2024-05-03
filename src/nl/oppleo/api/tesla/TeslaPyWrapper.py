@@ -187,7 +187,7 @@ class TeslaPyWrapper:
     """
         Does not wake up vehicle
     """
-    def getVehicle(self, email:str=None, vin:str=None, max_retries:int=3):
+    def getVehicle(self, email:str=None, vin:str=None, max_retries:int=3) -> teslapy.Vehicle:
         if email is None:
             email = self.__email
         if email is None:
@@ -219,16 +219,15 @@ class TeslaPyWrapper:
     """
         Does not wake up vehicle
     """
-    def isAwake(self, email:str=None, vin:str=None) -> bool:
+    def isAvailable(self, email:str=None, vin:str=None) -> bool:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("isAwake() - Cannot find vehicle - no email.")
+            self.__logger.warn("isAvailable() - Cannot find vehicle - no email.")
             return False
 
         vehicle = self.getVehicle(email, vin)
-        return vehicle is not None and vehicle['state'] != 'asleep'
-
+        return vehicle is not None and vehicle.available()
 
 
     def getVehicleData(self, email:str=None, vin:str=None, max_retries:int=3, wake_up:bool=False):
@@ -249,7 +248,7 @@ class TeslaPyWrapper:
             return None
 
         vehicle_list = teslaPy.vehicle_list()
-        vehicle = None
+        vehicle:teslapy.Vehicle = None
         for vehicle_from_list in vehicle_list:
             if vehicle_from_list['vin'] == vin:
                 vehicle = vehicle_from_list
@@ -259,15 +258,18 @@ class TeslaPyWrapper:
         # Does not have to be online for summary
         # vehicle_summary = vehicle.get_vehicle_summary()
         # Are we waking up?
-        if vehicle['state'] == 'asleep' and not wake_up:
+        if not vehicle.available() and not wake_up:
             self.__logger.info("getVehicleData() - vehicle sleeping and requested to not wake up. No vehicle data obtained")
             return vehicle
 
         vehicle_data = None
         tries = 1
+        # Wake up. Sometimes it reports online, while it is not (anymore)
+        vehicle.sync_wake_up()
         while vehicle_data is None and tries <= max_retries:
-            # Vehicle asleep?
-            if vehicle['state'] == 'asleep':
+            # Vehicle asleep? Also offline vehicles can sometimes be woken
+            if not vehicle.available():
+            # if vehicle['state'] == 'asleep' or vehicle['state'] == 'offline':
                 try:
                     vehicle.sync_wake_up()
                 except teslapy.VehicleError as ve:
@@ -334,10 +336,10 @@ class TeslaPyWrapper:
             return None
 
         if 'charge_state' in vehicle_data:
-            self.__logger.warn("getChargeState() - no charge state in retrieved vehicle data for {}".format(vin))
             return vehicle_data['charge_state']
 
         # Could not obtain it
+        self.__logger.warn("getChargeState() - no charge state in retrieved vehicle data for {}".format(vin))
         return None
 
 
