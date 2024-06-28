@@ -112,12 +112,14 @@ class EnergyDevice():
                 'Last save measurement values: %s, %s, %s' % (last_save_measurement.id, last_save_measurement.kw_total,
                                                             last_save_measurement.created_at))
 
-        if last_save_measurement is None or self.is_a_value_changed(last_save_measurement, device_measurement) \
-                or self.is_measurement_older_than_1hour(last_save_measurement, device_measurement):
+        if last_save_measurement is None or self.is_a_consumption_value_changed(last_save_measurement, device_measurement) \
+                or self.is_measurement_interval_expired(last_save_measurement, device_measurement):
             self.__logger.debug('Measurement has changed or old one is older than 1 hour, saving it to db (if env=Production)')
             device_measurement.save()
             self.__logger.debug("value saved %s %s %s" %
                     (device_measurement.energy_device_id, device_measurement.id, device_measurement.created_at))
+            
+        if last_save_measurement is None or self.is_a_consumption_value_changed(last_save_measurement, device_measurement):
             # Emit event
             self.counter += 1
             self.__logger.debug(f'Queue msg {self.counter} to be send ...{device_measurement.to_str()}')
@@ -134,8 +136,24 @@ class EnergyDevice():
         else:
             self.__logger.debug('Not saving new measurement, no significant change and not older than 1 hour')
 
+    """
+        Consumption values include kilowatts energy only
+        Oppleo shows power, amps, and voltages on screen, but they do not all need saving. Only kWh needs saving.
+        All other values are of interrest for m,onitoring, in Oppleo Front End or through MQTT
+    """
+    def is_a_consumption_value_changed(self, old_measurement, new_measurement):
+        measurements_of_interest = {'kwh_l1', 
+                                    'kwh_l2', 
+                                    'kwh_l3', 
+                                    'kw_total'}
 
-    def is_a_value_changed(self, old_measurement, new_measurement):
+        for measurement in measurements_of_interest:
+            if getattr(new_measurement, measurement) != getattr(old_measurement, measurement):
+                return True
+        # Not changed
+        return False
+
+    def is_a_monitoring_value_changed(self, old_measurement, new_measurement):
         measurements_of_interest = {'kwh_l1', 
                                     'kwh_l2', 
                                     'kwh_l3', 
@@ -145,6 +163,10 @@ class EnergyDevice():
                                     'a_l1', 
                                     'a_l2', 
                                     'a_l3',
+                                    'v_l1', 
+                                    'v_l2', 
+                                    'v_l3',
+                                    'hz',
                                     'kw_total'}
 
         for measurement in measurements_of_interest:
@@ -154,8 +176,10 @@ class EnergyDevice():
         return False
 
 
-    def is_measurement_older_than_1hour(self, old_measurement, new_measurement):
+    def is_measurement_interval_expired(self, old_measurement, new_measurement):
         diff = new_measurement.created_at - old_measurement.created_at
+        # TODO
+        #  - make interval configurable
         return (diff.seconds / SECONDS_IN_HOUR) > 1
 
     # Callbacks called when new values are read
