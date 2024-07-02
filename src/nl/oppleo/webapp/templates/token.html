@@ -122,7 +122,7 @@
     }
     savedMake = "{{ rfid_model.vehicle_make }}"
     accountLinked = {% if account_linked %}true{% else %}false{% endif %}
-    vehicleList = [ {% for vehicle in vehicle_list %}{{ vehicle|safe }}{% endfor %} ]
+    vehicleList = [ {% for vehicle in vehicle_list %}{{ vehicle|safe|join(', ') }}{% endfor %} ]
 
     function timestamp() {
       d = new Date();

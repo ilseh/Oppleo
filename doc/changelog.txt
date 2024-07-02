@@ -1,3 +1,14 @@
+Version 1.6.2           2024-07-02
+
+Fixed
+- Fixed multiple vehicles in Tesla account
+
+Version 1.6.1           2024-06-28
+
+Added
+- Volts and Hz changes in MQTT output (potential increasing accuracy)
+
+
 Version 1.6.0           2023-12-30
 
 Added
