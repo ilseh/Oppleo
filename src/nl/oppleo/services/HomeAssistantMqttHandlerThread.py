@@ -100,31 +100,31 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "ChargerID", "icon": "mdi:ev-station" },
             { "component": "sensor", "name": "EnergyDeviceID", "icon": "mdi:id-card" },
             { "component": "sensor", "name": "Timestamp", "icon": "mdi:calendar-month", "device_class": "timestamp" },
-            { "component": "sensor", "name": "A1", "icon": "mdi:sine-wave", "unit_of_measurement": "A", "device_class": "current" },
-            { "component": "sensor", "name": "A2", "icon": "mdi:sine-wave", "unit_of_measurement": "A", "device_class": "current" },
-            { "component": "sensor", "name": "A3", "icon": "mdi:sine-wave", "unit_of_measurement": "A", "device_class": "current" },
-            { "component": "sensor", "name": "V1", "icon": "mdi:transmission-tower", "unit_of_measurement": "V", "device_class": "voltage" },
-            { "component": "sensor", "name": "V2", "icon": "mdi:transmission-tower", "unit_of_measurement": "V", "device_class": "voltage" },
-            { "component": "sensor", "name": "V3", "icon": "mdi:transmission-tower", "unit_of_measurement": "V", "device_class": "voltage" },
-            { "component": "sensor", "name": "E1", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy" },
-            { "component": "sensor", "name": "E2", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy" },
-            { "component": "sensor", "name": "E3", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy" },
-            { "component": "sensor", "name": "TotalEnergy", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy" },
-            { "component": "sensor", "name": "P1", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power" },
-            { "component": "sensor", "name": "P2", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power" },
-            { "component": "sensor", "name": "P3", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power" },
-            { "component": "sensor", "name": "Frequency", "icon": "mdi:sine-wave", "unit_of_measurement": "Hz", "device_class": "frequency" },
-            { "component": "sensor", "name": "ChargeSpeed", "icon": "mdi:car-speed-limiter", "unit_of_measurement": "km/h", "device_class": "speed" },
+            { "component": "sensor", "name": "A1", "icon": "mdi:sine-wave", "unit_of_measurement": "A", "device_class": "current", "state_class": "measurement" },
+            { "component": "sensor", "name": "A2", "icon": "mdi:sine-wave", "unit_of_measurement": "A", "device_class": "current", "state_class": "measurement"},
+            { "component": "sensor", "name": "A3", "icon": "mdi:sine-wave", "unit_of_measurement": "A", "device_class": "current", "state_class": "measurement" },
+            { "component": "sensor", "name": "V1", "icon": "mdi:transmission-tower", "unit_of_measurement": "V", "device_class": "voltage", "state_class": "measurement" },
+            { "component": "sensor", "name": "V2", "icon": "mdi:transmission-tower", "unit_of_measurement": "V", "device_class": "voltage", "state_class": "measurement" },
+            { "component": "sensor", "name": "V3", "icon": "mdi:transmission-tower", "unit_of_measurement": "V", "device_class": "voltage", "state_class": "measurement" },
+            { "component": "sensor", "name": "E1", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"  },
+            { "component": "sensor", "name": "E2", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"  },
+            { "component": "sensor", "name": "E3", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"  },
+            { "component": "sensor", "name": "TotalEnergy", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "measurement" },
+            { "component": "sensor", "name": "P1", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power", "state_class": "measurement" },
+            { "component": "sensor", "name": "P2", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power", "state_class": "measurement" },
+            { "component": "sensor", "name": "P3", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power", "state_class": "measurement" },
+            { "component": "sensor", "name": "Frequency", "icon": "mdi:sine-wave", "unit_of_measurement": "Hz", "device_class": "frequency", "state_class": "measurement" },
+            { "component": "sensor", "name": "ChargeSpeed", "icon": "mdi:car-speed-limiter", "unit_of_measurement": "km/h", "device_class": "speed", "state_class": "measurement" },
             { "component": "sensor", "name": "Status", "icon": "mdi:clipboard-edit-outline" },
             { "component": "sensor", "name": "SessionId", "icon": "mdi:identifier" },
-            { "component": "sensor", "name": "Energy", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy" },
+            { "component": "sensor", "name": "Energy", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "measurement" },
             { "component": "sensor", "name": "Cost", "icon": "mdi:currency-eur", "unit_of_measurement": "€", "device_class": "monetary" },
             { "component": "sensor", "name": "Token", "icon": "mdi:credit-card-scan" },
             { "component": "sensor", "name": "EVSE", "icon": "mdi:home-battery-outline" },
             { "component": "sensor", "name": "OffPeak", "icon": "mdi:clock-check-outline" },
             { "component": "sensor", "name": "Charging", "icon": "mdi:clipboard-pulse-outline" },
-            { "component": "sensor", "name": "StartValue", "icon": "mdi:gauge-empty", "unit_of_measurement": "kWh", "device_class": "energy"  },
-            { "component": "sensor", "name": "EndValue", "icon": "mdi:gauge-full", "unit_of_measurement": "kWh", "device_class": "energy"  },
+            { "component": "sensor", "name": "StartValue", "icon": "mdi:gauge-empty", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "measurement" },
+            { "component": "sensor", "name": "EndValue", "icon": "mdi:gauge-full", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "measurement" },
             { "component": "sensor", "name": "Trigger", "icon": "mdi:ray-start-arrow" },
             { "component": "sensor", "name": "Tariff", "icon": "mdi:currency-eur", "unit_of_measurement": "€", "device_class": "monetary" },
             { "component": "select", "name": "Token", "icon": "mdi:credit-card-scan", "options": rfidTokenList }
@@ -538,6 +538,8 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 msg['unit_of_measurement'] = item["unit_of_measurement"]
             if "device_class" in item:
                 msg['device_class'] = item["device_class"]
+            if "state_class" in item:
+                msg['state_class'] = item["state_class"]
 
             msg['value_template'] = "{{ value_json."+item["name"]+" }}"
             if "options" in item:
