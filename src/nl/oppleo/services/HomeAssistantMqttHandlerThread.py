@@ -536,6 +536,9 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
                 msg['icon'] = item["icon"]
             if "unit_of_measurement" in item:
                 msg['unit_of_measurement'] = item["unit_of_measurement"]
+            if "device_class" in item:
+                msg['device_class'] = item["device_class"]
+
             msg['value_template'] = "{{ value_json."+item["name"]+" }}"
             if "options" in item:
                 msg['options'] = item["options"]
