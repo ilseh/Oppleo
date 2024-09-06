@@ -109,7 +109,7 @@ class HomeAssistantMqttHandlerThread(object, metaclass=Singleton):
             { "component": "sensor", "name": "E1", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"  },
             { "component": "sensor", "name": "E2", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"  },
             { "component": "sensor", "name": "E3", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"  },
-            { "component": "sensor", "name": "TotalEnergy", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "measurement" },
+            { "component": "sensor", "name": "TotalEnergy", "icon": "mdi:atom", "unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing" },
             { "component": "sensor", "name": "P1", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power", "state_class": "measurement" },
             { "component": "sensor", "name": "P2", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power", "state_class": "measurement" },
             { "component": "sensor", "name": "P3", "icon": "mdi:rocket-launch-outline", "unit_of_measurement": "W", "device_class": "power", "state_class": "measurement" },
