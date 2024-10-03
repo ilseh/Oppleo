@@ -32,6 +32,8 @@ Flask-SQLAlchemy==2.5.1
 Flask-User==1.0.2.2
 Flask-WTF==1.2.1
 gevent==22.10.2
+gitdb==4.0.11
+GitPython==3.1.43
 greenlet==2.0.2
 idna==3.3
 importlib-metadata==4.10.0
@@ -65,7 +67,6 @@ py-cpuinfo==8.0.0
 pyasn1==0.4.8
 pycparser==2.21
 pycryptodome==3.20.0
-pygit2==1.15.1
 PyJWT==2.6.0
 pylint==2.12.2
 pynput==1.7.6
@@ -90,6 +91,7 @@ service==0.6.0
 setproctitle==1.2.2
 shellescape==3.8.1
 six==1.16.0
+smmap==5.0.1
 soupsieve==2.3.1
 SQLAlchemy==1.4.28
 sqlalchemy-json==0.4.0

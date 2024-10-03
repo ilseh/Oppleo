@@ -1,8 +1,7 @@
 import os
-import pygit2
+from git import Repo    # GitPython
 from datetime import datetime
 from typing import Optional
-import pygit2.branches
 import requests
 
 class GitUtil(object):
@@ -62,10 +61,10 @@ class GitUtil(object):
         activeBranch = None
         branches = []
 
-        pygit = pygit2.Repository(path=os.getcwd())
-
-        branches = list(pygit.branches.local)
-        activeBranch = None if pygit.head_is_detached or pygit.head_is_unborn else pygit.head.shorthand
+        repo = Repo(path=os.getcwd())
+        activeBranch = repo.active_branch.name
+        for branch in repo.branches:
+            branches.append( branch.name )
 
         return (activeBranch, branches)
 
