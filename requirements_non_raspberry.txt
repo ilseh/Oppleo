@@ -8,7 +8,7 @@ beautifulsoup4==4.10.0
 bidict==0.21.4
 blinker==1.6.2
 certifi==2023.7.22
-cffi==1.15.0
+cffi==1.17.1
 chardet==4.0.0
 charset-normalizer==2.0.9
 click==8.1.7
@@ -55,7 +55,7 @@ paho-mqtt==1.6.1
 passlib==1.7.4
 pbr==5.8.0
 pid==3.0.4
-Pillow==10.2.0
+pillow==10.2.0
 platformdirs==2.4.0
 protobuf==4.22.3
 psutil==5.8.0
@@ -65,8 +65,14 @@ py-cpuinfo==8.0.0
 pyasn1==0.4.8
 pycparser==2.21
 pycryptodome==3.20.0
+pygit2==1.15.1
 PyJWT==2.6.0
 pylint==2.12.2
+pynput==1.7.6
+pyobjc-core==10.0
+pyobjc-framework-ApplicationServices==10.0
+pyobjc-framework-Cocoa==10.0
+pyobjc-framework-Quartz==10.0
 pyserial==3.5
 pysmb==1.2.7
 python-daemon==2.3.0

@@ -1,6 +1,8 @@
 import os
+import pygit2
 from datetime import datetime
 from typing import Optional
+import pygit2.branches
 import requests
 
 class GitUtil(object):
@@ -59,15 +61,12 @@ class GitUtil(object):
     def gitBranches():
         activeBranch = None
         branches = []
-        try:
-            branchLines = os.popen('git branch').read().rstrip().split('\n')
-            for branch in branchLines:
-                if branch.startswith('*'):
-                    branch = branch[1:].strip()
-                    activeBranch = branch
-                branches.append(branch.strip())
-        except (RuntimeError, TypeError, ValueError, NameError, Exception) as e:
-            pass
+
+        pygit = pygit2.Repository(path=os.getcwd())
+
+        branches = list(pygit.branches.local)
+        activeBranch = None if pygit.head_is_detached or pygit.head_is_unborn else pygit.head.shorthand
+
         return (activeBranch, branches)
 
 
