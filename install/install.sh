@@ -337,12 +337,13 @@ function installPipDependencies( ) {
   printf " [i] make sure pip is up to date... \n"
   pip install --upgrade pip > /dev/null 2>&1
 
+  # Install generic modules
+  printf " [i] installing generic dependencies...  \n"
+  pip install -r $OPPLEO_ROOT_DIR/requirements_non_raspberry.txt > /dev/null 2>&1
+
   # Are we on a raspberry? 
-  if [ "$1" == false ] || [ "$1" == 1 ]; then
-    printf " [i] installing non-raspberry dependencies excl. mfrc522, RPi.GPIO, and spidev... \n"
-    pip install -r $OPPLEO_ROOT_DIR/requirements_non_raspberry.txt > /dev/null 2>&1
-  else
-    printf " [i] installing raspberry dependencies incl mfrc522, RPi.GPIO, and spidev... \n"
+  if [ "$1" == true ] && [ "$1" != 1 ]; then
+    printf " [i] installing raspberry dependencies mfrc522, RPi.GPIO, and spidev... \n"
     pip install -r $OPPLEO_ROOT_DIR/requirements.txt > /dev/null 2>&1
   fi
 
