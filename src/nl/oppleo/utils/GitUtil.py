@@ -66,7 +66,7 @@ class GitUtil(object):
 
         # Remove /src if present
         if repoLoc.lower().endswith(os.sep+'src'):
-        repoLoc = repoLoc[:repoLoc.rfind(os.sep)]
+            repoLoc = repoLoc[:repoLoc.rfind(os.sep)]
 
         # Interprete repository
         repo = Repo(repoLoc)
