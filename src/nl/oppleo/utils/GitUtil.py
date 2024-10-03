@@ -61,7 +61,15 @@ class GitUtil(object):
         activeBranch = None
         branches = []
 
-        repo = Repo(path=os.getcwd())
+        # Current Working Directory
+        repoLoc = os.getcwd().rstrip(os.sep)
+
+        # Remove /src if present
+        if repoLoc.lower().endswith(os.sep+'src'):
+        repoLoc = repoLoc[:repoLoc.rfind(os.sep)]
+
+        # Interprete repository
+        repo = Repo(repoLoc)
         activeBranch = repo.active_branch.name
         for branch in repo.branches:
             branches.append( branch.name )
