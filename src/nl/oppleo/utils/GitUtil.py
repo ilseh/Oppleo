@@ -1,5 +1,5 @@
 import os
-from git import Repo    # GitPython
+from git import Repo, Git    # GitPython
 from datetime import datetime
 from typing import Optional
 import requests
@@ -22,7 +22,12 @@ class GitUtil(object):
         try:
             if remote and not branch.lower().startswith('origin') and '/' not in branch:
                 branch = 'origin/' + branch
-            return datetime.strptime(os.popen('git log -n 1 --pretty="format:%cd" {}'.format(branch)).read().rstrip(), '%a %b %d %H:%M:%S %Y %z')
+
+            # Interprete repository
+            git = Git(GitUtil.gitRepoLocation())
+            dateStr = git.log('-n', 1, '--pretty=%cd', branch)
+            return datetime.strptime(dateStr, '%a %b %d %H:%M:%S %Y %z')
+
         except (RuntimeError, TypeError, ValueError, NameError) as e:
             return None
 
@@ -51,7 +56,12 @@ class GitUtil(object):
     @staticmethod
     def gitRemoteUpdate() -> None:
         try:
-            outcome = os.system('git remote update')
+
+            # Interprete repository
+            git = Git(GitUtil.gitRepoLocation())
+            outcome = git.remote('update')
+
+            # outcome = os.system('git remote update')
         except (RuntimeError, TypeError, ValueError, NameError) as e:
             pass
 
@@ -61,15 +71,8 @@ class GitUtil(object):
         activeBranch = None
         branches = []
 
-        # Current Working Directory
-        repoLoc = os.getcwd().rstrip(os.sep)
-
-        # Remove /src if present
-        if repoLoc.lower().endswith(os.sep+'src'):
-            repoLoc = repoLoc[:repoLoc.rfind(os.sep)]
-
         # Interprete repository
-        repo = Repo(repoLoc)
+        repo = Repo(GitUtil.gitRepoLocation())
         activeBranch = repo.active_branch.name
         for branch in repo.branches:
             branches.append( branch.name )
@@ -94,3 +97,17 @@ class GitUtil(object):
             return None
 
         return r.text
+
+   # Updates the git status with the remote server
+    @staticmethod
+    def gitRepoLocation():
+
+        # Current Working Directory
+        repoLoc = os.getcwd().rstrip(os.sep)
+
+        # Remove /src if present
+        if repoLoc.lower().endswith(os.sep+'src'):
+            repoLoc = repoLoc[:repoLoc.rfind(os.sep)]
+
+        return repoLoc
+
