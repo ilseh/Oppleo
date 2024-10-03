@@ -3340,11 +3340,15 @@ def getRr(data:str=None):
     qr_io_buf.seek(0)
   #  return send_file(qr_io_buf, mimetype='image/jpeg')
     try:
+        """
+            send_file update
+                attachment_filename -> download_name
+                cache_timeout -> max_age
+        """
         return send_file(qr_io_buf,
-                 attachment_filename='oppleo_qr.png',
-                 mimetype='image/png',
-                 cache_timeout=-1)
-        
+                download_name='oppleo_qr.png',
+                mimetype='image/png',
+                max_age=-1)
     except Exception as e:
         abort(404)
 
