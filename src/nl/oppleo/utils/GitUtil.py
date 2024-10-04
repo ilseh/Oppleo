@@ -60,7 +60,8 @@ class GitUtil(object):
 
             # Interprete repository
             git = Git(GitUtil.gitRepoLocation())
-            outcome = git.remote('update')
+            # Update remote data
+            git.fetch()
 
             # outcome = os.system('git remote update')
         except (RuntimeError, TypeError, ValueError, NameError) as e:
