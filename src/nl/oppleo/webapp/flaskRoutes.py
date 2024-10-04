@@ -3013,6 +3013,7 @@ def softwareStatus(branch='master'):
     availableReleaseSoftwareVersion = 'unknown'
     # Get the current branch structure
     (activeBranch, branchNames) = GitUtil.gitBranches()
+    branchNames.append("1.3.0")
     for branchName in branchNames:
         changeLogText = GitUtil.getChangeLogForBranch(branchName)
         if changeLogText is None:
