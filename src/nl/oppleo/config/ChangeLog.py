@@ -206,15 +206,20 @@ class ChangeLog():
         for branchName in branchNames:
             changeLogText = GitUtil.getChangeLogForBranch(branchName)
             if changeLogText is None:
-                # Timeout or similar, return what we have untill now
-                return branches
-            parsedChangeLog = changeLog.parse(changeLogText=changeLogText)
-            (versionNumber, versionDate) = changeLog.getMostRecentVersion(changeLogObj=parsedChangeLog)
-            branches[branchName] = {
-                'branch': branchName, 
-                'version': str(versionNumber) if versionNumber is not None else '0.0.0', 
-                'date': changeLog.versionDateStr(lang=lang, versionDate=versionDate) if versionDate is not None else 'null', 
-                }
+                # Timeout or similar, can be a old branch with no changelog. Set data to empty
+                branches[branchName] = {
+                    'branch': branchName, 
+                    'version': '0.0.0', 
+                    'date': '', 
+                    }
+            else:
+                parsedChangeLog = changeLog.parse(changeLogText=changeLogText)
+                (versionNumber, versionDate) = changeLog.getMostRecentVersion(changeLogObj=parsedChangeLog)
+                branches[branchName] = {
+                    'branch': branchName, 
+                    'version': str(versionNumber) if versionNumber is not None else '0.0.0', 
+                    'date': changeLog.versionDateStr(lang=lang, versionDate=versionDate) if versionDate is not None else 'null', 
+                    }
         return branches
 
 
