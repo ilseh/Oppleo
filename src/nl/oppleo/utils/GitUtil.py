@@ -1,5 +1,5 @@
 import os
-from git import Repo, Git    # GitPython
+from git import Repo, Git, GitCommandError    # GitPython
 from datetime import datetime
 from typing import Optional
 import requests
@@ -29,7 +29,7 @@ class GitUtil(object):
             dateStr = git.log('-n', 1, '--pretty=%cd', branch)
             return datetime.strptime(dateStr, '%a %b %d %H:%M:%S %Y %z')
 
-        except (RuntimeError, TypeError, ValueError, NameError) as e:
+        except (RuntimeError, TypeError, ValueError, NameError, GitCommandError) as e:
             return None
 
     @staticmethod
