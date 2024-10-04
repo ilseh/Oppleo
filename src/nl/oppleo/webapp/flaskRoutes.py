@@ -3015,16 +3015,25 @@ def softwareStatus(branch='master'):
     (activeBranch, branchNames) = GitUtil.gitBranches()
     for branchName in branchNames:
         changeLogText = GitUtil.getChangeLogForBranch(branchName)
-        parsedChangeLog = changeLog.parse(changeLogText=changeLogText)
-        (versionNumber, versionDate) = changeLog.getMostRecentVersion(changeLogObj=parsedChangeLog)
-        branches.append({
-            'branch': branchName, 
-            'version': str(versionNumber) if versionNumber is not None else '0.0.0', 
-            'versionDate': changeLog.versionDateStr(versionDate=versionDate) if versionDate is not None else 'null', 
-            'gitDate' : GitUtil.lastBranchGitDate(branch=branchName, remote=True)
-            })
-        if branchName == 'master':
-            availableReleaseSoftwareVersion = str(versionNumber) if versionNumber is not None else '0.0.0'
+        if changeLogText is None:
+            # Timeout or similar, can be a old branch with no changelog. Set data to empty
+            branches.append({
+                'branch': branchName,
+                'version': '0.0.0', 
+                'versionDate': '',
+                'gitDate' : GitUtil.lastBranchGitDate(branch=branchName, remote=True)
+                })
+        else:
+            parsedChangeLog = changeLog.parse(changeLogText=changeLogText)
+            (versionNumber, versionDate) = changeLog.getMostRecentVersion(changeLogObj=parsedChangeLog)
+            branches.append({
+                'branch': branchName, 
+                'version': str(versionNumber) if versionNumber is not None else '0.0.0', 
+                'versionDate': changeLog.versionDateStr(versionDate=versionDate) if versionDate is not None else 'null', 
+                'gitDate' : GitUtil.lastBranchGitDate(branch=branchName, remote=True)
+                })
+            if branchName == 'master':
+                availableReleaseSoftwareVersion = str(versionNumber) if versionNumber is not None else '0.0.0'
 
     """
         softwareReleaseUpdateAvailable     if local and remote branch have different commit 
