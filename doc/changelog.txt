@@ -1,3 +1,8 @@
+Version 1.7.0           2024-10-07
+
+Added
+- Passkey support
+
 Version 1.6.4           2024-10-04
 
 Fixed

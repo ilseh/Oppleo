@@ -3722,3 +3722,281 @@ def mqttHistory(action:str=None):
         'action'    : action
         })            
 
+
+"""
+    webauthn
+"""
+
+from webauthn import generate_registration_options, options_to_json
+from webauthn.helpers.structs import (
+    AuthenticatorSelectionCriteria,
+    UserVerificationRequirement,
+    PublicKeyCredentialCreationOptions,
+    RegistrationCredential,
+    PublicKeyCredentialRequestOptions,
+    PublicKeyCredentialDescriptor,
+    ResidentKeyRequirement,
+    AuthenticationCredential
+)
+from webauthn.helpers import generate_challenge, bytes_to_base64url, base64url_to_bytes, byteslike_to_bytes, parse_client_data_json, parse_registration_credential_json, decode_credential_public_key
+from webauthn.helpers import parse_authentication_credential_json, decoded_public_key_to_cryptography, verify_signature, parse_attestation_object, decode_credential_public_key, parse_authentication_credential_json
+from base64 import b64decode, b64encode
+import random
+import string
+
+relyingPartyId = 'test998.oppleo.nl'
+relyingPartyName = 'Test Laadpaal'
+expectedOrigin = 'https://test998.oppleo.nl'
+
+webAuthUserIDList = {}
+
+publicKeyCredentialCreationOptionsList = {}
+verifiedRegistrationList = {}
+publicKeyCredentialRequestOptionsList = {}
+excludeCredentialsList = {}
+
+# Always returns json
+@flaskRoutes.route("/webauthn/registration/", methods=["GET"])
+@authenticated_resource
+def webauthn_registration_get():
+    global flaskRoutesLogger, oppleoConfig, publicKeyCredentialCreationOptionsList, relyingPartyId, relyingPartyName, webAuthUserIDList
+    flaskRoutesLogger.debug('/webauthn/registration/ GET ')
+
+    if not current_user.username in webAuthUserIDList:
+        webAuthUserIDList[current_user.username] = ''.join(random.choices(string.ascii_letters, k=32))
+    webAuthUserID = webAuthUserIDList[current_user.username]
+
+    # verifiedRegistrations = verifiedRegistrationList[current_user.username] if current_user.username in verifiedRegistrationList else []
+
+    excludeCredentials = []
+    if current_user.username in excludeCredentialsList:
+        for excludeCredential in excludeCredentialsList[current_user.username]:
+            publicKeyCredentialDescriptor = PublicKeyCredentialDescriptor(id=bytes(excludeCredential, 'utf-8'))
+            excludeCredentials.append( publicKeyCredentialDescriptor )
+
+    publicKeyCredentialCreationOptions:PublicKeyCredentialCreationOptions = generate_registration_options(
+        rp_name     = relyingPartyName,
+        rp_id       = relyingPartyId,
+        # Random number linked to the user
+        user_id     = bytes(webAuthUserID, 'utf-8'),
+        user_name   = current_user.username,
+        # Require the user to verify their identity to the authenticator
+        authenticator_selection = AuthenticatorSelectionCriteria(
+            user_verification       = UserVerificationRequirement.REQUIRED,
+            # Make the key discoverable (and stored on Yubikey)
+            # https://developers.yubico.com/WebAuthn/WebAuthn_Developer_Guide/Resident_Keys.html
+            resident_key            = ResidentKeyRequirement.PREFERRED,
+        ),
+        exclude_credentials = excludeCredentials
+    )
+    # Remember the challenge for later, you'll need it in the next step
+    publicKeyCredentialCreationOptionsList[current_user.username] = publicKeyCredentialCreationOptions
+
+    options_json = options_to_json(publicKeyCredentialCreationOptions)
+
+    # Return status
+    return jsonify({ 
+        'status'            : HTTP_CODE_200_OK,
+        'options'           : options_to_json(publicKeyCredentialCreationOptions)
+    })
+
+
+from webauthn import generate_authentication_options, verify_registration_response
+from webauthn.helpers.exceptions import InvalidRegistrationResponse, InvalidAuthenticationResponse, WebAuthnException
+from webauthn.registration.verify_registration_response import VerifiedRegistration
+from webauthn.authentication.verify_authentication_response import VerifiedAuthentication
+from dataclasses import asdict
+
+# Always returns json
+@flaskRoutes.route("/webauthn/registration/", methods=["POST"])
+@authenticated_resource
+def webauthn_registration_post():
+    global flaskRoutesLogger, oppleoConfig, relyingPartyId, expectedOrigin, excludeCredentialsList
+    flaskRoutesLogger.debug('/webauthn/registration/ POST ')
+
+    webauthnId = request.form.get('webauthnId')
+    webauthnResponse = json.loads( str(request.form.get('webauthnResponse')) )
+
+    # challenge = b64decode(bytes(webauthnResponse.response.challenge, 'utf-8'))
+
+    try:
+        registrationCredential:RegistrationCredential = parse_registration_credential_json(json_val=str(request.form.get('webauthnResponse')))
+        rawId = json.loads(str(request.form.get('webauthnResponse')))['rawId']
+    except Exception as e:
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Response error ({})".format(e.args)
+        }), HTTP_CODE_400_BAD_REQUEST        
+
+    # Retrieve 
+    publicKeyCredentialCreationOptions = publicKeyCredentialCreationOptionsList[current_user.username]
+    if publicKeyCredentialCreationOptions == None:
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Registration failed. Refresh page."
+        }), HTTP_CODE_400_BAD_REQUEST        
+
+    # Expected challenge is B64 encoded, as the browser impl. adds this somewhere
+    expected_challenge = bytes(bytes_to_base64url(publicKeyCredentialCreationOptions.challenge), 'utf-8')
+
+    verifiedRegistration = None
+    try:
+        verifiedRegistration = verify_registration_response(
+            credential=registrationCredential,
+            expected_challenge=expected_challenge,
+            expected_rp_id=relyingPartyId,
+            expected_origin=expectedOrigin,
+            require_user_verification=False
+        )
+    except Exception as e:
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Registration failed ({})".format(e.args)
+        }), HTTP_CODE_400_BAD_REQUEST        
+
+    if not current_user.username in verifiedRegistrationList:
+        verifiedRegistrationList[current_user.username] = []
+    verifiedRegistrationList[current_user.username].append( verifiedRegistration )
+    if not current_user.username in excludeCredentialsList:
+        excludeCredentialsList[current_user.username] = []
+    excludeCredentialsList[current_user.username].append( rawId )
+
+    """ STORE FOR LATER USE 
+        verification.credential_id
+        verification.credential_public_key
+        verification.sign_count
+        verification.credential_device_type
+        verification.credential_backed_up
+        credential["response"]["transports"]
+        rawId for excludeCredentials
+    """
+
+    publicKeyCredentialDescriptor = PublicKeyCredentialDescriptor(id=verifiedRegistration.credential_id)
+    # Return status
+    return jsonify({ 
+        'status'            : HTTP_CODE_200_OK,
+        'credential'        : { 'id': bytes_to_base64url(val=publicKeyCredentialDescriptor.id) }, 
+        'rp': {
+            'name'          :  relyingPartyName,
+            'id'            :  relyingPartyId
+        },
+        'User': {
+            'id'            : current_user.username,
+            'name'          : "{}@oppleo.nl".format(current_user.username),
+            'displayName'   : current_user.username
+        }        
+    })
+
+
+from webauthn import verify_authentication_response
+
+# Always returns json
+@flaskRoutes.route("/webauthn/authentication/", methods=["GET"])
+def webauthn_authentication_get():
+    global flaskRoutesLogger, oppleoConfig, publicKeyCredentialRequestOptionsList
+    flaskRoutesLogger.debug('/webauthn/authentication/ GET ')
+
+    # Unauthenticated - user in params
+    username = 'admin' # Fot now
+
+    if not username in verifiedRegistrationList:
+        return jsonify({ 
+            'status'            : HTTP_CODE_424_FAILED_DEPENDENCY,
+            'msg'               : 'Not available for user'
+        })
+
+    verifiedRegistrations = verifiedRegistrationList[username]
+    publicKeyCredentialDescriptorList = []
+    for verifiedRegistration in verifiedRegistrations:
+        publicKeyCredentialDescriptorList.append(
+                PublicKeyCredentialDescriptor(id=verifiedRegistration.credential_id)
+                )
+
+    publicKeyCredentialRequestOptions:PublicKeyCredentialRequestOptions = generate_authentication_options(
+        rp_id = relyingPartyId,
+        allow_credentials=publicKeyCredentialDescriptorList,
+        user_verification=UserVerificationRequirement.REQUIRED,
+    )
+
+    # Remember the challenge for later, you'll need it in the next step
+    publicKeyCredentialRequestOptionsList[current_user.username] = publicKeyCredentialRequestOptions
+
+    options_json = options_to_json(publicKeyCredentialRequestOptions)
+
+    # Return status
+    return jsonify({ 
+        'status'            : HTTP_CODE_200_OK,
+        'options'           : options_to_json(publicKeyCredentialRequestOptions)
+    })
+
+
+
+# Always returns json
+@flaskRoutes.route("/webauthn/authentication/", methods=["POST"])
+@authenticated_resource
+def webauthn_authentication_verify():
+    global flaskRoutesLogger, oppleoConfig, relyingPartyId, expectedOrigin
+    flaskRoutesLogger.debug('/webauthn/authentication/ POST ')
+
+    webauthnId = request.form.get('webauthnId')
+    webauthnResponse = json.loads( str(request.form.get('webauthnResponse')) )
+
+    try:
+        authenticationCredential:AuthenticationCredential = parse_authentication_credential_json(json_val=str(request.form.get('webauthnResponse')))
+    except Exception as e:
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Response error ({})".format(e.args)
+        }), HTTP_CODE_400_BAD_REQUEST        
+
+    # Retrieve 
+    publicKeyCredentialRequestOptions = publicKeyCredentialRequestOptionsList[current_user.username]
+    if publicKeyCredentialRequestOptions == None:
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Authentication failed."
+        }), HTTP_CODE_400_BAD_REQUEST        
+
+    # Expected challenge is B64 encoded, as the browser impl. adds this somewhere
+    expected_challenge = bytes(bytes_to_base64url(publicKeyCredentialRequestOptions.challenge), 'utf-8')
+
+    # TODO: determine which of the keys to use
+    verifiedRegistration = verifiedRegistrationList[current_user.username][0]
+
+    verifiedAuthentication = None
+    try:
+        verifiedAuthentication = verify_authentication_response(
+            credential                      = authenticationCredential,
+            expected_challenge              = expected_challenge,
+            expected_rp_id                  = relyingPartyId,
+            expected_origin                 = expectedOrigin,
+            credential_public_key           = verifiedRegistration.credential_public_key,
+            credential_current_sign_count   = 0,
+            require_user_verification       = False,
+        )
+    except Exception as e:
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Authentication failed ({})".format(e.args)
+        }), HTTP_CODE_400_BAD_REQUEST        
+
+
+    if verifiedAuthentication == None:
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Authentication failed"
+        }), HTTP_CODE_400_BAD_REQUEST        
+
+    # Return status
+    return jsonify({
+        'status'        : HTTP_CODE_200_OK,
+        'rp': {
+            'name'          :  relyingPartyName,
+            'id'            :  relyingPartyId
+        },
+        'User': {
+            'id'            : "ABCDE",
+            'name'          : "admin@oppleo.nl",
+            'displayName'   : 'Admin'
+        }
+    })
