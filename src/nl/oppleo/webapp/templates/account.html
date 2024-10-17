@@ -482,11 +482,60 @@
       })
     }
 
-    // From simplewebauthn-browser
-    function toArrayBuffera(e) {
-        for (var t = e.replace(/-/g, "+").replace(/_/g, "/"), r = (4 - t.length % 4) % 4, n = t.padEnd(t.length + r, "="), o = atob(n), i = new ArrayBuffer(o.length), a = new Uint8Array(i), s = 0; s < o.length; s++)
-            a[s] = o.charCodeAt(s);
-        return i
+    // From simplewebauthn-browser (function a())
+    function toArrayBuffer(e) {
+      for (var t = e.replace(/-/g, "+").replace(/_/g, "/"), r = (4 - t.length % 4) % 4, n = t.padEnd(t.length + r, "="), o = atob(n), i = new ArrayBuffer(o.length), a = new Uint8Array(i), s = 0; s < o.length; s++)
+          a[s] = o.charCodeAt(s);
+      return i
+    }
+
+    function fromArrayBuffer(e) {
+        var t, r, n = new Uint8Array(e), o = "";
+        try {
+            for (var i = function(e) {
+                var t = "function" == typeof Symbol && Symbol.iterator
+                  , r = t && e[t]
+                  , n = 0;
+                if (r)
+                    return r.call(e);
+                if (e && "number" == typeof e.length)
+                    return {
+                        next: function() {
+                            return e && n >= e.length && (e = void 0),
+                            {
+                                value: e && e[n++],
+                                done: !e
+                            }
+                        }
+                    };
+                throw new TypeError(t ? "Object is not iterable." : "Symbol.iterator is not defined.")
+            }(n), a = i.next(); !a.done; a = i.next()) {
+                var s = a.value;
+                o += String.fromCharCode(s)
+            }
+        } catch (e) {
+            t = {
+                error: e
+            }
+        } finally {
+            try {
+                a && !a.done && (r = i.return) && r.call(i)
+            } finally {
+                if (t)
+                    throw t.error
+            }
+        }
+        return btoa(o).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
+    }
+
+    function base64URLdecode(str) {
+      const base64Encoded = str.replace(/-/g, '+').replace(/_/g, '/')
+      const padding = str.length % 4 === 0 ? '' : '='.repeat(4 - (str.length % 4))
+      const base64WithPadding = base64Encoded + padding
+      return atob(base64WithPadding)
+        .split('')
+        .map(char => String.fromCharCode(char.charCodeAt(0)))
+        .join('');
     }
 
     async function registerNewPasskey() {
@@ -505,6 +554,16 @@
       }
 
       let rCredential = undefined
+
+      // Credential IDs to ArrayBuffer
+      let excludeCredentialsB64URL = webauthnRegistrationOptions.excludeCredentials.map((credential) => ({ ...credential, id: base64URLdecode( credential.id ) }) )
+
+      let excludeCredentials = webauthnRegistrationOptions.excludeCredentials.map((credential) => ({ ...credential, id: toArrayBuffer( base64URLdecode( credential.id ) ) }) )
+      excludeCredentials.forEach( (excludeCredentials, i) => {
+        excludeCredentials.transports = [ 'nfc', 'usb' ]
+      })
+
+      const abortController = new AbortController()
       try {
         // --- AUTORISE PASSKEY LOCAL
         const publicKeyCredentialCreationOptions = {
@@ -519,6 +578,7 @@
                 displayName: webauthnRegistrationOptions.user.displayName,
             },
             pubKeyCredParams: webauthnRegistrationOptions.pubKeyCredParams,
+            excludeCredentials: excludeCredentials,
             authenticatorSelection: webauthnRegistrationOptions.authenticatorSelection,
             timeout: webauthnRegistrationOptions.timeout,
             attestation: webauthnRegistrationOptions.attestation
@@ -529,15 +589,24 @@
           publicKeyCredentialCreationOptions.extensions.credProps = true
         }
         rCredential = await navigator.credentials.create({
-            publicKey: publicKeyCredentialCreationOptions
+            publicKey: publicKeyCredentialCreationOptions,
+            signal: abortController.signal
         })
 
       } catch (error) {
-        console.error(error)
-        autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+        console.error('WebAuthN ' + error.name + ': ' + error.message)
+        if (['InvalidStateError', 'AbortError', 'NotAllowedError'].includes(error.name)) {
+          // "The authenticator was previously registered"
+          autoHideNotify('warning','top-left', 'WebAuthN', error.message)
+        } else {
+          autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN unbekende fout. WebAuthN niet beschikbaar.')
+        }
+
         $('.spinner').hide()
         return
       }
+
+      rawId = fromArrayBuffer( rCredential.rawId )
 
       // --- REGISTER PASSKEY ON SERVER
       $('.spinner').show()
@@ -646,7 +715,7 @@
       }
 
       // Credential IDs to ArrayBuffer
-      let allowCredentials = webauthnAuthenticationOptions.allowCredentials.map((credential) => ({ ...credential, id: toArrayBuffera( credential.id ), transports: ['usb', 'ble', 'nfc'] }) )
+      let allowCredentials = webauthnAuthenticationOptions.allowCredentials.map((credential) => ({ ...credential, id: toArrayBuffer( credential.id ), transports: ['usb', 'ble', 'nfc'] }) )
 
       let aAssertion = undefined
       try {
@@ -688,6 +757,7 @@
         console.log(data)
         switch (data.status) {
           case 200:
+            autoHideNotify('success','top-left', 'WebAuthN', 'Succesvol gevalideerd.')
             break
           default:
             autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')

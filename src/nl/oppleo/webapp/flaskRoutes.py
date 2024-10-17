@@ -3774,6 +3774,12 @@ def webauthn_registration_get():
             publicKeyCredentialDescriptor = PublicKeyCredentialDescriptor(id=bytes(excludeCredential, 'utf-8'))
             excludeCredentials.append( publicKeyCredentialDescriptor )
 
+    if current_user.username in verifiedRegistrationList:
+        for verifiedRegistration in verifiedRegistrationList[current_user.username]:
+            rawId = bytes_to_base64url(val=verifiedRegistration.credential_id), 
+            publicKeyCredentialDescriptor = PublicKeyCredentialDescriptor(id=bytes(rawId[0], 'utf-8'))
+            excludeCredentials.append( publicKeyCredentialDescriptor )
+
     publicKeyCredentialCreationOptions:PublicKeyCredentialCreationOptions = generate_registration_options(
         rp_name     = relyingPartyName,
         rp_id       = relyingPartyId,
@@ -3871,11 +3877,10 @@ def webauthn_registration_post():
         rawId for excludeCredentials
     """
 
-    publicKeyCredentialDescriptor = PublicKeyCredentialDescriptor(id=verifiedRegistration.credential_id)
     # Return status
     return jsonify({ 
         'status'            : HTTP_CODE_200_OK,
-        'credential'        : { 'id': bytes_to_base64url(val=publicKeyCredentialDescriptor.id) }, 
+        'credential'        : { 'id': bytes_to_base64url(val=verifiedRegistration.credential_id) }, 
         'rp': {
             'name'          :  relyingPartyName,
             'id'            :  relyingPartyId
