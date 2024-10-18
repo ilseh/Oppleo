@@ -485,7 +485,7 @@
     // From simplewebauthn-browser (function a())
     function toArrayBuffer(e) {
       for (var t = e.replace(/-/g, "+").replace(/_/g, "/"), r = (4 - t.length % 4) % 4, n = t.padEnd(t.length + r, "="), o = atob(n), i = new ArrayBuffer(o.length), a = new Uint8Array(i), s = 0; s < o.length; s++)
-          a[s] = o.charCodeAt(s);
+          a[s] = o.charCodeAt(s)
       return i
     }
 
@@ -535,7 +535,7 @@
       return atob(base64WithPadding)
         .split('')
         .map(char => String.fromCharCode(char.charCodeAt(0)))
-        .join('');
+        .join('')
     }
 
     async function registerNewPasskey() {
