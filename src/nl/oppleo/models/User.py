@@ -3,6 +3,8 @@ from sqlalchemy import orm, Column, String, Boolean
 from sqlalchemy.exc import InvalidRequestError
 
 import logging
+import random
+import string
 
 from nl.oppleo.models.Base import Base, DbSession
 from nl.oppleo.exceptions.Exceptions import DbException
@@ -25,8 +27,9 @@ class User(Base):
     enabled_2fa = Column(Boolean, default=False)
     enforce_local_2fa = Column(Boolean, default=True)
     shared_secret = Column(String)
-    avatar = Column(String)
+    avatar = Column(String(100))
 
+    web_auth_user_id = Column(String)
 
     def __init__(self, username=None, password=None, authenticated=None):
         self.__logger = logging.getLogger(self.__class__.__module__)
@@ -95,6 +98,17 @@ class User(Base):
         """False, as anonymous users aren't supported."""
         return False
 
+    @property
+    def webAuthUserID(self):
+        if self.web_auth_user_id is None:
+            # Generate one
+            self.web_auth_user_id = ''.join(random.choices(string.ascii_letters, k=32))
+            self.save()
+        return self.web_auth_user_id
+
+    @property
+    def webAuthUserIDBytes(self):
+        return bytes(self.webAuthUserID, 'utf-8')
 
     # Return all users
     @staticmethod

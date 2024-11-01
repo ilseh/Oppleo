@@ -9,6 +9,9 @@
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/4.7.2/socket.io.min.js') }}"></script>
 
+  <!-- Oppleo edit web components -->
+  <script src="{{ url_for('static', filename='js/oppleo-edit-str.js') }}" shadydom></script>
+
   <style>
   .field-error {
     border: 1px solid red !important;
@@ -248,7 +251,64 @@
         // Hide spinner
         $('.spinner').hide()
       })
-    }    
+    }
+
+
+
+
+
+    function updateProfile( param, value ) {
+      console.log(timestamp() + ' updateProfile()')            
+      // Show spinner
+      $('.spinner').show()
+      if (value === true) value = 'true'
+      if (value === false) value = 'false'     
+      data = {
+            csrf_token    : '{{ csrf_token() }}',
+            param         : param,
+            value         : value
+          }
+      $.ajax({
+        type		    : 'POST',
+        url			    : '/webauthn/credentials/',
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data,
+        cache       : false
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200:
+            if (data.param.startsWith("passkey-")) {
+              autoHideNotify('success', 'top-left', 'Passkey', 'Naam passkey '+data.param.substring(7, data.param.length)+' gewijzigd.')
+            }
+            break
+          case 400:
+          case 404:
+            autoHideNotify('warning', 'top-left', 'Foutmelding', 'Wijziging kon niet doorgevoerd worden. ' + data.reason)
+            break
+          default:
+            autoHideNotify('warning','top-left', 'Foutmelding', 'Fout onbekend. Niet gewijzigd.')
+            break
+        }
+
+      })
+      .fail(function(data) {
+        autoHideNotify('error','top-left', 'Connectie fout', 'Profiel niet gewijzigd.')
+      })
+      .always(function() {
+        // Remove spinner
+        $('.spinner').hide()
+      })
+    }
+
+
+
+
+
     function changePassword(user, currentPassword, newPassword, totp) {
       console.log(timestamp() + ' changePassword()')         
       // Show spinner
@@ -629,17 +689,19 @@
         switch (data.status) {
           case 200:
             // Add key to the list
+            existingKeyCount = $('table#passkey-list tr[id^="passkey-"]').length
             if (!$('tr#passkey-'+data.credential.id).length) {
-              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.id+'"><td></td><td>Key N<button type="button" class="btn btn-sm btn-outline-success ml-4" id="rename-passkey-'+data.credential.id+'"><i class="fas fa-angle-right"></i> Hernoem</button></td></tr>')
+              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.id+'"><td></td><td>Key '+(existingKeyCount+1)+'<button type="button" class="btn btn-sm btn-outline-success ml-4" id="rename-passkey-'+data.credential.id+'"><i class="fas fa-angle-right"></i> Hernoem</button></td></tr>')
             }
+            autoHideNotify('success','top-left', 'WebAuthN', 'Passkey geregistreerd.')
             break
           default:
-            autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+            autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN niet beschikbaar.')
             break
         }
       })
       .fail(function(data) {
-        autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+        autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN niet beschikbaar.')
         console.error("WebAuthN error: "+data.responseJSON.msg)
       })
       .always(function() {
@@ -648,30 +710,90 @@
       })
     }
 
+    async function getWebauthnCredentials() {
+
+      data = {
+            csrf_token : '{{ csrf_token() }}'
+          }
+      $.ajax({
+        type		    : 'GET',
+        url			    : ('/webauthn/credentials/'),
+        headers     : { 'ignore-login-next': 'true' },
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data,
+        cache       : false
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200:
+            webauthnRegisteredCredentials = JSON.parse(data.credentials)
+            // Add keys to the list
+            webauthnRegisteredCredentials.forEach( (e, i) => {
+              if (!$('tr#passkey-'+e.id).length) {
+                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+e.credential_id+'" prefix="" value="'+(e.name!=""?e.name:'Key '+(i+1))+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}\',:;|&quot; ]|[ ])+$" info="Herkenbare naam voor credential met id '+e.credential_id+'." /></td></tr>')
 
 
-    async function getWebauthnAuthenticationOptions(authentication=false, ignoreEmpty=true) {
+
+              }
+            })
+            // Oppleo web component applied change
+            $('oppleo-edit-str').on('apply', (e) => {
+              console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+              // Submit
+              updateProfile( e.target.id, e.detail.newValue )
+            })
+            break
+          default:
+            autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+            // Remove spinner
+            $('.spinner').hide()
+            break
+        }
+      })
+      .fail(function(data) {
+        autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+        // Remove spinner
+        $('.spinner').hide()
+      })
+      .always(function() {
+      })
+    }
+      
+
+    async function getWebauthnAuthenticationOptions(authentication=false, ignoreEmpty=true, discoverCredential=false) {
       // --- FETCH PASSKEY AUTHENTICATION OPTIONS
 
       // Show spinner
       $('.spinner').show()
 
+      data = {
+            csrf_token : '{{ csrf_token() }}'
+          }
+      if (!discoverCredential) {
+        data.username = 'admin'
+      }
       $.ajax({
         type		    : 'GET',
         url			    : ('/webauthn/authentication/'),
         headers     : { 'ignore-login-next': 'true' },
-        contentType: false,
-        processData: false,
-        cache: false
+        dataType	  : 'json',
+        headers     : { 'ignore-login-next': 'true' },
+        encode		  : true,
+        data        : data,
+        cache       : false
       }) // using the done promise callback
       .done(function(data) {
         const validate = authentication
         const ignoreEmptyKeylist = ignoreEmpty
+        const credentialUser = data.username
         // log data to the console so we can see
         console.log(data)
         switch (data.status) {
           case 200:
-            alert('WebAuthN opties ontvangen: ' + data)
             webauthnAuthenticationOptions = JSON.parse(data.options)
             // Add keys to the list
             webauthnAuthenticationOptions.allowCredentials.forEach( (e, i) => {
@@ -680,7 +802,7 @@
               }
             })
             if (validate) {
-              validatePasskey()
+              validatePasskey(credentialUser)
             }
             break
           case 424: // Failed dependencies
@@ -704,7 +826,7 @@
       })
     }
 
-    async function validatePasskey() {
+    async function validatePasskey(credentialUser=undefined) {
       // --- VERIFY PASSKEY (AUTHENTICATE)
 
       if (typeof navigator.credentials != 'object' || 
@@ -742,8 +864,11 @@
       data = {
             csrf_token : '{{ csrf_token() }}',
             webauthnId : aAssertion.id,
-            webauthnResponse: JSON.stringify( aAssertion.toJSON() ),
-          }      
+            webauthnResponse: JSON.stringify( aAssertion.toJSON() )
+          }
+      if (credentialUser != undefined) {
+        data.username = credentialUser
+      }
       $.ajax({
         type		    : 'POST',
         url			    : ('/webauthn/authentication/'),
@@ -757,7 +882,7 @@
         console.log(data)
         switch (data.status) {
           case 200:
-            autoHideNotify('success','top-left', 'WebAuthN', 'Succesvol gevalideerd.')
+            autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd.')
             break
           default:
             autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
@@ -776,136 +901,6 @@
       let i = 0
 
     }    
-
-    async function showEnablePasskeyModal() {
-
-      /* --- GENERATE CHALLENGE -- */
-
-      // Generate random token in data field - at leat 16 bytes long
-      var challengeFromServer = Math.round(Math.random() * 1000000000000)
-      challengeFromServer = (""+challengeFromServer)
-      while ( challengeFromServer.length < 12 ) {
-        challengeFromServer = '0' + challengeFromServer
-      }
-      var tEnc = new TextEncoder(); // always utf-8
-      challengeFromServer = tEnc.encode(challengeFromServer)
-
-      /* --- REGISTER -- */
-      const publicKeyCredentialCreationOptions = {
-          challenge: challengeFromServer,
-          rp: {
-              name: "Oppleo",
-              id: "oppleo.nl",  // Needs to be the Oppleo domain (Responsible Party)
-          },
-          user: {
-              id: Uint8Array.from(
-                  "UZSL85T9AFC", c => c.charCodeAt(0)),
-              name: "admin@oppleo.nl",
-              displayName: "Admin",
-          },  // pubKeyCredParams -7 = ES256, -8 = Ed25519, -257 = RS256 (Windows Hello) - IANA COSE Algorithms registry
-          pubKeyCredParams: [{ type: "public-key", alg: -7 },{ type: "public-key", alg: -8 },{ type: "public-key", alg: -257 }],
-          authenticatorSelection: {
-              authenticatorAttachment: "cross-platform",
-          },
-          timeout: 60000,
-          attestation: "direct"
-      }
-
-      const rCredential = await navigator.credentials.create({
-          publicKey: publicKeyCredentialCreationOptions
-      })
-      credentialId = rCredential.rawId
-
-      /* --- VERIFY -- */
-
-
-      const publicKeyCredentialRequestOptions = {
-        challenge: challengeFromServer,
-        allowCredentials: [{
-            id: credentialId,
-            type: 'public-key',
-            transports: ['usb', 'ble', 'nfc'],
-        }],
-        rpId: "oppleo.nl",
-        // userVerification: "discouraged",
-        timeout: 60000,
-      }
-
-      const aCredential = await navigator.credentials.get({
-        publicKey: publicKeyCredentialRequestOptions
-      })
-
-
-
-
-      enablePasskeyDialog.modal('show')
-
-      }
-
-    async function showEnablePasskeyModal() {
-
-      /* --- GENERATE CHALLENGE -- */
-
-      // Generate random token in data field - at leat 16 bytes long
-      var challengeFromServer = Math.round(Math.random() * 1000000000000)
-      challengeFromServer = (""+challengeFromServer)
-      while ( challengeFromServer.length < 12 ) {
-        challengeFromServer = '0' + challengeFromServer
-      }
-      var tEnc = new TextEncoder(); // always utf-8
-      challengeFromServer = tEnc.encode(challengeFromServer)
-
-      /* --- REGISTER -- */
-      const publicKeyCredentialCreationOptions = {
-          challenge: challengeFromServer,
-          rp: {
-              name: "Oppleo",
-              id: "oppleo.nl",  // Needs to be the Oppleo domain (Responsible Party)
-          },
-          user: {
-              id: Uint8Array.from(
-                  "UZSL85T9AFC", c => c.charCodeAt(0)),
-              name: "admin@oppleo.nl",
-              displayName: "Admin",
-          },  // pubKeyCredParams -7 = ES256, -8 = Ed25519, -257 = RS256 (Windows Hello) - IANA COSE Algorithms registry
-          pubKeyCredParams: [{ type: "public-key", alg: -7 },{ type: "public-key", alg: -8 },{ type: "public-key", alg: -257 }],
-          authenticatorSelection: {
-              authenticatorAttachment: "cross-platform",
-          },
-          timeout: 60000,
-          attestation: "direct"
-      }
-
-      const rCredential = await navigator.credentials.create({
-          publicKey: publicKeyCredentialCreationOptions
-      })
-      credentialId = rCredential.rawId
-
-      /* --- VERIFY -- */
-
-
-      const publicKeyCredentialRequestOptions = {
-        challenge: challengeFromServer,
-        allowCredentials: [{
-            id: credentialId,
-            type: 'public-key',
-            transports: ['usb', 'ble', 'nfc'],
-        }],
-        rpId: "oppleo.nl",
-        // userVerification: "discouraged",
-        timeout: 60000,
-      }
-
-      const aCredential = await navigator.credentials.get({
-        publicKey: publicKeyCredentialRequestOptions
-      })
-
-
-
-
-      enablePasskeyDialog.modal('show')
-
-    }
 
     let changePasswordModal = null
     function showChangePasswordModal() {
@@ -964,7 +959,7 @@
     jQuery(document).ready(function () {
       console.log(timestamp() + " file load completed!")
       // Request webauthn info
-      getWebauthnAuthenticationOptions()
+      getWebauthnCredentials()
       $("button[id^=show_]").click(function () {
         id = $(this).attr('id').split("show_").pop()
         $('input[id=' + id).attr(
@@ -1089,6 +1084,12 @@
       $('button#validate-passkey').on('click', (ev) => {
         getWebauthnAuthenticationOptions(true, false)
       })
+      $('button#discoverable-credential-passkey').on('click', (ev) => {
+        getWebauthnAuthenticationOptions(true, false, true)
+      })
+
+      
+
       /* --- END PASSKEY --- */
 
 
@@ -1276,9 +1277,10 @@
                   Passkey:
                 </td>
                 <td>
-                  <button type="button" class="btn btn-sm btn-outline-warning-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="register-passkey"> <i class="fas fa-angle-right"></i> Toevoegen </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="validate-passkey"> <i class="fas fa-angle-right"></i> Valideer </button>
-                  <button type="button" class="btn btn-sm btn-outline-success-warning{% if not current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-disable-2fa"> <i class="fas fa-angle-right"></i> Uitschakelen </button>
+                  <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="register-passkey"> <i class="fas fa-angle-right"></i> Toevoegen </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="validate-passkey"> <i class="fas fa-angle-right"></i> Valideer </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="discoverable-credential-passkey"> <i class="fas fa-angle-right"></i> Discoverable Credential </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning{% if not current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-disable-2fa"> <i class="fas fa-angle-right"></i> Uitschakelen </button>
 
                 </td>
               </tr>

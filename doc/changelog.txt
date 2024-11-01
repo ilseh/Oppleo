@@ -1,7 +1,10 @@
-Version 1.7.0           2024-10-07
+Version 1.7.0           2024-11-01
 
 Added
-- Passkey support
+- WebAuthN Passkey support (a.o. Ubikey, MS Hello)
+
+Fixed
+- Unique username.
 
 Version 1.6.4           2024-10-04
 
