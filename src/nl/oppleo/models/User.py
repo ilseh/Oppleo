@@ -55,9 +55,11 @@ class User(Base):
                             .filter(User.username == username) \
                             .first()
         except InvalidRequestError as e:
+            User.__logger = logging.getLogger('nl.oppleo.models.User') if User.__logger is None else User.__logger
             User.__cleanupDbSession(db_session, User.__class__)
         except Exception as e:
             # Nothing to roll back 
+            User.__logger = logging.getLogger('nl.oppleo.models.User') if User.__logger is None else User.__logger
             User.__logger.error("Could not query {} table in database".format(User.__tablename__ ), exc_info=True)
             raise DbException("Could not query {} table in database".format(User.__tablename__ ))
         return user
@@ -118,6 +120,7 @@ class User(Base):
             # Should be only one
             return db_session.query(User).all()
         except Exception as e:
+            User.__logger = logging.getLogger('nl.oppleo.models.User') if User.__logger is None else User.__logger
             User.__logger.error("Could not query to {} table in database".format(User.__tablename__ ), exc_info=True)
         return None
 
@@ -148,9 +151,11 @@ class User(Base):
                                          .delete()
             db_session.commit()
         except InvalidRequestError as e:
+            User.__logger = logging.getLogger('nl.oppleo.models.User') if User.__logger is None else User.__logger
             User.__cleanupDbSession(db_session, User.__class__.__module__)
         except Exception as e:
             db_session.rollback()
+            User.__logger = logging.getLogger('nl.oppleo.models.User') if User.__logger is None else User.__logger
             User.__logger.error("Could not commit to {} table in database".format(User.__tablename__ ), exc_info=True)
             raise DbException("Could not commit to {} table in database".format(User.__tablename__ ))
 
