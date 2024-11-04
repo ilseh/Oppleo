@@ -7,6 +7,7 @@
 
      <i class="far fa-eye"></i>
      <i class="far fa-eye-slash"></i>
+
 */
 
 const oppleo_edit_str_template = document.createElement('template');
@@ -40,6 +41,18 @@ oppleo_edit_str_template.innerHTML = `
       background-color: #ffaa00;
       background-image: none;
       border-color: #ffaa00;
+  }
+  .btn-low-key-danger {
+      color: #df615c;
+      background-color: transparent;
+      background-image: none;
+      border-color: #df615c;
+  }
+  .btn-low-key-danger:hover, .btn-low-key-danger:focus, .btn-low-key-danger:active, .btn-low-key-danger.active, .open>.dropdown-toggle.btn-low-key-danger {
+      color: #fff;
+      background-color: #ef5350;
+      background-image: none;
+      border-color: #ef5350;
   }
   .form-control {
     color: #ffffff !important;
@@ -77,7 +90,7 @@ oppleo_edit_str_template.innerHTML = `
         <i class="fas fa-info-circle"></i>
       </span>
     </span>
-    <span id="input_container" class="input-group-append" style="width: calc(100% - 44px);">
+    <span id="input_container" class="input-group-append">
       <input 
         class="form-control form-control-sm" 
         type="text"
@@ -123,6 +136,17 @@ oppleo_edit_str_template.innerHTML = `
         >
         <i class="fas fa-lock"></i>
       </button> 
+      <button
+        type="button" 
+        id="deleteButton"
+        class="btn btn-sm pl-3 pr-3 waves-effect waves-light btn-low-key-danger"
+        data-toggle="tooltip" 
+        data-placement="bottom" 
+        data-html="true" 
+        title="<em>Verwijderen</em>"
+        >
+        <i class="fas fa-trash-alt"></i>
+      </button> 
     </span>
   </div>`
 
@@ -139,6 +163,7 @@ class OppleoEditStr extends HTMLElement {
     this.$hideEditButton = this._shadowRoot.querySelector('button#hideEditButton')
     this.$cancelButton = this._shadowRoot.querySelector('button#cancelButton')
     this.$editApplyButton = this._shadowRoot.querySelector('button#editApplyButton')
+    this.$deleteButton = this._shadowRoot.querySelector('button#deleteButton')
     this.$regex = undefined
 
     this.$input.addEventListener('keypress', () => { this.drawValidationBorder() })
@@ -174,6 +199,21 @@ class OppleoEditStr extends HTMLElement {
       this.$hideEditButton.blur()
     })
 
+    this.$deleteButton.addEventListener('click', () => {
+      // Delete button clicked?
+      let newValue = this.$input.value
+      let oldValue = this.$input.getAttribute('placeholder')
+      this.dispatchEvent(
+        new CustomEvent('delete', {
+            bubbles: true, 
+            detail: { 
+              newValue: newValue,
+              oldValue: oldValue
+            }
+        })
+      )
+    })
+
     this.$cancelButton.addEventListener('click', () => {
       if (this.hide != undefined) {
         this.$input.value = this.hide
@@ -194,15 +234,16 @@ class OppleoEditStr extends HTMLElement {
       this.$input_container.classList.remove("input-group-append")
 
       this.$cancelButton.style.display = "none"
-      this.$input_container.style.width = 'calc(100% - 44px)';
       this.$editApplyButton.setAttribute('data-original-title', '<em>Wijzigen</em>')
       this.$editApplyButton.innerHTML = '<i class="fas fa-lock"></i>'
+      this.$input_container.style.width = this.calcWidthCSS()
       this.$editApplyButton.classList.add("btn-low-key-warning")
       this.$editApplyButton.classList.remove("btn-primary")    
       // Hide the hide/show button in locked view
       this.$hideEditButton.style.display = "none"
       this.drawValidationBorder()  
     })
+
     this.$editApplyButton.addEventListener('click', () => {
       if (this.$editApplyButton.innerHTML.indexOf("fa-lock") >= 0) {
         // Unlock
@@ -228,19 +269,7 @@ class OppleoEditStr extends HTMLElement {
         this.$editApplyButton.classList.remove("btn-low-key-warning")
         this.$editApplyButton.classList.add("btn-primary")
         this.$editApplyButton.blur()
-        if (this.info != null) {
-          if (this.hideEdit != null) {
-            this.$input_container.style.width = 'calc(100% - 164px)'; // 130 + 34
-          } else {
-            this.$input_container.style.width = 'calc(100% - 130px)'; // 130
-          }
-        } else {
-          if (this.hideEdit != null) {
-            this.$input_container.style.width = 'calc(100% - 122px)'; // 88 + 34
-          } else {
-            this.$input_container.style.width = 'calc(100% - 88px)'; // 88
-          }
-        }
+        this.$input_container.style.width = this.calcWidthCSS()
         // Password view
         if (this.hideEdit != undefined) {
           // Show the hide/show button in edit view
@@ -271,7 +300,7 @@ class OppleoEditStr extends HTMLElement {
           this.$editApplyButton.innerHTML = '<i class="fas fa-lock"></i>'
           this.$editApplyButton.classList.add("btn-low-key-warning")
           this.$editApplyButton.classList.remove("btn-primary")
-          this.$input_container.style.width = 'calc(100% - 44px)';
+          this.$input_container.style.width = this.calcWidthCSS()
           // Hide the hide/show button in locked view
           this.$hideEditButton.style.display = "none"
 
@@ -291,7 +320,16 @@ class OppleoEditStr extends HTMLElement {
         }
       }
     })
-
+  }
+  calcWidthCSS() {
+    let _editable = this.$editApplyButton.innerHTML.indexOf("fa-lock") < 0
+    let _infoSpan = (_editable && this.info != null ? '42px' : '0px')
+    let _input = '100%'
+    let _hideEditButton = ( this.hideEdit != null ? '34px' : '0px' )
+    let _cancelButton = (this.unlock ? '0px' : ( _editable ? '44px' : '0px' ) )
+    let _editApplyButton = (this.unlock ? '0px' : '44px' )
+    let _deleteButton = ( this.delete ? '48px' : '0px' )
+    return 'calc(' + _input +' - ' + _infoSpan + ' - ' + _hideEditButton + ' - ' + _cancelButton + ' - ' + _editApplyButton + ' - ' + _deleteButton + ')'
   }
   get id() {
     return this.getAttribute('id')
@@ -351,6 +389,9 @@ class OppleoEditStr extends HTMLElement {
   set unlock(value) {
     this.setAttribute('lock', value)
   }
+  get delete() {
+    return (this.getAttribute('delete') === 'true')
+  }
   static get observedAttributes() {
     return ['prefix', 'value', 'suffix', 'info']
   }
@@ -372,28 +413,28 @@ class OppleoEditStr extends HTMLElement {
     $(this.$hideEditButton).tooltip({ boundary: 'window' })
     $(this.$cancelButton).tooltip({ boundary: 'window' })
     $(this.$editApplyButton).tooltip({ boundary: 'window' })
+    $(this.$deleteButton).tooltip({ boundary: 'window' })
+    if (!this.delete) {
+      // No delete. Hide the delete button
+      $(this.$deleteButton).hide()
+    }
     // If not locked, unlock and hide apply and cancel buttons
     if (this.unlock) {
       this.$editApplyButton.click()
       $(this.$editApplyButton).hide()
       $(this.$cancelButton).hide()
       if (this.info == null) {
-        if (this.hideEdit != null) {
-          $(this.$input_container).css('width', 'calc(100% - 34px)')   // 0 + 34
-        } else {
-          $(this.$input_container).css('width', 'calc(100% - 0px)')   // 0
-        }
         // Unlocked, but no info. Hide the info button
         this.$infoSpan.style.display = "none"
         // Info span hidden, make the input container the prepend
         this.$input_container.classList.add("input-group-prepend")
         this.$input_container.classList.remove("input-group-append")
       } else {
-        if (this.hideEdit != null) {
-          $(this.$input_container).css('width', 'calc(100% - 76px)')  // 42 + 34
-        } else {
-          $(this.$input_container).css('width', 'calc(100% - 42px)')  // 42
-        }
+        // Unlocked, but no info. Hide the info button
+        this.$infoSpan.style.display = ""
+        // Info span hidden, make the input container the prepend
+        this.$input_container.classList.add("input-group-append")
+        this.$input_container.classList.remove("input-group-prepend")
       }
     } else {
       // Locked, hide the info button
@@ -402,6 +443,7 @@ class OppleoEditStr extends HTMLElement {
       this.$input_container.classList.add("input-group-prepend")
       this.$input_container.classList.remove("input-group-append")
     }
+    $(this.$input_container).css('width', this.calcWidthCSS())  // TODO
   }
   drawValidationBorder() {
     if (this.validate(this.$input.value)) {   // Valid
