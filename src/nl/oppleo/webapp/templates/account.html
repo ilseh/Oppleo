@@ -257,7 +257,7 @@
 
 
 
-    function updateProfile( param, value ) {
+    function updateProfile( credentialId, action, value ) {
       console.log(timestamp() + ' updateProfile()')            
       // Show spinner
       $('.spinner').show()
@@ -265,7 +265,8 @@
       if (value === false) value = 'false'     
       data = {
             csrf_token    : '{{ csrf_token() }}',
-            param         : param,
+            credentialId  : credentialId,
+            action        : action,
             value         : value
           }
       $.ajax({
@@ -282,8 +283,24 @@
         console.log(data)
         switch (data.status) {
           case 200:
-            if (data.param.startsWith("passkey-")) {
-              autoHideNotify('success', 'top-left', 'Passkey', 'Naam passkey '+data.param.substring(7, data.param.length)+' gewijzigd.')
+            switch (data.action) {
+              case 'rename':
+                autoHideNotify('success', 'top-left', 'Passkey', 'Naam credential gewijzigd in '+data.value+'.')
+                break
+              case 'delete':
+                $('tr#passkey-'+data.credentialId).each( (i, trId) => {
+                  trId.remove()
+                })
+                if ($('oppleo-edit-str[id^=passkey-]').length == 0) {
+                  $('button#validate-passkey').addClass('d-none')
+                  $('button#discoverable-credential-passkey').addClass('d-none')
+                }
+                autoHideNotify('success', 'top-left', 'Passkey', 'Naam credential '+data.name+' verwijderd.')
+                break
+              default:
+                console.error("Unknkown action " + data.action + " completed for credential " + data.credentialId)
+                autoHideNotify('warning','top-left', 'Foutmelding', 'Onbekende actie.')
+                break
             }
             break
           case 400:
@@ -502,6 +519,7 @@
       $('a[href="#d2fa-step1"').tab('show')
     }
 
+    let infoPasskeyDialog = null
 
     async function getWebauthnRegistrationOptions() {
       // --- FETCH WEBAUTHN REGISTRATION OPTIONS
@@ -615,10 +633,8 @@
 
       let rCredential = undefined
 
-      // Credential IDs to ArrayBuffer
-      let excludeCredentialsB64URL = webauthnRegistrationOptions.excludeCredentials.map((credential) => ({ ...credential, id: base64URLdecode( credential.id ) }) )
-
-      let excludeCredentials = webauthnRegistrationOptions.excludeCredentials.map((credential) => ({ ...credential, id: toArrayBuffer( base64URLdecode( credential.id ) ) }) )
+      let excludeCredentials = webauthnRegistrationOptions.excludeCredentials.map((credential) => ({ ...credential, id: toArrayBuffer( credential.id ) }) )
+      //let excludeCredentials1 = webauthnRegistrationOptions.excludeCredentials.map((credential) => ({ ...credential, id: toArrayBuffer( base64URLdecode( credential.id ) ) }) )
       excludeCredentials.forEach( (excludeCredentials, i) => {
         excludeCredentials.transports = [ 'nfc', 'usb' ]
       })
@@ -689,9 +705,33 @@
         switch (data.status) {
           case 200:
             // Add key to the list
-            existingKeyCount = $('table#passkey-list tr[id^="passkey-"]').length
             if (!$('tr#passkey-'+data.credential.id).length) {
-              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.id+'"><td></td><td>Key '+(existingKeyCount+1)+'<button type="button" class="btn btn-sm btn-outline-success ml-4" id="rename-passkey-'+data.credential.id+'"><i class="fas fa-angle-right"></i> Hernoem</button></td></tr>')
+              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.id+'"><td></td><td><oppleo-edit-str id="passkey-'+data.credential.id+'" prefix="" value="'+data.credential.name+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}\',:;|&quot; ]|[ ])+$" info="Herkenbare naam voor credential met id '+data.credential.id+'." delete="true" /></td></tr>')
+              // Oppleo web component applied change
+              $('oppleo-edit-str#passkey-'+data.credential.id).on('apply', (e) => {
+                console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+                // Submit
+                let credentialId = e.target.id.substring(8, e.target.id.length)
+                updateProfile( credentialId, 'rename', e.detail.newValue )
+              })
+              // Oppleo web component delete
+              $('oppleo-edit-str#passkey-'+data.credential.id).on('delete', (e) => {
+                console.log('oppleo-edit-str onDelete [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+
+                showConfirmModal(
+                    '<i class="fas fa-exclamation-triangle"></i> Verwijder', 
+                    'Verwijder credential <span class="text-dark"><strong>' + e.target.$input.value + '</strong></span>?', 
+                    () => { 
+                      // Delete
+                      let credentialId = e.target.id.substring(8, e.target.id.length)
+                      updateProfile( credentialId, 'delete', e.detail.newValue )
+                    }
+                  )
+              })
+            }
+            if ($('oppleo-edit-str[id^=passkey-]').length > 0) {
+              $('button#validate-passkey').removeClass('d-none')
+              $('button#discoverable-credential-passkey').removeClass('d-none')
             }
             autoHideNotify('success','top-left', 'WebAuthN', 'Passkey geregistreerd.')
             break
@@ -734,18 +774,32 @@
             // Add keys to the list
             webauthnRegisteredCredentials.forEach( (e, i) => {
               if (!$('tr#passkey-'+e.id).length) {
-                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+e.credential_id+'" prefix="" value="'+(e.name!=""?e.name:'Key '+(i+1))+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}\',:;|&quot; ]|[ ])+$" info="Herkenbare naam voor credential met id '+e.credential_id+'." /></td></tr>')
-
-
-
+                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+e.credential_id+'" prefix="" value="'+(e.name!=""?e.name:'Key '+(i+1))+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}\',:;|&quot; ]|[ ])+$" info="Herkenbare naam voor credential met id '+e.credential_id+'." delete="true" /></td></tr>')
+                // Oppleo web component applied change
+                $('oppleo-edit-str#passkey-'+e.credential_id).on('apply', (e) => {
+                  console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
+                  // Submit
+                  let credentialId = e.target.id.substring(8, e.target.id.length)
+                  updateProfile( credentialId, 'rename', e.detail.newValue )
+                })
+                // Oppleo web component delete
+                $('oppleo-edit-str#passkey-'+e.credential_id).on('delete', (e) => {
+                  showConfirmModal(
+                    '<i class="fas fa-exclamation-triangle"></i> Verwijder', 
+                    'Verwijder credential <span class="text-dark"><strong>' + e.target.$input.value + '</strong></span>?', 
+                    () => { 
+                      // Delete
+                      let credentialId = e.target.id.substring(8, e.target.id.length)
+                      updateProfile( credentialId, 'delete', e.detail.newValue )
+                    }
+                  )
+                })
               }
             })
-            // Oppleo web component applied change
-            $('oppleo-edit-str').on('apply', (e) => {
-              console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
-              // Submit
-              updateProfile( e.target.id, e.detail.newValue )
-            })
+            if ($('oppleo-edit-str[id^=passkey-]').length > 0) {
+              $('button#validate-passkey').removeClass('d-none')
+              $('button#discoverable-credential-passkey').removeClass('d-none')
+            }
             break
           default:
             autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
@@ -795,12 +849,6 @@
         switch (data.status) {
           case 200:
             webauthnAuthenticationOptions = JSON.parse(data.options)
-            // Add keys to the list
-            webauthnAuthenticationOptions.allowCredentials.forEach( (e, i) => {
-              if (!$('tr#passkey-'+e.id).length) {
-                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.id+'"><td></td><td>Key '+(i+1)+'<button type="button" class="btn btn-sm btn-outline-success ml-4" id="rename-passkey-'+e.id+'"><i class="fas fa-angle-right"></i> Hernoem</button></td></tr>')
-              }
-            })
             if (validate) {
               validatePasskey(credentialUser)
             }
@@ -882,7 +930,7 @@
         console.log(data)
         switch (data.status) {
           case 200:
-            autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd.')
+            autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.keyname + '.')
             break
           default:
             autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
@@ -901,6 +949,36 @@
       let i = 0
 
     }    
+
+    let confirmModal = null
+    function showConfirmModal(title, message, confirmCallback, cancelCallback, closeCallback) {
+      // Init modal dialog
+      $('h3#confirmModalLabel').html(title)
+      $('div#div-confim-msg').html(message)
+      /* --- Confirm --- */
+      $('button#confirm-modal-footer-confirm').off('click')
+      $('button#confirm-modal-footer-confirm').on("click", function(e) {
+        confirmModal.modal('hide')
+        if (typeof confirmCallback === 'function') {
+          confirmCallback()
+        }
+      })
+      /* --- Cancel --- */
+      $('button#confirm-modal-footer-cancel').off('click')
+      $('button#confirm-modal-footer-cancel').on("click", function(e) {
+        confirmModal.modal('hide')
+        if (typeof cancelCallback === 'function') {
+          cancelCallback()
+        }
+      })
+      confirmModal.off('hidden.bs.modal')
+      confirmModal.on("hidden.bs.modal", function () {
+        if (typeof closeCallback === 'function') {
+          closeCallback()
+        }
+      })
+      confirmModal.modal('show')
+    }
 
     let changePasswordModal = null
     function showChangePasswordModal() {
@@ -970,6 +1048,19 @@
         $(this).find('i').toggleClass('fa-eye-slash') // far fa-eye-slash
       })
 
+      infoPasskeyDialog = $('#infoPasskeyModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $('button#infopasskey-modal-close').on("click", function(e) {
+        infoPasskeyDialog.modal('hide')
+        e.preventDefault()
+      })
+      $('button#modal-passkey-info').on('click', (e) => {
+        infoPasskeyDialog.modal('show')
+      })
+
       /* --- START 2FA --- */
       $('button#enable2fa-modal-footer-nextaction').on("click", function(e) {
         // active tab?
@@ -995,9 +1086,6 @@
       })
       $('button#modal-2fa-info').on('click', (e) => {
         info2FADialog.modal('show')
-      })
-      $('button#modal-passkey-info').on('click', (e) => {
-        infoPasskeyDialog.modal('show')
       })
       $('button#modal-info-2fa-enable-2fa').on('click', (e) => {
         info2FADialog.modal('hide')
@@ -1091,6 +1179,12 @@
       
 
       /* --- END PASSKEY --- */
+
+      confirmModal = $('#confirmModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
 
 
       changePasswordModal = $('#changePasswordModal').modal({
@@ -1267,21 +1361,17 @@
           <table class="table table-striped table-sm" id="passkey-list">
             <tbody>
               <tr id="account_passkey">
+                <td>Passkey:</td>
                 <td>
-                  <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %} mr-2" id="modal-passkey-info"
+                  <button type="button" class="btn btn-sm btn-outline-success" id="register-passkey"> <i class="fas fa-angle-right"></i> Toevoegen </button>
+                  <button type="button" class="btn btn-sm btn-outline-success mr-2" id="modal-passkey-info"
                     data-toggle="tooltip" data-placement="bottom" data-html="true" title="" 
                     data-original-title="Klik voor meer informatie over Passkeys"
                     >
                     <i class="fas fa-info-circle"></i>
                   </button>
-                  Passkey:
-                </td>
-                <td>
-                  <button type="button" class="btn btn-sm btn-outline-success{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="register-passkey"> <i class="fas fa-angle-right"></i> Toevoegen </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="validate-passkey"> <i class="fas fa-angle-right"></i> Valideer </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning{% if current_user.has_enabled_2FA() %} d-none{% endif %}" id="discoverable-credential-passkey"> <i class="fas fa-angle-right"></i> Discoverable Credential </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning{% if not current_user.has_enabled_2FA() %} d-none{% endif %}" id="modal-disable-2fa"> <i class="fas fa-angle-right"></i> Uitschakelen </button>
-
+                  <button type="button" class="btn btn-sm btn-outline-warning d-none" id="validate-passkey"> <i class="fas fa-angle-right"></i> Valideer </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning d-none" id="discoverable-credential-passkey"> <i class="fas fa-angle-right"></i> Discover </button>
                 </td>
               </tr>
             </tbody>
@@ -1544,17 +1634,17 @@
                   <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
                   data-original-title="Download <b>Google Authenticator</b> uit de Play Store voor Android telefoons"><i class="fab fa-google-play"></i></a>
                   <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
-                  data-original-title="Download <b>Google Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></i></a>,
+                  data-original-title="Download <b>Google Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></a>,
                   <span class="text-white font-bold">Microsoft Authenticator</span>
                   <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
                   data-original-title="Download <b>Microsoft Authenticator</b> uit de Play Store voor Android telefoons"><i class="fab fa-google-play"></i></a>
                   <a href="https://apps.apple.com/nl/app/microsoft-authenticator/id983156458" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
-                  data-original-title="Download <b>Microsoft Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></i></a> of
+                  data-original-title="Download <b>Microsoft Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></a> of
                   <span class="text-white font-bold">Lastpass Authenticator</span> 
                   <a href="https://play.google.com/store/apps/details?id=com.lastpass.authenticator" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
                   data-original-title="Download <b>Lastpass Authenticator</b> uit de Play Store voor Android telefoons"><i class="fab fa-google-play"></i></a>
                   <a href="https://apps.apple.com/nl/app/lastpass-authenticator/id1079110004" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
-                  data-original-title="Download <b>Lastpass Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></i></a>
+                  data-original-title="Download <b>Lastpass Authenticator</b> uit de App Store voor Apple iOS telefoons"><i class="fab fa-app-store"></i></a>
                   op een telefoon of tablet nodig. <br/>
                   <br/>
                   Download eerst een Authenticator app en klik daarna op de <button class="btn btn-sm btn-outline-success" id="modal-info-2fa-enable-2fa"> <i class="fas fa-angle-right"></i> Activeren</button> knop. 
@@ -1569,6 +1659,64 @@
           </div>
         </div>
       </div>
+
+
+       <!-- Bootstrap Modal -->
+       <div class="modal fade" id="infoPasskeyModal" tabindex="-1" role="dialog" aria-labelledby="infoPasskeyModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title" id="infoPasskeyModalLabel">Wat zijn Passkeys</h3>
+              <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i class="fas fa-times"></i></span>
+              </button>
+            </div>
+            <div class="modal-body">
+
+              <div class="col-lg-12">
+                <div class="w-100 pb-2 pt-3">
+                  Een passkey is een digitaal certificaat dat wordt gebruikt als authenticatiemethode voor een website of applicatie zoals Oppleo. Met een passkey kan veilig worden ingelogd op Oppleo zonder het hoeven onthouden van een complex wachtwoord.
+                  <a href="https://nl.wikipedia.org/wiki/Passkey" target="_new" data-toggle="tooltip" data-placement="top" data-html="true" title="" 
+                  data-original-title="Lees <b>Wikipedia</b> voor meer informatie over passkeys"><i class="fab fa-wikipedia-w"></i></a>
+                  <span class="text-white font-bold">Wikipedia</span>
+                </div>
+
+              </div>
+            </div>
+  
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" id="infopasskey-modal-close"> Sluiten</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        <!-- Confirm Modal -->
+        <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title" id="confirmModalLabel"> <i class="fas fa-exclamation-triangle"></i> Bevestig</h3>
+              <button type="button" class="close-x" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true"><i class="fas fa-times"></i></span>
+              </button>
+            </div>
+            <div class="modal-body" style="min-height: 100px;">
+
+              <div class="row pl-5 pr-5">
+                <div class="col-md-1 w-10 pb-2 pt-3 align-items-start" id="div-confim-icon"><h1><i class="fas fa-exclamation-triangle text-danger"></i></h1></div>
+                <div class="col-md-auto pt-4" id="div-confim-msg"> ... </div>
+              </div>
+            </div>
+          
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary mr-2" id="confirm-modal-footer-cancel">Annuleren</button>
+              <button type="button" class="btn btn-primary" id="confirm-modal-footer-confirm"> Ok</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
        <!-- Bootstrap Modal -->
        <div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true" data-backdrop="static">

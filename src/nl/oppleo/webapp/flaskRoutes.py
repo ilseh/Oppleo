@@ -3825,7 +3825,9 @@ def webauthn_registration_post():
     # Return status
     return jsonify({ 
         'status'            : HTTP_CODE_200_OK,
-        'credential'        : { 'id': webAuthNCredentialModel.credential_id }, 
+        'credential'        : { 'id': webAuthNCredentialModel.credential_id,
+                                'name': webAuthNCredentialModel.credential_name
+                              }, 
         'rp': {
             'name'          :  relyingPartyName,
             'id'            :  relyingPartyId
@@ -3951,10 +3953,11 @@ def webauthn_authentication_verify():
                 'status'  : HTTP_CODE_401_UNAUTHORIZED,
                 'code'    : DETAIL_CODE_26_USERNAME_UNKNOWN,
                 'username': username,
+                'keyname' : registeredCredential.credential_name,
                 'msg'     : 'Username unknown'
                 })
         # Log user in
-        login_user(user, remember=rememberMe)
+        login_user(user)
         user.authenticated = True
         user.save()
 
@@ -3977,6 +3980,8 @@ def webauthn_authentication_verify():
             'code'    : DETAIL_CODE_200_OK,
             'username': username,
             '' if login_next is None else 'login_next': login_next,
+            'keyname' : registeredCredential.credential_name,
+
             'msg'     : 'Loging successful'
             })                
  
@@ -3993,7 +3998,8 @@ def webauthn_authentication_verify():
             'id'            : registeredCredential.credential_owner,
             'name'          : "{}@oppleo.nl".format(registeredCredential.credential_owner),
             'displayName'   : registeredCredential.credential_owner
-        }
+        },
+        'keyname'           : registeredCredential.credential_name
     })
 
 
@@ -4006,27 +4012,50 @@ def webauthn_passkey():
 
     if (request.method == 'POST'):
         # Apply changes
-        param = request.form.get('param')
+        credentialId = request.form.get('credentialId')
+        action = request.form.get('action')
         value = request.form.get('value')
 
-        if (param.startswith("passkey-")):
-            credential_id = param[8:]
-            webAuthNCredentialModel = WebAuthNCredentialModel.get(credential_owner=current_user.username, credential_id=credential_id)
+        if (action == 'rename'):
+            webAuthNCredentialModel = WebAuthNCredentialModel.get(credential_owner=current_user.username, credential_id=credentialId)
             if webAuthNCredentialModel is None:
                 return jsonify({ 
                     'status': HTTP_CODE_404_NOT_FOUND, 
-                    'param': param, 
+                    'credentialId': credentialId,
+                    'action': action,
                     'value': value
                 })
             webAuthNCredentialModel.setAndSave('credential_name', value)
             return jsonify({ 
                 'status': HTTP_CODE_200_OK, 
-                'param': param, 
+                'credentialId': credentialId, 
+                'action': action,
                 'value': value
             })
+            
+        if (action == 'delete'):
+            webAuthNCredentialModel = WebAuthNCredentialModel.get(credential_owner=current_user.username, credential_id=credentialId)
+            if webAuthNCredentialModel is None:
+                return jsonify({ 
+                    'status': HTTP_CODE_404_NOT_FOUND, 
+                    'credentialId': credentialId, 
+                    'action': action,
+                    'value': value
+                })
+            name = webAuthNCredentialModel.credential_name
+            webAuthNCredentialModel.delete()
+            return jsonify({ 
+                'status': HTTP_CODE_200_OK, 
+                'credentialId': credentialId,
+                'name': name,
+                'action': action,
+                'value': value
+            })
+            
         return jsonify({ 
             'status': HTTP_CODE_400_BAD_REQUEST,
-            'param': param, 
+            'credentialId': credentialId,
+            'action': action,
             'value': value
         })
         
