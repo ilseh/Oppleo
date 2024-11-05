@@ -3940,14 +3940,21 @@ def webauthn_authentication_verify():
             'msg'       : "Authentication failed ({})".format(e.args)
         }), HTTP_CODE_400_BAD_REQUEST        
 
+    if verifiedAuthentication is None:
+        # Not verified
+        return jsonify({ 
+            'status'    : HTTP_CODE_400_BAD_REQUEST,
+            'msg'       : "Authentication failed"
+        }), HTTP_CODE_400_BAD_REQUEST        
+
     # TODO - log user in
 
     """ XXXXXXXXXX """
 
     # If the user is not logged in, login the user
-    if current_user is None:
+    if current_user is None or not current_user.is_authenticated:
         # The user is not logged in, login the user. Find the user
-        user = User.get(username)
+        user = User.get(username=registeredCredential.credential_owner)
         if user is None:
             return jsonify({
                 'status'  : HTTP_CODE_401_UNAUTHORIZED,
@@ -3978,6 +3985,15 @@ def webauthn_authentication_verify():
         return jsonify({
             'status'  : HTTP_CODE_200_OK,
             'code'    : DETAIL_CODE_200_OK,
+            'rp': {
+                'name'          :  relyingPartyName,
+                'id'            :  relyingPartyId
+            },
+            'User': {
+                'id'            : registeredCredential.credential_owner,
+                'name'          : "{}@oppleo.nl".format(registeredCredential.credential_owner),
+                'displayName'   : registeredCredential.credential_owner
+            },
             'username': username,
             '' if login_next is None else 'login_next': login_next,
             'keyname' : registeredCredential.credential_name,

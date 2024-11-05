@@ -55,6 +55,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="msapplication-starturl" content="/">
 
+  <!-- Oppleo webauthn functions -->
+  <script src="{{ url_for('static', filename='js/oppleo-webauthn.js') }}"></script>
+
   <style>
     button {
       cursor: pointer;
@@ -152,11 +155,13 @@
                   $('#field-error-code-msg').html('')
                   $('#field-error-code-icon').addClass('d-none')
                   $('#field-error-code-div').removeClass('d-none')
+                  $('#login-passkey').addClass('d-none')
                 } else {
                   // Submitted 2FA incorrect
                   $('#2fa-code').addClass('field-error')
                   $('#field-error-code-msg').html("De 2-Factor Authenticatie code is niet geldig!")
                   $('#field-error-code-icon').removeClass('d-none')
+                  $('#login-passkey').addClass('d-none')
                 }
                 $('#2fa-code').val('')
                 $('#2fa-code').focus()
@@ -168,6 +173,7 @@
                 $('#field-error-login-msg').html('Gebruiker of wachtwoord niet geldig!')
                 $('#field-error-login-icon').removeClass('d-none')
                 $('#username').focus()
+                $('#login-passkey').removeClass('d-none')
                 break
             }
             break
@@ -237,6 +243,15 @@
       $('.2fa-code').on('input', function (ev) {
         // Only accept digits, 6 max
         $(this).val($(this).val().replace(/[^0-9]/g, '').substring(0,6))
+      })
+      /* --- START PASSKEY --- */
+      $('button#login-passkey').on('click', function (ev) {
+        // if user known validate, otherwise discover
+        if ($('input#username').val().length == 0) { 
+            getWebauthnAuthenticationOptions('{{ csrf_token() }}', true)
+        } else {
+            getWebauthnAuthenticationOptions('{{ csrf_token() }}', true, $('input#username').val())
+        }
       })
       // Remove spinner
       $('.spinner').hide()
@@ -336,7 +351,9 @@
 
     <div class="form-group text-right m-t-20">
       <div class="col-xs-12">
-        <button id="login-cancel" class="btn btn-secondary btn-custom w-md waves-effect waves-light"
+        <button id="login-passkey" class="btn btn-success btn-custom waves-effect waves-light"
+          type="button"><i class="fab fa-keycdn"></i></button>
+          <button id="login-cancel" class="btn btn-secondary btn-custom w-md waves-effect waves-light"
           type="button">Annuleren</button>
         <button class="btn btn-primary btn-custom w-md waves-effect waves-light" id="login-submit" type="submit">Log In</button>
       </div>
