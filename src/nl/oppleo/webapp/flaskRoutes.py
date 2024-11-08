@@ -315,12 +315,14 @@ def login2(username:str=None):
             'msg'     : 'Password incorrect'
             })                
 
-    # Valid password, 2FA enabled?
+    # Valid password, 2FA required?
     if (user.has_enabled_2FA() and 
             (user.is_2FA_local_enforced() or 
-                IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False)
+                (not user.is_2FA_local_enforced() and 
+                        not IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False)
+                )
             )
-       ): 
+        ): 
         # Password correct, validate the code
         shared_secret = decryptAES(key=password, encData=user.shared_secret)
         if totp is None or not validateTotp(totp=totp, shared_secret=shared_secret):
@@ -476,22 +478,29 @@ def shutdown():
             requesttitle="Uitschakelen",
             requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
             buttontitle="Schakel uit!",
+            hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+            passkeyAction="shutdown",
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
-    if form.validate_on_submit() and \
-       check_password_hash(current_user.password, form.password.data):
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
+
+    if (webauthnAuthenticationStatusCode == HTTP_CODE_200_OK) or \
+            (form.validate_on_submit() and 
+                check_password_hash(current_user.password, form.password.data)):
         flaskRoutesLogger.debug('Shutdown requested and authorized.')
         if BackupUtil().backupInProgress:
             # Cannot shutdown now, wait for backup to complete
-            flaskRoutesLogger.debug('Restart request denied. Backup in progress.')
+            flaskRoutesLogger.debug('Shutdown request denied. Backup in progress.')
             return render_template("authorize.html", 
                     form=form, 
                     requesttitle="Uitschakelen",
                     requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
                     buttontitle="Schakel uit!",
+                    hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                    passkeyAction="shutdown",
                     errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
                     oppleoconfig=oppleoConfig,
                     changelog=changeLog
@@ -509,6 +518,8 @@ def shutdown():
                 requesttitle="Uitschakelen",
                 requestdescription="Schakel het systeem helemaal uit.<br/>Doe dit alleen voor onderhoud aan het systeem. Voor opnieuw opstarten is fysieke toegang tot het systeem vereist!",
                 buttontitle="Schakel uit!",
+                hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                passkeyAction="shutdown",
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
@@ -528,13 +539,18 @@ def reboot():
             requesttitle="Reboot",
             requestdescription="Reboot het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. <br />Dit zal ongeveer 40 seconden duren.",
             buttontitle="Reboot!",
+            hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+            passkeyAction="reboot",
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
-    if form.validate_on_submit() and \
-       check_password_hash(current_user.password, form.password.data):
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
+
+    if (webauthnAuthenticationStatusCode == HTTP_CODE_200_OK) or \
+            (form.validate_on_submit() and 
+                check_password_hash(current_user.password, form.password.data)):
         flaskRoutesLogger.debug('Reboot requested and authorized.')
         if BackupUtil().backupInProgress:
             # Cannot reboot now, wait for backup to complete
@@ -544,6 +560,8 @@ def reboot():
                     requesttitle="Reboot",
                     requestdescription="Reboot het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. <br />Dit zal ongeveer 40 seconden duren.",
                     buttontitle="Reboot!",
+                    hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                    passkeyAction="reboot",
                     errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
                     oppleoconfig=oppleoConfig,
                     changelog=changeLog
@@ -561,10 +579,25 @@ def reboot():
                 requesttitle="Reboot",
                 requestdescription="Reboot het systeem.<br/>Doe dit alleen als het systeem zich inconsistent gedraagd. <br />Dit zal ongeveer 40 seconden duren.",
                 buttontitle="Reboot!",
+                hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                passkeyAction="reboot",
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
                 )
+
+
+"""
+    Functions to explicitly authorize for
+    * restart
+    * shutdown
+    * delete_charge_session
+    * start_charge_session
+    * stop_charge_session
+    * reboot
+    * restart
+    * software-update
+"""
 
 
 @flaskRoutes.route("/restart", methods=["GET", "POST"])
@@ -580,13 +613,18 @@ def restart():
             requesttitle="Herstarten",
             requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
             buttontitle="Herstart!",
+            hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+            passkeyAction="restart",
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
-    if form.validate_on_submit() and \
-       check_password_hash(current_user.password, form.password.data):
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
+
+    if (webauthnAuthenticationStatusCode == HTTP_CODE_200_OK) or \
+            (form.validate_on_submit() and 
+                check_password_hash(current_user.password, form.password.data)):
         if BackupUtil().backupInProgress:
             # Cannot restart now, wait for backup to complete
             flaskRoutesLogger.debug('Restart request denied. Backup in progress.')
@@ -595,6 +633,8 @@ def restart():
                     requesttitle="Herstarten",
                     requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
                     buttontitle="Herstart!",
+                    hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                    passkeyAction="restart",
                     errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
                     oppleoconfig=oppleoConfig,
                     changelog=changeLog
@@ -616,6 +656,8 @@ def restart():
                 requesttitle="Herstarten",
                 requestdescription="Herstart de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het herstarten van de applicatie duurt ongeveer 10 seconden.",
                 buttontitle="Herstart!",
+                hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                passkeyAction="restart",
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
@@ -639,13 +681,18 @@ def software_update():
             requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie kan tot 1 minuut duren.",
             requestdescriptionclass="text-center text-warning",
             buttontitle="Update!",
+            hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+            passkeyAction="softwareUpdate",
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
-    if form.validate_on_submit() and \
-       check_password_hash(current_user.password, form.password.data):
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
+
+    if (webauthnAuthenticationStatusCode == HTTP_CODE_200_OK) or \
+            (form.validate_on_submit() and 
+                check_password_hash(current_user.password, form.password.data)):
         flaskRoutesLogger.debug('Software update requested and authorized.')
         if BackupUtil().backupInProgress:
             # Cannot start software update now, wait for backup to complete
@@ -655,6 +702,8 @@ def software_update():
                     requesttitle="Software Update",
                     requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie kan tot 1 minuut duren.",
                     buttontitle="Herstart!",
+                    hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                    passkeyAction="softwareUpdate",
                     errormsg="Er wordt momenteel een backup gemaakt. Probeer het later normaals.",
                     oppleoconfig=oppleoConfig,
                     changelog=changeLog
@@ -685,6 +734,8 @@ def software_update():
                 requesttitle="Software Update",
                 requestdescription="Update de applicatie.<br/>Doe dit alleen als een nieuwe configuratie geladen moet worden. Het updaten van de applicatie kan 30 seconden tot 1 minuut duren.",
                 buttontitle="Herstart!",
+                hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                passkeyAction="softwareUpdate",
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
@@ -709,13 +760,19 @@ def delete_charge_session(id=None):
             form=AuthorizeForm(),
             requesttitle=str("Laadsessie " + str(id)),
             buttontitle=str("Verwijder laadsessie " + str(id)),
+            hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+            passkeyAction="deleteChargeSession",
+            passkeyActionUrl=str("/delete_charge_session/"+ str(id)),
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm()
-    if form.validate_on_submit() and \
-       check_password_hash(current_user.password, form.password.data):
+
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
+    if (webauthnAuthenticationStatusCode == HTTP_CODE_200_OK) or \
+            (form.validate_on_submit() and 
+                check_password_hash(current_user.password, form.password.data)):
         flaskRoutesLogger.debug('delete_charge_session requested and authorized.')
         charge_session = ChargeSessionModel.get_one_charge_session(id)
         charge_session.delete()
@@ -734,6 +791,9 @@ def delete_charge_session(id=None):
                 form=form, 
                 requesttitle=str("Laadsessie " + str(id)),
                 buttontitle=str("Verwijder laadsessie " + str(id)),
+                hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                passkeyAction="deleteChargeSession",
+                passkeyActionUrl=str("/delete_charge_session/"+ str(id)),
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
@@ -765,15 +825,20 @@ def start_charge_session(token=None):
             form=AuthorizeForm(next_page=next_page),
             requesttitle=str("Start laadsessie"),
             buttontitle="Start laadsessie",
+            hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+            passkeyAction="startChargeSession",
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm(next_page=next_page)
-    if (not oppleoConfig.authWebCharge) or (                                  \
-            form.validate_on_submit() and                                  \
-            check_password_hash(current_user.password, form.password.data) \
-            ):
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
+
+    if (webauthnAuthenticationStatusCode == HTTP_CODE_200_OK) or \
+            (not oppleoConfig.authWebCharge) or (                                  \
+                form.validate_on_submit() and                                  \
+                check_password_hash(current_user.password, form.password.data) \
+                ):
         flaskRoutesLogger.debug('start_charge_session requested. authorized with authWebCharge={}.'.format(oppleoConfig.authWebCharge))
 
         with threadLock:
@@ -815,6 +880,9 @@ def start_charge_session(token=None):
                         form=form, 
                         requesttitle=str("Start laadsessie " + str(token)),
                         buttontitle="Start laadsessie",
+                        hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                        passkeyAction="startChargeSession",
+                        passkeyActionUrl=str("/start_charge_session/"+ str(token)),
                         errormsg="Er is al een laadsessie actief. Stop deze eerst.",
                         oppleoconfig=oppleoConfig,
                         changelog=changeLog
@@ -829,6 +897,9 @@ def start_charge_session(token=None):
                 form=form, 
                 requesttitle=str("Start laadsessie " + str(token)),
                 buttontitle="Start laadsessie",
+                hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                passkeyAction="startChargeSession",
+                passkeyActionUrl=str("/start_charge_session/"+ str(token)),
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
@@ -859,16 +930,21 @@ def stop_charge_session(charge_session_id=None):
             form=AuthorizeForm(next_page=next_page),
             requesttitle=str("Stop laadsessie " + str(charge_session_id)),
             buttontitle="Stop laadsessie",
+            hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+            passkeyAction="stopChargeSession",
+            passkeyActionUrl=str("/stop_charge_session/"+ str(charge_session_id)),
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
     # For POST requests, login the current user by processing the form.
     form = AuthorizeForm(next_page=next_page)
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
 
-    if (not oppleoConfig.authWebCharge) or (                                  \
-            form.validate_on_submit() and                                  \
-            check_password_hash(current_user.password, form.password.data) \
-            ):
+    if (webauthnAuthenticationStatusCode == HTTP_CODE_200_OK) or \
+            (not oppleoConfig.authWebCharge) or (                                  \
+                form.validate_on_submit() and                                  \
+                check_password_hash(current_user.password, form.password.data) \
+                ):
         flaskRoutesLogger.debug('stop_charge_session requested. authorized with authWebCharge={}.'.format(oppleoConfig.authWebCharge))
 
         with threadLock:
@@ -890,6 +966,9 @@ def stop_charge_session(charge_session_id=None):
                 form=form, 
                 requesttitle=str("Stop laadsessie " + str(charge_session_id)),
                 buttontitle="Stop laadsessie",
+                hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
+                passkeyAction="stopChargeSession",
+                passkeyActionUrl=str("/stop_charge_session/"+ str(charge_session_id)),
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
@@ -3748,8 +3827,8 @@ def webauthn_registration_get():
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https
-    expectedOrigin = "https://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
+    # Force https - TODO: configurable (behind https (reversed) proxy?)
+    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
     relyingPartyName = oppleoConfig.chargerNameText
 
     webAuthNCredentialOptionsStore = WebAuthNCredentialOptionsStore()
@@ -3757,7 +3836,6 @@ def webauthn_registration_get():
                                                                                                                 relyingPartyId=relyingPartyId, 
                                                                                                                 user=current_user
                                                                                                             )
-
     # Return status
     return jsonify({ 
         'status'            : HTTP_CODE_200_OK,
@@ -3775,8 +3853,8 @@ def webauthn_registration_post():
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https
-    expectedOrigin = "https://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
+    # Force https - TODO: configurable (behind https (reversed) proxy?)
+    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
     relyingPartyName = oppleoConfig.chargerNameText
 
     try:
@@ -3811,9 +3889,18 @@ def webauthn_registration_post():
             require_user_verification=False
         )
     except Exception as e:
+        verifiedRegistration = None
+        flaskRoutesLogger.debug("Registration failed ({})".format(e.args))
+
+
+    # Delete chalenge (prevent replay)
+    WebAuthNCredentialOptionsStore().invalidate( challenge=issuedChallenge )
+
+    if verifiedRegistration is None:
+        # Not verified
         return jsonify({ 
             'status'    : HTTP_CODE_400_BAD_REQUEST,
-            'msg'       : "Registration failed ({})".format(e.args)
+            'msg'       : "Registration failed"
         }), HTTP_CODE_400_BAD_REQUEST        
 
     # STORE FOR LATER USE
@@ -3851,8 +3938,8 @@ def webauthn_authentication_get():
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https
-    expectedOrigin = "https://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
+    # Force https - TODO: configurable (behind https (reversed) proxy?)
+    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
     relyingPartyName = oppleoConfig.chargerNameText
 
     # TODO - allow anonymous anyway to prevent data leak?
@@ -3876,31 +3963,23 @@ def webauthn_authentication_get():
     })
 
 
-# Always returns json
-@flaskRoutes.route("/webauthn/authentication/", methods=["POST"])
-def webauthn_authentication_verify():
+def webauthn_authentication_verify(request):
     global flaskRoutesLogger, oppleoConfig
-    flaskRoutesLogger.debug('/webauthn/authentication/ POST ')
+    flaskRoutesLogger.debug('webauthn_authentication_verify() ')
 
     # Unauthenticated - check if user is None (Discoverable Credential)
     username = request.values.get('username')
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https
-    expectedOrigin = "https://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
+    # Force https - TODO: configurable (behind https (reversed) proxy?)
+    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
     relyingPartyName = oppleoConfig.chargerNameText
-
-    webauthnId = request.form.get('webauthnId')
-    webauthnResponse = json.loads( str(request.form.get('webauthnResponse')) )
 
     try:
         authenticationCredential:AuthenticationCredential = parse_authentication_credential_json(json_val=str(request.form.get('webauthnResponse')))
     except Exception as e:
-        return jsonify({ 
-            'status'    : HTTP_CODE_400_BAD_REQUEST,
-            'msg'       : "Response error ({})".format(e.args)
-        }), HTTP_CODE_400_BAD_REQUEST        
+        return HTTP_CODE_400_BAD_REQUEST, "Response error ({})".format(e.args)
 
     issuedChallenge:Union[bytes, None] = None
     registeredCredential:Union[WebAuthNCredentialModel, None] = None
@@ -3917,10 +3996,7 @@ def webauthn_authentication_verify():
         pass
 
     if (issuedChallenge is None) or (registeredCredential is None):
-        return jsonify({ 
-            'status'    : HTTP_CODE_400_BAD_REQUEST,
-            'msg'       : "Authentication failed."
-        }), HTTP_CODE_400_BAD_REQUEST
+        return HTTP_CODE_400_BAD_REQUEST, "Authentication failed."
 
     verifiedAuthentication:Union[VerifiedAuthentication,None] = None
 
@@ -3935,73 +4011,100 @@ def webauthn_authentication_verify():
             require_user_verification       = False,
         )
     except Exception as e:
-        return jsonify({ 
-            'status'    : HTTP_CODE_400_BAD_REQUEST,
-            'msg'       : "Authentication failed ({})".format(e.args)
-        }), HTTP_CODE_400_BAD_REQUEST        
+        verifiedAuthentication = None
+        flaskRoutesLogger.debug("Authentication failed ({})".format(e.args))
+
+    # Delete chalenge (prevent replay)
+    WebAuthNCredentialOptionsStore().invalidate( challenge=issuedChallenge )
 
     if verifiedAuthentication is None:
         # Not verified
+        return HTTP_CODE_400_BAD_REQUEST, "Authentication failed"
+
+    # User already logged in, just a validation. Return status
+    return HTTP_CODE_200_OK, {
+            'relyingPartyName'      :  relyingPartyName,
+            'relyingPartyId'        :  relyingPartyId,
+            'registeredCredential'  : registeredCredential
+        }
+
+
+# Always returns json
+@flaskRoutes.route("/webauthn/authentication/", methods=["POST"])
+def webauthn_authentication_POST():
+    global flaskRoutesLogger, oppleoConfig
+    flaskRoutesLogger.debug('/webauthn/authentication/ POST ')
+
+    statusCode, result = webauthn_authentication_verify(request=request)
+
+    if statusCode != HTTP_CODE_200_OK:
         return jsonify({ 
-            'status'    : HTTP_CODE_400_BAD_REQUEST,
-            'msg'       : "Authentication failed"
-        }), HTTP_CODE_400_BAD_REQUEST        
+            'status'    : statusCode,
+            'msg'       : result
+        }), statusCode
 
-    # TODO - log user in
+    registeredCredential:WebAuthNCredentialModel = result['registeredCredential']
+    relyingPartyName:str = result['relyingPartyName']
+    relyingPartyId:str = result['relyingPartyId']
 
-    """ XXXXXXXXXX """
+    # What is the requested action?
+    passkeyAction = request.values.get('passkeyAction')
+    if passkeyAction == 'login':
+        
+        # If the user is not logged in, login the user
+        if current_user is None or not current_user.is_authenticated:
+            # The user is not logged in, login the user. Find the user
+            user = User.get(username=registeredCredential.credential_owner)
+            if user is None:
+                return jsonify({
+                    'status'  : HTTP_CODE_401_UNAUTHORIZED,
+                    'code'    : DETAIL_CODE_26_USERNAME_UNKNOWN,
+                    'username': registeredCredential.credential_owner,
+                    'keyname' : registeredCredential.credential_name,
+                    'msg'     : 'Username unknown'
+                    })
+            # Log user in
+            login_user(user)
+            user.authenticated = True
+            user.save()
 
-    # If the user is not logged in, login the user
-    if current_user is None or not current_user.is_authenticated:
-        # The user is not logged in, login the user. Find the user
-        user = User.get(username=registeredCredential.credential_owner)
-        if user is None:
+            if oppleoSystemConfig.mqttOutboundEnabled:
+                OutboundEvent.emitMQTTEvent( event='login',
+                                            data={
+                                                "user" : registeredCredential.credential_owner,
+                                            },
+                                            id=oppleoConfig.chargerID,
+                                            namespace='/webclient'
+                                            )
+
+            login_next = None
+            if 'login_next' in session:
+                login_next = session['login_next']
+                del session['login_next']
+
             return jsonify({
-                'status'  : HTTP_CODE_401_UNAUTHORIZED,
-                'code'    : DETAIL_CODE_26_USERNAME_UNKNOWN,
-                'username': username,
+                'status'  : HTTP_CODE_200_OK,
+                'code'    : DETAIL_CODE_200_OK,
+                'rp': {
+                    'name'          :  relyingPartyName,
+                    'id'            :  relyingPartyId
+                },
+                'User': {
+                    'id'            : registeredCredential.credential_owner,
+                    'name'          : "{}@oppleo.nl".format(registeredCredential.credential_owner),
+                    'displayName'   : registeredCredential.credential_owner
+                },
+                'username': registeredCredential.credential_owner,
+                '' if login_next is None else 'login_next': login_next,
                 'keyname' : registeredCredential.credential_name,
-                'msg'     : 'Username unknown'
-                })
-        # Log user in
-        login_user(user)
-        user.authenticated = True
-        user.save()
 
-        if oppleoSystemConfig.mqttOutboundEnabled:
-            OutboundEvent.emitMQTTEvent( event='login',
-                                        data={
-                                            "user" : username,
-                                        },
-                                        id=oppleoConfig.chargerID,
-                                        namespace='/webclient'
-                                        )
+                'msg'     : 'Loging successful'
+                })                
 
-        login_next = None
-        if 'login_next' in session:
-            login_next = session['login_next']
-            del session['login_next']
+    if passkeyAction == 'restart':
+        pass
 
-        return jsonify({
-            'status'  : HTTP_CODE_200_OK,
-            'code'    : DETAIL_CODE_200_OK,
-            'rp': {
-                'name'          :  relyingPartyName,
-                'id'            :  relyingPartyId
-            },
-            'User': {
-                'id'            : registeredCredential.credential_owner,
-                'name'          : "{}@oppleo.nl".format(registeredCredential.credential_owner),
-                'displayName'   : registeredCredential.credential_owner
-            },
-            'username': username,
-            '' if login_next is None else 'login_next': login_next,
-            'keyname' : registeredCredential.credential_name,
-
-            'msg'     : 'Loging successful'
-            })                
- 
-    """ XXXXXXXXX """
+    # passkeyAction 'validate' is normal behaviour
 
     # User already logged in, just a validation. Return status
     return jsonify({

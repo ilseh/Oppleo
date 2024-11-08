@@ -709,10 +709,10 @@
         getWebauthnRegistrationOptions()
       })
       $('button#validate-passkey').on('click', (ev) => {
-        getWebauthnAuthenticationOptions('{{ csrf_token() }}', false, '{{ user.username }}')
+        getWebauthnAuthenticationOptions('{{ csrf_token() }}', PASSKEY_ACTION.validate, '{{ user.username }}')
       })
       $('button#discoverable-credential-passkey').on('click', (ev) => {
-        getWebauthnAuthenticationOptions('{{ csrf_token() }}', false)
+        getWebauthnAuthenticationOptions('{{ csrf_token() }}', PASSKEY_ACTION.validate)
       })
       /* --- END PASSKEY --- */
 

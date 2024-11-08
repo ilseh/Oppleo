@@ -1,10 +1,16 @@
-Version 1.7.0           2024-11-01
+Version 1.7.1           2024-11-08
 
 Added
-- WebAuthN Passkey support (a.o. Ubikey, MS Hello)
+- WebAuthN Passkey support (a.o. Ubikey, MS Hello) for action authorization
+
+Version 1.7.0           2024-11-05
+
+Added
+- WebAuthN Passkey support (a.o. Ubikey, MS Hello) for login
 
 Fixed
 - Unique username.
+- Local 2FA enforcement issue
 
 Version 1.6.4           2024-10-04
 

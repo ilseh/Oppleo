@@ -3,6 +3,18 @@
 
 */
 
+    const PASSKEY_ACTION = {
+      validate              : { action: 'validate',             dataType: 'json',  url: '/webauthn/authentication/' },
+      login                 : { action: 'login',                dataType: 'json',  url: '/webauthn/authentication/' },
+      restart               : { action: 'restart',              dataType: 'html',  url: '/restart' },
+      shutdown              : { action: 'shutdown',             dataType: 'html',  url: '/shutdown' },
+      reboot                : { action: 'reboot',               dataType: 'html',  url: '/reboot' },
+      softwareUpdate        : { action: 'softwareUpdate',       dataType: 'html',  url: '/software-update' },
+      startChargeSession    : { action: 'startChargeSession',   dataType: 'html',  url: '/start_charge_session' },
+      stopChargeSession     : { action: 'stopChargeSession',    dataType: 'html',  url: '/stop_charge_session' },
+      deleteChargeSession   : { action: 'deleteChargeSession',  dataType: 'html',  url: '/delete_charge_session' }
+    }
+
     // From simplewebauthn-browser (function a())
     function toArrayBuffer(e) {
       for (var t = e.replace(/-/g, "+").replace(/_/g, "/"), r = (4 - t.length % 4) % 4, n = t.padEnd(t.length + r, "="), o = atob(n), i = new ArrayBuffer(o.length), a = new Uint8Array(i), s = 0; s < o.length; s++)
@@ -147,7 +159,7 @@
         let _csrf_token = csrf_token
         console.log(data)
         switch (data.status) {
-          case 200:
+          case 200: // HTTP 200 OK 
             // Add key to the list
             if (!$('tr#passkey-'+data.credential.id).length) {
               $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.id+'"><td></td><td><oppleo-edit-str id="passkey-'+data.credential.id+'" prefix="" value="'+data.credential.name+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}\',:;|&quot; ]|[ ])+$" info="Herkenbare naam voor credential met id '+data.credential.id+'." delete="true" /></td></tr>')
@@ -179,14 +191,17 @@
             }
             autoHideNotify('success','top-left', 'WebAuthN', 'Passkey geregistreerd.')
             break
+          case 400: // HTTP 400 BAD REQUEST 
+            autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN mislukt.')
+            break
           default:
             autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN niet beschikbaar.')
             break
         }
       })
       .fail(function(data) {
-        autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN niet beschikbaar.')
-        console.error("WebAuthN error: "+data.responseJSON.msg)
+        autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN mislukt.')
+        console.error("WebAuthN error: "+data.responseJSON)
       })
       .always(function() {
         // Remove spinner
@@ -263,7 +278,7 @@
     }
       
 
-    async function getWebauthnAuthenticationOptions(csrf_token, login=false, username=undefined) {
+    async function getWebauthnAuthenticationOptions(csrf_token, passkeyAction=PASSKEY_ACTION.validate, username=undefined) {
       // --- FETCH PASSKEY AUTHENTICATION OPTIONS
 
       // Show spinner
@@ -287,14 +302,14 @@
       }) // using the done promise callback
       .done(function(data) {
         const _credentialUser = data.username
-        let _login = login
+        const _passkeyAction = passkeyAction
         // log data to the console so we can see
         console.log(data)
         switch (data.status) {
           case 200:
             let _csrf_token = csrf_token
             webauthnAuthenticationOptions = JSON.parse(data.options)
-            validatePasskey(_csrf_token, _login, _credentialUser)
+            validatePasskey(_csrf_token, _passkeyAction, _credentialUser)
             break
           case 424: // Failed dependencies
             autoHideNotify('warning','top-left', 'WebAuthN', 'Geen WebAuthN registraties voor authorisatie.')
@@ -315,7 +330,7 @@
       })
     }
 
-    async function validatePasskey(csrf_token, login=false, credentialUser=undefined) {
+    async function validatePasskey(csrf_token, passkeyAction=PASSKEY_ACTION.validate, credentialUser=undefined) {
       // --- VERIFY PASSKEY (AUTHENTICATE)
 
       if (typeof navigator.credentials != 'object' || 
@@ -352,48 +367,69 @@
       // --- VALIDATE PASSKEY ON SERVER
       data = {
             csrf_token : csrf_token,
+            passkeyAction: passkeyAction.action,
             webauthnId : aAssertion.id,
             webauthnResponse: JSON.stringify( aAssertion.toJSON() )
           }
       if (credentialUser != undefined) {
         data.username = credentialUser
       }
+      // AJAX call and result processing
       $.ajax({
         type		    : 'POST',
-        url			    : ('/webauthn/authentication/'),
-        dataType	  : 'json',
+        url         : passkeyAction.url,
+/*          url			    : ('/restart/'), */
+/*          url			    : ('/webauthn/authentication/'), */
+  /*      dataType	  : 'json', */
+        dataType	  : passkeyAction.dataType,
         headers     : { 'ignore-login-next': 'true' },
         encode		  : true,
         data        : data
       }) // using the done promise callback
       .done(function(data) {
-        let _login = login
+        const _passkeyAction = passkeyAction
         // log data to the console so we can see        
-        console.log(data)
-        switch (data.status) {
-          case 200:
-            autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.keyname + '.')
-            // Login or validation?
-            if (_login) {
-              if (data.login_next) {
-                window.location.replace( 
-                  location.protocol + '//' + location.host + data.login_next
-                )
-              } else {
-                // window.history.go(-1) shows a page like you are not logged in
-                window.location.replace( 
-                  (document.referrer.length > 0 && document.referrer.split('/')[2] == location.host) ? 
-                    // Referrer, go back if it is on the same host
-                    document.referrer :
-                    // No referrer or not on this host, go to the default page
-                    location.protocol + '//' + location.host + '/'
-                )
+        if (_passkeyAction.dataType == 'html') {
+          // Add entry in browser history
+          const url = new URL(location)
+          history.pushState({}, "", url)
+
+          // If type is not json
+          document.open()
+          document.write(data)
+          document.close()
+        }
+        if (_passkeyAction.dataType == 'json') {
+          console.log(data)
+          switch (data.status) {
+            case 200:
+              autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.keyname + '.')
+              switch (_passkeyAction.action) {
+                case PASSKEY_ACTION.login.action:
+                  if (data.login_next) {
+                    window.location.replace( 
+                      location.protocol + '//' + location.host + data.login_next
+                    )
+                  } else {
+                    // window.history.go(-1) shows a page like you are not logged in
+                    window.location.replace( 
+                      (document.referrer.length > 0 && document.referrer.split('/')[2] == location.host) ? 
+                        // Referrer, go back if it is on the same host
+                        document.referrer :
+                        // No referrer or not on this host, go to the default page
+                        location.protocol + '//' + location.host + '/'
+                    )
+                  }
+                  break
+                case PASSKEY_ACTION.validate.action:
+                default:
+                  break
               }
-            }
-            break
-          default:
-            autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
-            break
+              break
+            default:
+              autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+              break
+          }
         }
       })
       .fail(function(data) {
@@ -403,10 +439,6 @@
         // Remove spinner
         $('.spinner').hide()
       })
-
-
-      let i = 0
-
     }    
 
 

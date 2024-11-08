@@ -227,6 +227,28 @@ class WebAuthNCredentialOptionsStore(object, metaclass=Singleton):
         return issuedChallenge, registeredCredential
 
 
+    def invalidate(self, challenge:Union[bytes, None]=None):
+        self.__logger.debug('invalidate()')
+
+        if challenge is None:
+            self.__logger.debug('invalidate called with no challenge (None)...')
+            raise ValueError("challenge missing (None)") 
+
+        # Remove expired options
+        self.__remove_expired()
+
+        # Remove used option
+        with self.__threadLock:
+            self.__storedCredentialsCreationOptions = [
+                    storedCredentialsCreationOptions 
+                        for storedCredentialsCreationOptions in self.__storedCredentialsCreationOptions if not bytes_to_base64url(storedCredentialsCreationOptions.publicKeyCredentialCreationOptions.challenge) == challenge
+                ]
+            self.__storedCredentialsRequestOptions = [
+                    storedCredentialRequestOptions 
+                        for storedCredentialRequestOptions in self.__storedCredentialsRequestOptions if not bytes_to_base64url(storedCredentialRequestOptions.publicKeyCredentialRequestOptions.challenge) == challenge
+                ]
+
+
     def __remove_expired(self):
         self.__logger.debug('__remove_expired')
 
@@ -239,8 +261,7 @@ class WebAuthNCredentialOptionsStore(object, metaclass=Singleton):
                     storedCredentialRequestOptions 
                         for storedCredentialRequestOptions in self.__storedCredentialsRequestOptions if not self.__is_expired_r(storedCredentialRequestOptions)
                 ]
-
-
+            
     def __is_expired_c(self, storedCredentialCreationOptions:Union[StoredCredentialCreationOptions, None]=None) -> bool:
         if storedCredentialCreationOptions is None or storedCredentialCreationOptions.created is None:
             return False
