@@ -94,6 +94,9 @@ class ChargerConfigModel(Base):
 
     vehicle_data_on_dashboard = Column(Boolean) 
 
+    webauthn_expected_origin  = Column(String(200))
+    behind_ssl_proxy = Column(Boolean)
+
     def __init__(self):
         if self.__logger is None:
             self.__logger = logging.getLogger(self.__class__.__module__)
@@ -321,3 +324,6 @@ class ChargerConfigSchema(Schema):
     smb_backup_remote_path = fields.Str(dump_only=True)
 
     vehicle_data_on_dashboard = fields.Bool(dump_only=True)
+
+    webauthn_expected_origin  = fields.Str(dump_only=True)
+    behind_ssl_proxy = fields.Bool(dump_only=True)

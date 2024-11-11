@@ -1,8 +1,10 @@
-
+from typing import List
 from configparser import RawConfigParser, NoSectionError, NoOptionError, ExtendedInterpolation
 import logging
 from datetime import datetime
 import os
+import re
+
 import json
 from json import JSONDecodeError
 
@@ -863,5 +865,37 @@ class OppleoConfig(object, metaclass=Singleton):
     @property
     def localDocDirectory(self) -> str:
         return os.path.join(self.oppleoRootDirectory, self.DOC_DIR_NAME)
+
+
+    """
+        returns the WebAuthN (Passkey) expected origin (URL)
+    """
+    @property
+    def webauthnExpectedOrigin(self) -> str:
+        return self.__chargerConfigModel.webauthn_expected_origin
+
+    @property
+    def webauthn_expected_origin_list(self):
+        # determine delimiter
+        expectedOriginList = re.split('; |, ', self.__chargerConfigModel.webauthn_expected_origin)
+        # Get rid of whitespaces
+        expectedOriginListStripped = [expectedOriginEntry.strip() for expectedOriginEntry in expectedOriginList]
+        return expectedOriginListStripped
+
+    @webauthnExpectedOrigin.setter
+    def webauthnExpectedOrigin(self, value):
+        self.__chargerConfigModel.setAndSave('webauthn_expected_origin', value)
+
+    """
+        behindSSLProxy --> behind_ssl_proxy
+    """
+    @property
+    def behindSSLProxy(self):
+        return self.__chargerConfigModel.behind_ssl_proxy
+
+    @behindSSLProxy.setter
+    def behindSSLProxy(self, value):
+        self.__chargerConfigModel.setAndSave('behind_ssl_proxy', value)
+
 
 oppleoConfig = OppleoConfig()

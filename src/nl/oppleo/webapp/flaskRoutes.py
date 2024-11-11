@@ -18,7 +18,7 @@ from json import JSONDecodeError
 
 import logging
 import re
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, ParseResult
 import io
 import uuid
 import validators
@@ -318,9 +318,7 @@ def login2(username:str=None):
     # Valid password, 2FA required?
     if (user.has_enabled_2FA() and 
             (user.is_2FA_local_enforced() or 
-                (not user.is_2FA_local_enforced() and 
-                        not IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False)
-                )
+                (not user.is_2FA_local_enforced() and IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False))
             )
         ): 
         # Password correct, validate the code
@@ -2337,13 +2335,6 @@ def update_settings(param=None, value=None):
         oppleoSystemConfig.onDbFailureShowCurrentUrl = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value })
 
-
-
-
-
-
-
-
     # Enable/ disable the modbus interface
     if param == 'energyDeviceEnabled':
         edm = EnergyDeviceModel.get()
@@ -2460,12 +2451,6 @@ def update_settings(param=None, value=None):
         oppleoConfig.modbusInterval = value
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
 
-
-
-
-
-
-
     # prowlEnabled
     if (param == 'prowlEnabled'):
         oppleoSystemConfig.prowlEnabled = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
@@ -2500,9 +2485,6 @@ def update_settings(param=None, value=None):
     if (param == 'pushoverSound') and isinstance(value, str):
         oppleoSystemConfig.pushoverSound = value if len(value) > 0 else None
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': value }), HTTP_CODE_200_OK
-
-
-
 
     # mqttOutboundEnabled
     if (param == 'mqttOutboundEnabled'):
@@ -2617,6 +2599,11 @@ def update_settings(param=None, value=None):
     if (param == 'allowLocalDashboardAccess'):
         oppleoConfig.allowLocalDashboardAccess = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.allowLocalDashboardAccess }), HTTP_CODE_200_OK
+
+    # behindSSLProxy
+    if (param == 'behindSSLProxy'):
+        oppleoConfig.behindSSLProxy = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.behindSSLProxy }), HTTP_CODE_200_OK
 
     # routerIPAddress
     validation="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
@@ -2799,6 +2786,11 @@ def update_settings(param=None, value=None):
         oppleoConfig.wakeupVehicleOnDataRequest = True if value.lower() in ['true', '1', 't', 'y', 'yes'] else False
         return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.wakeupVehicleOnDataRequest })
 
+    # webauthnExpectedOrigin
+    validation="^([a-zA-Z0-9]|[\s.:,;|])*$"
+    if (param == 'webauthnExpectedOrigin') and isinstance(value, str) and re.match(validation, value):
+        oppleoConfig.webauthnExpectedOrigin = value
+        return jsonify({ 'status': HTTP_CODE_200_OK, 'param': param, 'value': oppleoConfig.webauthnExpectedOrigin })
 
     # No parameter found or conditions not met
     return jsonify({ 'status': HTTP_CODE_404_NOT_FOUND, 'param': param, 'reason': 'Not found' }), HTTP_CODE_404_NOT_FOUND
@@ -3827,9 +3819,6 @@ def webauthn_registration_get():
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https - TODO: configurable (behind https (reversed) proxy?)
-    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
-    relyingPartyName = oppleoConfig.chargerNameText
 
     webAuthNCredentialOptionsStore = WebAuthNCredentialOptionsStore()
     publicKeyCredentialCreationOptions:PublicKeyCredentialCreationOptions = webAuthNCredentialOptionsStore.generate_registration_options(
@@ -3846,17 +3835,19 @@ def webauthn_registration_get():
 
 # Always returns json
 @flaskRoutes.route("/webauthn/registration/", methods=["POST"])
-@authenticated_resource
+#@authenticated_resource
 def webauthn_registration_post():
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/webauthn/registration/ POST ')
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https - TODO: configurable (behind https (reversed) proxy?)
-    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
     relyingPartyName = oppleoConfig.chargerNameText
-
+    expectedOrigin:str = ""
+    try:
+        expectedOrigin = get_expected_origin(request)
+    except ValueError as ve:
+        pass
     try:
         registrationCredential:RegistrationCredential = parse_registration_credential_json(json_val=str(request.form.get('webauthnResponse')))
         # rawId = json.loads(str(request.form.get('webauthnResponse')))['rawId']
@@ -3880,6 +3871,7 @@ def webauthn_registration_post():
         }), HTTP_CODE_400_BAD_REQUEST    
 
     verifiedRegistration = None
+    registrationMsg = None
     try:
         verifiedRegistration = verify_registration_response(
             credential=registrationCredential,
@@ -3891,6 +3883,7 @@ def webauthn_registration_post():
     except Exception as e:
         verifiedRegistration = None
         flaskRoutesLogger.debug("Registration failed ({})".format(e.args))
+        registrationMsg = e.args
 
 
     # Delete chalenge (prevent replay)
@@ -3900,21 +3893,19 @@ def webauthn_registration_post():
         # Not verified
         return jsonify({ 
             'status'    : HTTP_CODE_400_BAD_REQUEST,
-            'msg'       : "Registration failed"
+            'msg'       : "Registration failed. ({})".format(registrationMsg if registrationMsg is not None else '-')
         }), HTTP_CODE_400_BAD_REQUEST        
 
     # STORE FOR LATER USE
     webAuthNCredentialModel = WebAuthNCredentialModel.create(
             verifiedRegistration=verifiedRegistration,
-            user=current_user
+            user=current_user,
+            origin=expectedOrigin
         )
 
     # Return status
     return jsonify({ 
         'status'            : HTTP_CODE_200_OK,
-        'credential'        : { 'id': webAuthNCredentialModel.credential_id,
-                                'name': webAuthNCredentialModel.credential_name
-                              }, 
         'rp': {
             'name'          :  relyingPartyName,
             'id'            :  relyingPartyId
@@ -3923,7 +3914,8 @@ def webauthn_registration_post():
             'id'            : webAuthNCredentialModel.credential_owner,
             'name'          : "{}@oppleo.nl".format(webAuthNCredentialModel.credential_owner),
             'displayName'   : webAuthNCredentialModel.credential_owner
-        }        
+        },
+        'credential'        : webAuthNCredentialModel.to_dict()
     })
 
 
@@ -3938,11 +3930,7 @@ def webauthn_authentication_get():
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https - TODO: configurable (behind https (reversed) proxy?)
-    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
-    relyingPartyName = oppleoConfig.chargerNameText
 
-    # TODO - allow anonymous anyway to prevent data leak?
     if (username is not None) and (not WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=username)):
         return jsonify({ 
             'status'            : HTTP_CODE_424_FAILED_DEPENDENCY,
@@ -3954,13 +3942,59 @@ def webauthn_authentication_get():
                                                                                                                 relyingPartyId=relyingPartyId, 
                                                                                                                 username=username
                                                                                                             )
-
     # Return status
     return jsonify({ 
         'status'            : HTTP_CODE_200_OK,
         'username'          : username if username is not None else None,
         'options'           : options_to_json(publicKeyCredentialRequestOptions)
     })
+
+
+"""
+    Returns colon with portnumber (i.e. :5001) is tghe portnumber is not the regular 80 or 443.
+"""
+def get_port_if_odd_from_port(scheme, port):
+    if port is None:
+        return ""
+    try:
+        cleaned_port = int(port)
+    except:
+        cleaned_port = 0
+    cleaned_schema = 'http' if scheme == 'http' else 'https'
+    return ("" if (( cleaned_schema == 'http' and cleaned_port == 80 ) or 
+                  ( cleaned_schema == 'https' and cleaned_port == 443 )) else 
+            ":{}".format(cleaned_port) 
+           )
+
+def get_port_if_odd_from_baseurl(parsedBaseUrl:ParseResult):
+    return get_port_if_odd_from_port(scheme=parsedBaseUrl.scheme, port=parsedBaseUrl.port)
+
+
+"""
+    Get the expectedOrigin if the request is matching
+"""
+def get_expected_origin(request):
+
+    parsedBaseUrl:ParseResult = urlparse(request.base_url)
+
+    # If traffic not from proxy address, it must be local
+    localAccess = not IPv4.ipInSubnetList(ip=request.remote_addr, subnetList=oppleoConfig.routerIPAddress, default=False)
+    if (localAccess):
+        # Use the address in the request
+        return "{}://{}{}".format(parsedBaseUrl.scheme, parsedBaseUrl.hostname, get_port_if_odd_from_baseurl(parsedBaseUrl=parsedBaseUrl))
+    # Through (reverse) proxy - allowed domains
+    expectedOriginList = oppleoConfig.webauthn_expected_origin_list
+    for expectedOrigin in expectedOriginList:
+        # Port number present?
+        expectedOriginHostname, expectedOriginPort = (expectedOrigin.split(':')) if ':' in expectedOrigin else (expectedOrigin, None)
+        if ( ( parsedBaseUrl.hostname == expectedOriginHostname ) and
+             ( parsedBaseUrl.port is None or parsedBaseUrl.port == expectedOriginPort) ):
+            scheme = 'https' if oppleoConfig.behindSSLProxy else 'http'
+            # URL expected
+            return "{}://{}{}".format( scheme, parsedBaseUrl.hostname, get_port_if_odd_from_port(scheme=scheme, port=expectedOriginPort) )
+    # Origin not recognized
+    raise ValueError("No matching expected origin") 
+   
 
 
 def webauthn_authentication_verify(request):
@@ -3972,9 +4006,12 @@ def webauthn_authentication_verify(request):
 
     parsedBaseUrl = urlparse(request.base_url)
     relyingPartyId:str = str(parsedBaseUrl.hostname)
-    # Force https - TODO: configurable (behind https (reversed) proxy?)
-    expectedOrigin = "http://{}{}".format( relyingPartyId, ( ":{}".format( parsedBaseUrl.port ) if parsedBaseUrl.port is not None else "" ))
     relyingPartyName = oppleoConfig.chargerNameText
+    expectedOrigin:str = ""
+    try:
+        expectedOrigin = get_expected_origin(request)
+    except ValueError as ve:
+        pass
 
     try:
         authenticationCredential:AuthenticationCredential = parse_authentication_credential_json(json_val=str(request.form.get('webauthnResponse')))
@@ -4023,8 +4060,8 @@ def webauthn_authentication_verify(request):
 
     # User already logged in, just a validation. Return status
     return HTTP_CODE_200_OK, {
-            'relyingPartyName'      :  relyingPartyName,
-            'relyingPartyId'        :  relyingPartyId,
+            'relyingPartyName'      : relyingPartyName,
+            'relyingPartyId'        : relyingPartyId,
             'registeredCredential'  : registeredCredential
         }
 
@@ -4118,7 +4155,7 @@ def webauthn_authentication_POST():
             'name'          : "{}@oppleo.nl".format(registeredCredential.credential_owner),
             'displayName'   : registeredCredential.credential_owner
         },
-        'keyname'           : registeredCredential.credential_name
+        'credential'        : registeredCredential.to_dict()
     })
 
 
@@ -4140,6 +4177,14 @@ def webauthn_passkey():
             if webAuthNCredentialModel is None:
                 return jsonify({ 
                     'status': HTTP_CODE_404_NOT_FOUND, 
+                    'credentialId': credentialId,
+                    'action': action,
+                    'value': value
+                })
+            validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+.{},:;/\\/]|[ ])+$"
+            if not isinstance(value, str) or not re.match(validation, value):
+                return jsonify({ 
+                    'status': HTTP_CODE_400_BAD_REQUEST, 
                     'credentialId': credentialId,
                     'action': action,
                     'value': value

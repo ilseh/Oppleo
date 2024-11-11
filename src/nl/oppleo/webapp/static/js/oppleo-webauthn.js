@@ -71,6 +71,46 @@
         .join('')
     }
 
+    async function getWebauthnRegistrationOptions(csrf_token) {
+      // --- FETCH WEBAUTHN REGISTRATION OPTIONS
+      $('.spinner').show()
+      data = {
+            csrf_token : csrf_token
+          }      
+
+      $.ajax({
+        type		    : 'GET',
+        url			    : ('/webauthn/registration/'),
+        headers     : { 'ignore-login-next': 'true' },
+        contentType: false,
+        processData: false,
+        cache: false,
+        dataType	  : 'json',
+        encode		  : true,
+        data        : data
+      }) // using the done promise callback
+      .done(function(data) {
+        // log data to the console so we can see
+        console.log(data)
+        switch (data.status) {
+          case 200:
+            webauthnRegistrationOptions = JSON.parse(data.options)
+            registerNewPasskey(csrf_token)
+            break
+          default:
+            autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+            break
+        }
+      })
+      .fail(function(data) {
+        autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+        $('.spinner').hide()
+      })
+      .always(function() {
+      })
+    }
+
+
     async function registerNewPasskey(csrf_token) {
 
       // https://docs.yubico.com/hardware/yubikey-guidance/best-practices/sp-bestpractices-passkeys.html
@@ -162,16 +202,16 @@
           case 200: // HTTP 200 OK 
             // Add key to the list
             if (!$('tr#passkey-'+data.credential.id).length) {
-              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.id+'"><td></td><td><oppleo-edit-str id="passkey-'+data.credential.id+'" prefix="" value="'+data.credential.name+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}\',:;|&quot; ]|[ ])+$" info="Herkenbare naam voor credential met id '+data.credential.id+'." delete="true" /></td></tr>')
+              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+data.credential.credential_id+'" prefix="" value="'+data.credential.name+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+.{},:;/\\/]|[ ])+$" info="Herkenbare naam voor credential met id <i>'+data.credential.credential_id+'</i> geregistreerd via <strong>'+data.credential.origin+'</strong>." delete="true" /></td></tr>')
               // Oppleo web component applied change
-              $('oppleo-edit-str#passkey-'+data.credential.id).on('apply', (e) => {
+              $('oppleo-edit-str#passkey-'+data.credential.credential_id).on('apply', (e) => {
                 console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
                 // Submit
                 let credentialId = e.target.id.substring(8, e.target.id.length)
                 updateProfile( _csrf_token, credentialId, 'rename', e.detail.newValue )
               })
               // Oppleo web component delete
-              $('oppleo-edit-str#passkey-'+data.credential.id).on('delete', (e) => {
+              $('oppleo-edit-str#passkey-'+data.credential.credential_id).on('delete', (e) => {
                 console.log('oppleo-edit-str onDelete [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
 
                 showConfirmModal(
@@ -200,8 +240,12 @@
         }
       })
       .fail(function(data) {
-        autoHideNotify('warning','top-left', 'WebAuthN', 'WebAuthN mislukt.')
         console.error("WebAuthN error: "+data.responseJSON)
+        if (data.responseJSON?.hasOwnProperty('msg')) {
+          autoHideNotify('warning','top-left', 'WebAuthN', data.responseJSON.msg)
+        } else {
+          autoHideNotify('warning','top-left', 'WebAuthN', 'Autorisatie niet geaccpeteerd.')
+        }
       })
       .always(function() {
         // Remove spinner
@@ -234,7 +278,7 @@
             // Add keys to the list
             webauthnRegisteredCredentials.forEach( (e, i) => {
               if (!$('tr#passkey-'+e.id).length) {
-                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+e.credential_id+'" prefix="" value="'+(e.name!=""?e.name:'Key '+(i+1))+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+._/\\\[\]{}\',:;|&quot; ]|[ ])+$" info="Herkenbare naam voor credential met id '+e.credential_id+'." delete="true" /></td></tr>')
+                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+e.credential_id+'" prefix="" value="'+(e.name!=""?e.name:'Key '+(i+1))+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+.{},:;/\\/]|[ ])+$" info="Herkenbare naam voor credential met id <i>'+e.credential_id+'</i> geregistreerd via <strong>'+e.origin+'</strong>." delete="true" /></td></tr>')
                 // Oppleo web component applied change
                 $('oppleo-edit-str#passkey-'+e.credential_id).on('apply', (e) => {
                   console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
@@ -285,7 +329,7 @@
       $('.spinner').show()
 
       data = {
-            csrf_token : csrf_token
+            csrf_token  : csrf_token
           }
       if (username != undefined) {
         data.username = username
@@ -433,7 +477,11 @@
         }
       })
       .fail(function(data) {
-        autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+        if (data.responseJSON.hasOwnProperty('msg')) {
+          autoHideNotify('warning','top-left', 'WebAuthN', data.responseJSON.msg)
+        } else {
+          autoHideNotify('warning','top-left', 'WebAuthN', 'Autorisatie niet geaccpeteerd.')
+        }
       })
       .always(function() {
         // Remove spinner

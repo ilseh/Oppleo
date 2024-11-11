@@ -1280,6 +1280,9 @@
       $('input#allowLocalDashboardAccess').change(function() {
         updateSettings( 'allowLocalDashboardAccess', $(this).prop('checked') )
       })
+      $('input#behindSSLProxy').change(function() {
+        updateSettings( 'behindSSLProxy', $(this).prop('checked') )
+      })
       $('input#bypassLocal2FA').change(function() {
 
         // TODO: if 2FA enabled, check 2FA!
@@ -1607,7 +1610,7 @@
       })        
 
       $('oppleo-edit-select').on('select', (e) => {
-        console.log('oppleo-edit-str onSelect [' + e.target.id + '] id:' + e.detail.id + ' text:' + e.detail.text)
+        console.log('oppleo-edit-select onSelect [' + e.target.id + '] id:' + e.detail.id + ' text:' + e.detail.text)
         $('button#modal-directory-apply').prop('disabled', false)
         $('button#modal-directory-apply').attr('data-original-title', 'Selecteer directory "' + e.detail.text + '"')
         // Reset no service chosen error
@@ -1617,7 +1620,7 @@
         $('button#modal-footer-nextaction').removeClass('btn-danger')
       })
       $('oppleo-edit-select').on('unselect', (e) => {
-        console.log('oppleo-edit-str onSelect [' + e.target.id + '] id:' + e.detail.id + ' text:' + e.detail.text)
+        console.log('oppleo-edit-select onSelect [' + e.target.id + '] id:' + e.detail.id + ' text:' + e.detail.text)
         $('button#modal-directory-apply').prop('disabled', true)
         $('button#modal-directory-apply').attr('data-original-title', '')
 
@@ -2605,6 +2608,41 @@
                                 <button type="button" id="newSubnetOrIPCancel" style="float: right;" class="btn btn-sm btn-secondary waves-effect waves-light d-none"> 
                                   <i class="fas fa-times"></i> Annuleren 
                                 </button>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> Achter SSL Proxy:</td>
+                              <td class="text-primary">
+                                <form id="restrict-menu-form">
+                                  <input type="checkbox" 
+                                    {% if oppleoconfig.behindSSLProxy %}checked{% endif %}
+                                    name="behindSSLProxy"
+                                    id="behindSSLProxy"
+                                    data-toggle="toggle"
+                                    data-on="<i class='far fa-thumbs-up'></i></i> JA"
+                                    data-off="<i class='far fa-thumbs-down'></i> NEE"
+                                    data-onstyle="primary"
+                                    data-offstyle="dark"
+                                    data-size="sm"
+                                    data-height="30"
+                                    data-width="70"
+                                  />
+                                </form>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="text-dark"> Origin:<span class="pl-2 text-success b"><i class="fab fa-keycdn"></i></span></td>
+                              <td class="text-primary">
+                                <oppleo-edit-str 
+                                id="webauthnExpectedOrigin"
+                                {% if (oppleoconfig.webauthnExpectedOrigin is not none) %}
+                                value="{{ oppleoconfig.webauthnExpectedOrigin }}"
+                                {% else %}
+                                value=""
+                                {% endif %}
+                                validation="^([a-zA-Z0-9]|[\s.:,;|])*$"
+                                info="Een door komma's, punt komma's, of spaties gescheiden lijst met Oppleo hostnamen, voor bijvoorbeeld passkeys. Gebruik de <i>www.yourdomain.com</i> vorm."
+                                />
                               </td>
                             </tr>
 

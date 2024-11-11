@@ -55,6 +55,8 @@ class WebAuthNCredentialModel(Base):
 
     user_verified = Column(Boolean) 
 
+    origin = Column(String(256))
+
     modified_at = Column(DateTime)        # Last config update
 
     def __init__(self):
@@ -82,7 +84,7 @@ class WebAuthNCredentialModel(Base):
 
 
     @staticmethod
-    def create(verifiedRegistration:Union[VerifiedRegistration,None]=None, name:Union[str, None]=None, user:Union[User,None]=None):
+    def create(verifiedRegistration:Union[VerifiedRegistration,None]=None, name:Union[str, None]=None, user:Union[User,None]=None, origin:Union[str, None]=None):
 
         logger = getLogger('nl.oppleo.models.WebAuthNCredentialModel')
         logger.debug(".create()")
@@ -120,6 +122,11 @@ class WebAuthNCredentialModel(Base):
         newCred.fmt = verifiedRegistration.fmt
         newCred.sign_count = verifiedRegistration.sign_count
         newCred.user_verified = verifiedRegistration.user_verified
+
+        newCred.origin = origin
+
+        newCred.created_at = datetime.datetime.now()
+        newCred.modified_at = datetime.datetime.now()
 
         newCred.save()
 
@@ -346,7 +353,8 @@ class WebAuthNCredentialModel(Base):
                 "aaguid": str(self.aaguid),
                 "credential_device_type": str(self.credential_device_type),
                 "credential_type": str(self.credential_type),
-                "registered": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None),
+                "origin" : str(self.origin),
+                "created_at": (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None),
                 "modified_at": (str(self.modified_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.modified_at is not None else None)
             }
         )
@@ -358,7 +366,8 @@ class WebAuthNCredentialModel(Base):
         me["aaguid"] = str(self.aaguid)
         me["credential_device_type"] = str(self.credential_device_type)
         me["credential_type"] = str(self.credential_type)
-        me["registered"] = (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None)
+        me["origin"] = str(self.origin)
+        me["created_at"] = (str(self.created_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.created_at is not None else None)
         me["modified_at"] = (str(self.modified_at.strftime("%d/%m/%Y, %H:%M:%S")) if self.modified_at is not None else None)
         return me
 
@@ -398,6 +407,7 @@ class WebAuthNCredentialModelSchema(Schema):
     sign_count = fields.Int(dump_only=True)
 
     user_verified = fields.Bool(dump_only=True)
+    origin = fields.Str(dump_only=True)
 
     modified_at = fields.DateTime(dump_only=True)
 

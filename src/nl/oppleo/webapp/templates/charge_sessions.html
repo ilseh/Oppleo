@@ -1105,6 +1105,9 @@
         notify('error','top-left', 'Probleem', 'Laadsessiedata niet beschikbaar.');
       })
       .always(function() {
+
+        let h = history
+
         // Remove spinner
         $('.spinner').hide()
       })

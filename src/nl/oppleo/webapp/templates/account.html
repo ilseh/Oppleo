@@ -451,45 +451,6 @@
 
     let infoPasskeyDialog = null
 
-    async function getWebauthnRegistrationOptions() {
-      // --- FETCH WEBAUTHN REGISTRATION OPTIONS
-      $('.spinner').show()
-      data = {
-            csrf_token : '{{ csrf_token() }}'
-          }      
-
-      $.ajax({
-        type		    : 'GET',
-        url			    : ('/webauthn/registration/'),
-        headers     : { 'ignore-login-next': 'true' },
-        contentType: false,
-        processData: false,
-        cache: false,
-        dataType	  : 'json',
-        encode		  : true,
-        data        : data
-      }) // using the done promise callback
-      .done(function(data) {
-        // log data to the console so we can see
-        console.log(data)
-        switch (data.status) {
-          case 200:
-            webauthnRegistrationOptions = JSON.parse(data.options)
-            registerNewPasskey('{{ csrf_token() }}')
-            break
-          default:
-            autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
-            break
-        }
-      })
-      .fail(function(data) {
-        autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
-        $('.spinner').hide()
-      })
-      .always(function() {
-      })
-    }
-
     let confirmModal = null
     function showConfirmModal(title, message, confirmCallback, cancelCallback, closeCallback) {
       // Init modal dialog
@@ -706,7 +667,7 @@
 
       /* --- START PASSKEY --- */
       $('button#register-passkey').on('click', (ev) => {
-        getWebauthnRegistrationOptions()
+        getWebauthnRegistrationOptions('{{ csrf_token() }}')
       })
       $('button#validate-passkey').on('click', (ev) => {
         getWebauthnAuthenticationOptions('{{ csrf_token() }}', PASSKEY_ACTION.validate, '{{ user.username }}')
@@ -915,9 +876,6 @@
       </div>
     </div>
 
- 
-    
-
   </div>
 </div>
 
@@ -1033,8 +991,7 @@
 
                     </div>
                   </div>
-    
-    
+        
                 </div>
 
               </div>
@@ -1389,11 +1346,5 @@
           </div>
         </div>
       </div>
-
-
-
-
-
-
 
 {% endblock %}
