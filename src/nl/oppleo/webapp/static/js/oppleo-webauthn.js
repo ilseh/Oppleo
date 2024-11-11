@@ -122,7 +122,7 @@
       if (typeof navigator.credentials != 'object' || 
           typeof navigator.credentials.create != 'function' ||
           webauthnRegistrationOptions == undefined ) {
-        autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')
+        autoHideNotify('warning','top-left', 'WebAuthN', 'De browser understeunt geen WebAuthN. Een oorzaak kan een verouderde browser of directe IP adres toegang (geen domeinnaam) zijn.')
         return
       }
 
