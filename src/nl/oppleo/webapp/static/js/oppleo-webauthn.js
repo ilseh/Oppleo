@@ -15,6 +15,11 @@
       deleteChargeSession   : { action: 'deleteChargeSession',  dataType: 'html',  url: '/delete_charge_session' }
     }
 
+
+    window.addEventListener("unhandledrejection", (event) => {
+      console.log(event.reason)
+    })
+
     // From simplewebauthn-browser (function a())
     function toArrayBuffer(e) {
       for (var t = e.replace(/-/g, "+").replace(/_/g, "/"), r = (4 - t.length % 4) % 4, n = t.padEnd(t.length + r, "="), o = atob(n), i = new ArrayBuffer(o.length), a = new Uint8Array(i), s = 0; s < o.length; s++)
@@ -408,12 +413,30 @@
         return
       }
 
+      let webauthnResponse = undefined
+      if (typeof aAssertion.toJSON === 'function') {
+        webauthnResponse = JSON.stringify( aAssertion.toJSON() )
+      } else {
+        webauthnResponse = JSON.stringify( {
+          'authenticatorAttachement' : aAssertion.authenticatorAttachement,
+          'id' : aAssertion.id,
+          'rawId' : fromArrayBuffer( aAssertion.rawId ),
+          'response' : {
+            'authenticatorData': fromArrayBuffer( aAssertion.response.authenticatorData ),
+            'clientDataJSON': fromArrayBuffer( aAssertion.response.clientDataJSON ),
+            'signature': fromArrayBuffer( aAssertion.response.signature ),
+            'userHandle': fromArrayBuffer( aAssertion.response.userHandle )
+          },
+          'type' : aAssertion.type          
+          })
+      }
+
       // --- VALIDATE PASSKEY ON SERVER
       data = {
             csrf_token : csrf_token,
             passkeyAction: passkeyAction.action,
             webauthnId : aAssertion.id,
-            webauthnResponse: JSON.stringify( aAssertion.toJSON() )
+            webauthnResponse: webauthnResponse
           }
       if (credentialUser != undefined) {
         data.username = credentialUser

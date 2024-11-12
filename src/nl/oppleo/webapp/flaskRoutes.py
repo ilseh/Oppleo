@@ -4072,6 +4072,8 @@ def webauthn_authentication_POST():
     global flaskRoutesLogger, oppleoConfig
     flaskRoutesLogger.debug('/webauthn/authentication/ POST ')
 
+    webauthnResponse = request.form['webauthnResponse']
+
     statusCode, result = webauthn_authentication_verify(request=request)
 
     if statusCode != HTTP_CODE_200_OK:
