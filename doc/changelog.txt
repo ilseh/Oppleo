@@ -1,7 +1,12 @@
-Version 1.7.2           2024-11-11
+Version 1.7.3           2024-11-14
 
 Fixed
 - WebAuthN Passkey support
+
+Version 1.7.2           2024-11-11
+
+Fixed
+- WebAuthN Passkey support on non-chrome browsers
 
 Version 1.7.1           2024-11-08
 

@@ -207,7 +207,7 @@
           case 200: // HTTP 200 OK 
             // Add key to the list
             if (!$('tr#passkey-'+data.credential.id).length) {
-              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+data.credential.credential_id+'" prefix="" value="'+data.credential.name+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+.{},:;/\\/]|[ ])+$" info="Herkenbare naam voor credential met id <i>'+data.credential.credential_id+'</i> geregistreerd via <strong>'+data.credential.origin+'</strong>." delete="true" /></td></tr>')
+              $('table#passkey-list tr:last').after('<tr id="passkey-'+data.credential.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+data.credential.credential_id+'" prefix="" value="'+data.credential.credential_name+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+.{},:;/\\/]|[ ])+$" info="Herkenbare naam voor credential <i>'+data.credential.credential_id+'</i> geregistreerd op '+data.credential.created_at+' via <strong>'+data.credential.origin+'</strong>." delete="true" /></td></tr>')
               // Oppleo web component applied change
               $('oppleo-edit-str#passkey-'+data.credential.credential_id).on('apply', (e) => {
                 console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
@@ -283,7 +283,7 @@
             // Add keys to the list
             webauthnRegisteredCredentials.forEach( (e, i) => {
               if (!$('tr#passkey-'+e.id).length) {
-                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+e.credential_id+'" prefix="" value="'+(e.name!=""?e.name:'Key '+(i+1))+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+.{},:;/\\/]|[ ])+$" info="Herkenbare naam voor credential met id <i>'+e.credential_id+'</i> geregistreerd via <strong>'+e.origin+'</strong>." delete="true" /></td></tr>')
+                $('table#passkey-list tr:last').after('<tr id="passkey-'+e.credential_id+'"><td></td><td><oppleo-edit-str id="passkey-'+e.credential_id+'" prefix="" value="'+e.credential_name+'" validation="^([0-9]|[a-z]|[A-Z]|[!@#$%^&*()-+.{},:;/\\/]|[ ])+$" info="Herkenbare naam voor credential <i>'+e.credential_id+'</i> geregistreerd op '+e.created_at+' via <strong>'+e.origin+'</strong>." delete="true" /></td></tr>')
                 // Oppleo web component applied change
                 $('oppleo-edit-str#passkey-'+e.credential_id).on('apply', (e) => {
                   console.log('oppleo-edit-str onApply [' + e.target.id + '] oldValue:' + e.detail.oldValue + ' newValue:' + e.detail.newValue)
@@ -470,7 +470,7 @@
           console.log(data)
           switch (data.status) {
             case 200:
-              autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.keyname + '.')
+              autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.credential?.credential_name + '.')
               switch (_passkeyAction.action) {
                 case PASSKEY_ACTION.login.action:
                   if (data.login_next) {

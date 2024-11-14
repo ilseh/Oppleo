@@ -349,7 +349,7 @@ class WebAuthNCredentialModel(Base):
     def to_str(self):
         return ({
                 "credential_id": str(self.credential_id),
-                "name": str(self.credential_name),
+                "credential_name": str(self.credential_name),
                 "aaguid": str(self.aaguid),
                 "credential_device_type": str(self.credential_device_type),
                 "credential_type": str(self.credential_type),
@@ -362,7 +362,7 @@ class WebAuthNCredentialModel(Base):
     def to_dict(self):
         me = {}
         me["credential_id"] = str(self.credential_id)
-        me["name"] = "" if self.credential_name is None else str(self.credential_name)
+        me["credential_name"] = "" if self.credential_name is None else str(self.credential_name)
         me["aaguid"] = str(self.aaguid)
         me["credential_device_type"] = str(self.credential_device_type)
         me["credential_type"] = str(self.credential_type)
