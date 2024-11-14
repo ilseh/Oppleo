@@ -106,6 +106,8 @@
             // if user known validate, otherwise discover
             let pka = PASSKEY_ACTION.{{ passkeyAction }}
             {% if passkeyActionUrl is defined %}pka.url = '{{ passkeyActionUrl }}'{% endif %}
+            let npv = $('form#authorize-form input#next_page').val()
+            if (typeof npv == 'string') pka.nextPage = npv
             getWebauthnAuthenticationOptions('{{ csrf_token() }}', pka, '{{ current_user.username }}')
           })
         {% endif %}

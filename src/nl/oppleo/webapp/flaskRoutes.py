@@ -825,6 +825,7 @@ def start_charge_session(token=None):
             buttontitle="Start laadsessie",
             hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
             passkeyAction="startChargeSession",
+            passkeyActionUrl=str("/start_charge_session/"+ str(token) + ("?next_page={}".format(next_page) if next_page is not None else "")),
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
@@ -880,7 +881,7 @@ def start_charge_session(token=None):
                         buttontitle="Start laadsessie",
                         hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
                         passkeyAction="startChargeSession",
-                        passkeyActionUrl=str("/start_charge_session/"+ str(token)),
+                        passkeyActionUrl=str("/start_charge_session/"+ str(token) + ("?next_page={}".format(next_page) if next_page is not None else "")),
                         errormsg="Er is al een laadsessie actief. Stop deze eerst.",
                         oppleoconfig=oppleoConfig,
                         changelog=changeLog
@@ -897,7 +898,7 @@ def start_charge_session(token=None):
                 buttontitle="Start laadsessie",
                 hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
                 passkeyAction="startChargeSession",
-                passkeyActionUrl=str("/start_charge_session/"+ str(token)),
+                passkeyActionUrl=str("/start_charge_session/"+ str(token) + ("?next_page={}".format(next_page) if next_page is not None else "")),
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog
@@ -930,7 +931,7 @@ def stop_charge_session(charge_session_id=None):
             buttontitle="Stop laadsessie",
             hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
             passkeyAction="stopChargeSession",
-            passkeyActionUrl=str("/stop_charge_session/"+ str(charge_session_id)),
+            passkeyActionUrl=str("/stop_charge_session/"+ str(charge_session_id) + ("?next_page={}".format(next_page) if next_page is not None else "")),
             oppleoconfig=oppleoConfig,
             changelog=changeLog
             )
@@ -966,7 +967,7 @@ def stop_charge_session(charge_session_id=None):
                 buttontitle="Stop laadsessie",
                 hasRegisteredCredentials=WebAuthNCredentialModel.hasRegisteredCredentials(credential_owner=current_user.username),
                 passkeyAction="stopChargeSession",
-                passkeyActionUrl=str("/stop_charge_session/"+ str(charge_session_id)),
+                passkeyActionUrl=str("/stop_charge_session/"+ str(charge_session_id) + ("?next_page={}".format(next_page) if next_page is not None else "")),
                 errormsg="Het wachtwoord is onjuist",
                 oppleoconfig=oppleoConfig,
                 changelog=changeLog

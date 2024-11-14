@@ -4,15 +4,15 @@
 */
 
     const PASSKEY_ACTION = {
-      validate              : { action: 'validate',             dataType: 'json',  url: '/webauthn/authentication/' },
-      login                 : { action: 'login',                dataType: 'json',  url: '/webauthn/authentication/' },
-      restart               : { action: 'restart',              dataType: 'html',  url: '/restart' },
-      shutdown              : { action: 'shutdown',             dataType: 'html',  url: '/shutdown' },
-      reboot                : { action: 'reboot',               dataType: 'html',  url: '/reboot' },
-      softwareUpdate        : { action: 'softwareUpdate',       dataType: 'html',  url: '/software-update' },
-      startChargeSession    : { action: 'startChargeSession',   dataType: 'html',  url: '/start_charge_session' },
-      stopChargeSession     : { action: 'stopChargeSession',    dataType: 'html',  url: '/stop_charge_session' },
-      deleteChargeSession   : { action: 'deleteChargeSession',  dataType: 'html',  url: '/delete_charge_session' }
+      validate              : { action: 'validate',             dataType: 'json',  url: '/webauthn/authentication/',  nextPage: 'account' },
+      login                 : { action: 'login',                dataType: 'json',  url: '/webauthn/authentication/',  nextPage: 'dashboard' },
+      restart               : { action: 'restart',              dataType: 'html',  url: '/restart',                   nextPage: undefined },
+      shutdown              : { action: 'shutdown',             dataType: 'html',  url: '/shutdown',                  nextPage: undefined },
+      reboot                : { action: 'reboot',               dataType: 'html',  url: '/reboot',                    nextPage: undefined },
+      softwareUpdate        : { action: 'softwareUpdate',       dataType: 'html',  url: '/software-update',           nextPage: undefined },
+      startChargeSession    : { action: 'startChargeSession',   dataType: 'html',  url: '/start_charge_session',      nextPage: 'dashboard' },
+      stopChargeSession     : { action: 'stopChargeSession',    dataType: 'html',  url: '/stop_charge_session',       nextPage: 'dashboard' },
+      deleteChargeSession   : { action: 'deleteChargeSession',  dataType: 'html',  url: '/delete_charge_session',     nextPage: 'charge_sessions' }
     }
 
 
@@ -436,7 +436,8 @@
             csrf_token : csrf_token,
             passkeyAction: passkeyAction.action,
             webauthnId : aAssertion.id,
-            webauthnResponse: webauthnResponse
+            webauthnResponse: webauthnResponse,
+            next_page: passkeyAction.nextPage
           }
       if (credentialUser != undefined) {
         data.username = credentialUser
@@ -500,7 +501,7 @@
         }
       })
       .fail(function(data) {
-        if (data.responseJSON.hasOwnProperty('msg')) {
+        if (data.responseJSON?.hasOwnProperty('msg')) {
           autoHideNotify('warning','top-left', 'WebAuthN', data.responseJSON.msg)
         } else {
           autoHideNotify('warning','top-left', 'WebAuthN', 'Autorisatie niet geaccpeteerd.')
