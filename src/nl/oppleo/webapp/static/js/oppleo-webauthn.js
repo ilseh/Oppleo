@@ -4,15 +4,16 @@
 */
 
     const PASSKEY_ACTION = {
-      validate              : { action: 'validate',             dataType: 'json',  url: '/webauthn/authentication/',  nextPage: 'account' },
-      login                 : { action: 'login',                dataType: 'json',  url: '/webauthn/authentication/',  nextPage: 'dashboard' },
-      restart               : { action: 'restart',              dataType: 'html',  url: '/restart',                   nextPage: undefined },
-      shutdown              : { action: 'shutdown',             dataType: 'html',  url: '/shutdown',                  nextPage: undefined },
-      reboot                : { action: 'reboot',               dataType: 'html',  url: '/reboot',                    nextPage: undefined },
-      softwareUpdate        : { action: 'softwareUpdate',       dataType: 'html',  url: '/software-update',           nextPage: undefined },
-      startChargeSession    : { action: 'startChargeSession',   dataType: 'html',  url: '/start_charge_session',      nextPage: 'dashboard' },
-      stopChargeSession     : { action: 'stopChargeSession',    dataType: 'html',  url: '/stop_charge_session',       nextPage: 'dashboard' },
-      deleteChargeSession   : { action: 'deleteChargeSession',  dataType: 'html',  url: '/delete_charge_session',     nextPage: 'charge_sessions' }
+      validate              : { action: 'validate',             dataType: 'json',  url: '/webauthn/authentication/',                    nextPage: 'account' },
+      login                 : { action: 'login',                dataType: 'json',  url: '/webauthn/authentication/',                    nextPage: 'dashboard' },
+      restart               : { action: 'restart',              dataType: 'html',  url: '/restart',                                     nextPage: undefined },
+      shutdown              : { action: 'shutdown',             dataType: 'html',  url: '/shutdown',                                    nextPage: undefined },
+      reboot                : { action: 'reboot',               dataType: 'html',  url: '/reboot',                                      nextPage: undefined },
+      softwareUpdate        : { action: 'softwareUpdate',       dataType: 'html',  url: '/software-update',                             nextPage: undefined },
+      startChargeSession    : { action: 'startChargeSession',   dataType: 'html',  url: '/start_charge_session',                        nextPage: 'dashboard' },
+      stopChargeSession     : { action: 'stopChargeSession',    dataType: 'html',  url: '/stop_charge_session',                         nextPage: 'dashboard' },
+      deleteChargeSession   : { action: 'deleteChargeSession',  dataType: 'html',  url: '/delete_charge_session',                       nextPage: 'charge_sessions' },
+      updateChargeSession   : { action: 'updateChargeSession',  dataType: 'json',  url_template: '/charge_session/[[PARAM1]]/update/',  nextPage: 'charge_sessions' }
     }
 
 
@@ -439,6 +440,9 @@
             webauthnResponse: webauthnResponse,
             next_page: passkeyAction.nextPage
           }
+      if (passkeyAction.data != undefined) {
+        data.data = passkeyAction.data
+      }
       if (credentialUser != undefined) {
         data.username = credentialUser
       }
@@ -471,9 +475,9 @@
           console.log(data)
           switch (data.status) {
             case 200:
-              autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.credential?.credential_name + '.')
               switch (_passkeyAction.action) {
                 case PASSKEY_ACTION.login.action:
+                  autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.credential?.credential_name + '.')
                   if (data.login_next) {
                     window.location.replace( 
                       location.protocol + '//' + location.host + data.login_next
@@ -489,10 +493,91 @@
                     )
                   }
                   break
+
+                case PASSKEY_ACTION.updateChargeSession.action:
+                  autoHideNotify('success','top-left', 'WebAuthN', 'User succesvol gevalideerd.')
+                  // Should probably be a callback
+                  result = data
+                  
+                  // Close password form
+                  askPasswordModal.modal('hide')
+
+                  let rowIndex = -1
+                  dt.rows(function ( idx, rdata, node ) {             
+                      if (rdata[0] == result.session) rowIndex = idx
+                  })
+                  // Update table to reflect changes. and add Change animation
+                  for (fieldName in result.update) {
+                    if (result.update[fieldName]['updated']) {
+                      switch (fieldName) {
+                        case 'rfid':
+                            dt.cell( rowIndex, 1 ).data( result.update[fieldName]['value'] )
+                            highlightCell( rowIndex, 1 )
+                          break
+                        case 'start_time':
+                          dt.cell( rowIndex, 2 ).data( addNobr( result.update[fieldName]['value'] ) )
+                          highlightCell( rowIndex, 2 )
+                          break
+                        case 'trigger':
+                          dt.cell( rowIndex, 3 ).data( result.update[fieldName]['value'] )
+                          highlightCell( rowIndex, 3 )
+                          break
+                        case 'start_value':
+                          dt.cell( rowIndex, 4 ).data( result.update[fieldName]['value'] )
+                          highlightCell( rowIndex, 4 )
+                          break
+                        case 'km':
+                          dt.cell( rowIndex, 5 ).data( 
+                            (result.update[fieldName]['value'] != '' ?
+                              result.update[fieldName]['value'] :
+                              'None'
+                            )
+                          )
+                          highlightCell( rowIndex, 5 )
+                          break
+                        case 'end_time':
+                          dt.cell( rowIndex, 6 ).data( addNobr( result.update[fieldName]['value'] ) )
+                          highlightCell( rowIndex, 6 )
+                          break
+                        case 'end_value':
+                          dt.cell( rowIndex, 7 ).data( result.update[fieldName]['value'] )
+                          highlightCell( rowIndex, 7 )
+                          break
+                        case 'charger':
+                          dt.cell( rowIndex, 8 ).data( result.update[fieldName]['value'] )
+                          highlightCell( rowIndex, 8 )
+                          break
+                        case 'tariff':
+                          dt.cell( rowIndex, 9 ).data( result.update[fieldName]['value'] )
+                          highlightCell( rowIndex, 9 )
+                          break
+                        case 'total_energy':
+                          dt.cell( rowIndex, 10 ).data( result.update[fieldName]['value'] )
+                          highlightCell( rowIndex, 10 )
+                          break
+                        case 'total_price':
+                          dt.cell( rowIndex, 11 ).data( result.update[fieldName]['value'] )
+                          highlightCell( rowIndex, 11 )
+                          break
+                        default:  // session id etc, no change
+                          break
+                      }
+                    }
+                  }
+                  autoHideNotify('success','top-left', 'Gewijzigd', 'Laadsessie '+result.session+' is gewijzigd.')
+                  break
+
                 case PASSKEY_ACTION.validate.action:
+                  autoHideNotify('success','top-left', 'WebAuthN', 'User ' + data.User?.displayName + ' succesvol gevalideerd door ' + data.credential?.credential_name + '.')
                 default:
                   break
               }
+              break
+            case 401:
+              autoHideNotify('warning','top-left', 'Autorisatie fout', 'Autorisatie niet geaccepteerd.')
+              break
+            case 404:
+              autoHideNotify('warning','top-left', 'Onbekend', 'Te wijzigen object is onbekend.')
               break
             default:
               autoHideNotify('warning','top-left', 'Onbekend', 'WebAuthN niet beschikbaar.')

@@ -1418,13 +1418,26 @@ def charge_sessions(since_timestamp=None):
 def charge_session(id:int=None):
     global flaskRoutesLogger, oppleoConfig
 
-    id = request.form.get('session', default='None', type=str)
+    try:
+        id = int(id)
+    except ValueError as ve:
+        id = -1
+    try:
+        if id == -1:
+            id = int(request.form.get('session', default=-1, type=str))
+    except ValueError as ve:
+        id = -1
 
     # First validate password
     password = request.form.get('password', default='None', type=str)
-    if password is None or not check_password_hash(current_user.password, password):
-        return jsonify({ 'status': HTTP_CODE_401_UNAUTHORIZED, 'session': -1 if id is None else id, 'reason' : 'Authorization error' })
+#    if password is None or not check_password_hash(current_user.password, password):
+#        return jsonify({ 'status': HTTP_CODE_401_UNAUTHORIZED, 'session': -1 if id is None else id, 'reason' : 'Authorization error' })
 
+    webauthnAuthenticationStatusCode, webauthnAuthenticationResult = webauthn_authentication_verify(request=request)
+    if (webauthnAuthenticationStatusCode != HTTP_CODE_200_OK) and \
+        (password is None or not check_password_hash(current_user.password, password)):
+        return jsonify({ 'status': HTTP_CODE_401_UNAUTHORIZED, 'session': -1 if id is None else id, 'reason' : 'Authorization error' })
+    
     try:
         jsonD = json.loads(request.form.get('data', default='None', type=str))
     except JSONDecodeError as jde:
@@ -1447,6 +1460,12 @@ def charge_session(id:int=None):
 
 
     chargeSession = ChargeSessionModel.get_one_charge_session(id)
+    if chargeSession is None:
+        return jsonify({ 
+            'status'    : HTTP_CODE_404_NOT_FOUND,
+            'session'   : id,
+            'update'    : jsonD
+        })
     resultDict = {}
     for fieldName in chargeSession.fieldList:
         resultDict[fieldName] = { 'updated': False }

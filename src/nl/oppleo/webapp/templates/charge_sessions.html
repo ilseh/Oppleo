@@ -86,6 +86,9 @@
   <!-- Socket IO -->
   <script src="{{ url_for('static', filename='plugins/socket.io/4.7.2/socket.io.min.js') }}"></script>
 
+  <!-- Oppleo webauthn functions -->
+  <script src="{{ url_for('static', filename='js/oppleo-webauthn.js') }}"></script>
+
   <style>
     .paginate_button {
         padding: 0px !important;
@@ -1934,11 +1937,21 @@
             break
           case APF_STOP_SESSION:
             break
-          case APF_STOP_SESSION:
-            break
         }
         e.preventDefault()
       })
+
+      $('button#ask-password-modal-footer-passkey').on("click", (e) => {
+        let sessionId = $('span#ccsmChargeSessionId').text()
+
+        PASSKEY_ACTION.updateChargeSession.url = PASSKEY_ACTION.updateChargeSession.url_template.replace("[[PARAM1]]", sessionId)
+        PASSKEY_ACTION.updateChargeSession.data = JSON.stringify( chargeSessionModalData() )
+        
+        getWebauthnAuthenticationOptions('{{ csrf_token() }}', PASSKEY_ACTION.updateChargeSession, '{{ current_user.username }}')
+        e.preventDefault()
+      })
+      
+
       $('table#charge_sessions').addClass('table-hover-success')
       $('table#charge_sessions').css('cursor', 'pointer')
       $('table#charge_sessions').on('click', 'tr', function () {
@@ -2271,8 +2284,8 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary mr-2" id="change-chargesession-modal-footer-cancel">Annuleren</button>
-        <button type="button" class="btn btn-primary" id="change-chargesession-modal-footer-saveaction" disabled="true"> Wijziging opslaan</button>
+        <button type="button" class="btn btn-secondary waves-effect waves-light mr-2" id="change-chargesession-modal-footer-cancel">Annuleren</button>
+        <button type="button" class="btn btn-primary waves-effect waves-light" id="change-chargesession-modal-footer-saveaction" disabled="true"> Wijziging opslaan</button>
       </div>
     </div>
   </div>
@@ -2284,7 +2297,7 @@
   <div class="modal-dialog modal-password" role="document">
     <div class="modal-content">
       <div class="modal-header bg-warning">
-        <h3 class="modal-title" id="askPasswordModalLabel">Wachtwoord</h3>
+        <h3 class="modal-title" id="askPasswordModalLabel">Autorisatie</h3>
         <button type="button" class="close-x bg-warning" data-dismiss="modal" aria-label="Close" id="askPasswordModalCloseButton">
           <span aria-hidden="true"><i class="fas fa-times"></i></span>
         </button>
@@ -2326,8 +2339,9 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary mr-2" id="ask-password-modal-footer-cancel">Annuleren</button>
-        <button type="button" class="btn btn-warning" id="ask-password-modal-footer-saveaction"> Wijziging opslaan</button>
+        <button type="button" class="btn btn-success btn-custom waves-effect waves-light" id="ask-password-modal-footer-passkey" ><i class="fab fa-keycdn"></i></button>
+        <button type="button" class="btn btn-secondary waves-effect waves-light mr-2" id="ask-password-modal-footer-cancel">Annuleren</button>
+        <button type="button" class="btn btn-warning waves-effect waves-light" id="ask-password-modal-footer-saveaction"> Autoriseren</button>
       </div>
     </div>
   </div>
