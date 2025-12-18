@@ -25,7 +25,7 @@ oppleoConfig = OppleoConfig()
 """
 
 
-class UpdateOdometerTeslaUtil:
+class UpdateOdometerUtil:
     __logger = None
     __charge_session_id = None
     __thread = None
@@ -36,7 +36,7 @@ class UpdateOdometerTeslaUtil:
     def __init__(self):
         self.__logger = logging.getLogger(self.__class__.__module__)
         self.__logger.setLevel(level=oppleoSystemConfig.getLogLevelForModule(self.__class__.__module__))   
-        self.__logger.debug('UpdateOdometerTeslaUtil.__init__')
+        self.__logger.debug('UpdateOdometerUtil.__init__')
         self.__thread = None
         self.__threadLock = threading.Lock()
 
@@ -122,7 +122,7 @@ class UpdateOdometerTeslaUtil:
             
             # Inform through push messages if configured
             pushMessage.sendMessage(
-                "Tesla token invalid", 
+                "Vehicle session token invalid", 
                 "Unauthorized when updating odometer for charge session {}." + \
                     " Removing token from rfid tag {} ({})."
                 .format(
@@ -140,7 +140,7 @@ class UpdateOdometerTeslaUtil:
                 self.__charge_session_id
             ))
             pushMessage.sendMessage(
-                "Tesla odometer update failed", 
+                "Vehicle odometer update failed", 
                 "Could not retrieve odometer value for rfid {} ({}) on charge session {}."
                 .format(
                     rfid_model.name,
@@ -169,7 +169,7 @@ class UpdateOdometerTeslaUtil:
             charge_session.save()
         self.__logger.debug("Obtained odometer {} for {} ".format(
             charge_session.km,
-            rfid_model.vehicle_name
+            rfid_model.vehicle_name if rfid_model.vehicle_name is not None else 'unknown vehicle'
         ))
 
         self.sendChargeSessionUpdate(event='odomoter_update_ended', data={ 'status': True, 'chargeSessionId': self.charge_session_id })

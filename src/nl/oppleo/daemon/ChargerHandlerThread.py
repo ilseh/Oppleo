@@ -23,7 +23,7 @@ from nl.oppleo.services.EvseState import EvseState, EvseStateName
 from nl.oppleo.services.EvseReader import EvseReader
 from nl.oppleo.services.EvseOutput import EvseOutput
 from nl.oppleo.services.RfidReader import RfidReader
-from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
+from nl.oppleo.utils.UpdateOdometerUtil import UpdateOdometerUtil
 from nl.oppleo.utils.OutboundEvent import OutboundEvent 
 from nl.oppleo.services.HomeAssistantMqttHandlerThread import HomeAssistantMqttHandlerThread
 
@@ -375,7 +375,7 @@ class ChargerHandlerThread(object):
     # charge_session_id is the row id in the database table
     def save_tesla_values_in_thread(self, charge_session_id, condense=False):
         self.__logger.debug('.save_tesla_values_in_thread() id = {} and condense = {}'.format(charge_session_id, condense))
-        uotu = UpdateOdometerTeslaUtil()
+        uotu = UpdateOdometerUtil()
         uotu.charge_session_id = charge_session_id
         uotu.condense = condense
         # update_odometer takes some time, so put in own thread

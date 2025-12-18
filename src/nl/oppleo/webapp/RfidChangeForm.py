@@ -2,7 +2,7 @@
 from flask_wtf import FlaskForm
 
 from wtforms import StringField, BooleanField, SubmitField, DateField, HiddenField
-from wtforms.fields import EmailField
+from wtforms.fields import StringField
 from wtforms.validators import DataRequired, Optional, Email
 
 import logging
@@ -28,7 +28,7 @@ class RfidChangeForm(FlaskForm):
     license_plate = StringField('Kenteken')
     get_odometer = BooleanField('Kilometerregistratie')
 
-    oauth_email = EmailField('e-mail', validators=[Email(), Optional()])
+    oauth_email = StringField('e-mail', validators=[Email(), Optional()])
     oauth_password = StringField('password', validators=[Optional()])
 
     vehicle_name = StringField('Naam')

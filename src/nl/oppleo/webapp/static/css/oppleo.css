@@ -27,6 +27,13 @@ table th {
     padding-left: 14px;
     padding-right: 15px;
 }
+.eye-button-style {
+    cursor: pointer;
+}
+.eye-button-style span {
+    padding-left: 14px;
+    padding-right: 15px;
+}
 .input-text-only {
     text-align: left;
     font-style: italic; 

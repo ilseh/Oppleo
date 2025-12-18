@@ -46,7 +46,7 @@ from nl.oppleo.models.EnergyDeviceModel import EnergyDeviceModel
 from nl.oppleo.models.OffPeakHoursModel import OffPeakHoursModel
 from nl.oppleo.webapp.RfidChangeForm import RfidChangeForm
 from nl.oppleo.api.VehicleApi import VehicleApi
-from nl.oppleo.utils.UpdateOdometerTeslaUtil import UpdateOdometerTeslaUtil
+from nl.oppleo.utils.UpdateOdometerUtil import UpdateOdometerUtil
 from nl.oppleo.services.EvseOutput import EvseOutput
 from nl.oppleo.utils.OutboundEvent import OutboundEvent
 from nl.oppleo.utils.GitUtil import GitUtil
@@ -1835,10 +1835,9 @@ def rfid_tokens(token=None):
 
 
 """
-    Currently this method is not working.
-    Tesla is only implemented vehicle api, and it doesnot support OAuth2 token generation from username/password
-    without head (browser)
-    TODO: debug when working
+    This method is loggin into the vehicle account and obtaining an access and refresh token.
+    Tesla and Polestar are the only implemented vehicle APIs, and only Polestar supports OAuth2 token generation from username/password.
+
 """
 # Always returns json
 @flaskRoutes.route("/rfid_tokens/<path:token>/VehicleApi/GenerateOAuth", methods=["POST"])
@@ -1856,31 +1855,48 @@ def VehicleApi_GenerateOAuth(token=None):
             'reason': 'No known RFID token'
             })
 
-    """
-        TODO
-        ! This is not working at the time
-    """
-
     # Update for specific token
-    vApi = VehicleApi()
-    rfid_model.api_account=request.form['oauth_email']
-    vApi.authorizeByUsernamePassword(rfid_model=rfid_model, user=request.form['oauth_email'], password=request.form['oauth_password'])
+    vApi = VehicleApi(rfid_model=rfid_model)
+    # refresh token
+    authorized = vApi.authorizeByUsernamePassword(vehicle_make=request.json['vehicle_make'], username=request.json['username'], password=request.json['password'])
 
-    if vApi.isAuthorized():
+    if authorized:
         # Obtained token
+        rfid_model.api_account=request.json['username']
         rfid_model.save()
+
+        """
+            Create a vehicle img if available
+        """
+        vehicleList = vApi.getVehicleList()
+        for vehicle in vehicleList:
+            vImg = vApi.composeImage(vin=vehicle['vin'])
+            if vImg is not None:
+                # Determine unique and non-existing filename
+
+                vFilename = rfid_model.getVehicleFilename()
+                vFilePath = os.path.join(app.config['VEHICLE_FOLDER'], vFilename)
+                # Save the vehicle img to it. Open file in binary write mode
+                vFile = open(vFilePath, "wb")
+                # Write bytes to file
+                vFile.write(vImg)
+                # Close file
+                vFile.close()
+                vehicle['vehicle_img'] = vFilename
+
         return jsonify({
             'status': HTTP_CODE_200_OK, 
-            'vehicles' : vApi.getVehicleList()
+            'vehicles' : vehicleList
             })
     else:
         # Nope, no token
         rfid_model.api_account=None
-        rfid_model.vehicle_name=None
         return jsonify({
             'status': HTTP_CODE_401_UNAUTHORIZED,  
             'reason': 'Not authorized'
             })
+
+
 
 """
     TODO
@@ -1917,7 +1933,7 @@ def VehicleApi_RefreshOAuth(token=None):
             'reason': 'Refresh failed'
             })
     # Refresh succeeded, Obtained token
-    UpdateOdometerTeslaUtil.copy_token_from_api_to_rfid_model(tesla_api, rfid_model)
+    UpdateOdometerUtil.copy_token_from_api_to_rfid_model(tesla_api, rfid_model)
     rfid_model.save()
 
     return jsonify({
@@ -3587,9 +3603,9 @@ def requestOdometerUpdate():
             'action': request.method,
             'msg'   : 'No active charge session'
             })
-    uotu = UpdateOdometerTeslaUtil()
-    uotu.charge_session_id = chargeSession.id
-    uotu.condense = oppleoConfig.autoSessionCondenseSameOdometer
+    uou = UpdateOdometerUtil()
+    uou.charge_session_id = chargeSession.id
+    uou.condense = oppleoConfig.autoSessionCondenseSameOdometer
     # update_odometer takes some time, so put in own thread
 
     if oppleoConfig.vuThread is not None and oppleoConfig.vuThread.is_alive():
@@ -3602,7 +3618,7 @@ def requestOdometerUpdate():
             })
 
     if oppleoConfig.vuThread is None or not oppleoConfig.vuThread.is_alive():
-        oppleoConfig.vuThread = threading.Thread(target=uotu.update_odometer, name='TeslaUtilThread')
+        oppleoConfig.vuThread = threading.Thread(target=uou.update_odometer, name='OdometerUtilThread')
         oppleoConfig.vuThread.start()
 
     return jsonify({ 

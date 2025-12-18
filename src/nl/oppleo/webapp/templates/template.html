@@ -806,6 +806,20 @@
                         $(this).find('span').addClass('text-muted')
                     }
                 )
+                $('.eye-button-style').hover(
+                    function() { // mouseenter
+                        $(this).find('span').removeClass('bg-secondary')
+                        $(this).find('span').addClass('bg-primary')
+                        $(this).find('span').removeClass('text-muted')
+                        $(this).find('span').addClass('text-light')
+                    },
+                    function(){  // mouseleave
+                        $(this).find('span').removeClass('bg-primary')
+                        $(this).find('span').addClass('bg-secondary') 
+                        $(this).find('span').removeClass('text-light')
+                        $(this).find('span').addClass('text-muted')
+                    }
+                )
                 $('#updateSoftwareMenuItem').parent().hide()
                 $('#checkSoftwareStatusMenuItem').on('click', () => {
                     {% if current_user.is_authenticated %}

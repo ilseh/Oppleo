@@ -5,11 +5,26 @@ from nl.oppleo.models.RfidModel import RfidModel
 from nl.oppleo.api.tesla.TeslaPyWrapper import TeslaPyWrapper
 from nl.oppleo.api.tesla.TeslaApiFormatters import formatTeslaVehicle, formatTeslaChargeState
 
+from nl.oppleo.api.polestar.PolestarPyWrapper import PolestarPyWrapper
+
 """
     Generic vehicle interface for Oppleo
     
     implementations for:
     - Tesla
+    - Polestar (dec 2025)
+
+    authorizeByRefreshToken
+    getAuthorizationUrl - Tesla specific
+    authorizeByUrl - Tesla specific
+    isAuthorized
+    getVehicleList
+    isAvailable
+    getVehicleData - return is Tesla/Polestar specific
+    getOdometer
+    getChargeState
+    composeImage - Tesla specific
+    logout
 
 """
 
@@ -23,19 +38,24 @@ class VehicleApi:
         self.__rfid_model=rfid_model
 
 
-    def authorizeByUsernamePassword(self, rfid_model:RfidModel=None, user:str=None, password:str=None):
+    def authorizeByUsernamePassword(self, rfid_model:RfidModel=None, vehicle_make:str=None, username:str=None, password:str=None):
         if rfid_model is None:
             rfid_model = self.__rfid_model
-        if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("authorizeByUsernamePassword() - Cannot authorize for rfid_model")
+        if rfid_model is None:
+            self.__logger.warning("authorizeByUsernamePassword() - Cannot authorize for rfid_model")
             return
 
-        if rfid_model.vehicle_make == "Tesla":
+        if vehicle_make == "Tesla":
             # Not working at htis moment!
             self.__logger.error("authorizeByUsernamePassword() - Not supported for Tesla")
             return
 
-        self.__logger.warn("authorizeByUsernamePassword() - Cannot authorize for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        if vehicle_make == "Polestar":
+            # Establish account
+            ppw = PolestarPyWrapper(rfid=rfid_model.rfid, username=username)
+            return ppw.authorizeByUsernamePassword(username=username, password=password)
+
+        self.__logger.warning("authorizeByUsernamePassword() - Cannot authorize for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return
 
 
@@ -43,19 +63,19 @@ class VehicleApi:
         if account is None:
             account = rfid_model.api_account if rfid_model is not None else ( self.__rfid_model.api_account if self.__rfid_model is not None else None )
         if account is None:
-            self.__logger.warn("authorizeByRefreshToken() - Cannot authorize for rfid_model/account.")
+            self.__logger.warning("authorizeByRefreshToken() - Cannot authorize for rfid_model/account.")
             return
 
         if rfid is None:
             rfid = rfid_model.rfid if rfid_model is not None else ( self.__rfid_model.rfid if self.__rfid_model is not None else None )
         if rfid is None:
-            self.__logger.warn("authorizeByRefreshToken() - Cannot authorize for rfid.")
+            self.__logger.warning("authorizeByRefreshToken() - Cannot authorize for rfid.")
             return
 
         if vehicle_make is None:
             vehicle_make = rfid_model.vehicle_make if rfid_model is not None else ( self.__rfid_model.vehicle_make if self.__rfid_model is not None else None )
         if vehicle_make is None:
-            self.__logger.warn("getAuthorizationUrl() - Cannot authorize rfid_model/account - no vehicle make.")
+            self.__logger.warning("getAuthorizationUrl() - Cannot authorize rfid_model/account - no vehicle make.")
             return
 
         if vehicle_make == "Tesla":
@@ -63,20 +83,25 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=account)
             return tpw.authorizeByRefreshToken(refresh_token=refresh_token, rfid=rfid)
 
-        self.__logger.warn("authorizeByRefreshToken() - Cannot authorize for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        if vehicle_make == "Polestar":
+            # Establish account
+            ppw = PolestarPyWrapper(username=account)
+            return ppw.authorizeByRefreshToken(refresh_token=refresh_token, rfid=rfid)
+        
+        self.__logger.warning("authorizeByRefreshToken() - Cannot authorize for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
 
 
     def getAuthorizationUrl(self, rfid_model:RfidModel=None, account:str=None, vehicle_make:str=None) -> str:
         if account is None:
             account = rfid_model.api_account if rfid_model is not None else ( self.__rfid_model.api_account if self.__rfid_model is not None else None )
         if account is None:
-            self.__logger.warn("getAuthorizationUrl() - Cannot create url for rfid_model/account.")
+            self.__logger.warning("getAuthorizationUrl() - Cannot create url for rfid_model/account.")
             return None
 
         if vehicle_make is None:
             vehicle_make = rfid_model.vehicle_make if rfid_model is not None else ( self.__rfid_model.vehicle_make if self.__rfid_model is not None else None )
         if vehicle_make is None:
-            self.__logger.warn("getAuthorizationUrl() - Cannot authorize rfid_model/account - no vehicle make.")
+            self.__logger.warning("getAuthorizationUrl() - Cannot authorize rfid_model/account - no vehicle make.")
             return
 
         if vehicle_make == "Tesla":
@@ -84,7 +109,7 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=account)
             return tpw.getAuthorizationUrl()
 
-        self.__logger.warn("getAuthorizationUrl() - Cannot get authorization url for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warning("getAuthorizationUrl() - Cannot get authorization url for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return None
 
 
@@ -92,19 +117,19 @@ class VehicleApi:
         if account is None:
             account = rfid_model.api_account if rfid_model is not None else ( self.__rfid_model.api_account if self.__rfid_model is not None else None )
         if account is None:
-            self.__logger.warn("authorizeByRefreshToken() - Cannot authorize rfid_model/account - no account.")
+            self.__logger.warning("authorizeByRefreshToken() - Cannot authorize rfid_model/account - no account.")
             return False
 
         if rfid is None:
             rfid = rfid_model.rfid if rfid_model is not None else ( self.__rfid_model.rfid if self.__rfid_model is not None else None )
         if rfid is None:
-            self.__logger.warn("authorizeByRefreshToken() - Cannot authorize for rfid.")
+            self.__logger.warning("authorizeByRefreshToken() - Cannot authorize for rfid.")
             return False
 
         if vehicle_make is None:
             vehicle_make = rfid_model.vehicle_make if rfid_model is not None else ( self.__rfid_model.vehicle_make if self.__rfid_model is not None else None )
         if vehicle_make is None:
-            self.__logger.warn("authorizeByRefreshToken() - Cannot authorize rfid_model/account - no vehicle make.")
+            self.__logger.warning("authorizeByRefreshToken() - Cannot authorize rfid_model/account - no vehicle make.")
             return False
 
         if vehicle_make == "Tesla":
@@ -112,7 +137,7 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=account)
             return tpw.authorizeByUrl(url=url, rfid=rfid)
 
-        self.__logger.warn("authorizeByUrl() - Cannot get authorizate by url for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warning("authorizeByUrl() - Cannot get authorizate by url for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return False
 
     """
@@ -125,7 +150,7 @@ class VehicleApi:
             # No authorization, expected?
             if expected:
                 # Log as warning
-                self.__logger.warn("isAuthorized() - Cannot identify authorization status for rfid_model (rfid={}, name={}).".format(
+                self.__logger.warning("isAuthorized() - Cannot identify authorization status for rfid_model (rfid={}, name={}).".format(
                         "None" if rfid_model is None else rfid_model.rfid, 
                         "None" if rfid_model is None else rfid_model.name)
                         )
@@ -133,18 +158,23 @@ class VehicleApi:
                 # import inspect, traceback
                 # frame = inspect.currentframe()
                 # stack_trace = traceback.format_stack(frame)
-                # self.__logger.warn(stack_trace[:-1])
+                # self.__logger.warning(stack_trace[:-1])
 
             return False
 
         if rfid_model.vehicle_make == "Tesla":
             # Establish account
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
-            if not tpw.isAuthorized():
+            if not tpw.isAuthorized(email=rfid_model.api_account):
                 tpw.teslaLogout()
-            return tpw.isAuthorized()
+            return tpw.isAuthorized(email=rfid_model.api_account)
 
-        self.__logger.warn("isAuthorized() - Cannot get authorizate by url for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        if rfid_model.vehicle_make == "Polestar":
+            # Establish account
+            ppw = PolestarPyWrapper(username=rfid_model.api_account, rfid=rfid_model.rfid)
+            return ppw.isAuthorized(username=rfid_model.api_account)
+
+        self.__logger.warning("isAuthorized() - Cannot get authorizate by url for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return False
 
 
@@ -152,7 +182,7 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("getVehicleList() - Cannot get vehicle list for rfid_model.")
+            self.__logger.warning("getVehicleList() - Cannot get vehicle list for rfid_model.")
             return []
 
         if rfid_model.vehicle_make == "Tesla":
@@ -160,7 +190,12 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
             return tpw.getVehicleList(max_retries=max_retries)
 
-        self.__logger.warn("getVehicleList() - Cannot get vehicle list for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        if rfid_model.vehicle_make == "Polestar":
+            # Establish account
+            ppw = PolestarPyWrapper(username=rfid_model.api_account, rfid=rfid_model.rfid)
+            return ppw.getVehicleList(max_retries=max_retries)
+
+        self.__logger.warning("getVehicleList() - Cannot get vehicle list for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return []
 
 
@@ -171,7 +206,7 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("isAvailable() - Cannot get vehicle wake state for rfid_model.")
+            self.__logger.warning("isAvailable() - Cannot get vehicle wake state for rfid_model.")
             return False
 
         if rfid_model.vehicle_make == "Tesla":
@@ -179,7 +214,7 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
             return tpw.isAvailable(vin=rfid_model.vehicle_vin)
 
-        self.__logger.warn("isAvailable() - Cannot get vehicle wake state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warning("isAvailable() - Cannot get vehicle wake state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return False
 
 
@@ -187,7 +222,7 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("getVehicleData() - Cannot get vehicle data for rfid_model.")
+            self.__logger.warning("getVehicleData() - Cannot get vehicle data for rfid_model.")
             return None
 
         if rfid_model.vehicle_make == "Tesla":
@@ -201,7 +236,7 @@ class VehicleApi:
                             tpw.getVehicleData(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up)
                         )
 
-        self.__logger.warn("getVehicleData() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warning("getVehicleData() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return None
 
 
@@ -213,7 +248,7 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("getOdometer() - Cannot get odometer for rfid_model.")
+            self.__logger.warning("getOdometer() - Cannot get odometer for rfid_model.")
             return None
 
         if rfid_model.vehicle_make == "Tesla":
@@ -221,7 +256,12 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
             return tpw.getOdometer(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up )
 
-        self.__logger.warn("getOdometer() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        if rfid_model.vehicle_make == "Polestar":
+            # Establish account
+            ppw = PolestarPyWrapper(username=rfid_model.api_account, rfid=rfid_model.rfid)
+            return ppw.getOdometer(vin=rfid_model.vehicle_vin, max_retries=max_retries )
+
+        self.__logger.warning("getOdometer() - Cannot get vehicle data for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return None
 
 
@@ -234,7 +274,7 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("getChargeState() - Cannot get vehicle charge state for rfid_model.")
+            self.__logger.warning("getChargeState() - Cannot get vehicle charge state for rfid_model.")
             return None
 
         if rfid_model.vehicle_make == "Tesla":
@@ -244,7 +284,7 @@ class VehicleApi:
                             tpw.getChargeState(vin=rfid_model.vehicle_vin, max_retries=max_retries, wake_up=wake_up)
                         )   
 
-        self.__logger.warn("getChargeState() - Cannot get vehicle charge state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warning("getChargeState() - Cannot get vehicle charge state for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return None
 
 
@@ -256,33 +296,35 @@ class VehicleApi:
         if rfid_model is None:
             rfid_model = self.__rfid_model
         if rfid_model is None or rfid_model.api_account is None:
-            self.__logger.warn("composeImage() - Cannot compose vehicle image for rfid_model.")
+            self.__logger.warning("composeImage() - Cannot compose vehicle image for rfid_model.")
             return None
 
         if account is None:
             account = rfid_model.api_account if rfid_model is not None else ( self.__rfid_model.api_account if self.__rfid_model is not None else None )
         if account is None:
-            self.__logger.warn("composeImage() - Cannot compose vehicle image - no account.")
+            self.__logger.warning("composeImage() - Cannot compose vehicle image - no account.")
             return None
 
         if vin is None:
             vin = rfid_model.vehicle_vin if rfid_model is not None else ( self.__rfid_model.vehicle_vin if self.__rfid_model is not None else None )
         if vin is None:
-            self.__logger.warn("composeImage() - Cannot compose vehicle image - vin.")
+            self.__logger.warning("composeImage() - Cannot compose vehicle image - vin.")
             return None
 
         if vehicle_make is None:
             vehicle_make = rfid_model.vehicle_make if rfid_model is not None else ( self.__rfid_model.vehicle_make if self.__rfid_model is not None else None )
         if vehicle_make is None:
-            self.__logger.warn("composeImage() - Cannot compose vehicle image - no vehicle make.")
+            self.__logger.warning("composeImage() - Cannot compose vehicle image - no vehicle make.")
             return None
 
         if vehicle_make == "Tesla":
             # Establish account
             tpw = TeslaPyWrapper(email=rfid_model.api_account, rfid=rfid_model.rfid)
             return tpw.composeImage(vin=vin, view=view)
+        
+        # TODO: Image generation for Polestar
 
-        self.__logger.warn("composeImage() - Cannot logout for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        self.__logger.warning("composeImage() - Cannot logout for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return None
 
 
@@ -293,13 +335,13 @@ class VehicleApi:
         if account is None:
             account = rfid_model.api_account if rfid_model is not None else ( self.__rfid_model.api_account if self.__rfid_model is not None else None )
         if account is None:
-            self.__logger.warn("logout() - Cannot logout rfid_model/account - no account.")
+            self.__logger.warning("logout() - Cannot logout rfid_model/account - no account.")
             return False
 
         if vehicle_make is None:
             vehicle_make = rfid_model.vehicle_make if rfid_model is not None else ( self.__rfid_model.vehicle_make if self.__rfid_model is not None else None )
         if vehicle_make is None:
-            self.__logger.warn("logout() - Cannot logout rfid_model/account - no vehicle make.")
+            self.__logger.warning("logout() - Cannot logout rfid_model/account - no vehicle make.")
             return None
 
         if vehicle_make == "Tesla":
@@ -307,5 +349,11 @@ class VehicleApi:
             tpw = TeslaPyWrapper(email=account)
             return tpw.logout()
 
-        self.__logger.warn("logout() - Cannot logout for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
+        if vehicle_make == "Polestar":
+            # Establish account
+            ppw = PolestarPyWrapper(username=account)
+            return ppw.logout()
+
+        self.__logger.warning("logout() - Cannot logout for unsupported vehicle make ({})".format(rfid_model.vehicle_make))
         return None
+

@@ -91,12 +91,12 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("tpwAuthorizeByRefreshToken() - Cannot authorize - no email.")
+            self.__logger.warning("tpwAuthorizeByRefreshToken() - Cannot authorize - no email.")
             return False
         if rfid is not None:
             self.__rfid = rfid
         if self.__rfid is None:
-            self.__logger.warn("tpwAuthorizeByRefreshToken() - Cannot authorize - no rfid.")
+            self.__logger.warning("tpwAuthorizeByRefreshToken() - Cannot authorize - no rfid.")
             return False
         # Establish account
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)
@@ -113,7 +113,7 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("tpwGetAuthorizationUrl() - Cannot create url for email {}.".format(email))
+            self.__logger.warning("tpwGetAuthorizationUrl() - Cannot create url for email {}.".format(email))
             return
         # Establish account
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)
@@ -124,12 +124,12 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("authorizeByUrl() - Cannot authorize - no email.")
+            self.__logger.warning("authorizeByUrl() - Cannot authorize - no email.")
             return
         if rfid is not None :
             self.__rfid = rfid
         if self.__rfid is None:
-            self.__logger.warn("authorizeByUrl() - Cannot authorize - no rfid.")
+            self.__logger.warning("authorizeByUrl() - Cannot authorize - no rfid.")
             return False        # Establish account
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)
         # Set the refresh token
@@ -146,7 +146,7 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("isAuthorized() - Cannot identify authorization status for email {}.".format(email))
+            self.__logger.warning("isAuthorized() - Cannot identify authorization status for email {}.".format(email))
             return
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)    
         authorized = teslaPy.authorized
@@ -160,12 +160,12 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("getVehicleList() - Cannot get vehicle list for email {}.".format(email))
+            self.__logger.warning("getVehicleList() - Cannot get vehicle list for email {}.".format(email))
             return []
 
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)
         if not teslaPy.authorized:
-            self.__logger.warn("getVehicleList() - Email {} not authorizd".format(email))
+            self.__logger.warning("getVehicleList() - Email {} not authorizd".format(email))
             return []
 
         try:
@@ -191,12 +191,12 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("getVehicle() - Cannot get vehicle list for email {}.".format(email))
+            self.__logger.warning("getVehicle() - Cannot get vehicle list for email {}.".format(email))
             return None
 
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)
         if not teslaPy.authorized:
-            self.__logger.warn("getVehicle() - Email {} not authorizd".format(email))
+            self.__logger.warning("getVehicle() - Email {} not authorizd".format(email))
             return None
 
         try:
@@ -205,14 +205,14 @@ class TeslaPyWrapper:
             self.__logger.info("getVehicle() - timeout")
             return None
         except Exception as e: 
-            self.__logger.warn("getVehicle() - error {}".format(e))
+            self.__logger.warning("getVehicle() - error {}".format(e))
             return None
 
         for vehicle_from_list in vehicle_list:
             if vehicle_from_list['vin'] == vin:
                 return vehicle_from_list
 
-        self.__logger.warn("getVehicle() - Found {} vehicles, none with vin {}".format(len(vehicle_list), vin))
+        self.__logger.warning("getVehicle() - Found {} vehicles, none with vin {}".format(len(vehicle_list), vin))
         return None
 
 
@@ -223,7 +223,7 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("isAvailable() - Cannot find vehicle - no email.")
+            self.__logger.warning("isAvailable() - Cannot find vehicle - no email.")
             return False
 
         vehicle = self.getVehicle(email, vin)
@@ -239,12 +239,12 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("getVehicleData() - Cannot get vehicle data for email {}.".format(email))
+            self.__logger.warning("getVehicleData() - Cannot get vehicle data for email {}.".format(email))
             return None
 
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)
         if not teslaPy.authorized:
-            self.__logger.warn("getVehicleData() - Email {} not authorizd".format(email))
+            self.__logger.warning("getVehicleData() - Email {} not authorizd".format(email))
             return None
 
         vehicle_list = teslaPy.vehicle_list()
@@ -253,7 +253,7 @@ class TeslaPyWrapper:
             if vehicle_from_list['vin'] == vin:
                 vehicle = vehicle_from_list
         if vehicle is None:
-            self.__logger.warn("getVehicleData() - Found {} vehicles, none with vin {}".format(len(vehicle_list), vin))
+            self.__logger.warning("getVehicleData() - Found {} vehicles, none with vin {}".format(len(vehicle_list), vin))
             return None
         # Does not have to be online for summary
         # vehicle_summary = vehicle.get_vehicle_summary()
@@ -273,19 +273,19 @@ class TeslaPyWrapper:
                 try:
                     vehicle.sync_wake_up()
                 except teslapy.VehicleError as ve:
-                    self.__logger.warn("getVehicleData() - VehicleError - Vehicle did not wake up within timeout {}".format(ve))
+                    self.__logger.warning("getVehicleData() - VehicleError - Vehicle did not wake up within timeout {}".format(ve))
                     return vehicle
             try:
                 vehicle_data = vehicle.get_vehicle_data()
             except ReadTimeout:
                 self.__logger.info("getVehicleData() - timeout {}".format(tries))
             except Exception as e: 
-                self.__logger.warn("getVehicleData() - error {}".format(e))
+                self.__logger.warning("getVehicleData() - error {}".format(e))
                 tries = max_retries
             tries += 1
 
         if vehicle_data is None:
-            self.__logger.warn("getVehicleData() - could not retrieve vehicle data for {}".format(vin))
+            self.__logger.warning("getVehicleData() - could not retrieve vehicle data for {}".format(vin))
             return vehicle
 
         return vehicle_data
@@ -299,14 +299,14 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("getOdometer() - Cannot get vehicle data for email {}.".format(email))
+            self.__logger.warning("getOdometer() - Cannot get vehicle data for email {}.".format(email))
             return None
 
         # Wakeup required for odometer value
         vehicle_data = self.getVehicleData(email=email, vin=vin, max_retries=max_retries, wake_up=wake_up)
 
         if vehicle_data is None:
-            self.__logger.warn("getOdometer() - could not retrieve odometer value for {}".format(vin))
+            self.__logger.warning("getOdometer() - could not retrieve odometer value for {}".format(vin))
             return None
 
         odometerInMiles = vehicle_data.get('vehicle_state', {}).get('odometer', None)
@@ -323,14 +323,14 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("getChargeState() - Cannot get vehicle data for email {}.".format(email))
+            self.__logger.warning("getChargeState() - Cannot get vehicle data for email {}.".format(email))
             return None
 
         vehicle_data = self.getVehicleData(email=email, vin=vin, max_retries=max_retries, wake_up=wake_up)
 
         if vehicle_data is None:
             if (wake_up):
-                self.__logger.warn("getChargeState() - could not retrieve vehicle data containing charge state for {} (not waking up in time)".format(vin))
+                self.__logger.warning("getChargeState() - could not retrieve vehicle data containing charge state for {} (not waking up in time)".format(vin))
             else:
                 self.__logger.info("getChargeState() - could not retrieve vehicle data containing charge state for {} (wakeup {})".format(vin, wake_up))
             return None
@@ -339,7 +339,7 @@ class TeslaPyWrapper:
             return vehicle_data['charge_state']
 
         # Could not obtain it
-        self.__logger.warn("getChargeState() - no charge state in retrieved vehicle data for {}".format(vin))
+        self.__logger.warning("getChargeState() - no charge state in retrieved vehicle data for {}".format(vin))
         return None
 
 
@@ -357,7 +357,7 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("getVehicleList() - Cannot get vehicle list for email {}.".format(email))
+            self.__logger.warning("getVehicleList() - Cannot get vehicle list for email {}.".format(email))
             return None
 
         vehicle = self.getVehicle(email=email, vin=vin, max_retries=max_retries)
@@ -368,10 +368,10 @@ class TeslaPyWrapper:
         try:
             return vehicle.compose_image(view=view, options=optionCodes)
         except ValueError as e:
-            self.__logger.warn("composeImage() - Cannot get vehicle image from URL. {}".format(e))
+            self.__logger.warning("composeImage() - Cannot get vehicle image from URL. {}".format(e))
             return None
         except Exception as e:
-            self.__logger.warn("composeImage() - Cannot get vehicle image from URL.")
+            self.__logger.warning("composeImage() - Cannot get vehicle image from URL.")
             return None
 
 
@@ -382,7 +382,7 @@ class TeslaPyWrapper:
         if email is None:
             email = self.__email
         if email is None:
-            self.__logger.warn("logout() - Cannot get vehicle data for email {}.".format(email))
+            self.__logger.warning("logout() - Cannot get vehicle data for email {}.".format(email))
             return None
 
         teslaPy = teslapy.Tesla(email, cache_loader=self.__teslapy_loader, cache_dumper=self.__teslapy_dumper)

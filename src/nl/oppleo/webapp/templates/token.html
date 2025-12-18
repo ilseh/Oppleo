@@ -72,7 +72,7 @@
 
   <script>
 
-    implementedVehicleMakeApiList = ['Tesla']
+    implementedVehicleMakeApiList = ['Tesla', 'Polestar']
     fieldNames = ['vehicle_make', 'vehicle_model', 'license_plate', 'vehicle_vin', 'vehicle_name']
     fieldOverrideLinked = {
       "Tesla": {
@@ -84,6 +84,28 @@
           license_plate: false,
           vehicle_vin: true,
           vehicle_name: true,
+          get_odometer: false
+        },
+        reset: {
+          // Reset value when read-only?
+          vehicle: false,
+          vehicle_make: false,
+          vehicle_model: false,
+          license_plate: false,
+          vehicle_vin: false,
+          vehicle_name: false,
+          get_odometer: true
+        }
+      },
+      "Polestar": {
+        readonly: {
+          // Is this field with linked account readonly?
+          vehicle: false,
+          vehicle_make: true,
+          vehicle_model: false,
+          license_plate: true,
+          vehicle_vin: true,
+          vehicle_name: false,
           get_odometer: false
         },
         reset: {
@@ -146,15 +168,24 @@
       )
     }
 
-    function showVehicleApiAuthorization( data ) {
-      // Reset fields
+    function showTeslaVehicleApiAuthorization( data ) {
+      // Reset fields - Tesla
       $('input#account_id').val('')
       $('input#account_id').removeClass('field-error')
-      $('input#vehicle_autorization').val('').trigger('change')
-      $('button#show-link-account-closeaction').prop('disabled', true)
-      showVehicleApiAuthorizationModal.modal('show')
-
+      $('input#vehicle_authorization').val('').trigger('change')
+      $('button#show-link-account-closeaction-tesla').prop('disabled', true)
+      // 
+      showTeslaVehicleApiAuthorizationModal.modal('show')
     }
+    function showVehicleApiAuthorization( data ) {
+      // Reset fields - Generic
+      $('input#vehicle_authorization_username').val('')
+      $('input#vehicle_authorization_password').val('').trigger('change')
+      $('button#show-link-account-closeaction').prop('disabled', true)
+      // 
+      showVehicleApiAuthorizationModal.modal('show')
+    }
+
 
     function submitRfidTokenUpdate( close=true, data=undefined, successCallback=undefined ) {
       console.log(timestamp() + ' submitRfidTokenUpdate')
@@ -263,7 +294,7 @@
       $('.spinner').show()
       $.ajax({
         type		    : 'POST',
-        url			    : '/rfid_tokens/'+{{ rfid_model['rfid'] }}+'/VehicleApi/Unlink/',
+        url			    : '/rfid_tokens/{{ rfid_model['rfid'] }}/VehicleApi/Unlink/',
         dataType	  : 'json',
         encode		  : true,
         headers     : { 'ignore-login-next': 'true' },
@@ -310,13 +341,19 @@
       $('select#vehicle').empty()
       $('select#vehicle').append('<option value="" style="font-style: italic;">Selecteer voertuig...</option>')
       vehicles.forEach((vehicle) => {
-        $('select#vehicle').append('<option value="'+vehicle.vin+'" style="font-style: italic;">'+vehicle.display_name+' (VIN: '+vehicle.vin+')</option>')
+        let vName = (vehicle.display_name != null ? vehicle.display_name : (
+                      vehicle.model_name != null ? vehicle.model_name : (
+                        vehicle.registration_no != null ? vehicle.registration_no : "Voertuig" )
+                      )
+                    )
+        $('select#vehicle').append('<option value="'+vehicle.vin+'" style="font-style: italic;">'+vName+' (VIN: '+vehicle.vin+')</option>')
       })
       // Select the id if present
       if (selectedVehicle.length > 0) {
         $('select#vehicle').val(selectedId)
         $('input#vehicle_vin').val(selectedVehicle[0].vin)
         $('input#vehicle_name').val(selectedVehicle[0].display_name)
+        $('input#license_plate').val(selectedVehicle[0].registration_no)
 
         if (selectedVehicle[0].hasOwnProperty('vehicle_img')) {
           let urlPrefix = '{{ url_for("static", filename="images/vehicles/") }}'
@@ -332,8 +369,10 @@
       }
     }
 
-    function drawAccountLinkButton(linked, linkingAvailable, make=undefined, allowd=false) {
-      if (!implementedVehicleMakeApiList.includes(make)) make = undefined
+    function drawAccountLinkButton(linked, linkingAvailable, make=undefined, allowed=false) {
+      if (!implementedVehicleMakeApiList.includes(make)) { 
+        make = undefined
+      }
       $('button#add_remove_vehicle_api_authorization').off('click')
       if (linked) {
         // Change account link button
@@ -344,10 +383,22 @@
       } else if (linkingAvailable) {
         // Change account link button
         $('button#add_remove_vehicle_api_authorization').html('<i class="fa fa-link"></i> Koppel '+(make==undefined?'voertuig':' '+make)+' account')
-        if (allowd) {
-          $('button#add_remove_vehicle_api_authorization').on('click', function() {      
-            showVehicleApiAuthorization()
-          })
+        if (allowed) {
+          if (make == 'Tesla') {
+            $('button#add_remove_vehicle_api_authorization').on('click', function() {      
+              showTeslaVehicleApiAuthorization()
+            })
+          } else {
+            // Write modal text for make
+            // UUUUUUU
+            $("h3#showVehicleApiAuthorizationModalLabel").html('Koppel <img src="/static/images/logo/'+make+'.png" style="max-width: 40px; max-height: 22px;"> '+jQuery.camelCase(make)+' account <span id="showVehicleApiAuthorizationdTitle"></span>')
+            $("img#vehicle_authorization_logo").attr("src","/static/images/logo/"+make+".png")
+            $("td#vehicle_authorization_intro").html("Geef de gebruikersnaam en het wachtwoord waarmee u inlogt op uw "+jQuery.camelCase(make)+" account.")
+
+            $('button#add_remove_vehicle_api_authorization').on('click', function() {      
+              showVehicleApiAuthorization()
+            })
+          }
         } else {
           $('button#add_remove_vehicle_api_authorization').on('click', function() {      
             // TODO: Popup save action Yes/No
@@ -573,7 +624,7 @@
         // Nothing. Changes are submitted as whole form
       })
 
-      drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
+      drawAccountLinkButton(accountLinked, implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
       $('span#vehicleImg').hide()
       buildVehicleList(vehicleList, accountLinked, {% if rfid_model['vehicle_vin'] is not none %}'{{ rfid_model.vehicle_vin }}'{% else %}undefined{% endif %})
 
@@ -582,7 +633,7 @@
       $('select#vehicle').attr('readonly', !accountLinked)
 
       $('input[name="vehicle_make"]').on("change paste keyup", function() {
-        drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
+        drawAccountLinkButton(accountLinked, implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
       })
 
       $('select#vehicle').on('change', function() {
@@ -594,6 +645,8 @@
           if ($('select#vehicle').val() == vehicleInList.vin) {
             $('input#vehicle_name').val(vehicleInList.display_name)
             $('input#vehicle_vin').val(vehicleInList.vin)
+            $('input#license_plate').val(vehicleInList.registration_no)
+
             // Apply vehicle image
             if (vehicleInList.hasOwnProperty('vehicle_img')) {
               let urlPrefix = '{{ url_for("static", filename="images/vehicles/") }}'
@@ -622,6 +675,13 @@
         $('input[name="valid_until"]').val(valid_until)
       })
 
+      // Tesla specific modal
+      showTeslaVehicleApiAuthorizationModal = $('#showTeslaVehicleApiAuthorizationModal').modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      // Generic modal
       showVehicleApiAuthorizationModal = $('#showVehicleApiAuthorizationModal').modal({
         backdrop: 'static',
         keyboard: false,
@@ -631,18 +691,26 @@
       $('input#account_id').on( 'keyup keypress paste input change', (el) => {
 	      vEmail =validEmail(el.currentTarget.value)
         $('input#account_id').toggleClass('field-error', !vEmail)
-        $('button#show-link-account-closeaction').prop('disabled', ($('input#vehicle_autorization').val().trim().length == 0 || !vEmail))
+        $('button#show-link-account-closeaction-tesla').prop('disabled', ($('input#vehicle_authorization').val().trim().length == 0 || !vEmail))
+      })
+      $('input#vehicle_authorization_username').on( 'keyup keypress paste input change', (el) => {
+        $('button#show-link-account-closeaction').prop('disabled', ($('input#vehicle_authorization_username').val().trim().length == 0 || $('input#vehicle_authorization_password').val().trim().length == 0))
+      })
+      $('input#vehicle_authorization_password').on( 'keyup keypress paste input change', (el) => {
+        $('button#show-link-account-closeaction').prop('disabled', ($('input#vehicle_authorization_username').val().trim().length == 0 || $('input#vehicle_authorization_password').val().trim().length == 0))
       })
 
-      $('input#vehicle_autorization').on( 'keyup keypress paste input change', (el) => {
-        $('button#show-link-account-closeaction').prop('disabled', (el.currentTarget.value.trim().length == 0 || !validEmail($('input#account_id').val())))
+      $('input#vehicle_authorization').on( 'keyup keypress paste input change', (el) => {
+        $('button#show-link-account-closeaction-tesla').prop('disabled', (el.currentTarget.value.trim().length == 0 || !validEmail($('input#account_id').val())))
       })
 
       $('button#show-link-account-cancelaction').on('click', function(el) {
+        // Close either modal
         showVehicleApiAuthorizationModal.modal('hide')
+        showTeslaVehicleApiAuthorizationModal.modal('hide')
       })
       
-      $('button#show-link-account-closeaction').on('click', function(el) {
+      $('button#show-link-account-closeaction-tesla').on('click', function(el) {
         // Link account
         console.log(timestamp() + ' link account')
         // Start spinner
@@ -650,11 +718,63 @@
         let data = {
             vehicle_make  : $('input#vehicle_make').val().trim(),
             account       : $('input#account_id').val().trim(),
-            token         : $('input#vehicle_autorization').val().trim()
+            token         : $('input#vehicle_authorization').val().trim()
         }
         $.ajax({
           type		    : 'POST',
-          url			    : '/rfid_tokens/'+{{ rfid_model["rfid"] }}+'/VehicleApi/ValidateTokenOrUrl/',
+          url			    : '/rfid_tokens/{{ rfid_model["rfid"] }}/VehicleApi/ValidateTokenOrUrl/',
+          dataType	  : 'json',
+          encode		  : true,
+          contentType : 'application/json',
+          headers     : { 
+            'ignore-login-next' : 'true',
+            'X-CSRF-Token'      : '{{ csrf_token() }}'
+          },
+          data        : JSON.stringify( data )
+        }) // using the done promise callback
+        .done(function(res) {
+          switch (res.status) {
+            case 200:
+              autoHideNotify('success','top-left', 'Account gelinkt', 'Account sucesvol gelinkt.')
+              // Change account link button
+              accountLinked = true
+              vehicleList = res.vehicles
+              drawAccountLinkButton(accountLinked,  implementedVehicleMakeApiList.includes($('input#vehicle_make').val()), $('input#vehicle_make').val(), savedMake==$('input#vehicle_make').val())
+              buildVehicleList(vehicleList, accountLinked, $('input#vehicle_vin').val())
+
+              applyFieldBlocking( $('input#vehicle_make').val(), accountLinked )
+
+              // UUUUUU
+              showTeslaVehicleApiAuthorizationModal.modal('hide')
+              break
+            default:
+              autoHideNotify('error','top-left', 'Niet gelinkt', 'Autorisatie niet geaccepteerd.')
+          }
+        })
+        .fail(function(res) {
+          // fail
+          autoHideNotify('error','top-left', 'Niet beschikbaar', 'Deze functie is momenteel niet beschikbaar.')
+        })
+        .always(function() {
+          // Remove spinner
+          $('.spinner').hide()
+        })
+      })
+
+
+      $('button#show-link-account-closeaction').on('click', function(el) {
+        // Link account
+        console.log(timestamp() + ' link account')
+        // Start spinner
+        $('.spinner').show()
+        let data = {
+            vehicle_make  : $('input#vehicle_make').val().trim(),
+            username      : $('input#vehicle_authorization_username').val().trim(),
+            password      : $('input#vehicle_authorization_password').val().trim()
+        }
+        $.ajax({
+          type		    : 'POST',
+          url			    : '/rfid_tokens/{{ rfid_model["rfid"] }}/VehicleApi/GenerateOAuth/',
           dataType	  : 'json',
           encode		  : true,
           contentType : 'application/json',
@@ -695,6 +815,9 @@
       // Remove spinner
       $('.spinner').hide()
     })
+
+
+
 
     </script>
 
@@ -899,6 +1022,7 @@
                     <option value="Mercedes">
                     <option value="Mitsubishi">
                     <option value="Peugeot">
+                    <option value="Polestar">
                     <option value="Tesla">
                     <option value="Toyota">
                     <option value="Volkswagen">
@@ -943,10 +1067,14 @@
                   <input class="form-control" id="vehicle_model" name="vehicle_model" type="text" placeholder="Model" list="car_models"
                          value="{% if rfid_model['vehicle_model'] is not none %}{{ rfid_model['vehicle_model'] }}{% endif %}">
                   <datalist id="car_models">
+                    <option>i3</option>
                     <option>Model S</option>
                     <option>Model X</option>
                     <option>Model 3</option>
-                    <option>i3</option>
+                    <option>Polestar 2</option>
+                    <option>Polestar 3</option>
+                    <option>Polestar 4</option>
+                    <option>Polestar 5</option>
                   </datalist>          
                   <div class="input-group-append" id="vehicle_model_trash">
                     <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
@@ -1139,13 +1267,13 @@
 </div>
 
 
-<!-- Bootstrap Modal -->
-<div class="modal fade" id="showVehicleApiAuthorizationModal" tabindex="-1" role="dialog" aria-labelledby="showVehicleApiAuthorizationModalLabel" aria-hidden="true" data-backdrop="static">
+<!-- Bootstrap Modal - Tesla specific Vehicle account link -->
+<div class="modal fade" id="showTeslaVehicleApiAuthorizationModal" tabindex="-1" role="dialog" aria-labelledby="showTeslaVehicleApiAuthorizationModalLabel" aria-hidden="true" data-backdrop="static">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header bg-primary">
-        <h3 class="modal-title" id="showVehicleApiAuthorizationModalLabel">Koppel <img src="{{ url_for('static', filename='images/logo/tesla.png') }}" style="max-width: 40px; max-height: 22px;"> Tesla Account <span id="showVehicleApiAuthorizationdTitle"></span></h3>
-        <button type="button" class="close-x" data-dismiss="modal" aria-label="Close" id="showVehicleApiAuthorizationModalCloseButton">
+        <h3 class="modal-title" id="showTeslaVehicleApiAuthorizationModalLabel">Koppel <img src="{{ url_for('static', filename='images/logo/tesla.png') }}" style="max-width: 40px; max-height: 22px;"> Tesla Account <span id="showVehicleApiAuthorizationdTitle"></span></h3>
+        <button type="button" class="close-x" data-dismiss="modal" aria-label="Close" id="showTeslaVehicleApiAuthorizationModalCloseButton">
           <span aria-hidden="true"><i class="fas fa-times"></i></span>
         </button>
       </div>
@@ -1211,7 +1339,7 @@
                       <i class="fas fa-key"></i>
                     </span>
                   </div>
-                  <input class="form-control" id="vehicle_autorization" name="vehicle_autorization" type="text" autocomplete="off" placeholder="Refresh Token of URL" value="">
+                  <input class="form-control" id="vehicle_authorization" name="vehicle_authorization" type="text" autocomplete="off" placeholder="Refresh Token of URL" value="">
                   <div class="input-group-append info-button-style"
                        data-toggle="tooltip" 
                        data-placement="bottom" 
@@ -1224,7 +1352,7 @@
                     </span>
                   </div>
                   <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
-                          onclick="$('input#vehicle_autorization').val('').trigger('change'); return false;"
+                          onclick="$('input#vehicle_authorization').val('').trigger('change'); return false;"
                           data-toggle="tooltip" 
                           data-placement="bottom" 
                           data-html="true" 
@@ -1253,8 +1381,135 @@
                 </span> 
                 Login via de <a href="#" onClick="openExternalLoginPage(); return false;">Tesla inlog pagina <i class="fas fa-external-link-alt"></i></span></a> <a href="#" onClick="copyExternalLoginPage()"><i class="fas fa-copy"></i></a> en voer het <span class="text-success text-decoration-underline font-italic">refresh token</span> uit de URL of de hele URL in.<br/>
                 <small class="pl-4"><i class="mdi mdi-alert-outline"></i> <i>Na succesvol inloggen wordt er een "Page not found" pagina getoond. Het inloggen is dan wel succesvol.</i></small>
+              </td>
+            </tr>
 
-                Helper
+          </table>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="show-link-account-cancelaction"> Annuleren</button>
+        <button type="button" class="btn btn-primary" id="show-link-account-closeaction-tesla"> Koppel account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Bootstrap Modal - Regular login to link vehicle accounts -->
+<div class="modal fade" id="showVehicleApiAuthorizationModal" tabindex="-1" role="dialog" aria-labelledby="showVehicleApiAuthorizationModalLabel" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary">
+        <h3 class="modal-title" id="showVehicleApiAuthorizationModalLabel">Koppel <img src="{{ url_for('static', filename='images/logo/tesla.png') }}" style="max-width: 40px; max-height: 22px;"> BRAND Account <span id="showVehicleApiAuthorizationdTitle"></span></h3>
+        <button type="button" class="close-x" data-dismiss="modal" aria-label="Close" id="showVehicleApiAuthorizationModalCloseButton">
+          <span aria-hidden="true"><i class="fas fa-times"></i></span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="col-lg-12">
+
+          <table id="apiAuthorizationTable" class="table table-bordered" cellpadding="0" cellspacing="0">
+
+            <tr style="text-align: center;">
+              <td colspan="2" class="pb-3">
+                <img id="vehicle_authorization_logo" src="brand.png" style="max-width: 100px; max-height: 50px;">
+              </td>
+            </tr>
+
+            <tr>
+              <td id="vehicle_authorization_intro" colspan="2" class="pl-4 pt-3 pb-3" style="text-align: left;">
+                Geef de gebruikersnaam en het wachtwoord waarmee u inlogt op uw BRAND account. 
+              </td>
+            </tr>
+
+            <tr>
+              <th style="width: 20%;"><h5>Gebruikersnaam</h5></th>
+              <td>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
+                      <i class="mdi mdi-account"></i>
+                    </span>
+                  </div>
+                  <input class="form-control" id="vehicle_authorization_username" name="vehicle_authorization_username" type="text" autocomplete="off" placeholder="Gebruikersnaam" value="">
+                  <div class="input-group-append info-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Dit is de gebruikersnaam waarmee wordt ingelogd op het voertuig account."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                  <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                          onclick="$('input#vehicle_authorization_username').val('').trigger('change'); return false;"
+                          data-toggle="tooltip"
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="<em>Verwijder gebruikersnaam invoer</em>"
+                          >
+                    <i class="far fa-trash-alt"></i>
+                  </button>    
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <th><h5><em>Wachtwoord</em></h5></th>
+              <td>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary b-0 text-muted border-primary">
+                      <i class="fas fa-key"></i>
+                    </span>
+                  </div>
+                  <input class="form-control" id="vehicle_authorization_password" name="vehicle_authorization_password" type="password" autocomplete="off" placeholder="Wachtwoord" value="">
+
+                  <div class="input-group-append eye-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="<em>Toon wachtwoord-invoer</em>"
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary"
+                      onclick="$('#vehicle_authorization_password_eye').toggleClass('fa-eye fa-eye-slash'); $('input#vehicle_authorization_password').attr('type', (_, t) => t=='password'?'text':'password').attr('type');"
+                      >
+                      <i id="vehicle_authorization_password_eye" class="fas fa-eye-slash"></i>
+                    </span>
+                  </div>
+
+                  <div class="input-group-append info-button-style"
+                       data-toggle="tooltip" 
+                       data-placement="bottom" 
+                       data-html="true" 
+                       title="Het wachtwoord van uw voertuig account."
+                    >
+                    <span class="input-group-text bg-secondary text-muted border-secondary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </div>
+                  <button class="input-group-append bg-dark pl-3 pr-3 btn btn-outline-secondary border-dark text-white"
+                          onclick="$('input#vehicle_authorization').val('').trigger('change'); return false;"
+                          data-toggle="tooltip" 
+                          data-placement="bottom" 
+                          data-html="true" 
+                          title="<em>Verwijder autorisatie invoer</em>"
+                          >
+                    <i class="far fa-trash-alt"></i>
+                  </button>    
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" class="pl-4 pt-3 pb-3" style="text-align: left;">
+                <span class="text-light">
+                  Oppleo slaat geen wachtwoorden van voertuigaccounts op. Met uw login gegevens wordt eenmalig een toegangs-token aangemaakt wat wordt gebruikt om uw voertuiggegevens op te halen.
+                </span>
               </td>
             </tr>
 
@@ -1270,6 +1525,5 @@
     </div>
   </div>
 </div>
-
 
 {% endblock %}
